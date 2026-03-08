@@ -4,3 +4,6 @@
 **/out/
 **/packages/
 **/publish/
+
+# Raw images
+pictures/webp/

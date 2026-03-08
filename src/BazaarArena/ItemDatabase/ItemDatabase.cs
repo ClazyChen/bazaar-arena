@@ -10,6 +10,10 @@ public class ItemDatabase : IItemTemplateResolver
     public ItemTemplate? GetTemplate(string name) =>
         _templates.TryGetValue(name, out var t) ? t : null;
 
+    /// <summary>获取所有已注册物品名称，供 UI 下拉等使用。</summary>
+    public IReadOnlyList<string> GetAllNames() =>
+        _templates.Keys.OrderBy(x => x, StringComparer.Ordinal).ToList();
+
     /// <summary>注册物品模板。</summary>
     public void Register(ItemTemplate template)
     {
@@ -31,12 +35,12 @@ public class ItemDatabase : IItemTemplateResolver
             MinTier = t.MinTier,
             Size = t.Size,
             Tags = [..t.Tags],
-            Abilities = t.Abilities.Select(a => new AbilityDefinition
+            Abilities = [.. t.Abilities.Select(a => new AbilityDefinition
             {
                 TriggerName = a.TriggerName,
                 Priority = a.Priority,
                 Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value }).ToList(),
-            }).ToList(),
+            })],
             Auras = [..t.Auras],
         };
         clone.SetIntsByTier(t.GetIntsByTierSnapshot());

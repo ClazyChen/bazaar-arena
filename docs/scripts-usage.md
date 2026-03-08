@@ -7,6 +7,7 @@
 - **.NET SDK**：需已安装与项目匹配的 .NET SDK（用于 `dotnet run` / `dotnet publish`）
 - **Windows**：脚本针对 Windows 设计；`build-exe` 产出为 `win-x64` 自包含 exe
 - **PowerShell**：`.cmd` 脚本会调用同名的 `.ps1`，需系统已安装 PowerShell
+- **Python 3 + Pillow**：仅 **webp_to_png** 需要；用于将 `pictures/webp/` 下的 WebP 转为 PNG（见下文）
 
 ---
 
@@ -110,11 +111,46 @@ powershell -ExecutionPolicy Bypass -File scripts\build-exe.ps1
 
 ---
 
+## 3. webp_to_png — WebP 转 PNG（图片资源）
+
+将 **`pictures/webp/`** 目录下**尚未转换**的 WebP 图片转换为 PNG，保存到 **`pictures/png/`**。已存在同名 PNG 的文件会被跳过，便于增量更新（例如新增来自游戏资源网站的 WebP 后只转换新文件）。
+
+### 环境
+
+- **Python 3**
+- **Pillow**：`pip install Pillow`
+
+### 用法
+
+在仓库根目录下执行（或从任意目录执行，脚本会自行定位仓库根）：
+
+**CMD：**
+
+```cmd
+python scripts\webp_to_png.py
+```
+
+**PowerShell：**
+
+```powershell
+python scripts\webp_to_png.py
+```
+
+### 行为说明
+
+- **源目录**：`pictures/webp/`（仅处理 `.webp` 文件）
+- **输出目录**：`pictures/png/`（若不存在会自动创建）
+- **“未转换”规则**：仅当 `pictures/png/<文件名>.png` 不存在时，才对该 WebP 进行转换；已存在的 PNG 不会覆盖
+- 控制台会打印本次转换的文件数量及被跳过的数量，便于下一阶段界面测试时批量更新图片资源
+
+---
+
 ## 脚本与入口对应关系
 
 | 功能       | CMD 入口        | PowerShell 入口     | 实际逻辑所在   |
 |------------|-----------------|----------------------|----------------|
 | 开发态运行 | `scripts\run.cmd` | `scripts\run.ps1`   | `run.ps1`      |
 | 发布 exe   | `scripts\build-exe.cmd` | `scripts\build-exe.ps1` | `build-exe.ps1` |
+| WebP 转 PNG | `python scripts\webp_to_png.py` | 同上 | `scripts\webp_to_png.py` |
 
 `.cmd` 脚本会先 `cd` 到仓库根目录，再以 `-ExecutionPolicy Bypass` 调用对应 `.ps1`，因此从任意子目录执行 `scripts\run.cmd` 或 `scripts\build-exe.cmd` 均可，工作目录会被正确设置。

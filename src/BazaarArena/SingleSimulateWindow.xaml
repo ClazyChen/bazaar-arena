@@ -1,0 +1,58 @@
+<Window x:Class="BazaarArena.SingleSimulateWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="单次模拟" Height="620" Width="880" WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="200"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="玩家1 卡组：" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <ComboBox x:Name="DeckACombo" MinWidth="160" Margin="0,0,16,0"/>
+            <TextBlock Text="玩家2 卡组：" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <ComboBox x:Name="DeckBCombo" MinWidth="160" Margin="0,0,16,0"/>
+            <CheckBox x:Name="IdealTargetCheck" Content="玩家2 为理想目标（无限生命）" VerticalAlignment="Center"/>
+        </StackPanel>
+        <Button Grid.Row="1" Content="开始模拟" Click="Run_Click" Padding="12,6" HorizontalAlignment="Left" Margin="0,0,0,8"/>
+        <TextBlock x:Name="ResultText" Grid.Row="2" FontWeight="Bold" Margin="0,0,0,6"/>
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="战斗过程日志" FontWeight="Bold" Margin="0,0,0,4"/>
+                <TextBox x:Name="LogBox" IsReadOnly="True" TextWrapping="NoWrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" 
+                         FontFamily="Consolas" FontSize="12" Padding="4" MinHeight="120"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="每物品统计" FontWeight="Bold" Margin="0,0,0,4"/>
+                <DataGrid x:Name="StatsGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False"
+                          HeadersVisibility="Column" MinHeight="120" MinWidth="320">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="玩家" Binding="{Binding SideIndex}" Width="50"/>
+                        <DataGridTextColumn Header="物品" Binding="{Binding ItemName}" Width="*"/>
+                        <DataGridTextColumn Header="使用" Binding="{Binding CastCount}" Width="50"/>
+                        <DataGridTextColumn Header="伤害" Binding="{Binding Damage}" Width="50"/>
+                        <DataGridTextColumn Header="灼烧" Binding="{Binding Burn}" Width="50"/>
+                        <DataGridTextColumn Header="剧毒" Binding="{Binding Poison}" Width="50"/>
+                        <DataGridTextColumn Header="护盾" Binding="{Binding Shield}" Width="50"/>
+                        <DataGridTextColumn Header="治疗" Binding="{Binding Heal}" Width="50"/>
+                        <DataGridTextColumn Header="再生" Binding="{Binding Regen}" Width="50"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </StackPanel>
+        </Grid>
+        <TextBlock Grid.Row="4" Text="强度曲线（纵轴：累计总量，横轴：时间/秒）" FontWeight="Bold" Margin="0,8,0,4"/>
+        <Border Grid.Row="5" BorderBrush="#ccc" BorderThickness="1" Background="White" Padding="4">
+            <Canvas x:Name="CurveCanvas" ClipToBounds="True"/>
+        </Border>
+    </Grid>
+</Window>

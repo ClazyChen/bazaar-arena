@@ -36,4 +36,15 @@ public class Deck
             _ => false,
         };
     }
+
+    /// <summary>创建“理想强度曲线”用的对手卡组：无限生命、无物品，用于单次模拟时仅观察己方输出随时间曲线。</summary>
+    public static Deck CreateInfiniteHpDummyDeck()
+    {
+        return new Deck
+        {
+            PlayerLevel = 10,
+            Slots = [],
+            PlayerOverrides = new Dictionary<string, int> { ["MaxHp"] = 999999 },
+        };
+    }
 }

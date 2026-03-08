@@ -7,7 +7,7 @@ public static class RatioUtil
     public static int PercentFloor(int value, int percent)
     {
         if (value <= 0) return 0;
-        int result = (value * percent) / 100;
+        int result = value * percent / 100;
         return result < 1 ? 1 : result;
     }
 }

@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace BazaarArena.BattleSimulator;
 
 /// <summary>将战斗日志写入文件，文件名使用当前时间戳，由 <see cref="LogPaths.GetTimestampedLogPath"/> 生成。</summary>
