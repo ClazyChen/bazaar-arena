@@ -1,0 +1,90 @@
+using BazaarArena.Core;
+
+namespace BazaarArena.ItemDatabase;
+
+/// <summary>基座阶段测试用物品：纯伤害、纯灼烧、带暴击的伤害。</summary>
+public static class TestItems
+{
+    /// <summary>测试伤害物品：冷却 2 秒，造成 30 点伤害。</summary>
+    public static ItemTemplate TestDamage()
+    {
+        return new ItemTemplate
+        {
+            Name = "测试伤害",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = new List<string>(),
+            CooldownMs = 2000,
+            CritRatePercent = 0,
+            Multicast = 1,
+            AmmoCap = 0,
+            Abilities = new List<AbilityDefinition>
+            {
+                new()
+                {
+                    TriggerName = "使用物品",
+                    Priority = AbilityPriority.Medium,
+                    Effects = new List<EffectDefinition> { new() { Kind = EffectKind.Damage, Value = 30 } },
+                },
+            },
+        };
+    }
+
+    /// <summary>测试灼烧物品：冷却 4 秒，附加 40 点灼烧。</summary>
+    public static ItemTemplate TestBurn()
+    {
+        return new ItemTemplate
+        {
+            Name = "测试灼烧",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = new List<string>(),
+            CooldownMs = 4000,
+            CritRatePercent = 0,
+            Multicast = 1,
+            AmmoCap = 0,
+            Abilities = new List<AbilityDefinition>
+            {
+                new()
+                {
+                    TriggerName = "使用物品",
+                    Priority = AbilityPriority.Medium,
+                    Effects = new List<EffectDefinition> { new() { Kind = EffectKind.Burn, Value = 40 } },
+                },
+            },
+        };
+    }
+
+    /// <summary>测试暴击伤害：冷却 2 秒，50 伤害，50% 暴击率。</summary>
+    public static ItemTemplate TestCritDamage()
+    {
+        return new ItemTemplate
+        {
+            Name = "测试暴击伤害",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = new List<string>(),
+            CooldownMs = 2000,
+            CritRatePercent = 50,
+            Multicast = 1,
+            AmmoCap = 0,
+            Abilities = new List<AbilityDefinition>
+            {
+                new()
+                {
+                    TriggerName = "使用物品",
+                    Priority = AbilityPriority.Medium,
+                    Effects = new List<EffectDefinition> { new() { Kind = EffectKind.Damage, Value = 50 } },
+                },
+            },
+        };
+    }
+
+    /// <summary>注册所有测试物品到数据库。</summary>
+    public static void RegisterAll(ItemDatabase db)
+    {
+        db.Register(TestDamage());
+        db.Register(TestBurn());
+        db.Register(TestCritDamage());
+    }
+}

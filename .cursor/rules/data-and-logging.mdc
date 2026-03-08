@@ -1,0 +1,20 @@
+---
+description: 数据文件与运行期日志的目录、语义与默认行为
+alwaysApply: false
+globs: "**/*.cs"
+---
+
+# 数据与日志约定
+
+## 数据文件
+
+- **位置**：游戏数据（如卡组、等级表）放在 `Data/` 下，例如 `Data/Decks/`、`Data/levelups.json`。程序优先从当前目录找 `Data`，否则用程序目录下的 `Data`。
+- **等级→生命值**：来自游戏的 levelups 类 JSON 中，**L 级最大生命值 = 300 + Level1 的 HealthIncrease + … + Level(L-1) 的 HealthIncrease**（2 级 = 300 + Level1 的增量，不是 Level2 的增量）。解析时用「上一级」的 HealthIncrease 累加。
+- **发布**：需随程序分发的 JSON 在 csproj 中通过 `None` + `CopyToOutputDirectory` 复制到输出目录的对应路径（如 `Data/levelups.json`）。
+
+## 运行期日志
+
+- **目录**：运行中产生的日志写入 `Logs/`，路径由 `LogPaths.GetLogDirectory()` 决定（当前目录或程序目录下的 `Logs`）。目录在首次写入时创建。
+- **命名**：单次运行对应一个文件，文件名带当前时间戳，格式 `yyyyMMdd-HHmmss.log`，由 `LogPaths.GetTimestampedLogPath()` 生成。
+- **默认行为**：默认同时输出到控制台和日志文件。**文件日志始终使用 Detailed 级别**，保证日志文件包含完整战斗过程；控制台按参数为 Summary（仅结果）或 Detailed。若不需要写文件，可传参 `nolog` 或 `nofile`。
+- **忽略**：`.gitignore` 中已忽略 `Logs/`，不提交运行期日志文件。
