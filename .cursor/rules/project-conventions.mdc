@@ -1,0 +1,16 @@
+---
+description: Bazaar Arena 项目通用约定（C#、Windows、中文）
+alwaysApply: true
+---
+
+# 项目约定
+
+- **项目名称**：Bazaar Arena（游戏 The Bazaar 的组队模拟器）。代码与命名空间使用 `BazaarArena`。
+- **平台**：面向 Windows；采用 C# 编写。
+- **语言**：用户界面文案、代码注释均使用中文。
+- **模块与目录**：与设计文档一致，主项目下分为：
+  - `DeckManager/` — 卡组管理器
+  - `ItemDatabase/` — 物品数据库
+  - `BattleSimulator/` — 对战模拟器
+
+命名空间与文件夹对应，例如 `BazaarArena.DeckManager`、`BazaarArena.ItemDatabase`、`BazaarArena.BattleSimulator`。

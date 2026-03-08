@@ -1,0 +1,6 @@
+# 构建与依赖产物，减少索引
+**/bin/
+**/obj/
+**/out/
+**/packages/
+**/publish/

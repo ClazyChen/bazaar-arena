@@ -1,0 +1,18 @@
+---
+description: C# 编码规范与设计文档中的抽象与封装倾向
+globs: "**/*.cs"
+alwaysApply: false
+---
+
+# C# 规范
+
+- **命名**：遵循 C# 惯例（类型、方法、公共属性 PascalCase；局部变量、参数 camelCase）。避免无意义缩写。
+- **命名空间与目录**：类型所在命名空间与文件夹结构一致（如 `BazaarArena.ItemDatabase` 对应 `ItemDatabase/` 下代码）。
+- **物品定义**：设计文档要求“通过抽象和封装尽量简化定义一件物品所需的代码量”。新增物品相关类型与公开 API 保持精简，便于用少量代码描述一件物品的属性和效果。
+
+示例（注释风格）：
+
+```csharp
+// 卡组管理器：负责卡组的 CRUD 与本地 JSON 持久化。
+public class DeckManager { }
+```
