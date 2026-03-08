@@ -1,7 +1,7 @@
 # 将参考图复制为测试物品用图，便于 UI 显示。
 # 约定：pictures/png/<Name>.png
 # 参考图：独角鲸（小）、尖刺圆盾（中）、哈库维发射器（大）
-# 测试物品（TestItems）：测试伤害、测试灼烧、测试暴击伤害、伤害随等级、冷却随等级（均为 Small）
+# 测试物品（TestItems）与尺寸：测试伤害 Small、测试灼烧 Medium、测试暴击伤害 Large、伤害随等级 Small、冷却随等级 Medium
 
 # 脚本位于 <项目>/scripts/，故项目根目录为 PSScriptRoot 的父目录
 $root = Split-Path -Parent $PSScriptRoot
@@ -11,19 +11,25 @@ $smallRef = "独角鲸.png"
 $mediumRef = "尖刺圆盾.png"
 $largeRef = "哈库维发射器.png"
 
+# 测试物品名称 -> 参考图（Small / Medium / Large）
 $testItems = @(
-    "测试伤害", "测试灼烧", "测试暴击伤害", "伤害随等级", "冷却随等级"
+    @{ Name = "测试伤害";     Ref = $smallRef },
+    @{ Name = "测试灼烧";     Ref = $mediumRef },
+    @{ Name = "测试暴击伤害"; Ref = $largeRef },
+    @{ Name = "伤害随等级";   Ref = $smallRef },
+    @{ Name = "冷却随等级";   Ref = $mediumRef }
 )
 
-if (-not (Test-Path (Join-Path $pngDir $smallRef))) {
-    Write-Host "未找到参考图 $smallRef，请先将参考图放入 pictures\png\ 目录。"
-    exit 0
-}
-
-foreach ($name in $testItems) {
-    $dest = Join-Path $pngDir "$name.png"
-    if (-not (Test-Path $dest)) {
-        Copy-Item (Join-Path $pngDir $smallRef) $dest
-        Write-Host "已复制: $name.png"
+foreach ($item in $testItems) {
+    $refPath = Join-Path $pngDir $item.Ref
+    if (-not (Test-Path $refPath)) {
+        Write-Host "未找到参考图 $($item.Ref)，跳过: $($item.Name).png"
+        continue
     }
+    $dest = Join-Path $pngDir "$($item.Name).png"
+    if (Test-Path $dest) {
+        Remove-Item $dest -Force
+    }
+    Copy-Item $refPath $dest
+    Write-Host "已生成: $($item.Name).png (来自 $($item.Ref))"
 }

@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using BazaarArena.Core;
 using BazaarArena.DeckManager;
 using BazaarArena.ItemDatabase;
@@ -16,6 +18,13 @@ public partial class MainWindow
     private string? _currentDeckId;
     private IReadOnlyList<string> _itemNames = [];
 
+    /// <summary>卡组表格第二行中每个物品的显示项（起始列、跨列、视图模型）。</summary>
+    public ObservableCollection<DeckSlotDisplayItem> DeckSlotDisplays { get; } = [];
+
+    private static readonly Brush UnavailableColumnBrush = Brushes.Black;
+    private static readonly Brush EmptySlotBrush = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0));
+    private const string SlotRowViewModelFormat = "BazaarArena.SlotRowViewModel";
+
     public MainWindow()
     {
         InitializeComponent();
@@ -25,17 +34,22 @@ public partial class MainWindow
         _itemNames = _itemDatabase.GetAllNames();
 
         DeckListBox.ItemsSource = _deckNames;
-        SlotEntriesList.ItemsSource = _slotRows;
 
         for (int i = 1; i <= 20; i++)
             PlayerLevelCombo.Items.Add(i);
         PlayerLevelCombo.SelectedIndex = 4; // 5 级
 
-        AddItemNameCombo.ItemsSource = _itemNames;
-        AddTierCombo.ItemsSource = SlotRowViewModel.Tiers;
-        AddTierCombo.SelectedIndex = 0;
+        ItemPoolList.ItemsSource = _itemNames;
 
         RefreshDeckList();
+    }
+
+    private void DeckGridInner_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (DeckGridInner is not { } grid || grid.ActualWidth <= 0) return;
+        // small 物品 1:2（宽:高），单列宽 = ActualWidth/10，高 = 2*单列宽 = ActualWidth/5
+        double h = Math.Max(40, grid.ActualWidth / 5);
+        grid.RowDefinitions[1].Height = new GridLength(h);
     }
 
     private void RefreshDeckList()
@@ -143,48 +157,300 @@ public partial class MainWindow
             used += t != null ? (int)t.Size : 1;
         }
         SlotSummaryText.Text = $"槽位：已用 {used} / 上限 {maxSlots}";
+        UpdateDeckGridDisplay();
     }
 
-    private void AddSlot_Click(object sender, RoutedEventArgs e)
+    private static Brush TierToBrush(ItemTier tier)
     {
-        if (AddItemNameCombo.SelectedItem is not string name)
+        return tier switch
         {
-            MessageBox.Show("请选择要添加的物品。", "添加物品", MessageBoxButton.OK, MessageBoxImage.Information);
+            ItemTier.Bronze => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#CD7F32")),
+            ItemTier.Silver => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#C0C0C0")),
+            ItemTier.Gold => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD700")),
+            ItemTier.Diamond => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#B9F2FF")),
+            _ => EmptySlotBrush,
+        };
+    }
+
+    private void UpdateDeckGridDisplay()
+    {
+        int level = GetPlayerLevel();
+        int maxSlots = Deck.MaxSlotsForLevel(level);
+        int firstSlot = (10 - maxSlots) / 2;
+
+        // 更新第二行物品显示（先算 DeckSlotDisplays，tier 行依赖它）
+        DeckSlotDisplays.Clear();
+        int currentCol = firstSlot;
+        foreach (var row in _slotRows)
+        {
+            if (string.IsNullOrEmpty(row.ItemName)) continue;
+            var t = _itemDatabase.GetTemplate(row.ItemName);
+            int size = t != null ? (int)t.Size : 1;
+            if (currentCol + size > firstSlot + maxSlots) break;
+            DeckSlotDisplays.Add(new DeckSlotDisplayItem
+            {
+                StartColumn = currentCol,
+                ColumnSpan = size,
+                ViewModel = row,
+            });
+            currentCol += size;
+        }
+
+        RebuildTierRow();
+        RebuildDeckImageRow();
+    }
+
+    private void RebuildTierRow()
+    {
+        if (TierRowGrid == null) return;
+        TierRowGrid.Children.Clear();
+        int level = GetPlayerLevel();
+        int maxSlots = Deck.MaxSlotsForLevel(level);
+        int firstSlot = (10 - maxSlots) / 2;
+
+        const int colGap = 2; // 列间缝隙（每侧 2px，两列之间共 4px）
+        var rowMargin = new Thickness(colGap, 1, colGap, 1);
+
+        // 不可用列：左侧黑块
+        if (firstSlot > 0)
+        {
+            var left = new Border { Background = UnavailableColumnBrush, Margin = rowMargin };
+            Grid.SetColumn(left, 0);
+            Grid.SetColumnSpan(left, firstSlot);
+            TierRowGrid.Children.Add(left);
+        }
+        // 不可用列：右侧黑块
+        int rightStart = firstSlot + maxSlots;
+        if (rightStart < 10)
+        {
+            var right = new Border { Background = UnavailableColumnBrush, Margin = rowMargin };
+            Grid.SetColumn(right, rightStart);
+            Grid.SetColumnSpan(right, 10 - rightStart);
+            TierRowGrid.Children.Add(right);
+        }
+        // 空槽位（可用但无物品）：按连续区间添加灰块
+        int col = firstSlot;
+        foreach (var item in DeckSlotDisplays)
+        {
+            if (col < item.StartColumn)
+            {
+                var empty = new Border { Background = EmptySlotBrush, Margin = rowMargin };
+                Grid.SetColumn(empty, col);
+                Grid.SetColumnSpan(empty, item.StartColumn - col);
+                TierRowGrid.Children.Add(empty);
+            }
+            col = item.StartColumn + item.ColumnSpan;
+        }
+        if (col < rightStart)
+        {
+            var empty = new Border { Background = EmptySlotBrush, Margin = rowMargin };
+            Grid.SetColumn(empty, col);
+            Grid.SetColumnSpan(empty, rightStart - col);
+            TierRowGrid.Children.Add(empty);
+        }
+        // 物品 tier 色块（与物品同跨列），可点击切换等级
+        foreach (var item in DeckSlotDisplays)
+        {
+            var border = new Border
+            {
+                Background = TierToBrush(item.ViewModel.Tier),
+                Tag = item.ViewModel,
+                Cursor = Cursors.Hand,
+                CornerRadius = new CornerRadius(1),
+                Margin = rowMargin,
+            };
+            border.PreviewMouseLeftButtonDown += TierBlock_PreviewMouseLeftButtonDown;
+            Grid.SetColumn(border, item.StartColumn);
+            Grid.SetColumnSpan(border, item.ColumnSpan);
+            TierRowGrid.Children.Add(border);
+        }
+    }
+
+    private void TierBlock_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not Border border || border.Tag is not SlotRowViewModel row) return;
+        int level = GetPlayerLevel();
+        ItemTier next = CycleToNextAllowedTier(row.Tier, level);
+        if (next != row.Tier)
+        {
+            row.Tier = next;
+            RebuildTierRow();
+        }
+    }
+
+    private static ItemTier CycleToNextAllowedTier(ItemTier current, int playerLevel)
+    {
+        var order = new[] { ItemTier.Bronze, ItemTier.Silver, ItemTier.Gold, ItemTier.Diamond };
+        int i = Array.IndexOf(order, current);
+        for (int k = 1; k <= 4; k++)
+        {
+            ItemTier candidate = order[(i + k) % 4];
+            if (Deck.TierAllowedForLevel(candidate, playerLevel))
+                return candidate;
+        }
+        return current;
+    }
+
+    private void RebuildDeckImageRow()
+    {
+        if (DeckImageRowGrid == null) return;
+        DeckImageRowGrid.Children.Clear();
+        const int colGap = 2; // 与 tier 行一致，列间缝隙
+        var cellMargin = new Thickness(colGap, 0, colGap, 0);
+        foreach (var item in DeckSlotDisplays)
+        {
+            var border = new Border
+            {
+                Margin = cellMargin,
+                Background = new SolidColorBrush(Colors.Transparent),
+                Tag = item.ViewModel,
+                Cursor = Cursors.Hand,
+                ToolTip = item.ViewModel.ItemName,
+                Child = new Image
+                {
+                    Source = ItemImageHelper.GetImageSource(item.ViewModel.ItemName),
+                    Stretch = Stretch.Fill,
+                },
+            };
+            border.PreviewMouseLeftButtonDown += DeckItem_PreviewMouseLeftButtonDown;
+            Grid.SetColumn(border, item.StartColumn);
+            Grid.SetColumnSpan(border, item.ColumnSpan);
+            DeckImageRowGrid.Children.Add(border);
+        }
+    }
+
+    private void DeckItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not Border border || border.Tag is not SlotRowViewModel row) return;
+        var data = new DataObject(SlotRowViewModelFormat, row);
+        DragDrop.DoDragDrop(border, data, DragDropEffects.Move);
+    }
+
+    private void ItemPoolTile_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement el || el.DataContext is not string itemName) return;
+        var data = new DataObject(DataFormats.Text, itemName);
+        DragDrop.DoDragDrop(el, data, DragDropEffects.Copy);
+    }
+
+    private void DeleteZone_DragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(SlotRowViewModelFormat) ? DragDropEffects.Move : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void DeleteZone_Drop(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(SlotRowViewModelFormat)) return;
+        if (e.Data.GetData(SlotRowViewModelFormat) is SlotRowViewModel row)
+        {
+            RemoveSlotRow(row);
+            e.Handled = true;
+        }
+    }
+
+    private void DeckGrid_DragOver(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(SlotRowViewModelFormat) || e.Data.GetDataPresent(DataFormats.Text))
+            e.Effects = e.Data.GetDataPresent(SlotRowViewModelFormat) ? DragDropEffects.Move : DragDropEffects.Copy;
+        else
+            e.Effects = DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void DeckGrid_Drop(object sender, DragEventArgs e)
+    {
+        if (DeckImageRowGrid == null) return;
+        var pos = e.GetPosition(DeckImageRowGrid);
+        double w = DeckImageRowGrid.ActualWidth;
+        if (w <= 0) return;
+        int col = Math.Clamp((int)(pos.X / (w / 10)), 0, 9);
+        int level = GetPlayerLevel();
+        int maxSlots = Deck.MaxSlotsForLevel(level);
+        int firstSlot = (10 - maxSlots) / 2;
+        if (col < firstSlot || col >= firstSlot + maxSlots) return;
+        int logicalSlot = col - firstSlot;
+
+        if (e.Data.GetDataPresent(SlotRowViewModelFormat) && e.Data.GetData(SlotRowViewModelFormat) is SlotRowViewModel row)
+        {
+            MoveSlotToLogicalIndex(row, logicalSlot);
+            e.Handled = true;
             return;
         }
-        var tier = AddTierCombo.SelectedItem is ItemTier t ? t : ItemTier.Bronze;
+        if (e.Data.GetDataPresent(DataFormats.Text) && e.Data.GetData(DataFormats.Text) is string itemName)
+        {
+            TryInsertItemAt(itemName, ItemTier.Bronze, logicalSlot);
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>尝试将物品加入卡组（如槽位或等级不允许则返回 false）。</summary>
+    public bool TryAddItemToDeck(string itemName, ItemTier tier = ItemTier.Bronze)
+    {
+        int maxSlots = Deck.MaxSlotsForLevel(GetPlayerLevel());
+        return TryInsertItemAt(itemName, tier, maxSlots);
+    }
+
+    /// <summary>尝试在指定逻辑槽位插入物品（0 表示最左）。槽位不足或等级不允许时返回 false。</summary>
+    public bool TryInsertItemAt(string itemName, ItemTier tier, int logicalSlot)
+    {
         int level = GetPlayerLevel();
         if (!Deck.TierAllowedForLevel(tier, level))
-        {
-            MessageBox.Show($"玩家等级 {level} 不可选择该物品等级。", "添加物品", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-        var template = _itemDatabase.GetTemplate(name);
-        if (template == null) return;
+            return false;
+        var template = _itemDatabase.GetTemplate(itemName);
+        if (template == null) return false;
         int maxSlots = Deck.MaxSlotsForLevel(level);
+        int firstSlot = (10 - maxSlots) / 2;
+        if (logicalSlot < 0 || logicalSlot > maxSlots) return false;
+        int insertCol = firstSlot + logicalSlot;
         int used = 0;
+        int insertIndex = 0;
+        int col = firstSlot;
         foreach (var row in _slotRows)
         {
             if (string.IsNullOrEmpty(row.ItemName)) continue;
             var tpl = _itemDatabase.GetTemplate(row.ItemName);
-            used += tpl != null ? (int)tpl.Size : 1;
+            int size = tpl != null ? (int)tpl.Size : 1;
+            if (col >= insertCol) break;
+            col += size;
+            used += size;
+            insertIndex++;
         }
         if (used + (int)template.Size > maxSlots)
-        {
-            MessageBox.Show($"槽位不足，无法添加该物品（需要 {template.Size} 槽）。", "添加物品", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-        _slotRows.Add(new SlotRowViewModel { ItemNames = _itemNames, ItemName = name, Tier = tier });
+            return false;
+        _slotRows.Insert(insertIndex, new SlotRowViewModel { ItemNames = _itemNames, ItemName = itemName, Tier = tier });
+        UpdateSlotSummary();
+        return true;
+    }
+
+    /// <summary>从卡组中移除指定槽位行。</summary>
+    public void RemoveSlotRow(SlotRowViewModel row)
+    {
+        _slotRows.Remove(row);
         UpdateSlotSummary();
     }
 
-    private void RemoveSlot_Click(object sender, RoutedEventArgs e)
+    /// <summary>在卡组内移动物品：将 source 移到 targetLogicalSlot（0 到 maxSlots-1 的逻辑槽位）。</summary>
+    public void MoveSlotToLogicalIndex(SlotRowViewModel source, int targetLogicalSlot)
     {
-        if (sender is Button btn && btn.Tag is SlotRowViewModel row)
+        int maxSlots = Deck.MaxSlotsForLevel(GetPlayerLevel());
+        int firstSlot = (10 - maxSlots) / 2;
+        if (targetLogicalSlot < 0 || targetLogicalSlot >= maxSlots) return;
+        int targetCol = firstSlot + targetLogicalSlot;
+        _slotRows.Remove(source);
+        int insertIndex = 0;
+        int col = firstSlot;
+        foreach (var row in _slotRows)
         {
-            _slotRows.Remove(row);
-            UpdateSlotSummary();
+            if (string.IsNullOrEmpty(row.ItemName)) continue;
+            var t = _itemDatabase.GetTemplate(row.ItemName);
+            int size = t != null ? (int)t.Size : 1;
+            if (col + size > targetCol) break;
+            col += size;
+            insertIndex++;
         }
+        _slotRows.Insert(insertIndex, source);
+        UpdateSlotSummary();
     }
 
     private Deck BuildDeckFromEditor()

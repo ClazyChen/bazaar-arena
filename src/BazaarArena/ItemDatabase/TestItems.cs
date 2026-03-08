@@ -5,7 +5,7 @@ namespace BazaarArena.ItemDatabase;
 /// <summary>基座阶段测试用物品：纯伤害、纯灼烧、带暴击的伤害。</summary>
 public static class TestItems
 {
-    /// <summary>测试伤害物品：冷却 2 秒，造成 30 点伤害。</summary>
+    /// <summary>测试伤害物品：冷却 2 秒，造成 30 点伤害。小型 1 槽。</summary>
     public static ItemTemplate TestDamage()
     {
         return new ItemTemplate
@@ -30,14 +30,14 @@ public static class TestItems
         };
     }
 
-    /// <summary>测试灼烧物品：冷却 4 秒，附加 40 点灼烧。</summary>
+    /// <summary>测试灼烧物品：冷却 4 秒，附加 40 点灼烧。中型 2 槽。</summary>
     public static ItemTemplate TestBurn()
     {
         return new ItemTemplate
         {
             Name = "测试灼烧",
             MinTier = ItemTier.Bronze,
-            Size = ItemSize.Small,
+            Size = ItemSize.Medium,
             Tags = [],
             CooldownMs = 4000,
             CritRatePercent = 0,
@@ -55,14 +55,14 @@ public static class TestItems
         };
     }
 
-    /// <summary>测试暴击伤害：冷却 2 秒，50 伤害，50% 暴击率。</summary>
+    /// <summary>测试暴击伤害：冷却 2 秒，50 伤害，50% 暴击率。大型 3 槽。</summary>
     public static ItemTemplate TestCritDamage()
     {
         return new ItemTemplate
         {
             Name = "测试暴击伤害",
             MinTier = ItemTier.Bronze,
-            Size = ItemSize.Small,
+            Size = ItemSize.Large,
             Tags = [],
             CooldownMs = 2000,
             CritRatePercent = 50,
@@ -106,14 +106,14 @@ public static class TestItems
         };
     }
 
-    /// <summary>冷却随等级：铜 3 秒、银 2.5 秒、金 2 秒、钻石 1.5 秒；伤害固定 30。</summary>
+    /// <summary>冷却随等级：铜 3 秒、银 2.5 秒、金 2 秒、钻石 1.5 秒；伤害固定 30。中型 2 槽。</summary>
     public static ItemTemplate TestCooldownByTier()
     {
         return new ItemTemplate
         {
             Name = "冷却随等级",
             MinTier = ItemTier.Bronze,
-            Size = ItemSize.Small,
+            Size = ItemSize.Medium,
             Tags = [],
             CooldownMs = [3000, 2500, 2000, 1500],
             CritRatePercent = 0,

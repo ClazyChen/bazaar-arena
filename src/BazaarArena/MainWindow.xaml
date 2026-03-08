@@ -42,42 +42,96 @@
             <Grid Grid.Column="1">
                 <TextBlock x:Name="WelcomeText" Text="欢迎使用 Bazaar Arena。从左侧选择卡组或点击「新建」开始编辑；也可使用菜单进行模拟对战。" 
                            TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24" FontSize="14"/>
-                <ScrollViewer x:Name="EditorPanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Padding="16">
+                <ScrollViewer x:Name="EditorPanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Padding="16"
+                              DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}}">
                     <StackPanel>
                         <TextBlock Text="玩家等级 (1–20)" FontWeight="Bold" Margin="0,0,0,4"/>
                         <ComboBox x:Name="PlayerLevelCombo" Width="120" HorizontalAlignment="Left" Margin="0,0,0,12" SelectionChanged="PlayerLevel_Changed"/>
                         <TextBlock x:Name="SlotSummaryText" Margin="0,0,0,8"/>
-                        <TextBlock Text="卡组槽位（从左到右）" FontWeight="Bold" Margin="0,0,0,4"/>
-                        <ItemsControl x:Name="SlotEntriesList" Margin="0,0,0,12">
+                        <TextBlock Text="卡组（可拖拽调整顺序，拖至「删除」区移除）" FontWeight="Bold" Margin="0,0,0,4"/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="DeleteDropZone" Grid.Column="0" Width="56" MinHeight="80" Margin="0,0,8,0"
+                                    Background="#400000" BorderBrush="#888" BorderThickness="1" CornerRadius="4"
+                                    VerticalAlignment="Stretch" AllowDrop="True" DragOver="DeleteZone_DragOver" Drop="DeleteZone_Drop">
+                                <TextBlock Text="删除" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#CCC" FontSize="12"/>
+                            </Border>
+                            <Border x:Name="DeckGridDropZone" Grid.Column="1" BorderBrush="#ccc" BorderThickness="1" CornerRadius="4" Padding="4" Background="#1a1a1a"
+                                    AllowDrop="True" DragOver="DeckGrid_DragOver" Drop="DeckGrid_Drop">
+                                <Grid x:Name="DeckGridInner" SizeChanged="DeckGridInner_SizeChanged">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="14"/>
+                                        <RowDefinition Height="80"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid x:Name="TierRowGrid" Grid.Row="0" Grid.ColumnSpan="10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                    </Grid>
+                                    <Grid x:Name="DeckImageRowGrid" Grid.Row="1" Grid.ColumnSpan="10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                            <Border Grid.Column="2" Width="56" MinHeight="140" Margin="8,0,0,0" Background="Transparent"/>
+                        </Grid>
+                        <TextBlock Text="添加物品（拖拽到卡组中加入）" FontWeight="Bold" Margin="0,0,0,4"/>
+                        <ItemsControl x:Name="ItemPoolList" Margin="0,0,0,12">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Padding="4" Margin="0,2" Background="#fafafa" BorderBrush="#ddd" BorderThickness="1" CornerRadius="2">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <Border Grid.Column="0" Width="32" Height="32" Margin="0,0,8,0" Background="#e0e0e0" CornerRadius="2">
-                                                <Image Source="{Binding ItemName, Converter={StaticResource ItemNameToImage}}" Stretch="Uniform" />
+                                    <Border Width="64" Margin="0,0,8,8" Padding="4" Background="#2a2a2a" BorderBrush="#555" BorderThickness="1" CornerRadius="4"
+                                            Cursor="Hand" PreviewMouseLeftButtonDown="ItemPoolTile_PreviewMouseLeftButtonDown">
+                                        <StackPanel>
+                                            <Border Height="48" Margin="0,0,0,4" Background="#333" CornerRadius="2">
+                                                <Image Source="{Binding Converter={StaticResource ItemNameToImage}}" Stretch="Uniform" Height="48"/>
                                             </Border>
-                                            <ComboBox Grid.Column="1" ItemsSource="{Binding ItemNames}" SelectedItem="{Binding ItemName, UpdateSourceTrigger=PropertyChanged}" 
-                                                      MinWidth="140" Margin="0,0,8,0"/>
-                                            <ComboBox Grid.Column="2" ItemsSource="{Binding TierList}" SelectedItem="{Binding Tier, UpdateSourceTrigger=PropertyChanged}" 
-                                                      Width="80" Margin="0,0,8,0"/>
-                                            <Button Grid.Column="3" Content="移除" Click="RemoveSlot_Click" Tag="{Binding}" Padding="6,2"/>
-                                        </Grid>
+                                            <TextBlock Text="{Binding}" FontSize="11" Foreground="#eee" TextTrimming="CharacterEllipsis" MaxWidth="56" HorizontalAlignment="Center"/>
+                                        </StackPanel>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <TextBlock Text="添加物品：" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <ComboBox x:Name="AddItemNameCombo" MinWidth="140" Margin="0,0,6,0"/>
-                            <ComboBox x:Name="AddTierCombo" Width="80" Margin="0,0,6,0"/>
-                            <Button Content="添加" Click="AddSlot_Click" Padding="8,4"/>
-                        </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Button Content="保存" Click="SaveDeck_Click" Padding="12,6" Margin="0,0,8,0"/>
                             <Button Content="另存为..." Click="SaveAsDeck_Click" Padding="12,6"/>
