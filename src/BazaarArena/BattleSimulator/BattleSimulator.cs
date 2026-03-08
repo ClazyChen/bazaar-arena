@@ -123,11 +123,7 @@ public class BattleSimulator
                 }
             }
 
-            // 8. 处理能力队列（当前帧的）
-            currentAbilityQueue.Clear();
-            foreach (var e in nextAbilityQueue) currentAbilityQueue.Add(e);
-            nextAbilityQueue.Clear();
-
+            // 8. 处理能力队列（当前帧的 currentAbilityQueue；下一帧的待处理在 nextAbilityQueue，本帧末再移动）
             foreach (var entry in currentAbilityQueue)
             {
                 if (timeMs - entry.LastTriggerMs < TriggerIntervalMs)
@@ -149,6 +145,11 @@ public class BattleSimulator
                 if (entry.PendingCount > 0)
                     nextAbilityQueue.Add(entry);
             }
+
+            // 本帧能力处理完毕，将下一帧队列移入当前队列，供下一轮循环步骤 8 处理
+            currentAbilityQueue.Clear();
+            foreach (var e in nextAbilityQueue) currentAbilityQueue.Add(e);
+            nextAbilityQueue.Clear();
 
             // 9. 胜负判定
             bool dead0 = side0.Hp <= 0;
