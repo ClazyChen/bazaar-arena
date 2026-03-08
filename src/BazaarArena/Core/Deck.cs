@@ -7,7 +7,7 @@ public class Deck
     public int PlayerLevel { get; set; } = 1;
 
     /// <summary>从左到右的物品槽位；总占用槽数不得超过 <see cref="MaxSlotsForLevel"/>。</summary>
-    public List<DeckSlotEntry> Slots { get; set; } = new();
+    public List<DeckSlotEntry> Slots { get; set; } = [];
 
     /// <summary>玩家字段重写：如初始生命上限、护盾、生命再生等。默认收入 7，金钱 15。</summary>
     public Dictionary<string, int>? PlayerOverrides { get; set; }

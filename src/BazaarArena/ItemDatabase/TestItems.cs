@@ -13,20 +13,20 @@ public static class TestItems
             Name = "测试伤害",
             MinTier = ItemTier.Bronze,
             Size = ItemSize.Small,
-            Tags = new List<string>(),
+            Tags = [],
             CooldownMs = 2000,
             CritRatePercent = 0,
             Multicast = 1,
             AmmoCap = 0,
-            Abilities = new List<AbilityDefinition>
-            {
+            Abilities =
+            [
                 new()
                 {
                     TriggerName = "使用物品",
                     Priority = AbilityPriority.Medium,
-                    Effects = new List<EffectDefinition> { new() { Kind = EffectKind.Damage, Value = 30 } },
+                    Effects = [new() { Kind = EffectKind.Damage, Value = 30 }],
                 },
-            },
+            ],
         };
     }
 
@@ -38,20 +38,20 @@ public static class TestItems
             Name = "测试灼烧",
             MinTier = ItemTier.Bronze,
             Size = ItemSize.Small,
-            Tags = new List<string>(),
+            Tags = [],
             CooldownMs = 4000,
             CritRatePercent = 0,
             Multicast = 1,
             AmmoCap = 0,
-            Abilities = new List<AbilityDefinition>
-            {
+            Abilities =
+            [
                 new()
                 {
                     TriggerName = "使用物品",
                     Priority = AbilityPriority.Medium,
-                    Effects = new List<EffectDefinition> { new() { Kind = EffectKind.Burn, Value = 40 } },
+                    Effects = [new() { Kind = EffectKind.Burn, Value = 40 }],
                 },
-            },
+            ],
         };
     }
 
@@ -63,20 +63,71 @@ public static class TestItems
             Name = "测试暴击伤害",
             MinTier = ItemTier.Bronze,
             Size = ItemSize.Small,
-            Tags = new List<string>(),
+            Tags = [],
             CooldownMs = 2000,
             CritRatePercent = 50,
             Multicast = 1,
             AmmoCap = 0,
-            Abilities = new List<AbilityDefinition>
-            {
+            Abilities =
+            [
                 new()
                 {
                     TriggerName = "使用物品",
                     Priority = AbilityPriority.Medium,
-                    Effects = new List<EffectDefinition> { new() { Kind = EffectKind.Damage, Value = 50 } },
+                    Effects = [new() { Kind = EffectKind.Damage, Value = 50 }],
                 },
-            },
+            ],
+        };
+    }
+
+    /// <summary>伤害随等级：铜 25、银 35、金 45、钻石 55；冷却固定 2 秒。</summary>
+    public static ItemTemplate TestDamageByTier()
+    {
+        return new ItemTemplate
+        {
+            Name = "伤害随等级",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = [],
+            CooldownMs = 2000,
+            CritRatePercent = 0,
+            Multicast = 1,
+            AmmoCap = 0,
+            Damage = [25, 35, 45, 55],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = "使用物品",
+                    Priority = AbilityPriority.Medium,
+                    Effects = [new() { Kind = EffectKind.Damage, Value = 0 }],
+                },
+            ],
+        };
+    }
+
+    /// <summary>冷却随等级：铜 3 秒、银 2.5 秒、金 2 秒、钻石 1.5 秒；伤害固定 30。</summary>
+    public static ItemTemplate TestCooldownByTier()
+    {
+        return new ItemTemplate
+        {
+            Name = "冷却随等级",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = [],
+            CooldownMs = [3000, 2500, 2000, 1500],
+            CritRatePercent = 0,
+            Multicast = 1,
+            AmmoCap = 0,
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = "使用物品",
+                    Priority = AbilityPriority.Medium,
+                    Effects = [new() { Kind = EffectKind.Damage, Value = 30 }],
+                },
+            ],
         };
     }
 
@@ -86,5 +137,7 @@ public static class TestItems
         db.Register(TestDamage());
         db.Register(TestBurn());
         db.Register(TestCritDamage());
+        db.Register(TestDamageByTier());
+        db.Register(TestCooldownByTier());
     }
 }

@@ -25,23 +25,21 @@ public class ItemDatabase : IItemTemplateResolver
 
     private static ItemTemplate CloneTemplate(ItemTemplate t)
     {
-        return new ItemTemplate
+        var clone = new ItemTemplate
         {
             Name = t.Name,
             MinTier = t.MinTier,
             Size = t.Size,
-            Tags = new List<string>(t.Tags),
-            CooldownMs = t.CooldownMs,
-            CritRatePercent = t.CritRatePercent,
-            Multicast = t.Multicast,
-            AmmoCap = t.AmmoCap,
+            Tags = [..t.Tags],
             Abilities = t.Abilities.Select(a => new AbilityDefinition
             {
                 TriggerName = a.TriggerName,
                 Priority = a.Priority,
                 Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value }).ToList(),
             }).ToList(),
-            Auras = new List<object>(t.Auras),
+            Auras = [..t.Auras],
         };
+        clone.SetIntsByTier(t.GetIntsByTierSnapshot());
+        return clone;
     }
 }

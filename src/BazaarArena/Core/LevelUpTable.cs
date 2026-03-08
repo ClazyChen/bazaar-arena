@@ -23,7 +23,7 @@ public static class LevelUpTable
             arrayElement = prop.Value;
             break;
         }
-        var list = new List<LevelUpEntry>();
+        List<LevelUpEntry> list = [];
         foreach (var item in arrayElement.EnumerateArray())
         {
             list.Add(new LevelUpEntry

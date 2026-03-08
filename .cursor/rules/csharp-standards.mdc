@@ -9,6 +9,14 @@ alwaysApply: false
 - **命名**：遵循 C# 惯例（类型、方法、公共属性 PascalCase；局部变量、参数 camelCase）。避免无意义缩写。
 - **命名空间与目录**：类型所在命名空间与文件夹结构一致（如 `BazaarArena.ItemDatabase` 对应 `ItemDatabase/` 下代码）。
 - **物品定义**：设计文档要求“通过抽象和封装尽量简化定义一件物品所需的代码量”。新增物品相关类型与公开 API 保持精简，便于用少量代码描述一件物品的属性和效果。
+- **集合初始化（IDE0028）**：优先使用 C# 12 集合表达式，避免冗长的集合初始化写法。
+  - 空集合：用 `[]` 替代 `new List<T>()`、`new()`（如 `List<string> Tags = [];`）。
+  - 带元素列表：用 `[a, b, c]` 替代 `new List<T> { a, b, c }`。
+  - 从已有集合复制：用 `[..source]` 替代 `new List<T>(source)`。
+  - 字典：空字典用 `[]`（如 `Dictionary<K,V> d = [];`）；带初值的字典在 C# 12 仍用传统写法 `new Dictionary<K,V> { [k] = v }`。
+  - 赋值给接口类型（如 `IEnumerable<T> x = []`）可能改变运行时集合类型，若需保持具体类型请显式写 `List<T> x = [];`。
+- **物品模板与按等级属性**：扩展属性统一用 `_intsByTier`（`Dictionary<string, List<int>>`）存储；单值存为长度为 1 的列表。在 `new ItemTemplate { }` 中可用 `Damage = 40` 或 `Damage = [25, 35, 45, 55]`，通过 `IntOrByTier` 类型与属性 setter 写入。运行时用 `GetInt(key, tier)` 按当前等级取值；未定义 key 时返回默认值（如 0），不提供 Key 常量对外 API，调用方直接用字符串字面量（如 `"CooldownMs"`、`"Damage"`）访问。
+- **自定义类型支持集合表达式**：若希望 `X = [a, b, c]` 直接赋给自定义类型（如 `IntOrByTier`），需：(1) 为该类型添加 `[CollectionBuilder(typeof(类型), "Create")]`；(2) 实现静态方法 `Create(ReadOnlySpan<T>)` 返回该类型；(3) 实现 `IEnumerable<T>` 并暴露 `GetEnumerator`，以便编译器推断元素类型（否则报 CS9188）。
 
 示例（注释风格）：
 

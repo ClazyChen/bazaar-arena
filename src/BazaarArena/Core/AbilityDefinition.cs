@@ -9,7 +9,7 @@ public class AbilityDefinition
     public AbilityPriority Priority { get; set; }
 
     /// <summary>该能力触发的效果列表（伤害、灼烧等）。</summary>
-    public List<EffectDefinition> Effects { get; set; } = new();
+    public List<EffectDefinition> Effects { get; set; } = [];
 }
 
 /// <summary>单条效果定义：类型与数值（基座阶段可为固定值，后续可支持按等级）。</summary>

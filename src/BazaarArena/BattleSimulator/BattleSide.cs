@@ -9,5 +9,5 @@ public class BattleSide
     public int Burn { get; set; }
     public int Poison { get; set; }
     public int Regen { get; set; }
-    public List<BattleItemState> Items { get; set; } = new();
+    public List<BattleItemState> Items { get; set; } = [];
 }

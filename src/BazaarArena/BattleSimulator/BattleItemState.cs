@@ -18,18 +18,19 @@ public class BattleItemState
     public int AmmoRemaining { get; set; }
 
     /// <summary>每个能力上次触发的时间（毫秒），用于 250ms 间隔。</summary>
-    public List<int> LastTriggerMsByAbility { get; set; } = new();
+    public List<int> LastTriggerMsByAbility { get; set; } = [];
 
     public BattleItemState(ItemTemplate template, ItemTier tier)
     {
         Template = template;
         Tier = tier;
-        AmmoRemaining = template.AmmoCap;
+        AmmoRemaining = template.GetInt("AmmoCap", tier);
         for (int i = 0; i < template.Abilities.Count; i++)
             LastTriggerMsByAbility.Add(-1000);
     }
 
-    public int GetCooldownMs() => Template.CooldownMs;
-    public int GetCritRatePercent() => Template.CritRatePercent;
-    public int GetMulticast() => Template.Multicast;
+    public int GetCooldownMs() => Template.GetInt("CooldownMs", Tier);
+    public int GetCritRatePercent() => Template.GetInt("CritRatePercent", Tier);
+    public int GetMulticast() => Template.GetInt("Multicast", Tier, 1);
+    public int GetAmmoCap() => Template.GetInt("AmmoCap", Tier);
 }

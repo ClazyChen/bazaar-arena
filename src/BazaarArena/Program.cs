@@ -30,20 +30,20 @@ if (deckA == null || deckB == null)
     deckA = new Deck
     {
         PlayerLevel = 5,
-        Slots = new List<DeckSlotEntry>
-        {
-            new() { ItemName = "测试伤害", Tier = ItemTier.Bronze },
-            new() { ItemName = "测试灼烧", Tier = ItemTier.Bronze },
-        },
+        Slots =
+        [
+            new() { ItemName = "伤害随等级", Tier = ItemTier.Bronze },
+            new() { ItemName = "冷却随等级", Tier = ItemTier.Silver },
+        ],
     };
     deckB = new Deck
     {
         PlayerLevel = 5,
-        Slots = new List<DeckSlotEntry>
-        {
-            new() { ItemName = "测试暴击伤害", Tier = ItemTier.Bronze },
-            new() { ItemName = "测试伤害", Tier = ItemTier.Bronze },
-        },
+        Slots =
+        [
+            new() { ItemName = "伤害随等级", Tier = ItemTier.Gold },
+            new() { ItemName = "冷却随等级", Tier = ItemTier.Diamond },
+        ],
     };
     Console.WriteLine("使用内存测试卡组（未找到 Data/Decks 下的 JSON）。");
 }

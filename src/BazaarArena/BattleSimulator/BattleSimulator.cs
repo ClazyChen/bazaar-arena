@@ -31,9 +31,9 @@ public class BattleSimulator
             throw new ArgumentException("卡组中包含未知物品，无法构建战斗状态。");
 
         int timeMs = 0;
-        var castQueue = new List<(int SideIndex, int ItemIndex)>();
-        var currentAbilityQueue = new List<AbilityQueueEntry>();
-        var nextAbilityQueue = new List<AbilityQueueEntry>();
+        List<(int SideIndex, int ItemIndex)> castQueue = [];
+        List<AbilityQueueEntry> currentAbilityQueue = [];
+        List<AbilityQueueEntry> nextAbilityQueue = [];
 
         // 沙尘暴状态：设计文档 30s 开始，首次 tick 300ms，然后间隔递减 20ms 至 140ms 后改为伤害+2，120s 结束
         int sandstormNextTickMs = SandstormStartMs;
@@ -104,7 +104,7 @@ public class BattleSimulator
             {
                 var side = sideIdx == 0 ? side0 : side1;
                 var item = side.Items[itemIdx];
-                if (item.Template.AmmoCap > 0)
+                if (item.GetAmmoCap() > 0)
                     item.AmmoRemaining--;
                 logSink.OnCast(sideIdx, item.Template.Name, timeMs);
                 int multicast = item.GetMulticast();
@@ -201,19 +201,21 @@ public class BattleSimulator
                 Name = t.Name,
                 MinTier = t.MinTier,
                 Size = t.Size,
-                Tags = new List<string>(t.Tags),
-                CooldownMs = entry.Overrides?.GetValueOrDefault("CooldownMs", t.CooldownMs) ?? t.CooldownMs,
-                CritRatePercent = entry.Overrides?.GetValueOrDefault("CritRatePercent", t.CritRatePercent) ?? t.CritRatePercent,
-                Multicast = t.Multicast,
-                AmmoCap = t.AmmoCap,
+                Tags = [..t.Tags],
                 Abilities = t.Abilities.Select(a => new AbilityDefinition
                 {
                     TriggerName = a.TriggerName,
                     Priority = a.Priority,
                     Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value }).ToList(),
                 }).ToList(),
-                Auras = new List<object>(t.Auras),
+                Auras = [..t.Auras],
             };
+            clone.SetIntsByTier(t.GetIntsByTierSnapshot());
+            if (entry.Overrides != null)
+            {
+                foreach (var kv in entry.Overrides)
+                    clone.SetInt(kv.Key, kv.Value);
+            }
             side.Items.Add(new BattleItemState(clone, entry.Tier));
         }
         return side;
@@ -236,7 +238,7 @@ public class BattleSimulator
             item.CooldownElapsedMs += advanceMs;
             if (item.CooldownElapsedMs >= cooldownMs)
             {
-                if (item.Template.AmmoCap > 0 && item.AmmoRemaining <= 0) continue;
+                if (item.GetAmmoCap() > 0 && item.AmmoRemaining <= 0) continue;
                 item.CooldownElapsedMs = 0;
                 castQueue.Add((sideIndex, i));
             }
@@ -291,6 +293,17 @@ public class BattleSimulator
         side.Hp -= Math.Max(0, damage);
     }
 
+    private static string GetTemplateKeyForEffect(EffectKind kind) => kind switch
+    {
+        EffectKind.Damage => "Damage",
+        EffectKind.Burn => "Burn",
+        EffectKind.Poison => "Poison",
+        EffectKind.Shield => "Shield",
+        EffectKind.Heal => "Heal",
+        EffectKind.Regen => "Regen",
+        _ => "",
+    };
+
     private void ExecuteOneEffect(int sideIndex, int itemIndex, AbilityDefinition ability, int critMultiplier,
         BattleSide side0, BattleSide side1, int timeMs, IBattleLogSink logSink)
     {
@@ -299,7 +312,10 @@ public class BattleSimulator
         var item = side.Items[itemIndex];
         foreach (var eff in ability.Effects)
         {
-            int value = eff.Value * critMultiplier;
+            string key = GetTemplateKeyForEffect(eff.Kind);
+            int baseValue = item.Template.GetInt(key, item.Tier);
+            if (baseValue == 0) baseValue = eff.Value;
+            int value = baseValue * critMultiplier;
             switch (eff.Kind)
             {
                 case EffectKind.Damage:
