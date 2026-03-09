@@ -40,11 +40,15 @@ public class ItemDatabase : IItemTemplateResolver
             {
                 TriggerName = a.TriggerName,
                 Priority = a.Priority,
+                Condition = CloneCondition(a.Condition),
                 Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, CustomEffectId = e.CustomEffectId }).ToList(),
             })],
-            Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = a.Condition, FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
+            Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = CloneCondition(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
         };
         clone.SetIntsByTier(t.GetIntsByTierSnapshot());
         return clone;
     }
+
+    private static Condition? CloneCondition(Condition? c) =>
+        c == null ? null : new Condition { Kind = c.Kind, Tag = c.Tag };
 }

@@ -66,6 +66,8 @@ public class ItemTemplate
     private const string KeyBurn = "Burn";
     private const string KeyPoison = "Poison";
     private const string KeyHeal = "Heal";
+    private const string KeyShield = "Shield";
+    private const string KeyCharge = "Charge";
     private const string KeyCustom_0 = "Custom_0";
 
     /// <summary>根据字段名读取 int 值（无 tier 时按第一档），不存在则返回 0。</summary>
@@ -144,6 +146,15 @@ public class ItemTemplate
 
     /// <summary>治疗值（可单值或按等级）。</summary>
     public IntOrByTier Heal { get => GetInt(KeyHeal, 0); set => SetIntOrByTier(KeyHeal, value.ToList()); }
+
+    /// <summary>护盾值（可单值或按等级）。</summary>
+    public IntOrByTier Shield { get => GetInt(KeyShield, 0); set => SetIntOrByTier(KeyShield, value.ToList()); }
+
+    /// <summary>充能值（毫秒，可单值或按等级）；用于 ChargeSelf 效果为此物品增加已过冷却时间。</summary>
+    public IntOrByTier Charge { get => GetInt(KeyCharge, 0); set => SetIntOrByTier(KeyCharge, value.ToList()); }
+
+    /// <summary>充能时间（秒）。设置时转换为 Charge 毫秒（仅支持单值）；定义物品时可用此属性以秒书写。</summary>
+    public double ChargeSeconds { get => GetInt(KeyCharge, 0) / 1000.0; set => SetInt(KeyCharge, (int)(value * 1000)); }
 
     /// <summary>自定义变量 0（可单值或按等级），用于如举重手套的武器伤害提升量等。</summary>
     public IntOrByTier Custom_0 { get => GetInt(KeyCustom_0, 0); set => SetIntOrByTier(KeyCustom_0, value.ToList()); }

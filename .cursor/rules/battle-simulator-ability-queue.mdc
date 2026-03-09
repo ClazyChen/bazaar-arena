@@ -1,0 +1,39 @@
+---
+description: 对战模拟器能力队列与触发器约定，修改 BattleSimulator 能力/施放逻辑时必读
+globs: **/BattleSimulator/**/*.cs
+alwaysApply: false
+---
+
+# 能力队列与触发器（BattleSimulator）
+
+修改 `BattleSimulator` 中能力队列、施放队列或触发器相关逻辑时，必须遵守以下约定，避免破坏帧边界与合并语义。
+
+## 双队列语义
+
+- **currentAbilityQueue**：本帧步骤 8 **唯一**处理的对象；内容来自上一帧步骤 11 从 next 移入的条目。
+- **nextAbilityQueue**：本帧延后（未到 250ms）、未消耗完 Pending 的条目写回此处；**本帧施放产生的新能力也只加入此处**（见下）。
+- **唯一允许「next → current」的位置**：**仅步骤 11**。在步骤 8 开头、循环前或任何其他地方做「把 next 移入 current」都是错误。
+
+## 施放队列（castQueue）触发的能力
+
+- 步骤 7 中，由 castQueue 触发的「使用物品」「使用其他物品」等能力，**必须加入 nextAbilityQueue**，不能加入 currentAbilityQueue。
+- 这样这些能力会在下一帧经步骤 11 进入 current，再在下一帧的步骤 8 被处理，即「本帧施放、下一帧生效」。
+
+## 步骤 8 执行过程中引发的新能力
+
+- 执行能力效果（ExecuteOneEffect）时可能触发新能力（如后续扩展的触发器）。
+- 新能力入队规则：**只有优先级为 AbilityPriority.Immediate 的加入 currentAbilityQueue**；**其余一律加入 nextAbilityQueue**。
+- 因此 `ExecuteOneEffect` 必须接收 `currentAbilityQueue` 与 `nextAbilityQueue` 参数，供触发器调用使用。
+
+## 触发器调用方式与 PendingCount
+
+- 使用统一的「触发器调用」方法：如 `InvokeUseItemTrigger(...)`、`InvokeUseOtherItemTrigger(...)`，在方法内遍历双方卡组寻找可触发能力，而不是在步骤 7 里手写多套循环。
+- **PendingCount 合并顺序（AddOrMergeAbility）**：
+  1. 先在 **currentAbilityQueue** 中查找同 (SideIndex, ItemIndex, AbilityIndex)，找到则只做 `PendingCount += pendingCount`，不新建。
+  2. 再在 **nextAbilityQueue** 中查找同上键，找到则只做 `PendingCount += pendingCount`，不新建。
+  3. 都没有则新建条目：**Immediate → currentAbilityQueue**，**非 Immediate → nextAbilityQueue**。
+
+## 设计文档对照
+
+- 实现与 `docs/Bazaar Arena 设计文档.md` 中「每一帧的结算顺序」步骤 7、8、11 一致。
+- 更多错误案例与修正经验见 `docs/implementation-notes.md` 中「对战模拟器：能力队列的帧边界」一节。

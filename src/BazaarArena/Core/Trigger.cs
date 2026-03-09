@@ -5,4 +5,6 @@ public static class Trigger
 {
     public const string UseItem = "使用物品";
     public const string BattleStart = "战斗开始";
+    /// <summary>使用其他物品时触发（如姜饼人：使用工具时为此物品充能）。</summary>
+    public const string UseOtherItem = "使用其他物品";
 }

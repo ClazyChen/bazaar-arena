@@ -9,9 +9,10 @@ public static class EffectKindKeys
         EffectKind.Damage => nameof(ItemTemplate.Damage),
         EffectKind.Burn => nameof(ItemTemplate.Burn),
         EffectKind.Poison => nameof(ItemTemplate.Poison),
-        EffectKind.Shield => "Shield",
+        EffectKind.Shield => nameof(ItemTemplate.Shield),
         EffectKind.Heal => nameof(ItemTemplate.Heal),
         EffectKind.Regen => "Regen",
+        EffectKind.Charge => nameof(ItemTemplate.Charge),
         EffectKind.Other => nameof(ItemTemplate.Custom_0),
         _ => "",
     };
@@ -25,6 +26,7 @@ public static class EffectKindKeys
         EffectKind.Shield => "护盾",
         EffectKind.Heal => "治疗",
         EffectKind.Regen => "生命再生",
+        EffectKind.Charge => "充能",
         EffectKind.Other => "",
         _ => "",
     };

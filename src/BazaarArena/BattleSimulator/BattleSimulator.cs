@@ -66,7 +66,7 @@ public class BattleSimulator
                 battleStartEntries.Sort((x, y) => x.Ability.Priority.CompareTo(y.Ability.Priority));
                 foreach (var (sideIdx, itemIdx, abilityIdx, ability) in battleStartEntries)
                 {
-                    ExecuteOneEffect(sideIdx, itemIdx, ability, isCrit: false, critDamagePercent: 200, side0, side1, 0, logSink);
+                    ExecuteOneEffect(sideIdx, itemIdx, ability, isCrit: false, critDamagePercent: 200, side0, side1, 0, logSink, null, currentAbilityQueue, nextAbilityQueue);
                 }
             }
 
@@ -118,60 +118,58 @@ public class BattleSimulator
                 sandstormNextTickMs = timeMs + sandstormIntervalMs;
             }
 
-            // 7. 遍历施放队列，加入能力队列（减少 Ammo → 暴击 → 当前物品使用；多重触发写入多次效果）
-            foreach (var (sideIdx, itemIdx) in castQueue)
+            // 7-8. 施放队列产生的能力加入 nextAbilityQueue（下一帧才处理）；步骤 8 只处理 currentAbilityQueue；延后/未消耗的入 nextAbilityQueue；仅步骤 11 将 nextAbilityQueue 移入 currentAbilityQueue
+            do
             {
-                var side = sideIdx == 0 ? side0 : side1;
-                var item = side.Items[itemIdx];
-                if (item.GetAmmoCap() > 0)
-                    item.AmmoRemaining--;
-                logSink.OnCast(sideIdx, itemIdx, item.Template.Name, timeMs);
-                int multicast = item.GetMulticast();
-                for (int a = 0; a < item.Template.Abilities.Count; a++)
+                var toProcess = new List<(int, int)>(castQueue);
+                castQueue.Clear();
+                // 7. 遍历本轮施放队列，用触发器调用方式加入能力队列（先合并 current 再 next，都没有则入 next；仅 Immediate 入 current）
+                foreach (var (sideIdx, itemIdx) in toProcess)
                 {
-                    var ab = item.Template.Abilities[a];
-                    if (ab.TriggerName != Trigger.UseItem) continue;
-                    nextAbilityQueue.Add(new AbilityQueueEntry
+                    var side = sideIdx == 0 ? side0 : side1;
+                    var item = side.Items[itemIdx];
+                    if (item.GetAmmoCap() > 0)
+                        item.AmmoRemaining--;
+                    logSink.OnCast(sideIdx, itemIdx, item.Template.Name, timeMs);
+                    int multicast = item.GetMulticast();
+                    InvokeUseItemTrigger(side0, side1, sideIdx, itemIdx, multicast, currentAbilityQueue, nextAbilityQueue);
+                    InvokeUseOtherItemTrigger(side0, side1, item.Template, sideIdx, itemIdx, currentAbilityQueue, nextAbilityQueue);
+                }
+
+                // 8. 处理能力队列（只处理 currentAbilityQueue）；延后或未消耗的加入 nextAbilityQueue；充能导致物品满时加入 castQueue
+                var toProcessAbilities = new List<AbilityQueueEntry>(currentAbilityQueue);
+                currentAbilityQueue.Clear();
+                foreach (var entry in toProcessAbilities)
+                {
+                    if (timeMs - entry.LastTriggerMs < TriggerIntervalMs)
                     {
-                        SideIndex = sideIdx,
-                        ItemIndex = itemIdx,
-                        AbilityIndex = a,
-                        PendingCount = multicast,
-                        LastTriggerMs = item.LastTriggerMsByAbility[a],
-                    });
+                        nextAbilityQueue.Add(entry);
+                        continue;
+                    }
+                    var side = entry.SideIndex == 0 ? side0 : side1;
+                    var opp = entry.SideIndex == 0 ? side1 : side0;
+                    var item = side.Items[entry.ItemIndex];
+                    item.LastTriggerMsByAbility[entry.AbilityIndex] = timeMs;
+                    entry.LastTriggerMs = timeMs;
+                    var ability = item.Template.Abilities[entry.AbilityIndex];
+                    bool canCrit = ability.Effects.Any(e => IsCrittableEffect(e.Kind));
+                    bool isCrit = false;
+                    int critDamagePercent = 200;
+                    var auraContext = new BattleAuraContext(side, entry.ItemIndex);
+                    int critRate = item.Template.GetInt(nameof(ItemTemplate.CritRatePercent), item.Tier, 0, auraContext);
+                    if (canCrit && critRate > 0 && Random.Shared.Next(100) < critRate)
+                    {
+                        isCrit = true;
+                        critDamagePercent = item.Template.GetInt(nameof(ItemTemplate.CritDamagePercent), item.Tier, 200, auraContext);
+                    }
+                    ExecuteOneEffect(entry.SideIndex, entry.ItemIndex, ability, isCrit, critDamagePercent, side0, side1, timeMs, logSink, castQueue, currentAbilityQueue, nextAbilityQueue);
+                    entry.PendingCount--;
+                    if (entry.PendingCount > 0)
+                        nextAbilityQueue.Add(entry);
                 }
-            }
+            } while (castQueue.Count > 0);
 
-            // 8. 处理能力队列（当前帧的 currentAbilityQueue；下一帧的待处理在 nextAbilityQueue，本帧末再移动）
-            foreach (var entry in currentAbilityQueue)
-            {
-                if (timeMs - entry.LastTriggerMs < TriggerIntervalMs)
-                {
-                    nextAbilityQueue.Add(entry);
-                    continue;
-                }
-                var side = entry.SideIndex == 0 ? side0 : side1;
-                var opp = entry.SideIndex == 0 ? side1 : side0;
-                var item = side.Items[entry.ItemIndex];
-                item.LastTriggerMsByAbility[entry.AbilityIndex] = timeMs;
-                var ability = item.Template.Abilities[entry.AbilityIndex];
-                bool canCrit = ability.Effects.Any(e => IsCrittableEffect(e.Kind));
-                bool isCrit = false;
-                int critDamagePercent = 200;
-                var auraContext = new BattleAuraContext(side, entry.ItemIndex);
-                int critRate = item.Template.GetInt(nameof(ItemTemplate.CritRatePercent), item.Tier, 0, auraContext);
-                if (canCrit && critRate > 0 && Random.Shared.Next(100) < critRate)
-                {
-                    isCrit = true;
-                    critDamagePercent = item.Template.GetInt(nameof(ItemTemplate.CritDamagePercent), item.Tier, 200, auraContext);
-                }
-                ExecuteOneEffect(entry.SideIndex, entry.ItemIndex, ability, isCrit, critDamagePercent, side0, side1, timeMs, logSink);
-                entry.PendingCount--;
-                if (entry.PendingCount > 0)
-                    nextAbilityQueue.Add(entry);
-            }
-
-            // 本帧能力处理完毕，将下一帧队列移入当前队列，供下一轮循环步骤 8 处理
+            // 11. 能力队列更新到下一帧（移入 currentAbilityQueue，供下一帧步骤 8 处理）
             currentAbilityQueue.Clear();
             foreach (var e in nextAbilityQueue) currentAbilityQueue.Add(e);
             nextAbilityQueue.Clear();
@@ -208,7 +206,7 @@ public class BattleSimulator
         }
     }
 
-    private static bool IsCrittableEffect(EffectKind k) => k != EffectKind.Other;
+    private static bool IsCrittableEffect(EffectKind k) => k != EffectKind.Other && k != EffectKind.Charge;
 
     /// <summary>战斗内光环上下文：持有己方与目标物品下标，在 GetAuraModifiers 中遍历己方未摧毁物品的光环并累加。</summary>
     private sealed class BattleAuraContext(BattleSide side, int targetItemIndex) : IAuraContext
@@ -237,12 +235,29 @@ public class BattleSimulator
     /// <summary>光环条件谓词：根据来源与目标物品下标判断是否生效。</summary>
     private static class AuraConditionEvaluator
     {
-        public static bool Evaluate(AuraConditionKind condition, BattleSide side, int sourceItemIndex, int targetItemIndex)
+        public static bool Evaluate(Condition? condition, BattleSide side, int sourceItemIndex, int targetItemIndex)
         {
-            return condition switch
+            if (condition == null) return true;
+            return condition.Kind switch
             {
-                AuraConditionKind.AdjacentToSource => Math.Abs(sourceItemIndex - targetItemIndex) == 1,
-                AuraConditionKind.SameAsSource => sourceItemIndex == targetItemIndex,
+                ConditionKind.SameAsSource => sourceItemIndex == targetItemIndex,
+                ConditionKind.AdjacentToSource => Math.Abs(sourceItemIndex - targetItemIndex) == 1,
+                ConditionKind.WithTag => side.Items[targetItemIndex].Template.Tags.Contains(condition.Tag ?? ""),
+                _ => false,
+            };
+        }
+    }
+
+    /// <summary>能力条件谓词（如 UseOtherItem）：根据被使用的物品模板判断是否触发。</summary>
+    private static class AbilityConditionEvaluator
+    {
+        public static bool EvaluateForAbility(Condition? condition, ItemTemplate usedItemTemplate)
+        {
+            if (condition == null) return true;
+            return condition.Kind switch
+            {
+                ConditionKind.WithTag => usedItemTemplate.Tags.Contains(condition.Tag ?? ""),
+                ConditionKind.SameAsSource or ConditionKind.AdjacentToSource => true,
                 _ => false,
             };
         }
@@ -272,9 +287,10 @@ public class BattleSimulator
                 {
                     TriggerName = a.TriggerName,
                     Priority = a.Priority,
+                    Condition = CloneCondition(a.Condition),
                     Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, CustomEffectId = e.CustomEffectId }).ToList(),
                 }).ToList(),
-                Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = a.Condition, FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
+                Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = CloneCondition(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
             };
             clone.SetIntsByTier(t.GetIntsByTierSnapshot());
             if (entry.Overrides != null)
@@ -286,6 +302,9 @@ public class BattleSimulator
         }
         return side;
     }
+
+    private static Condition? CloneCondition(Condition? c) =>
+        c == null ? null : new Condition { Kind = c.Kind, Tag = c.Tag };
 
     private static void ProcessCooldown(BattleSide side, int sideIndex, int timeMs, List<(int, int)> castQueue)
     {
@@ -360,7 +379,7 @@ public class BattleSimulator
         side.Hp -= Math.Max(0, damage);
     }
 
-    /// <summary>单次效果应用上下文，供策略表使用。</summary>
+    /// <summary>单次效果应用上下文，供策略表使用。充能导致满时通过 ChargeInducedCastQueue 加入施放队列。</summary>
     private readonly struct EffectApplyContext
     {
         public BattleSide Side { get; init; }
@@ -373,6 +392,7 @@ public class BattleSimulator
         public int SideIndex { get; init; }
         public int ItemIndex { get; init; }
         public string LogName { get; init; }
+        public List<(int, int)>? ChargeInducedCastQueue { get; init; }
     }
 
     private delegate void EffectApplier(in EffectApplyContext ctx);
@@ -417,6 +437,23 @@ public class BattleSimulator
         ctx.LogSink.OnEffect(ctx.SideIndex, ctx.ItemIndex, ctx.Item.Template.Name, ctx.LogName, ctx.Value, ctx.TimeMs, ctx.IsCrit);
     }
 
+    private static void ApplyCharge(in EffectApplyContext ctx)
+    {
+        int cooldownMs = ctx.Item.GetCooldownMs();
+        if (cooldownMs <= 0) return;
+        int newElapsed = Math.Min(cooldownMs, ctx.Item.CooldownElapsedMs + ctx.Value);
+        int added = newElapsed - ctx.Item.CooldownElapsedMs;
+        ctx.Item.CooldownElapsedMs = newElapsed;
+        if (added > 0)
+            ctx.LogSink.OnEffect(ctx.SideIndex, ctx.ItemIndex, ctx.Item.Template.Name, ctx.LogName, added, ctx.TimeMs, ctx.IsCrit);
+        if (ctx.Item.CooldownElapsedMs >= cooldownMs && ctx.ChargeInducedCastQueue != null)
+        {
+            if (ctx.Item.GetAmmoCap() <= 0 || ctx.Item.AmmoRemaining > 0)
+                ctx.ChargeInducedCastQueue.Add((ctx.SideIndex, ctx.ItemIndex));
+            ctx.Item.CooldownElapsedMs = 0;
+        }
+    }
+
     /// <summary>效果类型 → 应用策略；Other 无登记，由调用方走 CustomEffectHandlers。</summary>
     private static EffectApplier? GetEffectApplier(EffectKind kind) => kind switch
     {
@@ -426,12 +463,72 @@ public class BattleSimulator
         EffectKind.Shield => ApplyShield,
         EffectKind.Heal => ApplyHeal,
         EffectKind.Regen => ApplyRegen,
+        EffectKind.Charge => ApplyCharge,
         _ => null,
     };
 
-    /// <summary>暴击时最终倍率 = CritDamagePercent/100，默认 200 即 2 倍；利爪翻倍为 400 即 4 倍。</summary>
+    /// <summary>将能力加入队列或合并 PendingCount：先查 currentAbilityQueue，再查 nextAbilityQueue；都没有则新建，仅 Immediate 入 current，其余入 next。</summary>
+    private static void AddOrMergeAbility(int sideIdx, int itemIdx, int abilityIdx, AbilityDefinition ability, int pendingCount, int lastTriggerMs,
+        List<AbilityQueueEntry> current, List<AbilityQueueEntry> next)
+    {
+        var existing = current.FirstOrDefault(e => e.SideIndex == sideIdx && e.ItemIndex == itemIdx && e.AbilityIndex == abilityIdx);
+        if (existing != null) { existing.PendingCount += pendingCount; return; }
+        existing = next.FirstOrDefault(e => e.SideIndex == sideIdx && e.ItemIndex == itemIdx && e.AbilityIndex == abilityIdx);
+        if (existing != null) { existing.PendingCount += pendingCount; return; }
+        var entry = new AbilityQueueEntry
+        {
+            SideIndex = sideIdx,
+            ItemIndex = itemIdx,
+            AbilityIndex = abilityIdx,
+            PendingCount = pendingCount,
+            LastTriggerMs = lastTriggerMs,
+        };
+        if (ability.Priority == AbilityPriority.Immediate)
+            current.Add(entry);
+        else
+            next.Add(entry);
+    }
+
+    /// <summary>调用「使用物品」触发器：遍历双方卡组寻找该触发器；此处仅来源物品的 UseItem 能力，加入队列（先合并 current 再 next）。</summary>
+    private static void InvokeUseItemTrigger(BattleSide side0, BattleSide side1, int sourceSideIdx, int sourceItemIdx, int multicast,
+        List<AbilityQueueEntry> current, List<AbilityQueueEntry> next)
+    {
+        var side = sourceSideIdx == 0 ? side0 : side1;
+        var item = side.Items[sourceItemIdx];
+        for (int a = 0; a < item.Template.Abilities.Count; a++)
+        {
+            var ab = item.Template.Abilities[a];
+            if (ab.TriggerName != Trigger.UseItem) continue;
+            AddOrMergeAbility(sourceSideIdx, sourceItemIdx, a, ab, multicast, item.LastTriggerMsByAbility[a], current, next);
+        }
+    }
+
+    /// <summary>调用「使用其他物品」触发器：遍历双方卡组（排除被使用的物品），条件匹配的 UseOtherItem 能力加入队列（先合并 current 再 next）。</summary>
+    private static void InvokeUseOtherItemTrigger(BattleSide side0, BattleSide side1, ItemTemplate usedTemplate, int usedSideIdx, int usedItemIdx,
+        List<AbilityQueueEntry> current, List<AbilityQueueEntry> next)
+    {
+        foreach (var (sideIdx, side) in new[] { (0, side0), (1, side1) })
+        {
+            for (int i = 0; i < side.Items.Count; i++)
+            {
+                if (sideIdx == usedSideIdx && i == usedItemIdx) continue;
+                var other = side.Items[i];
+                if (other.Destroyed) continue;
+                for (int a = 0; a < other.Template.Abilities.Count; a++)
+                {
+                    var ab = other.Template.Abilities[a];
+                    if (ab.TriggerName != Trigger.UseOtherItem) continue;
+                    if (!AbilityConditionEvaluator.EvaluateForAbility(ab.Condition, usedTemplate)) continue;
+                    AddOrMergeAbility(sideIdx, i, a, ab, 1, other.LastTriggerMsByAbility[a], current, next);
+                }
+            }
+        }
+    }
+
+    /// <summary>暴击时最终倍率 = CritDamagePercent/100，默认 200 即 2 倍；利爪翻倍为 400 即 4 倍。chargeInducedCastQueue 非 null 时充能导致满会加入该队列。执行过程中引发的新能力通过 AddOrMergeAbility/Invoke*Trigger 加入 current/next（仅 Immediate 入 current）。</summary>
     private void ExecuteOneEffect(int sideIndex, int itemIndex, AbilityDefinition ability, bool isCrit, int critDamagePercent,
-        BattleSide side0, BattleSide side1, int timeMs, IBattleLogSink logSink)
+        BattleSide side0, BattleSide side1, int timeMs, IBattleLogSink logSink, List<(int, int)>? chargeInducedCastQueue,
+        List<AbilityQueueEntry> currentAbilityQueue, List<AbilityQueueEntry> nextAbilityQueue)
     {
         var side = sideIndex == 0 ? side0 : side1;
         var opp = sideIndex == 0 ? side1 : side0;
@@ -441,7 +538,7 @@ public class BattleSimulator
         {
             string key = eff.ValueKey ?? eff.Kind.GetDefaultTemplateKey();
             int baseValue = eff.ResolveValue(item.Template, item.Tier, key);
-            int value = baseValue * critMultiplier;
+            int value = eff.Kind == EffectKind.Charge ? baseValue : baseValue * critMultiplier;
             if (GetEffectApplier(eff.Kind) is { } applier)
             {
                 var ctx = new EffectApplyContext
@@ -456,6 +553,7 @@ public class BattleSimulator
                     SideIndex = sideIndex,
                     ItemIndex = itemIndex,
                     LogName = eff.Kind.GetLogName(),
+                    ChargeInducedCastQueue = chargeInducedCastQueue,
                 };
                 applier(in ctx);
             }

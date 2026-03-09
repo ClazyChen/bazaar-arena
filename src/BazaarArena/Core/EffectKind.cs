@@ -9,6 +9,8 @@ public enum EffectKind
     Shield,
     Heal,
     Regen,
+    /// <summary>充能：为此物品增加已过冷却时间（毫秒），不能暴击。</summary>
+    Charge,
     /// <summary>自定义效果，由 CustomEffectId 指定逻辑。</summary>
     Other,
 }

@@ -45,6 +45,13 @@ public static class Effect
         ValueKey = EffectKind.Regen.GetDefaultTemplateKey(),
     };
 
+    /// <summary>为此物品充能：数值来自模板的 Charge 字段（毫秒），增加已过冷却时间，不能暴击。</summary>
+    public static readonly EffectDefinition ChargeSelf = new()
+    {
+        Kind = EffectKind.Charge,
+        ValueKey = EffectKind.Charge.GetDefaultTemplateKey(),
+    };
+
     /// <summary>武器伤害提升（自定义效果）：对己方所有带「武器」tag 的物品，将其 Damage 增加指定量；数值来自模板的 valueKey 字段（默认 Custom_0）。</summary>
     public static EffectDefinition WeaponDamageBonus(string? ValueKey = null) => new()
     {

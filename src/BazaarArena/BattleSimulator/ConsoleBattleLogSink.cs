@@ -25,7 +25,8 @@ public class ConsoleBattleLogSink : IBattleLogSink
     {
         if (_level != BattleLogLevel.Detailed) return;
         string critSuffix = isCrit ? " （暴击）" : "";
-        Console.WriteLine($"  玩家{sideIndex + 1} [{itemName}] {effectKind} {value}{critSuffix} @ {timeMs}ms");
+        string valueStr = EffectLogFormat.FormatEffectValue(effectKind, value);
+        Console.WriteLine($"  玩家{sideIndex + 1} [{itemName}] {effectKind} {valueStr}{critSuffix} @ {timeMs}ms");
     }
 
     public void OnBurnTick(int sideIndex, int burnDamage, int remainingBurn, int timeMs)

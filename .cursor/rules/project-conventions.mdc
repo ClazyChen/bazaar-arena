@@ -14,3 +14,5 @@ alwaysApply: true
   - `BattleSimulator/` — 对战模拟器
 
 命名空间与文件夹对应，例如 `BazaarArena.DeckManager`、`BazaarArena.ItemDatabase`、`BazaarArena.BattleSimulator`。
+
+- **对战模拟器能力队列**：修改 `BattleSimulator` 中能力队列、施放队列或触发器逻辑时，必须遵守 **.cursor/rules/battle-simulator-ability-queue.mdc**（仅步骤 11 做 next→current、cast 触发的能力入 next、步骤 8 只处理 current、新能力按优先级入 current/next、PendingCount 先 current 再 next）。

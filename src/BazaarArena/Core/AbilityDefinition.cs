@@ -11,6 +11,9 @@ public class AbilityDefinition
 
     public AbilityPriority Priority { get; set; }
 
+    /// <summary>触发条件（如 UseOtherItem 时仅当被使用物品带某标签）。可选，null 表示不限制。</summary>
+    public Condition? Condition { get; set; }
+
     /// <summary>该能力触发的效果列表（伤害、灼烧等）。</summary>
     public List<EffectDefinition> Effects { get; set; } = [];
 }

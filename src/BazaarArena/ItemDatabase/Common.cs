@@ -190,7 +190,7 @@ public static class Common
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.CritRatePercent),
-                    Condition = AuraConditionKind.AdjacentToSource,
+                    Condition = Condition.AdjacentToSource,
                     FixedValueKey = nameof(ItemTemplate.Custom_0),
                 },
             ],
@@ -224,7 +224,7 @@ public static class Common
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.CritDamagePercent),
-                    Condition = AuraConditionKind.SameAsSource,
+                    Condition = Condition.SameAsSource,
                     PercentValueKey = nameof(ItemTemplate.Custom_0),
                 },
             ],
@@ -255,6 +255,38 @@ public static class Common
         };
     }
 
+    /// <summary>姜饼人（Gingerbread Man）：5s 小 铜 食物 伙伴；获得 10 » 20 » 30 » 40 护盾（优先级 Low）；使用工具时为此物品充能 1 秒（优先级 Medium）。</summary>
+    public static ItemTemplate GingerbreadMan()
+    {
+        return new ItemTemplate
+        {
+            Name = "姜饼人",
+            Desc = "获得 {Shield} 护盾；使用工具时，为此物品充能 {ChargeSeconds} 秒",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = [Tag.Food, Tag.Friend],
+            Cooldown = 5.0,
+            Shield = [10, 20, 30, 40],
+            ChargeSeconds = 1.0,
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Low,
+                    Effects = [Effect.Shield],
+                },
+                new()
+                {
+                    TriggerName = Trigger.UseOtherItem,
+                    Priority = AbilityPriority.Medium,
+                    Condition = Condition.WithTag(Tag.Tool),
+                    Effects = [Effect.ChargeSelf],
+                },
+            ],
+        };
+    }
+
     /// <summary>注册所有公共物品到数据库。</summary>
     public static void RegisterAll(ItemDatabase db)
     {
@@ -268,5 +300,6 @@ public static class Common
         db.Register(AgilityBoots());
         db.Register(Claws());
         db.Register(Bluenanas());
+        db.Register(GingerbreadMan());
     }
 }

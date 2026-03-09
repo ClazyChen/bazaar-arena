@@ -448,6 +448,15 @@ public partial class MainWindow
             tt.Content = BuildDeckSlotToolTip(template, row.Tier);
     }
 
+    /// <summary>构建物品标签行：尺寸（小型/中型/大型）+ 现有 Tags，用空格连接。</summary>
+    private static string BuildTagsLine(ItemTemplate template)
+    {
+        var parts = new List<string> { template.Size.GetDisplayName() };
+        if (template.Tags?.Count > 0)
+            parts.AddRange(template.Tags);
+        return string.Join(" ", parts);
+    }
+
     /// <summary>卡组内物品悬停：名称按 tier 色、冷却（若有）、Desc；占位符为单 tier 数值并加粗。</summary>
     private static Border BuildDeckSlotToolTip(ItemTemplate template, ItemTier tier)
     {
@@ -455,6 +464,9 @@ public partial class MainWindow
         var line1 = new TextBlock { Foreground = ToolTipForeground };
         line1.Inlines.Add(new Run(template.Name) { FontWeight = FontWeights.Bold, Foreground = TierToBrush(tier) });
         panel.Children.Add(line1);
+        var tagsLine = new TextBlock { Foreground = ToolTipForeground, FontStyle = FontStyles.Italic };
+        tagsLine.Inlines.Add(new Run(BuildTagsLine(template)));
+        panel.Children.Add(tagsLine);
         if (template.GetInt("CooldownMs", tier) > 0)
         {
             var (line2, ranges2) = ItemDescHelper.ReplacePlaceholdersSingle(template, tier, "冷却时间：{Cooldown} 秒");
@@ -498,12 +510,15 @@ public partial class MainWindow
         var line1 = new TextBlock { Foreground = ToolTipForeground };
         line1.Inlines.Add(new Run(template.Name) { FontWeight = FontWeights.Bold, Foreground = ToolTipForeground });
         panel.Children.Add(line1);
+        var tagsLine = new TextBlock { Foreground = ToolTipForeground, FontStyle = FontStyles.Italic };
+        tagsLine.Inlines.Add(new Run(BuildTagsLine(template)));
+        panel.Children.Add(tagsLine);
         bool hasCooldown = Enumerable.Range(0, 4).Any(i => template.GetInt("CooldownMs", (ItemTier)i) > 0);
         if (hasCooldown)
         {
-            var (line2, ranges2) = ItemDescHelper.ReplacePlaceholdersAllTiers(template, "冷却时间：{Cooldown} 秒");
+            var (line2, ranges2) = ItemDescHelper.ReplacePlaceholdersAllTiers(template, "冷却时间：{Cooldown} 秒", ToolTipForeground);
             var tb2 = new TextBlock { Foreground = ToolTipForeground };
-            var ranges2Simple = ranges2.Select(r => (r.Start, r.Length)).ToList();
+            var ranges2Simple = ranges2.Select(r => (r.Start, r.Length, r.OverrideBrush)).ToList();
             foreach (var inline in ItemDescHelper.BuildLineInlines(line2, ranges2Simple, null))
                 tb2.Inlines.Add(inline);
             panel.Children.Add(tb2);
@@ -514,7 +529,7 @@ public partial class MainWindow
             {
                 var trimmed = segment.Trim();
                 if (string.IsNullOrEmpty(trimmed)) continue;
-                var (line3, ranges3) = ItemDescHelper.ReplacePlaceholdersAllTiers(template, trimmed);
+                var (line3, ranges3) = ItemDescHelper.ReplacePlaceholdersAllTiers(template, trimmed, ToolTipForeground);
                 var tb3 = new TextBlock { Foreground = ToolTipForeground };
                 foreach (var inline in ItemDescHelper.BuildLineInlinesWithTiers(line3, ranges3, TierToBrush))
                     tb3.Inlines.Add(inline);
