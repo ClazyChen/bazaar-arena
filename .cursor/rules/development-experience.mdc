@@ -34,17 +34,18 @@ globs: "**/*.cs","**/*.xaml","**/docs/**"
 
 ## 物品与数据
 
-- **按等级属性、集合表达式**：物品模板扩展属性用 `_intsByTier`；`IntOrByTier` + `[CollectionBuilder]` + `IEnumerable<int>` 支持 `Damage = [25,35,45,55]` 等写法。详见 `docs/implementation-notes.md` 与 `csharp-standards.mdc`。
-- **公共物品**：仅保留 `ItemDatabase/Common.cs` 注册公共物品（如獠牙）；`App`/`Program` 只调用 `Common.RegisterAll`。新增公共物品在 Common 中写工厂方法并在 `RegisterAll` 中注册。
-- **ItemTemplate.Desc**：物品模板有 `Desc` 属性，可含占位符 `{Damage}`、`{Cooldown}`、`{Burn}` 等；卡组编辑区悬停时替换为当前 tier 或全 tier 数值，并与 `EffectKeywordFormatting` 关键词着色一致。克隆/序列化时需复制 `Desc`。
-- **效果预定义**：`Core/Effect.cs` 提供 `Effect.Damage`、`Effect.Burn` 等，使用 `ValueResolver` 从模板字段取值；物品可写 `Effects = [Effect.Damage]`。
+- **按等级属性、集合表达式**：物品模板扩展属性用 `_intsByTier`；`IntOrByTier` + `[CollectionBuilder]` + `IEnumerable<int>` 支持 `Damage = [25,35,45,55]` 等写法；`IntOrByTier.Add(delta)` 用于战斗内对每 tier 加值（如举重手套）。详见 `docs/implementation-notes.md`、`csharp-standards.mdc`、**item-design.mdc**。
+- **公共物品**：仅保留 `ItemDatabase/Common.cs` 注册公共物品；`App`/`Program` 只调用 `Common.RegisterAll`。新增公共物品在 Common 中写工厂方法并在 `RegisterAll` 中注册。**物品设计经验**（触发器、战斗开始、自定义效果、ValueKey、Tooltip、灼烧衰减等）见 **item-design.mdc**。
+- **ItemTemplate.Desc**：物品模板有 `Desc` 属性，可含占位符 `{Damage}`、`{Cooldown}`、`{Burn}`、`{Poison}`、`{Custom_0}` 等；卡组编辑区悬停时替换为当前 tier 或全 tier 数值，并与 `EffectKeywordFormatting` 关键词着色一致。**无冷却（CooldownMs 为 0）时不显示冷却行**。
+- **效果预定义与自定义**：`Core/Effect.cs` 提供 `Effect.Damage`、`Effect.Burn`、`Effect.WeaponDamageBonus(ValueKey: "Custom_0")` 等。`EffectDefinition` 支持 `ValueKey` 指定模板字段，避免写 ValueResolver 委托；`Kind = Other` 时用 `CustomEffectId` 在 `BattleSimulator/CustomEffectHandlers.cs` 中派发，不在 BattleSimulator 内堆逻辑。
 - **数据与日志路径**：见 `data-and-logging.mdc`（Data/、Logs/、levelups 解析、CopyToOutputDirectory）。
 
 ## Tooltip 与悬停说明
 
 - **延后构建防卡顿**：不在 MouseEnter 时构建 Tooltip 内容。卡组内物品：为 Border 设置空 `ToolTip`，在 `ToolTip.Opened` 中根据 `PlacementTarget.Tag`（SlotRowViewModel）再构建并赋 `Content`。物品池：使用 `ToolTipService.ToolTipOpening`，在事件里根据 DataContext（itemName）构建或从缓存取，赋给该元素的 `ToolTip.Content`。
+- **冷却行条件**：仅当物品有冷却（`CooldownMs > 0`）时显示「冷却时间：X 秒」行；无冷却物品不显示该行。
 - **物品池缓存**：`_poolToolTipCache`（Dictionary<itemName, Border>）缓存已构建的物品池 Tooltip，同一物品多次悬停不重复构建。
-- **等级颜色**：Tier 使用标准色（Bronze 180,98,65；Silver 192,192,192；Gold 255,215,0；Diamond 0,255,255），`TierToBrush` 与 `TierToBrushConverter` 一致。Tooltip 背景 `#35322e`，默认文字白色。
+- **等级颜色**：Tier 使用标准色（Bronze 180,98,65；Silver 192,192,192；Gold 255,215,0；Diamond 0,255,255），`TierToBrush` 与 `TierToBrushConverter` 一致。Tooltip 背景 `#35322e`，默认文字白色。效果关键词（灼烧、剧毒等）颜色与战斗日志一致，见 `EffectKeywordFormatting`。
 
 ## 修改与扩展时注意
 

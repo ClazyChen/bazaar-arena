@@ -46,10 +46,28 @@ public class BattleSimulator
                 logSink.OnFrameStart(timeMs, frame);
             logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);
 
-            // 1. 第 0 帧触发「游戏开始时」
+            // 1. 第 0 帧触发「战斗开始」
             if (frame == 0)
             {
-                // 暂无「游戏开始时」触发器，仅初始化
+                var battleStartEntries = new List<(int SideIndex, int ItemIndex, int AbilityIndex, AbilityDefinition Ability)>();
+                foreach (var (sideIdx, side) in new[] { (0, side0), (1, side1) })
+                {
+                    for (int i = 0; i < side.Items.Count; i++)
+                    {
+                        var item = side.Items[i];
+                        for (int a = 0; a < item.Template.Abilities.Count; a++)
+                        {
+                            var ab = item.Template.Abilities[a];
+                            if (ab.TriggerName == "战斗开始")
+                                battleStartEntries.Add((sideIdx, i, a, ab));
+                        }
+                    }
+                }
+                battleStartEntries.Sort((x, y) => x.Ability.Priority.CompareTo(y.Ability.Priority));
+                foreach (var (sideIdx, itemIdx, abilityIdx, ability) in battleStartEntries)
+                {
+                    ExecuteOneEffect(sideIdx, itemIdx, ability, 1, side0, side1, 0, logSink);
+                }
             }
 
             // 2. 加速、减速、冻结剩余时间减少 50ms
@@ -212,7 +230,7 @@ public class BattleSimulator
                 {
                     TriggerName = a.TriggerName,
                     Priority = a.Priority,
-                    Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value, ValueResolver = e.ValueResolver }).ToList(),
+                    Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, CustomEffectId = e.CustomEffectId }).ToList(),
                 }).ToList(),
                 Auras = [..t.Auras],
             };
@@ -256,7 +274,8 @@ public class BattleSimulator
         if (victim.Burn <= 0) return;
         int damage = victim.Burn;
         ApplyDamageToSide(victim, damage, isBurn: true);
-        victim.Burn = RatioUtil.PercentFloor(victim.Burn, 97); // 减少 3%，即保留 97%
+        int decay = RatioUtil.PercentFloor(victim.Burn, 3); // 衰减量：当前灼烧的 3%（至少为 1），灼烧 1 时衰减 1 变为 0
+        victim.Burn = Math.Max(0, victim.Burn - decay);
         logSink.OnBurnTick(victimSideIndex, damage, victim.Burn, timeMs);
     }
 
@@ -307,6 +326,7 @@ public class BattleSimulator
         EffectKind.Shield => "Shield",
         EffectKind.Heal => "Heal",
         EffectKind.Regen => "Regen",
+        EffectKind.Other => "Custom_0",
         _ => "",
     };
 
@@ -319,10 +339,7 @@ public class BattleSimulator
         foreach (var eff in ability.Effects)
         {
             string key = GetTemplateKeyForEffect(eff.Kind);
-            int baseValue = eff.ValueResolver != null
-                ? eff.ValueResolver(item.Template, item.Tier)
-                : item.Template.GetInt(key, item.Tier);
-            if (baseValue == 0) baseValue = eff.Value;
+            int baseValue = eff.ResolveValue(item.Template, item.Tier, key);
             int value = baseValue * critMultiplier;
             switch (eff.Kind)
             {
@@ -353,6 +370,9 @@ public class BattleSimulator
                 case EffectKind.Regen:
                     side.Regen += value;
                     logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "生命再生", value, timeMs);
+                    break;
+                case EffectKind.Other:
+                    CustomEffectHandlers.TryExecute(eff.CustomEffectId ?? "", sideIndex, itemIndex, item, ability, eff, side0, side1, timeMs, logSink);
                     break;
             }
         }

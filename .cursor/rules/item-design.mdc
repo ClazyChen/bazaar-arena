@@ -1,0 +1,48 @@
+---
+description: 物品与效果设计经验：触发器、数值、自定义效果、Tooltip 与战斗内修改
+alwaysApply: false
+globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/ItemTemplate.cs","**/BattleSimulator/CustomEffectHandlers.cs"
+---
+
+# 物品设计经验
+
+## 物品模板（ItemTemplate）
+
+- **基础**：`Name`、`Desc`、`MinTier`（铜/银/金/钻）、`Size`（小/中/大）、`Tags`（如 `["武器"]`、`["伙伴"]`、`["工具","服饰"]`）。
+- **数值**：按等级用 `IntOrByTier`，支持单值或列表：`Damage = [5,10,15,20]`、`Burn = [6,9,12,15]`、`Poison = [1,2,3,4]`、`Custom_0 = [1,2,3,4]`。冷却用 `Cooldown = 5.0`（秒），无冷却则不设或为 0。
+- **描述占位符**：`Desc` 中可用 `{Damage}`、`{Cooldown}`、`{Burn}`、`{Poison}`、`{Custom_0}` 等；Tooltip 与 `ItemDescHelper` 会按单 tier 或全 tier 替换，并在 `ItemDescHelper` 的 Placeholders 中登记新 key（如 `{Custom_0}` → `"Custom_0"`）。
+- **战斗内模板**：每场战斗 `BuildSide` 时每个槽位用卡组 template 克隆一份；`BattleItemState.Template` 即该克隆，可直接修改（如 `Template.Damage = Template.Damage.Add(delta)`），无需额外字段。
+
+## 触发器与能力
+
+- **使用物品**：冷却转好后施放，能力进入队列，按 250ms 间隔与优先级结算；`TriggerName = "使用物品"`，`Priority` 为 `AbilityPriority` 枚举（High、Medium 等）。
+- **战斗开始**：第 0 帧触发一次；`TriggerName = "战斗开始"`。模拟器在第 0 帧收集双方所有「战斗开始」能力、按 Priority 排序后依次执行，无冷却/间隔。
+- **能力**：`AbilityDefinition` 含 `TriggerName`、`Priority`、`Effects`（`EffectDefinition` 列表）。每条效果有 `Kind`、`Value`、可选 `ValueResolver`、可选 `ValueKey`、以及 `Kind == Other` 时的 `CustomEffectId`。
+
+## 效果与数值解析
+
+- **内置效果**：`Effect.Damage`、`Effect.Burn`、`Effect.Poison`、`Effect.Shield`、`Effect.Heal`、`Effect.Regen` 从模板对应字段取值（ValueResolver 或 GetInt）。
+- **数值解析顺序**：`EffectDefinition.ResolveValue(template, tier, defaultKey)` 顺序为：`ValueResolver` → `ValueKey`（如 `"Custom_0"`）→ `defaultKey`（按 Kind 映射）→ `Value`。优先用 `ValueKey = "Custom_0"` 指定字段，避免写 lambda。
+- **自定义效果（Other）**：`Kind = EffectKind.Other`，`CustomEffectId` 指定逻辑（如 `"WeaponDamageBonus"`）。实现放在 `BattleSimulator/CustomEffectHandlers.cs`，按 id 注册到 `Handlers`，模拟器在 `ExecuteOneEffect` 的 Other 分支调用 `CustomEffectHandlers.TryExecute(...)`。不要把所有自定义逻辑塞进 BattleSimulator。
+- **预定义自定义效果**：无专用属性的可包装到 `Core/Effect.cs`，例如 `Effect.WeaponDamageBonus(ValueKey: "Custom_0")`，返回 `EffectDefinition { Kind = Other, CustomEffectId = "WeaponDamageBonus", ValueKey = ValueKey }`；物品侧写 `Effects = [Effect.WeaponDamageBonus(ValueKey: "Custom_0")]` 或 `Effect.WeaponDamageBonus()`（默认即 Custom_0）。
+
+## 战斗内修改与 IntOrByTier
+
+- **IntOrByTier.Add(delta)**：每个 tier 的值都加 delta，返回新的 `IntOrByTier`；用于举重手套等「武器伤害 +N」：对己方带「武器」tag 的物品执行 `wi.Template.Damage = wi.Template.Damage.Add(value)`。
+- **Damage 的 getter**：模板的 `Damage` 属性 get 返回完整按等级列表（`GetIntOrByTier(KeyDamage)`），以便支持 `.Add(delta)` 后 set 回；不要用仅返回单值的 getter 做此类修改。
+
+## Tooltip 与 UI 表现
+
+- **冷却行**：若物品无冷却（`CooldownMs` 为 0），Tooltip **不显示**「冷却时间」那一行（卡组内与物品池均按此判断）。
+- **效果关键词颜色**：`EffectKeywordFormatting` 中「灼烧」/「灼烧结算」为 rgb(255,159,69)，「剧毒」/「剧毒结算」为 rgb(14,190,79)，与战斗日志一致。
+
+## 灼烧衰减
+
+- 每 500ms tick 时：衰减量 = 当前灼烧的 3%，用 `RatioUtil.PercentFloor(burn, 3)`（至少为 1）；`victim.Burn = Math.Max(0, victim.Burn - decay)`。这样灼烧 1 会衰减 1 变为 0。
+
+## 新增公共物品流程
+
+1. 在 `ItemDatabase/Common.cs` 写工厂方法（如 `LiftingGloves()`），设置 Name、Desc、MinTier、Size、Tags、数值属性、`Abilities`（含 TriggerName、Priority、Effects）。
+2. 若为自定义效果：在 `CustomEffectHandlers.cs` 注册 id → Handler；若可复用通用字段，在 `Effect.cs` 增加如 `Effect.WeaponDamageBonus(ValueKey = "Custom_0")`。
+3. 在 `Common.RegisterAll` 中 `db.Register(XXX())`。
+4. 若 Desc 或 Tooltip 用到新占位符，在 `ItemDescHelper` 的 Placeholders 中增加对应 key。

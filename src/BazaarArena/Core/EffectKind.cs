@@ -9,4 +9,6 @@ public enum EffectKind
     Shield,
     Heal,
     Regen,
+    /// <summary>自定义效果，由 CustomEffectId 指定逻辑。</summary>
+    Other,
 }

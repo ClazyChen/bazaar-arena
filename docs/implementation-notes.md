@@ -51,3 +51,19 @@
 ### 小结
 
 按等级属性用单字典 + 列表长度区分单值/多值；初始器用 IntOrByTier 统一写法；对外用字符串 key、默认值 0 简化逻辑。需要 `X = [a,b,c]` 时用 CollectionBuilder + IEnumerable 让自定义类型支持集合表达式。
+
+---
+
+## 物品与效果扩展（战斗内修改、自定义效果）
+
+### IntOrByTier.Add(delta) 与战斗内模板
+
+- **IntOrByTier**：增加 `Add(int delta)`，对每个 tier 的值加 delta 并返回新的 IntOrByTier；空列表时返回 `[delta, delta, delta, delta]`。用于「本场战斗内增加某数值」类效果（如举重手套给武器加伤害）。
+- **战斗内模板**：`BuildSide` 时每个卡组槽位从 resolver 取 template 后**克隆**一份（新 ItemTemplate + SetIntsByTier），再创建 `BattleItemState(clone, tier)`。因此 `BattleItemState.Template` 为当局专用，可直接修改，例如 `wi.Template.Damage = wi.Template.Damage.Add(value)`，无需额外 DamageBonus 字段。
+- **Damage 的 getter**：若需对 Damage 做「整体加 delta」并写回，模板的 Damage 属性 get 需返回**完整按等级列表**（如通过 GetIntOrByTier），否则 get 只返回单值会丢失其他 tier。
+
+### 自定义效果（EffectKind.Other）与 ValueKey
+
+- **EffectDefinition**：`ValueKey`（如 `"Custom_0"`）表示「未设 ValueResolver 时用 template.GetInt(ValueKey, tier) 取值」；`ResolveValue(template, tier, defaultKey)` 统一顺序：ValueResolver → ValueKey → defaultKey → Value。新增物品时优先写 `ValueKey = "Custom_0"`，避免手写 lambda。
+- **CustomEffectHandlers**：自定义效果实现集中在 `BattleSimulator/CustomEffectHandlers.cs`，按 `CustomEffectId` 注册；BattleSimulator 仅调用 `CustomEffectHandlers.TryExecute(...)`，不在此文件内堆具体逻辑。
+- **预定义**：无专用属性的自定义效果可放在 `Core/Effect.cs`，如 `Effect.WeaponDamageBonus(ValueKey = "Custom_0")`，物品侧写 `Effects = [Effect.WeaponDamageBonus(ValueKey: "Custom_0")]`。详见 **.cursor/rules/item-design.mdc**。

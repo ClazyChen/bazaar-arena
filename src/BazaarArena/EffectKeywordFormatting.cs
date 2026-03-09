@@ -11,12 +11,12 @@ public static class EffectKeywordFormatting
     private static readonly (string Keyword, Color Color, bool Bold)[] Rules =
     [
         ("生命再生", Color.FromRgb(0x27, 0xae, 0x60), false),
-        ("灼烧结算", Color.FromRgb(0xe6, 0x7e, 0x22), false),
-        ("剧毒结算", Color.FromRgb(0x9b, 0x59, 0xb6), false),
+        ("灼烧结算", Color.FromRgb(255, 159, 69), false),
+        ("剧毒结算", Color.FromRgb(14, 190, 79), false),
         ("沙尘暴", Color.FromRgb(0x95, 0xa5, 0xa6), false),
         ("伤害", Color.FromRgb(0xf5, 0x50, 0x3d), true),
-        ("灼烧", Color.FromRgb(0xe6, 0x7e, 0x22), false),
-        ("剧毒", Color.FromRgb(0x9b, 0x59, 0xb6), false),
+        ("灼烧", Color.FromRgb(255, 159, 69), false),
+        ("剧毒", Color.FromRgb(14, 190, 79), false),
         ("护盾", Color.FromRgb(0x34, 0x98, 0xdb), false),
         ("治疗", Color.FromRgb(0x2e, 0xcc, 0x71), false),
         ("回复", Color.FromRgb(0x2e, 0xcc, 0x71), false),

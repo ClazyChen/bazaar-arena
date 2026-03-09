@@ -18,6 +18,7 @@ public static class ItemDescHelper
         ("{Shield}", "Shield", false),
         ("{Heal}", "Heal", false),
         ("{Regen}", "Regen", false),
+        ("{Custom_0}", "Custom_0", false),
     ];
 
     /// <summary>单 tier 替换：返回替换后的字符串及数值区段（起始索引、长度），用于加粗。</summary>
