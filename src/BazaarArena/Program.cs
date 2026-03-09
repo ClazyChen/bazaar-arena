@@ -17,9 +17,13 @@ var levelupsPath = Path.Combine(dataDir, "levelups.json");
 if (File.Exists(levelupsPath))
     LevelUpTable.Load(levelupsPath);
 
-var deckManager = new DeckManager(decksDir);
+var deckManager = new DeckManager();
 var db = new ItemDatabase();
 TestItems.RegisterAll(db);
+
+var defaultCollectionPath = Path.Combine(decksDir, "default.json");
+if (File.Exists(defaultCollectionPath))
+    deckManager.OpenCollection(defaultCollectionPath);
 
 Deck? deckA = deckManager.Load("test_deck_a");
 Deck? deckB = deckManager.Load("test_deck_b");

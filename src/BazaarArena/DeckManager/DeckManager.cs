@@ -1,10 +1,12 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using BazaarArena.Core;
 using BazaarArena.ItemDatabase;
 
 namespace BazaarArena.DeckManager;
 
-/// <summary>卡组管理器：CRUD，以 JSON 形式保存在本地目录。</summary>
+/// <summary>卡组管理器：维护当前卡组集（内存），支持从/向单个 JSON 文件打开与保存。</summary>
 public class DeckManager
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -14,13 +16,13 @@ public class DeckManager
         PropertyNameCaseInsensitive = true,
     };
 
-    private readonly string _baseDir;
+    private readonly Dictionary<string, Deck> _decks = [];
+    private string? _currentCollectionPath;
 
-    public DeckManager(string? baseDir = null)
-    {
-        _baseDir = baseDir ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BazaarArena", "Decks");
-        Directory.CreateDirectory(_baseDir);
-    }
+    public DeckManager() { }
+
+    /// <summary>当前卡组集文件路径；未打开或新建未保存时为 null。</summary>
+    public string? CurrentCollectionPath => _currentCollectionPath;
 
     /// <summary>用于列表/下拉框显示：ID、等级与显示文本「[等级] 卡组名」。</summary>
     public sealed class DeckListItem
@@ -30,49 +32,79 @@ public class DeckManager
         public string Display => $"[{Level}] {Id}";
     }
 
-    /// <summary>列出已保存的卡组 ID（文件名无扩展名）。</summary>
+    /// <summary>新建卡组集：清空当前列表，不关联文件。</summary>
+    public void NewCollection()
+    {
+        _decks.Clear();
+        _currentCollectionPath = null;
+    }
+
+    /// <summary>打开卡组集：从指定 JSON 文件加载所有卡组，并切换为当前列表。</summary>
+    public void OpenCollection(string path)
+    {
+        var json = File.ReadAllText(path);
+        var file = JsonSerializer.Deserialize<DeckCollectionFile>(json, JsonOptions)
+            ?? new DeckCollectionFile();
+        _decks.Clear();
+        foreach (var entry in file.Decks)
+        {
+            if (string.IsNullOrWhiteSpace(entry.Id)) continue;
+            _decks[entry.Id.Trim()] = entry.Deck ?? new Deck();
+        }
+        _currentCollectionPath = Path.GetFullPath(path);
+    }
+
+    /// <summary>保存卡组集到指定路径；若 path 为 null 则保存到当前打开的文件（无路径时返回 false）。</summary>
+    public bool SaveCollection(string? path = null)
+    {
+        var target = path ?? _currentCollectionPath;
+        if (string.IsNullOrEmpty(target)) return false;
+        target = Path.GetFullPath(target);
+        var file = new DeckCollectionFile
+        {
+            Decks = _decks.Select(kv => new DeckEntry { Id = kv.Key, Deck = kv.Value }).ToList()
+        };
+        var json = JsonSerializer.Serialize(file, JsonOptions);
+        var dir = Path.GetDirectoryName(target);
+        if (!string.IsNullOrEmpty(dir))
+            Directory.CreateDirectory(dir);
+        File.WriteAllText(target, json);
+        _currentCollectionPath = target;
+        return true;
+    }
+
+    /// <summary>列出当前卡组集中所有卡组 ID。</summary>
     public IEnumerable<string> List()
     {
-        foreach (var f in Directory.EnumerateFiles(_baseDir, "*.json"))
-            yield return Path.GetFileNameWithoutExtension(f);
+        foreach (var id in _decks.Keys)
+            yield return id;
     }
 
     /// <summary>列出卡组并带玩家等级，用于界面显示「[等级] 卡组名」。</summary>
     public IEnumerable<DeckListItem> ListWithLevels()
     {
-        foreach (var id in List())
-        {
-            var deck = Load(id);
-            yield return new DeckListItem { Id = id, Level = deck?.PlayerLevel ?? 1 };
-        }
+        foreach (var kv in _decks)
+            yield return new DeckListItem { Id = kv.Key, Level = kv.Value.PlayerLevel };
     }
 
     /// <summary>按 ID 读取卡组，不存在则返回 null。</summary>
     public Deck? Load(string id)
     {
-        var path = GetPath(id);
-        if (!File.Exists(path)) return null;
-        var json = File.ReadAllText(path);
-        return JsonSerializer.Deserialize<Deck>(json, JsonOptions);
+        return _decks.TryGetValue(id, out var deck) ? deck : null;
     }
 
-    /// <summary>保存卡组。若提供 resolver 则校验槽位与等级。</summary>
+    /// <summary>保存卡组到当前卡组集（内存）。若提供 resolver 则校验槽位与等级。</summary>
     public void Save(Deck deck, string id, IItemTemplateResolver? resolver = null)
     {
         if (resolver != null)
             Validate(deck, resolver);
-
-        var path = GetPath(id);
-        var json = JsonSerializer.Serialize(deck, JsonOptions);
-        File.WriteAllText(path, json);
+        _decks[id] = deck;
     }
 
-    /// <summary>删除指定卡组。</summary>
+    /// <summary>从当前卡组集中删除指定卡组。</summary>
     public void Delete(string id)
     {
-        var path = GetPath(id);
-        if (File.Exists(path))
-            File.Delete(path);
+        _decks.Remove(id);
     }
 
     /// <summary>校验槽位总占用、等级与玩家等级限制。</summary>
@@ -91,11 +123,5 @@ public class DeckManager
         }
         if (totalSlots > maxSlots)
             throw new ArgumentException($"槽位占用 {totalSlots} 超过上限 {maxSlots}");
-    }
-
-    private string GetPath(string id)
-    {
-        var safe = string.Join("_", id.Split(Path.GetInvalidFileNameChars()));
-        return Path.Combine(_baseDir, safe + ".json");
     }
 }

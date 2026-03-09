@@ -152,21 +152,24 @@ public class BattleSimulator
             foreach (var e in nextAbilityQueue) currentAbilityQueue.Add(e);
             nextAbilityQueue.Clear();
 
-            // 9. 胜负判定
+            // 9. 胜负判定（先输出本帧结算后的最终生命，再通知结果）
             bool dead0 = side0.Hp <= 0;
             bool dead1 = side1.Hp <= 0;
             if (dead0 && dead1)
             {
+                logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);
                 logSink.OnResult(-1, timeMs, true);
                 return -1;
             }
             if (dead1)
             {
+                logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);
                 logSink.OnResult(0, timeMs, false);
                 return 0;
             }
             if (dead0)
             {
+                logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);
                 logSink.OnResult(1, timeMs, false);
                 return 1;
             }
@@ -174,6 +177,7 @@ public class BattleSimulator
             // 10. 沙尘暴 120s 结束判平局
             if (timeMs >= SandstormEndMs)
             {
+                logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);
                 logSink.OnResult(-1, timeMs, true);
                 return -1;
             }

@@ -1,0 +1,44 @@
+---
+description: 仓库结构、卡组集与 GUI 开发经验总结
+alwaysApply: false
+globs: "**/*.cs","**/*.xaml","**/docs/**"
+---
+
+# 开发经验与仓库约定
+
+## 仓库结构
+
+- **src/BazaarArena/**：主项目（WPF 应用 + 核心逻辑）。子目录与命名空间：`DeckManager/`、`ItemDatabase/`、`BattleSimulator/`、`Core/`。
+- **Data/**：静态与默认数据。`Data/Decks/` 为卡组集 JSON 默认目录；`Data/levelups.json` 为等级生命表。启动时若存在 `Data/Decks/default.json` 则自动加载为当前卡组集。
+- **docs/**：设计文档、实现笔记、GUI 说明。详见 `docs/Bazaar Arena 设计文档.md`、`docs/implementation-notes.md`、`docs/gui-overview.md`。
+- **.cursor/rules/**：项目约定与开发经验规则，供 AI 与人工查阅。
+
+## 卡组集模型
+
+- **一个 JSON 文件 = 一个卡组集**：格式为 `DeckCollectionFile`（version + decks 数组），每项为 `DeckEntry`（id + deck）。见 `DeckManager/DeckCollectionFile.cs`。
+- **DeckManager**：无参构造，维护内存中的 `_decks` 与 `_currentCollectionPath`。`OpenCollection(path)` 从文件加载并切换列表；`SaveCollection(path?)` 写回 path 或当前路径；`NewCollection()` 清空内存并清空路径。列表/加载/保存/删除均针对当前卡组集。
+- **自动保存**：保存卡组、另存为卡组、删除卡组、新建卡组集（选路径后）都会在可能时写回当前卡组集文件；若无路径则弹出“保存卡组集”另存为（初始目录 `App.DecksDirectory` = Data/Decks）。
+- **打开/新建卡组集**：文件对话框的 `InitialDirectory` 设为 `App.DecksDirectory`，新建卡组集时用 SaveFileDialog 在 Decks 下创建新 JSON。
+
+## GUI 约定
+
+- **主窗口**：`MainWindow` 为入口，持有 `DeckManager`、卡组列表与编辑区。子窗口（单次模拟、批量模拟）创建时设置 `Owner = this`，以便 `WindowStartupLocation="CenterOwner"` 生效。
+- **对话框**：卡组“另存为”等需用户输入的对话框设置 `Owner`，并在 `Loaded` 中通过 `Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () => { TextBox.Focus(); TextBox.SelectAll(); })` 使输入框立即获得焦点，无需再点击。
+- **单次模拟**：生命曲线为阶梯状；仅在生命值变化时记录点，且每次变化记录两点 (timeMs, 旧HP)、(timeMs, 新HP)；战斗结束前在 BattleSimulator 中调用 `OnHpSnapshot` 再 `OnResult`，保证最后一帧写入曲线；HP 显示时用 `Math.Max(0, hp)`。
+
+## 对战模拟与日志
+
+- **IBattleLogSink**：模拟器每帧/事件调用 OnFrameStart、OnHpSnapshot、OnCast、OnEffect、OnBurnTick、OnPoisonTick、OnRegenTick、OnResult 等。批量模拟用 `SilentBattleLogSink`；单次模拟用 `StatsCollectingSink` + `TextBoxBattleLogSink` 等组合。
+- **StatsCollectingSink**：生命曲线只依赖 `OnHpSnapshot`，在 HP 相对上一记录变化时写入两点形成阶梯；不再按固定间隔写入。详见 `BattleSimulator/StatsCollectingSink.cs`。
+- **帧边界**：能力队列使用 current/next 双队列；将 next 移入 current 必须在**本帧所有能力处理完毕之后**，否则会破坏“本帧施放、下一帧生效”的语义。详见 `docs/implementation-notes.md`。
+
+## 物品与数据
+
+- **按等级属性、集合表达式**：物品模板扩展属性用 `_intsByTier`；`IntOrByTier` + `[CollectionBuilder]` + `IEnumerable<int>` 支持 `Damage = [25,35,45,55]` 等写法。详见 `docs/implementation-notes.md` 与 `csharp-standards.mdc`。
+- **数据与日志路径**：见 `data-and-logging.mdc`（Data/、Logs/、levelups 解析、CopyToOutputDirectory）。
+
+## 修改与扩展时注意
+
+- 新增窗口或对话框时记得设置 `Owner`，并在需要时在 Loaded 中聚焦输入控件。
+- 修改战斗结算顺序或能力队列移动时机时，对照设计文档的帧顺序与 `implementation-notes.md` 的帧边界说明。
+- 卡组集相关逻辑集中在 DeckManager 与 MainWindow 的“保存/另存为/删除/新建卡组集”中，保持“有路径则写回，无路径则弹窗”的一致性。

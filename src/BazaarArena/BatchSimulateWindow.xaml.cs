@@ -87,7 +87,7 @@ public partial class BatchSimulateWindow
             {
                 runButton.IsEnabled = true;
                 ProgressText.Text = $"共 {n} 场";
-                ResultText.Text = $"玩家1（{itemA.Display}）胜率：{p0:F1}%  |  玩家2（{itemB.Display}）胜率：{p1:F1}%  |  平局：{pd:F1}%";
+                ResultText.Text = $"玩家1（{itemA.Display}）胜率：{p0:F1}%\n玩家2（{itemB.Display}）胜率：{p1:F1}%\n平局：{pd:F1}%";
             });
         });
     }

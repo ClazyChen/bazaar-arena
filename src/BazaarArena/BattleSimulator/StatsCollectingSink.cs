@@ -21,6 +21,7 @@ public class StatsCollectingSink : IBattleLogSink
     private int _side1Regen;
     private int _lastCurveTimeMs = -1;
     private int _lastHp0, _lastHp1;
+    private int _lastRecordedHp0 = -1, _lastRecordedHp1 = -1;
     private int _initialHp0, _initialHp1;
     private readonly List<StrengthCurvePoint> _curveSide0 = [];
     private readonly List<StrengthCurvePoint> _curveSide1 = [];
@@ -46,6 +47,7 @@ public class StatsCollectingSink : IBattleLogSink
 
     public void OnFrameStart(int timeMs, int frame) { }
 
+    /// <summary>每帧调用；仅在生命值相对上一帧发生变化时记录曲线点，以即时反映生命变化。</summary>
     public void OnHpSnapshot(int timeMs, int side0Hp, int side1Hp)
     {
         _lastHp0 = side0Hp;
@@ -54,6 +56,24 @@ public class StatsCollectingSink : IBattleLogSink
         {
             _initialHp0 = side0Hp;
             _initialHp1 = side1Hp;
+            AddCurvePointSide0(0, side0Hp);
+            AddCurvePointSide1(0, side1Hp);
+            _lastRecordedHp0 = side0Hp;
+            _lastRecordedHp1 = side1Hp;
+            _lastCurveTimeMs = 0;
+            return;
+        }
+        if (side0Hp != _lastRecordedHp0)
+        {
+            AddCurvePointSide0(timeMs, _lastRecordedHp0); // 阶梯：先延续旧值到当前时刻
+            AddCurvePointSide0(timeMs, side0Hp);         // 再在同一时刻跳到新值
+            _lastRecordedHp0 = side0Hp;
+        }
+        if (side1Hp != _lastRecordedHp1)
+        {
+            AddCurvePointSide1(timeMs, _lastRecordedHp1);
+            AddCurvePointSide1(timeMs, side1Hp);
+            _lastRecordedHp1 = side1Hp;
         }
     }
 
@@ -134,36 +154,46 @@ public class StatsCollectingSink : IBattleLogSink
         }
     }
 
-    private void TryRecordCurve(int timeMs)
+    private void AddCurvePointSide0(int timeMs, int hp)
     {
-        if (_lastCurveTimeMs >= 0 && timeMs - _lastCurveTimeMs < CurveIntervalMs)
-            return;
-        int t = (timeMs / CurveIntervalMs) * CurveIntervalMs;
-        if (t <= _lastCurveTimeMs)
-            return;
-        _lastCurveTimeMs = t;
         _curveSide0.Add(new StrengthCurvePoint
         {
-            TimeMs = t,
+            TimeMs = timeMs,
             Damage = _side0Damage,
             Burn = _side0Burn,
             Poison = _side0Poison,
             Shield = _side0Shield,
             Heal = _side0Heal,
             Regen = _side0Regen,
-            Hp = _lastHp0,
+            Hp = Math.Max(0, hp),
         });
+    }
+
+    private void AddCurvePointSide1(int timeMs, int hp)
+    {
         _curveSide1.Add(new StrengthCurvePoint
         {
-            TimeMs = t,
+            TimeMs = timeMs,
             Damage = _side1Damage,
             Burn = _side1Burn,
             Poison = _side1Poison,
             Shield = _side1Shield,
             Heal = _side1Heal,
             Regen = _side1Regen,
-            Hp = _lastHp1,
+            Hp = Math.Max(0, hp),
         });
+    }
+
+    private void TryRecordCurve(int timeMs)
+    {
+        // 生命曲线改由 OnHpSnapshot 在生命值变化时记录，此处仅保留供其他扩展用（如按间隔采样）。
+        if (CurveIntervalMs <= 0) return;
+        if (_lastCurveTimeMs >= 0 && timeMs - _lastCurveTimeMs < CurveIntervalMs)
+            return;
+        int t = (timeMs / CurveIntervalMs) * CurveIntervalMs;
+        if (t <= _lastCurveTimeMs)
+            return;
+        _lastCurveTimeMs = t;
     }
 
     public void OnBurnTick(int sideIndex, int burnDamage, int remainingBurn, int timeMs) => TryRecordCurve(timeMs);
@@ -201,6 +231,11 @@ public class StatsCollectingSink : IBattleLogSink
         List<StrengthCurvePoint> c1 = _curveSide1.Count == 0 || _curveSide1[0].TimeMs > 0
             ? [new StrengthCurvePoint { TimeMs = 0, Hp = _initialHp1 }, .._curveSide1]
             : [.._curveSide1];
+        // 若最后一点早于结束时间，补终点使曲线延伸到战斗结束（生命显示为 0 以上）
+        if (_durationMs > 0 && c0.Count > 0 && c0[^1].TimeMs < _durationMs)
+            c0.Add(new StrengthCurvePoint { TimeMs = _durationMs, Hp = Math.Max(0, _lastHp0), Damage = _side0Damage, Burn = _side0Burn, Poison = _side0Poison, Shield = _side0Shield, Heal = _side0Heal, Regen = _side0Regen });
+        if (_durationMs > 0 && c1.Count > 0 && c1[^1].TimeMs < _durationMs)
+            c1.Add(new StrengthCurvePoint { TimeMs = _durationMs, Hp = Math.Max(0, _lastHp1), Damage = _side1Damage, Burn = _side1Burn, Poison = _side1Poison, Shield = _side1Shield, Heal = _side1Heal, Regen = _side1Regen });
 
         return new BattleRunStats
         {
@@ -219,6 +254,7 @@ public class StatsCollectingSink : IBattleLogSink
         _side0Damage = _side0Burn = _side0Poison = _side0Shield = _side0Heal = _side0Regen = 0;
         _side1Damage = _side1Burn = _side1Poison = _side1Shield = _side1Heal = _side1Regen = 0;
         _lastCurveTimeMs = -1;
+        _lastRecordedHp0 = _lastRecordedHp1 = -1;
         _initialHp0 = _initialHp1 = 0;
         _curveSide0.Clear();
         _curveSide1.Clear();

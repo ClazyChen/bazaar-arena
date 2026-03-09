@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -7,6 +8,7 @@ using System.Windows.Media;
 using BazaarArena.Core;
 using BazaarArena.DeckManager;
 using BazaarArena.ItemDatabase;
+using Microsoft.Win32;
 
 namespace BazaarArena;
 
@@ -43,6 +45,23 @@ public partial class MainWindow
         ItemPoolList.ItemsSource = _itemNames;
 
         RefreshDeckList();
+        var defaultPath = Path.Combine(App.DecksDirectory, "default.json");
+        if (File.Exists(defaultPath))
+        {
+            try
+            {
+                _deckManager.OpenCollection(defaultPath);
+                RefreshDeckList();
+            }
+            catch { /* 启动时加载失败则保持空列表 */ }
+        }
+        UpdateWindowTitle();
+    }
+
+    private void UpdateWindowTitle()
+    {
+        var path = _deckManager.CurrentCollectionPath;
+        Title = string.IsNullOrEmpty(path) ? "Bazaar Arena - 未命名" : $"Bazaar Arena - {Path.GetFileName(path)}";
     }
 
     private void DeckGridInner_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -76,14 +95,57 @@ public partial class MainWindow
         DeckListBox.SelectedItem = null;
     }
 
-    private void OpenDeck_Click(object sender, RoutedEventArgs e)
+    private void NewCollection_Click(object sender, RoutedEventArgs e)
     {
-        if (DeckListBox.SelectedItem is DeckManager.DeckManager.DeckListItem item)
+        var dlg = new SaveFileDialog
         {
-            LoadDeckIntoEditor(item.Id);
-            return;
+            Filter = "卡组集 JSON|*.json|所有文件|*.*",
+            DefaultExt = ".json",
+            Title = "新建卡组集",
+            InitialDirectory = App.DecksDirectory
+        };
+        if (dlg.ShowDialog() != true) return;
+        try
+        {
+            _deckManager.NewCollection();
+            _deckManager.SaveCollection(dlg.FileName);
+            RefreshDeckList();
+            _currentDeckId = null;
+            _slotRows.Clear();
+            ShowEditor(false);
+            DeckListBox.SelectedItem = null;
+            UpdateWindowTitle();
         }
-        MessageBox.Show("请先在左侧列表中选择要打开的卡组。", "打开卡组", MessageBoxButton.OK, MessageBoxImage.Information);
+        catch (Exception ex)
+        {
+            MessageBox.Show($"创建失败：{ex.Message}", "新建卡组集", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void OpenCollection_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFileDialog
+        {
+            Filter = "卡组集 JSON|*.json|所有文件|*.*",
+            DefaultExt = ".json",
+            Title = "打开卡组集",
+            InitialDirectory = App.DecksDirectory
+        };
+        if (dlg.ShowDialog() != true) return;
+        try
+        {
+            _deckManager.OpenCollection(dlg.FileName);
+            RefreshDeckList();
+            _currentDeckId = null;
+            _slotRows.Clear();
+            ShowEditor(false);
+            DeckListBox.SelectedItem = null;
+            UpdateWindowTitle();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"无法打开文件：{ex.Message}", "打开卡组集", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void DeckListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -134,6 +196,7 @@ public partial class MainWindow
             ShowEditor(false);
         }
         RefreshDeckList();
+        TrySaveCollectionToFile();
     }
 
     private void PlayerLevel_Changed(object sender, SelectionChangedEventArgs e)
@@ -503,6 +566,7 @@ public partial class MainWindow
             var deck = BuildDeckFromEditor();
             _deckManager.Save(deck, _currentDeckId, _itemDatabase);
             RefreshDeckList();
+            TrySaveCollectionToFile();
             MessageBox.Show("保存成功。", "保存", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (ArgumentException ex)
@@ -513,7 +577,7 @@ public partial class MainWindow
 
     private void SaveAsDeck_Click(object sender, RoutedEventArgs e)
     {
-        var input = new SaveAsDialog();
+        var input = new SaveAsDialog { Owner = this };
         if (input.ShowDialog() != true || string.IsNullOrWhiteSpace(input.DeckId))
             return;
         string id = input.DeckId.Trim();
@@ -524,11 +588,39 @@ public partial class MainWindow
             _currentDeckId = id;
             RefreshDeckList();
             DeckListBox.SelectedItem = _deckListItems.FirstOrDefault(x => x.Id == id);
+            TrySaveCollectionToFile();
             MessageBox.Show("另存为成功。", "保存", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (ArgumentException ex)
         {
             MessageBox.Show(ex.Message, "保存失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    /// <summary>若已有关联文件则保存卡组集到该文件；否则（新建卡组集）弹出另存为对话框。</summary>
+    private void TrySaveCollectionToFile()
+    {
+        if (_deckManager.SaveCollection())
+        {
+            UpdateWindowTitle();
+            return;
+        }
+        var dlg = new SaveFileDialog
+        {
+            Filter = "卡组集 JSON|*.json|所有文件|*.*",
+            DefaultExt = ".json",
+            Title = "保存卡组集",
+            InitialDirectory = App.DecksDirectory
+        };
+        if (dlg.ShowDialog() != true) return;
+        try
+        {
+            _deckManager.SaveCollection(dlg.FileName);
+            UpdateWindowTitle();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"保存卡组集失败：{ex.Message}", "保存", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -546,9 +638,4 @@ public partial class MainWindow
         win.ShowDialog();
     }
 
-    private void DeckCompare_Click(object sender, RoutedEventArgs e)
-    {
-        var win = new BatchSimulateWindow { Owner = this, Title = "卡组互评" };
-        win.ShowDialog();
-    }
 }

@@ -10,15 +10,14 @@
         </Grid.RowDefinitions>
         <Menu Grid.Row="0">
             <MenuItem Header="文件(_F)">
-                <MenuItem Header="新建卡组" Click="NewDeck_Click"/>
-                <MenuItem Header="打开卡组..." Click="OpenDeck_Click"/>
+                <MenuItem Header="新建卡组集" Click="NewCollection_Click"/>
+                <MenuItem Header="打开卡组集..." Click="OpenCollection_Click"/>
                 <Separator/>
                 <MenuItem Header="退出" Click="Exit_Click"/>
             </MenuItem>
             <MenuItem Header="模拟(_S)">
                 <MenuItem Header="单次模拟..." Click="SingleSimulate_Click"/>
                 <MenuItem Header="批量模拟..." Click="BatchSimulate_Click"/>
-                <MenuItem Header="卡组互评..." Click="DeckCompare_Click"/>
             </MenuItem>
         </Menu>
         <Grid Grid.Row="1">
@@ -29,7 +28,7 @@
             <!-- 左侧：卡组列表 -->
             <Border Grid.Column="0" BorderBrush="#ccc" BorderThickness="0,0,1,0" Padding="8">
                 <StackPanel>
-                    <TextBlock Text="已保存的卡组" FontWeight="Bold" Margin="0,0,0,6"/>
+                    <TextBlock Text="卡组列表" FontWeight="Bold" Margin="0,0,0,6"/>
                     <ListBox x:Name="DeckListBox" Height="280" SelectionChanged="DeckListBox_SelectionChanged"
                              DisplayMemberPath="Display"/>
                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">

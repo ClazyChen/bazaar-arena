@@ -1,7 +1,0 @@
-{
-  "playerLevel": 5,
-  "slots": [
-    { "itemName": "测试伤害", "tier": 0 },
-    { "itemName": "测试灼烧", "tier": 0 }
-  ]
-}
