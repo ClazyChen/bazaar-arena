@@ -1,7 +1,7 @@
 ---
-description: 物品与效果设计经验：触发器、数值、自定义效果、Tooltip 与战斗内修改
+description: 物品与效果设计经验：触发器、数值、自定义效果、光环、Tooltip 与战斗内修改
 alwaysApply: false
-globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/ItemTemplate.cs","**/BattleSimulator/CustomEffectHandlers.cs"
+globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/ItemTemplate.cs","**/Core/Aura*.cs","**/BattleSimulator/CustomEffectHandlers.cs"
 ---
 
 # 物品设计经验
@@ -10,8 +10,9 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 - **基础**：`Name`、`Desc`、`MinTier`（铜/银/金/钻）、`Size`（小/中/大）、`Tags`（如 `["武器"]`、`["伙伴"]`、`["工具","服饰"]`）。
 - **数值**：按等级用 `IntOrByTier`，支持单值或列表：`Damage = [5,10,15,20]`、`Burn = [6,9,12,15]`、`Poison = [1,2,3,4]`、`Custom_0 = [1,2,3,4]`。冷却用 `Cooldown = 5.0`（秒），无冷却则不设或为 0。
-- **描述占位符**：`Desc` 中可用 `{Damage}`、`{Cooldown}`、`{Burn}`、`{Poison}`、`{Custom_0}` 等；Tooltip 与 `ItemDescHelper` 会按单 tier 或全 tier 替换，并在 `ItemDescHelper` 的 Placeholders 中登记新 key（如 `{Custom_0}` → `"Custom_0"`）。
+- **描述占位符**：`Desc` 中可用 `{Damage}`、`{Cooldown}`、`{Burn}`、`{Poison}`、`{Custom_0}` 等；支持前缀/后缀格式 `{+Custom_0%}`（大括号内非字母数字下划线的连续字符为前缀/后缀，与数值一并替换并参与加粗与 tier 着色）。`ItemDescHelper` 用正则动态解析，无需单独登记 key；`{Cooldown}` 映射为 `CooldownMs` 并按秒显示。
 - **战斗内模板**：每场战斗 `BuildSide` 时每个槽位用卡组 template 克隆一份；`BattleItemState.Template` 即该克隆，可直接修改（如 `Template.Damage = Template.Damage.Add(delta)`），无需额外字段。
+- **光环**：`Auras` 为 `List<AuraDefinition>`；每条含 `AttributeName`、`Condition`（如 `AuraConditionKind.AdjacentToSource`）、`FixedValueKey`、`PercentValueKey`。仅在战斗内读取属性且传入 `IAuraContext` 时生效；公式为 `(基础 + Σ固定) × (1 + Σ百分比/100)`，被摧毁物品不提供光环。
 
 ## 触发器与能力
 
@@ -34,7 +35,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 ## Tooltip 与 UI 表现
 
 - **冷却行**：若物品无冷却（`CooldownMs` 为 0），Tooltip **不显示**「冷却时间」那一行（卡组内与物品池均按此判断）。
-- **效果关键词颜色**：`EffectKeywordFormatting` 中「灼烧」/「灼烧结算」为 rgb(255,159,69)，「剧毒」/「剧毒结算」为 rgb(14,190,79)，与战斗日志一致。
+- **效果关键词**：`EffectKeywordFormatting` 中「伤害」「灼烧」「暴击」「暴击率」等仅**着色**、不加粗；加粗仅用于物品名称和占位符替换出的数值区段（含 `{+Custom_0%}` 的前后缀）。颜色与战斗日志一致（如伤害/暴击系 rgb(0xf5,0x50,0x3d)，灼烧 rgb(255,159,69)，剧毒 rgb(14,190,79)）。
 
 ## 灼烧衰减
 
@@ -42,7 +43,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 ## 新增公共物品流程
 
-1. 在 `ItemDatabase/Common.cs` 写工厂方法（如 `LiftingGloves()`），设置 Name、Desc、MinTier、Size、Tags、数值属性、`Abilities`（含 TriggerName、Priority、Effects）。
+1. 在 `ItemDatabase/Common.cs` 写工厂方法（如 `LiftingGloves()`），设置 Name、Desc、MinTier、Size、Tags、数值属性、`Abilities`（含 TriggerName、Priority、Effects）；若为纯光环物品可无 Abilities，仅设 `Auras`（如轻步靴）。
 2. 若为自定义效果：在 `CustomEffectHandlers.cs` 注册 id → Handler；若可复用通用字段，在 `Effect.cs` 增加如 `Effect.WeaponDamageBonus(ValueKey = "Custom_0")`。
 3. 在 `Common.RegisterAll` 中 `db.Register(XXX())`。
-4. 若 Desc 或 Tooltip 用到新占位符，在 `ItemDescHelper` 的 Placeholders 中增加对应 key。
+4. 占位符由 `ItemDescHelper` 正则解析，新 key（字母数字下划线）自动支持；若需前缀/后缀（如 `{+Custom_0%}`），直接写在 Desc 即可。

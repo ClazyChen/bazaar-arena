@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -6,92 +7,82 @@ using BazaarArena.Core;
 
 namespace BazaarArena;
 
-/// <summary>物品描述占位符替换与 ToolTip 行构建：{Damage}、{Cooldown} 等，单 tier 或全 tier。</summary>
+/// <summary>物品描述占位符替换与 ToolTip 行构建：支持 {Key}、{+Custom_0%} 等（前缀/后缀随数值一并加粗着色）。</summary>
 public static class ItemDescHelper
 {
-    private static readonly (string Placeholder, string Key, bool AsSeconds)[] Placeholders =
-    [
-        ("{Damage}", "Damage", false),
-        ("{Cooldown}", "CooldownMs", true),
-        ("{Burn}", "Burn", false),
-        ("{Poison}", "Poison", false),
-        ("{Shield}", "Shield", false),
-        ("{Heal}", "Heal", false),
-        ("{Regen}", "Regen", false),
-        ("{Custom_0}", "Custom_0", false),
-    ];
+    /// <summary>大括号内：可选前缀(非字母数字下划线) + key(字母数字下划线) + 可选后缀(非字母数字下划线)。</summary>
+    private static readonly Regex PlaceholderRegex = new(@"\{([^a-zA-Z0-9_]*)([a-zA-Z0-9_]+)([^a-zA-Z0-9_]*)\}", RegexOptions.Compiled);
 
-    /// <summary>单 tier 替换：返回替换后的字符串及数值区段（起始索引、长度），用于加粗。</summary>
+    /// <summary>描述中可用 {Cooldown} 表示冷却秒数，实际读 CooldownMs。</summary>
+    private static string ResolveKey(string key) => key == "Cooldown" ? "CooldownMs" : key;
+
+    private static bool IsSecondsKey(string key) => key == "CooldownMs";
+
+    /// <summary>解析文本中所有占位符，返回 (索引, 占位符全长, 前缀, Key, 后缀)。</summary>
+    private static List<(int Index, int Length, string Prefix, string Key, string Suffix)> ParsePlaceholders(string text)
+    {
+        var list = new List<(int Index, int Length, string Prefix, string Key, string Suffix)>();
+        if (string.IsNullOrEmpty(text)) return list;
+        foreach (Match m in PlaceholderRegex.Matches(text))
+        {
+            list.Add((m.Index, m.Length, m.Groups[1].Value, m.Groups[2].Value, m.Groups[3].Value));
+        }
+        return list.OrderBy(x => x.Index).ToList();
+    }
+
+    /// <summary>单 tier 替换：返回替换后的字符串及数值区段（含前缀后缀，用于加粗）。</summary>
     public static (string Result, List<(int Start, int Length)> ValueRanges) ReplacePlaceholdersSingle(
         ItemTemplate template, ItemTier tier, string text)
     {
         string result = text ?? "";
         var valueRanges = new List<(int Start, int Length)>();
-        var matches = new List<(int Index, string Placeholder, string Key, bool AsSeconds)>();
-        foreach (var (placeholder, key, asSeconds) in Placeholders)
-        {
-            int idx = 0;
-            while ((idx = result.IndexOf(placeholder, idx, StringComparison.Ordinal)) >= 0)
-            {
-                matches.Add((idx, placeholder, key, asSeconds));
-                idx += placeholder.Length;
-            }
-        }
+        var matches = ParsePlaceholders(result);
         int offset = 0;
-        foreach (var m in matches.OrderBy(x => x.Index))
+        foreach (var (index, length, prefix, key, suffix) in matches)
         {
-            int idx = m.Index + offset;
-            string replaceStr = m.AsSeconds
-                ? FormatCooldownSeconds(template.GetInt(m.Key, tier))
-                : template.GetInt(m.Key, tier).ToString();
-            result = result.Remove(idx, m.Placeholder.Length).Insert(idx, replaceStr);
+            int idx = index + offset;
+            string actualKey = ResolveKey(key);
+            int value = template.GetInt(actualKey, tier);
+            string valueStr = IsSecondsKey(actualKey) ? FormatCooldownSeconds(value) : value.ToString();
+            string replaceStr = prefix + valueStr + suffix;
+            result = result.Remove(idx, length).Insert(idx, replaceStr);
             valueRanges.Add((idx, replaceStr.Length));
-            offset += replaceStr.Length - m.Placeholder.Length;
+            offset += replaceStr.Length - length;
         }
         return (result, valueRanges);
     }
 
-    /// <summary>全 tier 替换：返回替换后的字符串及每个数值的（起始、长度、tier），用于分 tier 着色加粗。</summary>
+    /// <summary>全 tier 替换：返回替换后的字符串及每个数值段的（起始、长度、tier），前缀后缀含在段内。</summary>
     public static (string Result, List<(int Start, int Length, ItemTier Tier)> ValueRanges) ReplacePlaceholdersAllTiers(
         ItemTemplate template, string text)
     {
         string result = text ?? "";
         var valueRanges = new List<(int Start, int Length, ItemTier Tier)>();
         var snapshot = template.GetIntsByTierSnapshot();
-        var matches = new List<(int Index, string Placeholder, string Key, bool AsSeconds)>();
-        foreach (var (placeholder, key, asSeconds) in Placeholders)
-        {
-            int idx = 0;
-            while ((idx = result.IndexOf(placeholder, idx, StringComparison.Ordinal)) >= 0)
-            {
-                matches.Add((idx, placeholder, key, asSeconds));
-                idx += placeholder.Length;
-            }
-        }
+        var matches = ParsePlaceholders(result);
         int offset = 0;
-        foreach (var (index, placeholder, key, asSeconds) in matches.OrderBy(x => x.Index))
+        foreach (var (index, length, prefix, key, suffix) in matches)
         {
             int idx = index + offset;
-            if (!snapshot.TryGetValue(key, out var list) || list.Count == 0)
+            string actualKey = ResolveKey(key);
+            if (!snapshot.TryGetValue(actualKey, out var list) || list.Count == 0)
             {
-                result = result.Remove(idx, placeholder.Length).Insert(idx, "0");
-                valueRanges.Add((idx, 1, ItemTier.Bronze));
-                offset += 1 - placeholder.Length;
+                string seg = prefix + "0" + suffix;
+                result = result.Remove(idx, length).Insert(idx, seg);
+                valueRanges.Add((idx, seg.Length, ItemTier.Bronze));
+                offset += seg.Length - length;
                 continue;
             }
-            string replaceStr = string.Join(" » ", asSeconds
-                ? list.Select(ms => FormatCooldownSeconds(ms))
-                : list.Select(v => v.ToString()));
-            result = result.Remove(idx, placeholder.Length).Insert(idx, replaceStr);
+            var segments = list.Select(v => prefix + (IsSecondsKey(actualKey) ? FormatCooldownSeconds(v) : v.ToString()) + suffix).ToList();
+            string replaceStr = string.Join(" » ", segments);
+            result = result.Remove(idx, length).Insert(idx, replaceStr);
             int off = 0;
-            for (int i = 0; i < list.Count; i++)
+            for (int i = 0; i < segments.Count; i++)
             {
-                if (i > 0) off += 3; // " » "
-                string s = asSeconds ? FormatCooldownSeconds(list[i]) : list[i].ToString();
-                valueRanges.Add((idx + off, s.Length, (ItemTier)i));
-                off += s.Length;
+                valueRanges.Add((idx + off, segments[i].Length, (ItemTier)i));
+                off += segments[i].Length + (i < segments.Count - 1 ? 3 : 0); // " » "
             }
-            offset += replaceStr.Length - placeholder.Length;
+            offset += replaceStr.Length - length;
         }
         return (result, valueRanges);
     }

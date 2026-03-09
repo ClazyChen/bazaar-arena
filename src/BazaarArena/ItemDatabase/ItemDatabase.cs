@@ -42,7 +42,7 @@ public class ItemDatabase : IItemTemplateResolver
                 Priority = a.Priority,
                 Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, CustomEffectId = e.CustomEffectId }).ToList(),
             })],
-            Auras = [..t.Auras],
+            Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = a.Condition, FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
         };
         clone.SetIntsByTier(t.GetIntsByTierSnapshot());
         return clone;

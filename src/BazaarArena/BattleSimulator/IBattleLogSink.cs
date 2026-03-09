@@ -7,7 +7,7 @@ public interface IBattleLogSink
     /// <summary>当前帧双方当前生命值快照，用于强度曲线纵轴（当前生命值）。</summary>
     void OnHpSnapshot(int timeMs, int side0Hp, int side1Hp);
     void OnCast(int sideIndex, int itemIndex, string itemName, int timeMs);
-    void OnEffect(int sideIndex, int itemIndex, string itemName, string effectKind, int value, int timeMs);
+    void OnEffect(int sideIndex, int itemIndex, string itemName, string effectKind, int value, int timeMs, bool isCrit = false);
     void OnBurnTick(int sideIndex, int burnDamage, int remainingBurn, int timeMs);
     void OnPoisonTick(int sideIndex, int poisonDamage, int timeMs);
     void OnRegenTick(int sideIndex, int heal, int timeMs);

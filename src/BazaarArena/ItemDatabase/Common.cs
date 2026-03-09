@@ -174,6 +174,29 @@ public static class Common
         };
     }
 
+    /// <summary>轻步靴（Agility Boots）：小、铜、服饰；相邻物品 +3% » +6% » +9% » +12% 暴击率（光环）。</summary>
+    public static ItemTemplate AgilityBoots()
+    {
+        return new ItemTemplate
+        {
+            Name = "轻步靴",
+            Desc = "相邻物品 {+Custom_0%} 暴击率",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = ["服饰"],
+            Custom_0 = [3, 6, 9, 12],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = "CritRatePercent",
+                    Condition = AuraConditionKind.AdjacentToSource,
+                    FixedValueKey = "Custom_0",
+                },
+            ],
+        };
+    }
+
     /// <summary>蓝蕉（Bluenanas）：10s 食物 小 铜，治疗 10 » 20 » 40 » 80 生命值。</summary>
     public static ItemTemplate Bluenanas()
     {
@@ -208,6 +231,7 @@ public static class Common
         db.Register(RuneAxe());
         db.Register(MagnifyingGlass());
         db.Register(OldSword());
+        db.Register(AgilityBoots());
         db.Register(Bluenanas());
     }
 }

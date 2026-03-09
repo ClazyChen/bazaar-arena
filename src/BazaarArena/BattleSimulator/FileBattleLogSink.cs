@@ -33,10 +33,11 @@ public class FileBattleLogSink : IBattleLogSink, IDisposable
         _writer.WriteLine($"  玩家{sideIndex + 1} 施放 [{itemName}] @ {timeMs}ms");
     }
 
-    public void OnEffect(int sideIndex, int itemIndex, string itemName, string effectKind, int value, int timeMs)
+    public void OnEffect(int sideIndex, int itemIndex, string itemName, string effectKind, int value, int timeMs, bool isCrit = false)
     {
         if (_level != BattleLogLevel.Detailed) return;
-        _writer.WriteLine($"  玩家{sideIndex + 1} [{itemName}] {effectKind} {value} @ {timeMs}ms");
+        string critSuffix = isCrit ? " （暴击）" : "";
+        _writer.WriteLine($"  玩家{sideIndex + 1} [{itemName}] {effectKind} {value}{critSuffix} @ {timeMs}ms");
     }
 
     public void OnBurnTick(int sideIndex, int burnDamage, int remainingBurn, int timeMs)

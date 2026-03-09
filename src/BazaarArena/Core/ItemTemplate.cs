@@ -84,6 +84,16 @@ public class ItemTemplate
         return ti >= 0 && ti < list.Count ? list[ti] : defaultValue;
     }
 
+    /// <summary>根据字段名与等级读取，若有光环上下文则先取基础值再叠加光环：最终值 = (基础 + Σ固定) × (1 + Σ百分比/100)。</summary>
+    public int GetInt(string key, ItemTier tier, int defaultValue, IAuraContext? context)
+    {
+        int baseVal = GetInt(key, tier, defaultValue);
+        if (context == null)
+            return baseVal;
+        context.GetAuraModifiers(key, out int fixedSum, out int percentSum);
+        return (int)Math.Round((baseVal + fixedSum) * (1 + percentSum / 100.0));
+    }
+
     /// <summary>写入单值（用于 Overrides 等），存为长度为 1 的列表。</summary>
     public void SetInt(string key, int value) => _intsByTier[key] = [value];
 
@@ -135,8 +145,8 @@ public class ItemTemplate
     public IntOrByTier Custom_0 { get => GetInt(KeyCustom_0, 0); set => SetIntOrByTier(KeyCustom_0, value.ToList()); }
 
     public List<AbilityDefinition> Abilities { get; set; } = [];
-    /// <summary>光环列表（基座阶段可留空，后续按属性、条件、百分比加算实现）。</summary>
-    public List<object> Auras { get; set; } = [];
+    /// <summary>光环列表：当在战斗内读取属性并传入 IAuraContext 时，会按条件与公式叠加这些光环。</summary>
+    public List<AuraDefinition> Auras { get; set; } = [];
 
     /// <summary>获取按等级扩展属性的只读副本，用于序列化或复制。</summary>
     public IReadOnlyDictionary<string, List<int>> GetIntsByTierSnapshot() =>

@@ -157,7 +157,9 @@ public class BattleSimulator
                 var ability = item.Template.Abilities[entry.AbilityIndex];
                 bool canCrit = ability.Effects.Any(e => IsCrittableEffect(e.Kind));
                 int critMultiplier = 1;
-                if (canCrit && item.GetCritRatePercent() > 0 && Random.Shared.Next(100) < item.GetCritRatePercent())
+                var auraContext = new BattleAuraContext(side, entry.ItemIndex);
+                int critRate = item.Template.GetInt("CritRatePercent", item.Tier, 0, auraContext);
+                if (canCrit && critRate > 0 && Random.Shared.Next(100) < critRate)
                     critMultiplier = 2;
                 ExecuteOneEffect(entry.SideIndex, entry.ItemIndex, ability, critMultiplier, side0, side1, timeMs, logSink);
                 entry.PendingCount--;
@@ -206,6 +208,43 @@ public class BattleSimulator
         k == EffectKind.Damage || k == EffectKind.Burn || k == EffectKind.Poison ||
         k == EffectKind.Shield || k == EffectKind.Heal || k == EffectKind.Regen;
 
+    /// <summary>战斗内光环上下文：持有己方与目标物品下标，在 GetAuraModifiers 中遍历己方未摧毁物品的光环并累加。</summary>
+    private sealed class BattleAuraContext(BattleSide side, int targetItemIndex) : IAuraContext
+    {
+        public void GetAuraModifiers(string attributeName, out int fixedSum, out int percentSum)
+        {
+            fixedSum = 0;
+            percentSum = 0;
+            for (int i = 0; i < side.Items.Count; i++)
+            {
+                var source = side.Items[i];
+                if (source.Destroyed) continue;
+                foreach (var aura in source.Template.Auras)
+                {
+                    if (aura.AttributeName != attributeName) continue;
+                    if (!AuraConditionEvaluator.Evaluate(aura.Condition, side, i, targetItemIndex)) continue;
+                    if (!string.IsNullOrEmpty(aura.FixedValueKey))
+                        fixedSum += source.Template.GetInt(aura.FixedValueKey, source.Tier, 0);
+                    if (!string.IsNullOrEmpty(aura.PercentValueKey))
+                        percentSum += source.Template.GetInt(aura.PercentValueKey, source.Tier, 0);
+                }
+            }
+        }
+    }
+
+    /// <summary>光环条件谓词：根据来源与目标物品下标判断是否生效。</summary>
+    private static class AuraConditionEvaluator
+    {
+        public static bool Evaluate(AuraConditionKind condition, BattleSide side, int sourceItemIndex, int targetItemIndex)
+        {
+            return condition switch
+            {
+                AuraConditionKind.AdjacentToSource => Math.Abs(sourceItemIndex - targetItemIndex) == 1,
+                _ => false,
+            };
+        }
+    }
+
     private static BattleSide? BuildSide(Deck deck, IItemTemplateResolver resolver)
     {
         var side = new BattleSide
@@ -232,7 +271,7 @@ public class BattleSimulator
                     Priority = a.Priority,
                     Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, CustomEffectId = e.CustomEffectId }).ToList(),
                 }).ToList(),
-                Auras = [..t.Auras],
+                Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = a.Condition, FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
             };
             clone.SetIntsByTier(t.GetIntsByTierSnapshot());
             if (entry.Overrides != null)
@@ -341,23 +380,24 @@ public class BattleSimulator
             string key = GetTemplateKeyForEffect(eff.Kind);
             int baseValue = eff.ResolveValue(item.Template, item.Tier, key);
             int value = baseValue * critMultiplier;
+            bool isCrit = critMultiplier == 2;
             switch (eff.Kind)
             {
                 case EffectKind.Damage:
                     ApplyDamageToSide(opp, value, isBurn: false);
-                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "伤害", value, timeMs);
+                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "伤害", value, timeMs, isCrit);
                     break;
                 case EffectKind.Burn:
                     opp.Burn += value;
-                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "灼烧", value, timeMs);
+                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "灼烧", value, timeMs, isCrit);
                     break;
                 case EffectKind.Poison:
                     opp.Poison += value;
-                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "剧毒", value, timeMs);
+                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "剧毒", value, timeMs, isCrit);
                     break;
                 case EffectKind.Shield:
                     side.Shield += value;
-                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "护盾", value, timeMs);
+                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "护盾", value, timeMs, isCrit);
                     break;
                 case EffectKind.Heal:
                     int heal = Math.Min(value, side.MaxHp - side.Hp);
@@ -365,11 +405,11 @@ public class BattleSimulator
                     int clear = RatioUtil.PercentFloor(heal, 5);
                     side.Burn = Math.Max(0, side.Burn - clear);
                     side.Poison = Math.Max(0, side.Poison - clear);
-                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "治疗", heal, timeMs);
+                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "治疗", heal, timeMs, isCrit);
                     break;
                 case EffectKind.Regen:
                     side.Regen += value;
-                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "生命再生", value, timeMs);
+                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "生命再生", value, timeMs, isCrit);
                     break;
                 case EffectKind.Other:
                     CustomEffectHandlers.TryExecute(eff.CustomEffectId ?? "", sideIndex, itemIndex, item, ability, eff, side0, side1, timeMs, logSink);

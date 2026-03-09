@@ -18,3 +18,4 @@ globs: "**/*.cs"
 - **命名**：单次运行对应一个文件，文件名带当前时间戳，格式 `yyyyMMdd-HHmmss.log`，由 `LogPaths.GetTimestampedLogPath()` 生成。
 - **默认行为**：默认同时输出到控制台和日志文件。**文件日志始终使用 Detailed 级别**，保证日志文件包含完整战斗过程；控制台按参数为 Summary（仅结果）或 Detailed。若不需要写文件，可传参 `nolog` 或 `nofile`。
 - **忽略**：`.gitignore` 中已忽略 `Logs/`，不提交运行期日志文件。
+- **暴击**：效果日志 `OnEffect(..., isCrit)` 在暴击时由各 sink 在行末追加「 （暴击）」；关键词「暴击」「暴击率」等在 `EffectKeywordFormatting` 中与「伤害」同色、不加粗。
