@@ -7,49 +7,49 @@ public static class Effect
     public static readonly EffectDefinition Damage = new()
     {
         Kind = EffectKind.Damage,
-        ValueResolver = (t, tier) => t.GetInt("Damage", tier),
+        ValueKey = EffectKind.Damage.GetDefaultTemplateKey(),
     };
 
     /// <summary>灼烧：数值来自模板的 Burn 字段。</summary>
     public static readonly EffectDefinition Burn = new()
     {
         Kind = EffectKind.Burn,
-        ValueResolver = (t, tier) => t.GetInt("Burn", tier),
+        ValueKey = EffectKind.Burn.GetDefaultTemplateKey(),
     };
 
     /// <summary>剧毒：数值来自模板的 Poison 字段。</summary>
     public static readonly EffectDefinition Poison = new()
     {
         Kind = EffectKind.Poison,
-        ValueResolver = (t, tier) => t.GetInt("Poison", tier),
+        ValueKey = EffectKind.Poison.GetDefaultTemplateKey(),
     };
 
     /// <summary>护盾：数值来自模板的 Shield 字段。</summary>
     public static readonly EffectDefinition Shield = new()
     {
         Kind = EffectKind.Shield,
-        ValueResolver = (t, tier) => t.GetInt("Shield", tier),
+        ValueKey = EffectKind.Shield.GetDefaultTemplateKey(),
     };
 
     /// <summary>治疗：数值来自模板的 Heal 字段。</summary>
     public static readonly EffectDefinition Heal = new()
     {
         Kind = EffectKind.Heal,
-        ValueResolver = (t, tier) => t.GetInt("Heal", tier),
+        ValueKey = EffectKind.Heal.GetDefaultTemplateKey(),
     };
 
     /// <summary>生命再生：数值来自模板的 Regen 字段。</summary>
     public static readonly EffectDefinition Regen = new()
     {
         Kind = EffectKind.Regen,
-        ValueResolver = (t, tier) => t.GetInt("Regen", tier),
+        ValueKey = EffectKind.Regen.GetDefaultTemplateKey(),
     };
 
-    /// <summary>武器伤害提升（自定义效果）：对己方所有带「武器」tag 的物品，将其 Damage 增加指定量；数值来自模板的 valueKey 字段（默认 "Custom_0"）。</summary>
-    public static EffectDefinition WeaponDamageBonus(string ValueKey = "Custom_0") => new()
+    /// <summary>武器伤害提升（自定义效果）：对己方所有带「武器」tag 的物品，将其 Damage 增加指定量；数值来自模板的 valueKey 字段（默认 Custom_0）。</summary>
+    public static EffectDefinition WeaponDamageBonus(string? ValueKey = null) => new()
     {
         Kind = EffectKind.Other,
         CustomEffectId = "WeaponDamageBonus",
-        ValueKey = ValueKey,
+        ValueKey = ValueKey ?? nameof(ItemTemplate.Custom_0),
     };
 }

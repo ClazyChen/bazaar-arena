@@ -30,7 +30,7 @@ public class BattleItemState
     }
 
     public int GetCooldownMs() => Template.GetInt("CooldownMs", Tier);
-    public int GetCritRatePercent() => Template.GetInt("CritRatePercent", Tier);
+    public int GetCritRatePercent() => Template.GetInt(nameof(ItemTemplate.CritRatePercent), Tier);
     public int GetMulticast() => Template.GetInt("Multicast", Tier, 1);
     public int GetAmmoCap() => Template.GetInt("AmmoCap", Tier);
 }

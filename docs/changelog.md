@@ -1,5 +1,33 @@
 # 变更记录
 
+## 魔法字符串消除、EffectKind 简化与暴击伤害
+
+### 魔法字符串消除
+
+- **Tag**（`Core/Tag.cs`）：`Tag.Weapon`、`Tag.Tool`、`Tag.Apparel`、`Tag.Friend`、`Tag.Food` 替代 "武器"/"工具"/"服饰"/"伙伴"/"食物"。Common 与 CustomEffectHandlers 使用 Tag 常量。
+- **Trigger**（`Core/Trigger.cs`）：`Trigger.UseItem`、`Trigger.BattleStart` 替代 "使用物品"/"战斗开始"。Common 与 BattleSimulator 使用 Trigger 常量。
+- **nameof(ItemTemplate.xxx)**：AuraDefinition 的 AttributeName、FixedValueKey、PercentValueKey 及 Effect 的 ValueKey、BattleSimulator 的 GetInt 键等改用 `nameof(ItemTemplate.CritRatePercent)`、`nameof(ItemTemplate.Custom_0)` 等，避免手写字符串。
+
+### EffectKind 集中映射与策略表
+
+- **EffectKindKeys**：`GetDefaultTemplateKey(EffectKind)`、`GetLogName(EffectKind)` 集中维护 Kind→模板 key 与 Kind→日志名；**EffectKindExtensions** 提供 `kind.GetDefaultTemplateKey()`、`kind.GetLogName()`。
+- **IsCrittableEffect**：简化为 `k != EffectKind.Other`。
+- **预定义效果**：Effect.Damage、Burn、Poison、Shield、Heal、Regen 仅设 `Kind` 与 `ValueKey = EffectKind.XXX.GetDefaultTemplateKey()`，不再设 ValueResolver。
+- **策略表**：BattleSimulator 中 ExecuteOneEffect 的 switch 改为「EffectApplyContext + EffectApplier 委托 + GetEffectApplier(EffectKind)」；每个标准 Kind 对应一个 ApplyXxx(in ctx)，Other 走 CustomEffectHandlers。
+
+### 暴击伤害与利爪、Desc 分行
+
+- **CritDamagePercent**：ItemTemplate 新增属性，默认 200（2 倍暴击）；暴击倍率 = CritDamagePercent/100，作用于伤害/灼烧/剧毒/护盾/治疗/生命再生。**AuraConditionKind.SameAsSource** 支持「仅自身」光环，利爪光环为自身 CritDamagePercent +100%（200→400，4 倍）。
+- **暴击伤害着色**：EffectKeywordFormatting 增加「暴击伤害」与伤害同色。
+- **Desc 分行**：Tooltip 中 `template.Desc` 按 `;`/`；` 拆成多段，每段单独替换占位符并渲染为一行。
+
+### 文档与规则
+
+- **docs/implementation-notes.md**：新增「避免魔法字符串」「EffectKind 集中映射与策略表」「暴击伤害与描述分行」等节。
+- **.cursor/rules**：development-experience.mdc、item-design.mdc、csharp-standards.mdc 补充 Tag/Trigger/nameof、EffectKind、CritDamage、Desc 分行等约定。
+
+---
+
 ## 光环系统与轻步靴、占位符与暴击表现
 
 ### 光环（Aura）

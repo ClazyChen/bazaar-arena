@@ -92,4 +92,52 @@
 ### 暴击与日志、关键词样式
 
 - **暴击日志**：`IBattleLogSink.OnEffect(..., bool isCrit = false)`；当 `isCrit` 为 true 时，Console/TextBox/File 等 sink 在效果行末尾追加「 （暴击）」。
-- **关键词着色**：`EffectKeywordFormatting` 中「伤害」「灼烧」「暴击」「暴击率」等仅修改颜色，**不加粗**；加粗仅用于物品名称和嵌入的数值区段（由 ItemDescHelper 的 valueRanges 控制）。
+- **关键词着色**：`EffectKeywordFormatting` 中「伤害」「灼烧」「暴击」「暴击率」「暴击伤害」等仅修改颜色，**不加粗**；加粗仅用于物品名称和嵌入的数值区段（由 ItemDescHelper 的 valueRanges 控制）。
+
+---
+
+## 避免魔法字符串（Tag / Trigger / nameof）
+
+### 设计选择
+
+- **标签**：`Core/Tag.cs` 提供 `Tag.Weapon`、`Tag.Tool`、`Tag.Apparel`、`Tag.Friend`、`Tag.Food` 等常量，对应「武器」「工具」「服饰」「伙伴」「食物」。物品的 `Tags = [Tag.Weapon]`，CustomEffectHandlers 等用 `Tags.Contains(Tag.Weapon)`，不再手写字符串。
+- **触发器**：`Core/Trigger.cs` 提供 `Trigger.UseItem`、`Trigger.BattleStart`。能力定义用 `TriggerName = Trigger.UseItem`；模拟器判断用 `ab.TriggerName == Trigger.BattleStart`、`ab.TriggerName != Trigger.UseItem`。
+- **属性名与 key**：AuraDefinition 的 `AttributeName`、`FixedValueKey`、`PercentValueKey` 以及 Effect 的 `ValueKey` 使用 `nameof(ItemTemplate.xxx)`，如 `nameof(ItemTemplate.CritRatePercent)`、`nameof(ItemTemplate.Custom_0)`。BattleSimulator 中 `GetInt(nameof(ItemTemplate.CritDamagePercent), ...)` 等同理，重命名属性时编译期可发现漏改。
+
+### 小结
+
+新增物品或效果时优先用 `Tag.*`、`Trigger.*`、`nameof(ItemTemplate.属性)`，避免散落中英文魔法字符串；仅 ItemTemplate 尚未暴露的属性（如 Shield、Regen）在 EffectKindKeys 等处保留字面量。
+
+---
+
+## EffectKind 集中映射与策略表
+
+### 元数据集中
+
+- **EffectKindKeys**（`Core/EffectKindKeys.cs`）：`GetDefaultTemplateKey(EffectKind)` 与 `GetLogName(EffectKind)` 集中维护「Kind → 模板字段名」和「Kind → 日志显示名」。Shield、Regen 因 ItemTemplate 无对应公开属性仍用字面量 `"Shield"`、`"Regen"`。
+- **EffectKindExtensions**（`Core/EffectKindExtensions.cs`）：`kind.GetDefaultTemplateKey()`、`kind.GetLogName()` 将元数据强绑定到枚举，调用处统一写 `eff.Kind.GetDefaultTemplateKey()`、`eff.Kind.GetLogName()`。
+- **可暴击判断**：`IsCrittableEffect(k)` 简化为 `k != EffectKind.Other`，新增可暴击 Kind 无需改此处。
+
+### 数值解析与预定义效果
+
+- **ResolveValue 的 key**：BattleSimulator 中 `key = eff.ValueKey ?? eff.Kind.GetDefaultTemplateKey()`，不再在模拟器内维护 Kind→key 映射。
+- **预定义效果**（`Core/Effect.cs`）：Damage、Burn、Poison、Shield、Heal、Regen 仅设 `Kind` 与 `ValueKey = EffectKind.XXX.GetDefaultTemplateKey()`，不设 ValueResolver，与 WeaponDamageBonus 等自定义效果写法一致。
+
+### 策略表替代 switch
+
+- **EffectApplyContext**：只读结构体，包含 Side、Opp、Item、Value、IsCrit、TimeMs、LogSink、SideIndex、ItemIndex、LogName，供应用策略使用。
+- **EffectApplier**：委托 `void(in EffectApplyContext ctx)`。每个标准 Kind 对应一个静态方法（ApplyDamage、ApplyBurn、ApplyPoison、ApplyShield、ApplyHeal、ApplyRegen），只做「改状态 + 打一条日志」。
+- **GetEffectApplier(EffectKind)**：返回登记的策略；Other 返回 null，由 ExecuteOneEffect 走 CustomEffectHandlers.TryExecute。新增标准效果时：在 EffectKindKeys 加 key/日志名、在 GetEffectApplier 加分支、实现一个 ApplyXxx(in ctx)，无需改 ExecuteOneEffect 循环。
+
+---
+
+## 暴击伤害与描述分行
+
+### 暴击伤害（CritDamagePercent）
+
+- **属性**：ItemTemplate 增加 `CritDamagePercent`，默认 200（表示 2 倍暴击）。暴击时最终倍率 = `CritDamagePercent / 100`（200 → 2x，400 → 4x）。作用于伤害、灼烧、剧毒、护盾、治疗、生命再生等所有可暴击效果。
+- **光环**：利爪等「自身暴击伤害 +100%」使用 `AuraConditionKind.SameAsSource`（仅 targetItemIndex == sourceItemIndex），`AttributeName = nameof(ItemTemplate.CritDamagePercent)`，`PercentValueKey = nameof(ItemTemplate.Custom_0)`，Custom_0 = 100；公式 `(基础 + Σ固定) × (1 + Σ百分比/100)` 得 200×2=400 即 4 倍。
+
+### Desc 按分号分两行
+
+- **显示**：物品 Desc 中可用分号（`;` 或 `；`）分段。MainWindow 的卡组内/物品池 Tooltip 对 `template.Desc` 按分号 Split 后，每段 trim 再单独做占位符替换与 BuildLineInlines，每段一个 TextBlock，实现两行或多行显示。

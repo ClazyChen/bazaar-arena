@@ -16,14 +16,14 @@ public static class Common
             Desc = "造成 {Damage} 伤害",
             MinTier = ItemTier.Bronze,
             Size = ItemSize.Small,
-            Tags = ["武器"],
+            Tags = [Tag.Weapon],
             Cooldown = 3.0,
             Damage = [5, 10, 15, 20],
             Abilities =
             [
                 new()
                 {
-                    TriggerName = "使用物品",
+                    TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.Medium,
                     Effects = [Effect.Damage],
                 },
@@ -46,7 +46,7 @@ public static class Common
             [
                 new()
                 {
-                    TriggerName = "战斗开始",
+                    TriggerName = Trigger.BattleStart,
                     Priority = AbilityPriority.Medium,
                     Effects = [Effect.Burn],
                 },
@@ -63,14 +63,14 @@ public static class Common
             Desc = "造成 {Poison} 剧毒",
             MinTier = ItemTier.Bronze,
             Size = ItemSize.Small,
-            Tags = ["伙伴"],
+            Tags = [Tag.Friend],
             Cooldown = 6.0,
             Poison = [1, 2, 3, 4],
             Abilities =
             [
                 new()
                 {
-                    TriggerName = "使用物品",
+                    TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.Medium,
                     Effects = [Effect.Poison],
                 },
@@ -87,16 +87,16 @@ public static class Common
             Desc = "武器伤害提高 {Custom_0}（限本场战斗）",
             MinTier = ItemTier.Bronze,
             Size = ItemSize.Small,
-            Tags = ["工具", "服饰"],
+            Tags = [Tag.Tool, Tag.Apparel],
             Cooldown = 5.0,
             Custom_0 = [1, 2, 3, 4],
             Abilities =
             [
                 new()
                 {
-                    TriggerName = "使用物品",
+                    TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.High,
-                    Effects = [Effect.WeaponDamageBonus(ValueKey: "Custom_0")],
+                    Effects = [Effect.WeaponDamageBonus(ValueKey: nameof(ItemTemplate.Custom_0))],
                 },
             ],
         };
@@ -111,14 +111,14 @@ public static class Common
             Desc = "造成 {Damage} 伤害",
             MinTier = ItemTier.Bronze,
             Size = ItemSize.Small,
-            Tags = ["武器"],
+            Tags = [Tag.Weapon],
             Cooldown = 8.0,
             Damage = [15, 30, 60, 120],
             Abilities =
             [
                 new()
                 {
-                    TriggerName = "使用物品",
+                    TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.Medium,
                     Effects = [Effect.Damage],
                 },
@@ -135,14 +135,14 @@ public static class Common
             Desc = "造成 {Damage} 伤害",
             MinTier = ItemTier.Bronze,
             Size = ItemSize.Small,
-            Tags = ["武器", "工具"],
+            Tags = [Tag.Weapon, Tag.Tool],
             Cooldown = 6.0,
             Damage = [5, 15, 30, 50],
             Abilities =
             [
                 new()
                 {
-                    TriggerName = "使用物品",
+                    TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.Medium,
                     Effects = [Effect.Damage],
                 },
@@ -159,14 +159,14 @@ public static class Common
             Desc = "造成 {Damage} 伤害",
             MinTier = ItemTier.Bronze,
             Size = ItemSize.Small,
-            Tags = ["武器"],
+            Tags = [Tag.Weapon],
             Cooldown = 5.0,
             Damage = [5, 10, 20, 40],
             Abilities =
             [
                 new()
                 {
-                    TriggerName = "使用物品",
+                    TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.Medium,
                     Effects = [Effect.Damage],
                 },
@@ -183,15 +183,49 @@ public static class Common
             Desc = "相邻物品 {+Custom_0%} 暴击率",
             MinTier = ItemTier.Bronze,
             Size = ItemSize.Small,
-            Tags = ["服饰"],
+            Tags = [Tag.Apparel],
             Custom_0 = [3, 6, 9, 12],
             Auras =
             [
                 new AuraDefinition
                 {
-                    AttributeName = "CritRatePercent",
+                    AttributeName = nameof(ItemTemplate.CritRatePercent),
                     Condition = AuraConditionKind.AdjacentToSource,
-                    FixedValueKey = "Custom_0",
+                    FixedValueKey = nameof(ItemTemplate.Custom_0),
+                },
+            ],
+        };
+    }
+
+    /// <summary>利爪（Claws）：4s 小 铜 武器，造成 10 » 20 » 30 » 40 伤害；此物品能造成双倍暴击伤害（光环：自身暴击伤害 +100%）。</summary>
+    public static ItemTemplate Claws()
+    {
+        return new ItemTemplate
+        {
+            Name = "利爪",
+            Desc = "造成 {Damage} 伤害；此物品能造成双倍暴击伤害",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = [Tag.Weapon],
+            Cooldown = 4.0,
+            Damage = [10, 20, 30, 40],
+            Custom_0 = 100,
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Damage],
+                },
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = nameof(ItemTemplate.CritDamagePercent),
+                    Condition = AuraConditionKind.SameAsSource,
+                    PercentValueKey = nameof(ItemTemplate.Custom_0),
                 },
             ],
         };
@@ -206,14 +240,14 @@ public static class Common
             Desc = "治疗 {Heal} 生命值",
             MinTier = ItemTier.Bronze,
             Size = ItemSize.Small,
-            Tags = ["食物"],
+            Tags = [Tag.Food],
             Cooldown = 10.0,
             Heal = [10, 20, 40, 80],
             Abilities =
             [
                 new()
                 {
-                    TriggerName = "使用物品",
+                    TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.Medium,
                     Effects = [Effect.Heal],
                 },
@@ -232,6 +266,7 @@ public static class Common
         db.Register(MagnifyingGlass());
         db.Register(OldSword());
         db.Register(AgilityBoots());
+        db.Register(Claws());
         db.Register(Bluenanas());
     }
 }

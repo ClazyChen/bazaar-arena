@@ -59,6 +59,7 @@ public class ItemTemplate
 
     private const string KeyCooldownMs = "CooldownMs";
     private const string KeyCritRatePercent = "CritRatePercent";
+    private const string KeyCritDamagePercent = "CritDamagePercent";
     private const string KeyMulticast = "Multicast";
     private const string KeyAmmoCap = "AmmoCap";
     private const string KeyDamage = "Damage";
@@ -122,6 +123,9 @@ public class ItemTemplate
 
     /// <summary>暴击率（百分比，0–100）。默认 0，不指定时可省略。</summary>
     public IntOrByTier CritRatePercent { get => GetInt(KeyCritRatePercent, 0); set => SetIntOrByTier(KeyCritRatePercent, value.ToList()); }
+
+    /// <summary>暴击伤害（百分比，200 表示 2 倍暴击）。默认 200，作用于伤害、灼烧、剧毒、治疗等可暴击效果。</summary>
+    public IntOrByTier CritDamagePercent { get => GetInt(KeyCritDamagePercent, 200); set => SetIntOrByTier(KeyCritDamagePercent, value.ToList()); }
 
     /// <summary>多重触发。默认 1，不指定时可省略。</summary>
     public IntOrByTier Multicast { get => GetInt(KeyMulticast, 1); set => SetIntOrByTier(KeyMulticast, value.ToList()); }

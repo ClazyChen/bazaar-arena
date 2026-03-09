@@ -15,6 +15,7 @@ public static class EffectKeywordFormatting
         ("剧毒结算", Color.FromRgb(14, 190, 79), false),
         ("沙尘暴", Color.FromRgb(0x95, 0xa5, 0xa6), false),
         ("暴击率", Color.FromRgb(0xf5, 0x50, 0x3d), false),
+        ("暴击伤害", Color.FromRgb(0xf5, 0x50, 0x3d), false),
         ("暴击", Color.FromRgb(0xf5, 0x50, 0x3d), false),
         ("伤害", Color.FromRgb(0xf5, 0x50, 0x3d), false),
         ("灼烧", Color.FromRgb(255, 159, 69), false),

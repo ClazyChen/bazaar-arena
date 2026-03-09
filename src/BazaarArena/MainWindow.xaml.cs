@@ -465,11 +465,16 @@ public partial class MainWindow
         }
         if (!string.IsNullOrEmpty(template.Desc))
         {
-            var (line3, ranges3) = ItemDescHelper.ReplacePlaceholdersSingle(template, tier, template.Desc);
-            var tb3 = new TextBlock { Foreground = ToolTipForeground };
-            foreach (var inline in ItemDescHelper.BuildLineInlines(line3, ranges3, null))
-                tb3.Inlines.Add(inline);
-            panel.Children.Add(tb3);
+            foreach (var segment in template.Desc.Split([';', '；']))
+            {
+                var trimmed = segment.Trim();
+                if (string.IsNullOrEmpty(trimmed)) continue;
+                var (line3, ranges3) = ItemDescHelper.ReplacePlaceholdersSingle(template, tier, trimmed);
+                var tb3 = new TextBlock { Foreground = ToolTipForeground };
+                foreach (var inline in ItemDescHelper.BuildLineInlines(line3, ranges3, null))
+                    tb3.Inlines.Add(inline);
+                panel.Children.Add(tb3);
+            }
         }
         var wrap = new Border
         {
@@ -505,11 +510,16 @@ public partial class MainWindow
         }
         if (!string.IsNullOrEmpty(template.Desc))
         {
-            var (line3, ranges3) = ItemDescHelper.ReplacePlaceholdersAllTiers(template, template.Desc);
-            var tb3 = new TextBlock { Foreground = ToolTipForeground };
-            foreach (var inline in ItemDescHelper.BuildLineInlinesWithTiers(line3, ranges3, TierToBrush))
-                tb3.Inlines.Add(inline);
-            panel.Children.Add(tb3);
+            foreach (var segment in template.Desc.Split([';', '；']))
+            {
+                var trimmed = segment.Trim();
+                if (string.IsNullOrEmpty(trimmed)) continue;
+                var (line3, ranges3) = ItemDescHelper.ReplacePlaceholdersAllTiers(template, trimmed);
+                var tb3 = new TextBlock { Foreground = ToolTipForeground };
+                foreach (var inline in ItemDescHelper.BuildLineInlinesWithTiers(line3, ranges3, TierToBrush))
+                    tb3.Inlines.Add(inline);
+                panel.Children.Add(tb3);
+            }
         }
         return new Border { Background = ToolTipBackground, Child = panel, Padding = new Thickness(2, 2, 2, 2) };
     }

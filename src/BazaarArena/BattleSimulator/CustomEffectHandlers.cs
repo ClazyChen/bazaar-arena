@@ -22,11 +22,11 @@ public static class CustomEffectHandlers
         ["WeaponDamageBonus"] = (sideIndex, itemIndex, casterItem, ability, effect, side0, side1, timeMs, logSink) =>
         {
             var side = sideIndex == 0 ? side0 : side1;
-            int value = effect.ResolveValue(casterItem.Template, casterItem.Tier, "Custom_0");
+            int value = effect.ResolveValue(casterItem.Template, casterItem.Tier, nameof(ItemTemplate.Custom_0));
             foreach (var wi in side.Items)
             {
                 if (wi.Destroyed) continue;
-                if (wi.Template.Tags.Contains("武器"))
+                if (wi.Template.Tags.Contains(Tag.Weapon))
                     wi.Template.Damage = wi.Template.Damage.Add(value);
             }
             logSink.OnEffect(sideIndex, itemIndex, casterItem.Template.Name, "武器伤害提升", value, timeMs);

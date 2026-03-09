@@ -5,6 +5,9 @@ public enum AuraConditionKind
 {
     /// <summary>被计算属性的物品与光环来源物品在己方槽位中相邻（|sourceIndex - targetIndex| == 1）。</summary>
     AdjacentToSource,
+
+    /// <summary>仅作用于光环来源物品自身（targetItemIndex == sourceItemIndex）。</summary>
+    SameAsSource,
 }
 
 /// <summary>单条光环定义：作用的属性、条件、以及固定/百分比数值来源字段。</summary>
