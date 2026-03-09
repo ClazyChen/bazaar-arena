@@ -17,6 +17,7 @@ public readonly struct SecondsOrByTier
     public static implicit operator SecondsOrByTier(double[] byTier) => new(byTier);
 
     internal List<int> ToFreezeMs() => _values?.Select(s => (int)(s * 1000)).ToList() ?? [];
+    internal List<int> ToSlowMs() => _values?.Select(s => (int)(s * 1000)).ToList() ?? [];
 
     public static implicit operator double(SecondsOrByTier s) => s._values?.Length > 0 ? s._values[0] : 0;
 }
@@ -88,6 +89,9 @@ public class ItemTemplate
     private const string KeyCharge = "Charge";
     private const string KeyFreeze = "Freeze";
     private const string KeyFreezeTargetCount = "FreezeTargetCount";
+    private const string KeySlow = "Slow";
+    private const string KeySlowTargetCount = "SlowTargetCount";
+    private const string KeyLifeSteal = "LifeSteal";
     private const string KeyCustom_0 = "Custom_0";
 
     /// <summary>根据字段名读取 int 值（无 tier 时按第一档），不存在则返回 0。</summary>
@@ -184,6 +188,18 @@ public class ItemTemplate
 
     /// <summary>冻结目标数量（可单值或按等级）；随机选取敌人物品时选取的次数（每次独立，可能重复）。</summary>
     public IntOrByTier FreezeTargetCount { get => GetInt(KeyFreezeTargetCount, 1); set => SetIntOrByTier(KeyFreezeTargetCount, value.ToList()); }
+
+    /// <summary>减速时长（毫秒，可单值或按等级）；用于减速效果。内部存储用，定义物品时请用 SlowSeconds（秒）。</summary>
+    public IntOrByTier Slow { get => GetIntOrByTier(KeySlow); set => SetIntOrByTier(KeySlow, value.ToList()); }
+
+    /// <summary>减速时长（秒）。可赋单值或按等级，内部转换为毫秒存储。物品定义中时间一律用秒。</summary>
+    public SecondsOrByTier SlowSeconds { get => SecondsOrByTier.FromFirstTierMs(GetInt(KeySlow, 0)); set => SetIntOrByTier(KeySlow, value.ToSlowMs()); }
+
+    /// <summary>减速目标数量（可单值或按等级）；随机选取敌人物品时选取的次数（每次独立，可能重复）。</summary>
+    public IntOrByTier SlowTargetCount { get => GetInt(KeySlowTargetCount, 1); set => SetIntOrByTier(KeySlowTargetCount, value.ToList()); }
+
+    /// <summary>吸血：1 表示造成伤害时按实际伤害量治疗己方，0 表示无。用于伤害效果。</summary>
+    public IntOrByTier LifeSteal { get => GetInt(KeyLifeSteal, 0); set => SetIntOrByTier(KeyLifeSteal, value.ToList()); }
 
     /// <summary>自定义变量 0（可单值或按等级），用于如举重手套的武器伤害提升量等。</summary>
     public IntOrByTier Custom_0 { get => GetInt(KeyCustom_0, 0); set => SetIntOrByTier(KeyCustom_0, value.ToList()); }

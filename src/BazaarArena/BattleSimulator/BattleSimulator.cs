@@ -132,7 +132,7 @@ public class BattleSimulator
                     item.LastTriggerMsByAbility[entry.AbilityIndex] = timeMs;
                     entry.LastTriggerMs = timeMs;
                     var ability = item.Template.Abilities[entry.AbilityIndex];
-                    bool canCrit = ability.Effects.Any(e => IsCrittableEffect(e.Kind));
+                    bool canCrit = TemplateHasAnyCrittableField(item.Template, item.Tier) && ability.Effects.Any(e => e.Apply != null && e.ApplyCritMultiplier);
                     bool isCrit = false;
                     int critDamagePercent = 200;
                     var auraContext = new BattleAuraContext(side, entry.ItemIndex);
@@ -186,7 +186,17 @@ public class BattleSimulator
         }
     }
 
-    private static bool IsCrittableEffect(EffectKind k) => k != EffectKind.Other && k != EffectKind.Charge && k != EffectKind.Freeze;
+    /// <summary>物品是否具备可暴击的六类数值之一（Damage/Burn/Poison/Heal/Shield/Regen 任一 &gt; 0）。</summary>
+    private static bool TemplateHasAnyCrittableField(ItemTemplate template, ItemTier tier)
+    {
+        if (template.GetInt(nameof(ItemTemplate.Damage), tier, 0) > 0) return true;
+        if (template.GetInt(nameof(ItemTemplate.Burn), tier, 0) > 0) return true;
+        if (template.GetInt(nameof(ItemTemplate.Poison), tier, 0) > 0) return true;
+        if (template.GetInt(nameof(ItemTemplate.Heal), tier, 0) > 0) return true;
+        if (template.GetInt(nameof(ItemTemplate.Shield), tier, 0) > 0) return true;
+        if (template.GetInt("Regen", tier, 0) > 0) return true;
+        return false;
+    }
 
     /// <summary>战斗内光环上下文：持有己方与目标物品下标，在 GetAuraModifiers 中遍历己方未摧毁物品的光环并累加。</summary>
     private sealed class BattleAuraContext(BattleSide side, int targetItemIndex) : IAuraContext
@@ -202,7 +212,15 @@ public class BattleSimulator
                 foreach (var aura in source.Template.Auras)
                 {
                     if (aura.AttributeName != attributeName) continue;
-                    if (!AuraConditionEvaluator.Evaluate(aura.Condition, side, i, targetItemIndex)) continue;
+                    var auraCtx = new ConditionContext
+                    {
+                        CandidateSide = 0,
+                        SourceSide = 0,
+                        CandidateItem = targetItemIndex,
+                        SourceItem = i,
+                        CandidateTemplate = side.Items[targetItemIndex].Template,
+                    };
+                    if (aura.Condition != null && !aura.Condition.Evaluate(auraCtx)) continue;
                     if (!string.IsNullOrEmpty(aura.FixedValueKey))
                         fixedSum += source.Template.GetInt(aura.FixedValueKey, source.Tier, 0);
                     if (!string.IsNullOrEmpty(aura.PercentValueKey))
@@ -212,47 +230,11 @@ public class BattleSimulator
         }
     }
 
-    /// <summary>光环条件谓词：根据来源与目标物品下标判断是否生效。</summary>
-    private static class AuraConditionEvaluator
-    {
-        public static bool Evaluate(Condition? condition, BattleSide side, int sourceItemIndex, int targetItemIndex)
-        {
-            if (condition == null) return true;
-            return condition.Kind switch
-            {
-                ConditionKind.SameAsSource => sourceItemIndex == targetItemIndex,
-                ConditionKind.DifferentFromSource => sourceItemIndex != targetItemIndex,
-                ConditionKind.AdjacentToSource => Math.Abs(sourceItemIndex - targetItemIndex) == 1,
-                ConditionKind.WithTag => side.Items[targetItemIndex].Template.Tags.Contains(condition.Tag ?? ""),
-                _ => false,
-            };
-        }
-    }
-
     /// <summary>触发器调用上下文：传入 InvokeTrigger，用于条件判断与 PendingCount。</summary>
     private sealed class TriggerInvokeContext
     {
         public int? Multicast { get; init; }
         public ItemTemplate? UsedTemplate { get; init; }
-    }
-
-    /// <summary>统一触发器条件评估：根据来源、候选与上下文判断能力是否触发。UseOtherItem 时始终排除来源物品（再叠加 WithTag 等）。</summary>
-    private static class TriggerConditionEvaluator
-    {
-        public static bool Evaluate(string triggerName, Condition? condition, int candidateSide, int candidateItem, int sourceSide, int sourceItem, TriggerInvokeContext? context)
-        {
-            if (triggerName == Trigger.UseOtherItem && sourceSide >= 0 && sourceItem >= 0 && candidateSide == sourceSide && candidateItem == sourceItem)
-                return false;
-            if (condition == null) return true;
-            return condition.Kind switch
-            {
-                ConditionKind.SameAsSource => sourceSide >= 0 && sourceItem >= 0 && candidateSide == sourceSide && candidateItem == sourceItem,
-                ConditionKind.DifferentFromSource => sourceSide < 0 || sourceItem < 0 || candidateSide != sourceSide || candidateItem != sourceItem,
-                ConditionKind.WithTag => context?.UsedTemplate?.Tags.Contains(condition.Tag ?? "") ?? false,
-                ConditionKind.AdjacentToSource => sourceSide >= 0 && sourceItem >= 0 && candidateSide == sourceSide && Math.Abs(candidateItem - sourceItem) == 1,
-                _ => false,
-            };
-        }
     }
 
     private static BattleSide? BuildSide(Deck deck, IItemTemplateResolver resolver)
@@ -279,10 +261,10 @@ public class BattleSimulator
                 {
                     TriggerName = a.TriggerName,
                     Priority = a.Priority,
-                    Condition = EnsureTriggerCondition(a.TriggerName, CloneCondition(a.Condition)),
-                    Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, CustomEffectId = e.CustomEffectId }).ToList(),
+                    Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
+                    Effects = a.Effects.Select(e => new EffectDefinition { Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, ApplyCritMultiplier = e.ApplyCritMultiplier, Apply = e.Apply }).ToList(),
                 }).ToList(),
-                Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = CloneCondition(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
+                Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
             };
             clone.SetIntsByTier(t.GetIntsByTierSnapshot());
             if (entry.Overrides != null)
@@ -295,16 +277,16 @@ public class BattleSimulator
         return side;
     }
 
-    private static Condition? CloneCondition(Condition? c) =>
-        c == null ? null : new Condition { Kind = c.Kind, Tag = c.Tag };
-
-    /// <summary>UseItem / UseOtherItem 生成时自动补 Condition：UseItem → SameAsSource，UseOtherItem → DifferentFromSource（仅当原 Condition 为 null 时）。</summary>
+    /// <summary>UseItem → SameAsSource；UseOtherItem 始终叠加己方其他物品（And(DifferentFromSource, SameSide)），再与显式 Condition（如 WithTag）取与。</summary>
     private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
     {
-        if (condition != null) return condition;
-        if (triggerName == Trigger.UseItem) return Condition.SameAsSource;
-        if (triggerName == Trigger.UseOtherItem) return Condition.DifferentFromSource;
-        return null;
+        if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
+        if (triggerName == Trigger.UseOtherItem)
+        {
+            Condition baseSameSideOther = Condition.And(Condition.DifferentFromSource, Condition.SameSide);
+            return condition != null ? Condition.And(baseSameSideOther, condition) : baseSameSideOther;
+        }
+        return condition;
     }
 
     private static void ProcessCooldown(BattleSide side, int sideIndex, int timeMs, List<(int, int)> castQueue)
@@ -359,10 +341,11 @@ public class BattleSimulator
 
     private static void ApplySandstorm(BattleSide side, int damage, IBattleLogSink logSink, int timeMs)
     {
-        ApplyDamageToSide(side, damage, isBurn: false);
+        _ = ApplyDamageToSide(side, damage, isBurn: false);
     }
 
-    private static void ApplyDamageToSide(BattleSide side, int damage, bool isBurn)
+    /// <summary>对一方造成伤害，返回实际扣减的生命值（用于吸血等）。</summary>
+    private static int ApplyDamageToSide(BattleSide side, int damage, bool isBurn)
     {
         if (isBurn)
         {
@@ -377,129 +360,136 @@ public class BattleSimulator
             side.Shield -= shieldConsume;
             damage -= shieldConsume;
         }
-        side.Hp -= Math.Max(0, damage);
+        int actualHpDamage = Math.Max(0, damage);
+        side.Hp -= actualHpDamage;
+        return actualHpDamage;
     }
 
-    /// <summary>单次效果应用上下文，供策略表使用。充能导致满时通过 ChargeInducedCastQueue 加入施放队列。</summary>
-    private readonly struct EffectApplyContext
+    /// <summary>效果应用上下文：实现 IEffectApplyContext，供 EffectDefinition.Apply 委托使用。</summary>
+    private sealed class EffectApplyContextImpl : IEffectApplyContext
     {
-        public BattleSide Side { get; init; }
-        public BattleSide Opp { get; init; }
-        public BattleItemState Item { get; init; }
+        public required BattleSide Side { get; init; }
+        public required BattleSide Opp { get; init; }
+        public required BattleItemState Item { get; init; }
         public int Value { get; init; }
+        public int CritMultiplier { get; init; }
         public bool IsCrit { get; init; }
         public int TimeMs { get; init; }
-        public IBattleLogSink LogSink { get; init; }
+        public required IBattleLogSink LogSink { get; init; }
         public int SideIndex { get; init; }
         public int ItemIndex { get; init; }
-        public string LogName { get; init; }
         public List<(int, int)>? ChargeInducedCastQueue { get; init; }
-    }
 
-    private delegate void EffectApplier(in EffectApplyContext ctx);
+        public bool HasLifeSteal => Item.Template.GetInt(nameof(ItemTemplate.LifeSteal), Item.Tier, 0) != 0;
 
-    private static void ApplyDamage(in EffectApplyContext ctx)
-    {
-        ApplyDamageToSide(ctx.Opp, ctx.Value, isBurn: false);
-        ctx.LogSink.OnEffect(ctx.SideIndex, ctx.ItemIndex, ctx.Item.Template.Name, ctx.LogName, ctx.Value, ctx.TimeMs, ctx.IsCrit);
-    }
-
-    private static void ApplyBurn(in EffectApplyContext ctx)
-    {
-        ctx.Opp.Burn += ctx.Value;
-        ctx.LogSink.OnEffect(ctx.SideIndex, ctx.ItemIndex, ctx.Item.Template.Name, ctx.LogName, ctx.Value, ctx.TimeMs, ctx.IsCrit);
-    }
-
-    private static void ApplyPoison(in EffectApplyContext ctx)
-    {
-        ctx.Opp.Poison += ctx.Value;
-        ctx.LogSink.OnEffect(ctx.SideIndex, ctx.ItemIndex, ctx.Item.Template.Name, ctx.LogName, ctx.Value, ctx.TimeMs, ctx.IsCrit);
-    }
-
-    private static void ApplyShield(in EffectApplyContext ctx)
-    {
-        ctx.Side.Shield += ctx.Value;
-        ctx.LogSink.OnEffect(ctx.SideIndex, ctx.ItemIndex, ctx.Item.Template.Name, ctx.LogName, ctx.Value, ctx.TimeMs, ctx.IsCrit);
-    }
-
-    private static void ApplyHeal(in EffectApplyContext ctx)
-    {
-        int heal = Math.Min(ctx.Value, ctx.Side.MaxHp - ctx.Side.Hp);
-        ctx.Side.Hp += heal;
-        int clear = RatioUtil.PercentFloor(heal, 5);
-        ctx.Side.Burn = Math.Max(0, ctx.Side.Burn - clear);
-        ctx.Side.Poison = Math.Max(0, ctx.Side.Poison - clear);
-        ctx.LogSink.OnEffect(ctx.SideIndex, ctx.ItemIndex, ctx.Item.Template.Name, ctx.LogName, heal, ctx.TimeMs, ctx.IsCrit);
-    }
-
-    private static void ApplyRegen(in EffectApplyContext ctx)
-    {
-        ctx.Side.Regen += ctx.Value;
-        ctx.LogSink.OnEffect(ctx.SideIndex, ctx.ItemIndex, ctx.Item.Template.Name, ctx.LogName, ctx.Value, ctx.TimeMs, ctx.IsCrit);
-    }
-
-    private static void ApplyCharge(in EffectApplyContext ctx)
-    {
-        int cooldownMs = ctx.Item.GetCooldownMs();
-        if (cooldownMs <= 0) return;
-        int newElapsed = Math.Min(cooldownMs, ctx.Item.CooldownElapsedMs + ctx.Value);
-        int added = newElapsed - ctx.Item.CooldownElapsedMs;
-        ctx.Item.CooldownElapsedMs = newElapsed;
-        if (added > 0)
-            ctx.LogSink.OnEffect(ctx.SideIndex, ctx.ItemIndex, ctx.Item.Template.Name, ctx.LogName, added, ctx.TimeMs, ctx.IsCrit);
-        if (ctx.Item.CooldownElapsedMs >= cooldownMs && ctx.ChargeInducedCastQueue != null)
+        public int GetResolvedValue(string key, bool applyCritMultiplier)
         {
-            if (ctx.Item.GetAmmoCap() <= 0 || ctx.Item.AmmoRemaining > 0)
-                ctx.ChargeInducedCastQueue.Add((ctx.SideIndex, ctx.ItemIndex));
-            ctx.Item.CooldownElapsedMs = 0;
+            int baseValue = Item.Template.GetInt(key, Item.Tier, 0);
+            return applyCritMultiplier ? baseValue * CritMultiplier : baseValue;
         }
-    }
 
-    /// <summary>冻结：根据 FreezeTargetCount 与 ctx.Value（毫秒），从敌人物品中随机选取目标；有冷却的物品优先，每次选取独立可重复。</summary>
-    private static void ApplyFreeze(in EffectApplyContext ctx)
-    {
-        int freezeMs = ctx.Value;
-        int count = ctx.Item.Template.GetInt("FreezeTargetCount", ctx.Item.Tier, 1);
-        if (freezeMs <= 0 || count <= 0) return;
-        var opp = ctx.Opp;
-        var withCooldown = new List<int>();
-        var withoutCooldown = new List<int>();
-        for (int i = 0; i < opp.Items.Count; i++)
-        {
-            if (opp.Items[i].Destroyed) continue;
-            if (opp.Items[i].GetCooldownMs() > 0)
-                withCooldown.Add(i);
-            else
-                withoutCooldown.Add(i);
-        }
-        var pool = withCooldown.Count > 0 ? withCooldown : withoutCooldown;
-        if (pool.Count == 0) return;
-        var targetNames = new List<string>();
-        for (int n = 0; n < count; n++)
-        {
-            int idx = Random.Shared.Next(pool.Count);
-            int itemIdx = pool[idx];
-            var target = opp.Items[itemIdx];
-            target.FreezeRemainingMs = Math.Max(target.FreezeRemainingMs, freezeMs);
-            targetNames.Add(target.Template.Name);
-        }
-        string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
-        ctx.LogSink.OnEffect(ctx.SideIndex, ctx.ItemIndex, ctx.Item.Template.Name, ctx.LogName, freezeMs, ctx.TimeMs, ctx.IsCrit, extraSuffix);
-    }
+        public int GetCasterItemInt(string key, int defaultValue) => Item.Template.GetInt(key, Item.Tier, defaultValue);
 
-    /// <summary>效果类型 → 应用策略；Other 无登记，由调用方走 CustomEffectHandlers。</summary>
-    private static EffectApplier? GetEffectApplier(EffectKind kind) => kind switch
-    {
-        EffectKind.Damage => ApplyDamage,
-        EffectKind.Burn => ApplyBurn,
-        EffectKind.Poison => ApplyPoison,
-        EffectKind.Shield => ApplyShield,
-        EffectKind.Heal => ApplyHeal,
-        EffectKind.Regen => ApplyRegen,
-        EffectKind.Charge => ApplyCharge,
-        EffectKind.Freeze => ApplyFreeze,
-        _ => null,
-    };
+        public int ApplyDamageToOpp(int value, bool isBurn) => ApplyDamageToSide(Opp, value, isBurn);
+        public void HealCaster(int amount) { Side.Hp = Math.Min(Side.MaxHp, Side.Hp + amount); }
+        public void AddBurnToOpp(int value) => Opp.Burn += value;
+        public void AddPoisonToOpp(int value) => Opp.Poison += value;
+        public void AddShieldToCaster(int value) => Side.Shield += value;
+
+        public int HealCasterWithDebuffClear(int requestedHeal)
+        {
+            int heal = Math.Min(requestedHeal, Side.MaxHp - Side.Hp);
+            Side.Hp += heal;
+            int clear = RatioUtil.PercentFloor(heal, 5);
+            Side.Burn = Math.Max(0, Side.Burn - clear);
+            Side.Poison = Math.Max(0, Side.Poison - clear);
+            return heal;
+        }
+
+        public void AddRegenToCaster(int value) => Side.Regen += value;
+
+        public void ChargeCasterItem(int chargeMs, out bool fullAndShouldCast)
+        {
+            fullAndShouldCast = false;
+            int cooldownMs = Item.GetCooldownMs();
+            if (cooldownMs <= 0) return;
+            int newElapsed = Math.Min(cooldownMs, Item.CooldownElapsedMs + chargeMs);
+            int added = newElapsed - Item.CooldownElapsedMs;
+            Item.CooldownElapsedMs = newElapsed;
+            if (added > 0)
+                LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "充能", added, TimeMs, isCrit: false);
+            if (Item.CooldownElapsedMs >= cooldownMs && ChargeInducedCastQueue != null)
+            {
+                if (Item.GetAmmoCap() <= 0 || Item.AmmoRemaining > 0)
+                    ChargeInducedCastQueue.Add((SideIndex, ItemIndex));
+                fullAndShouldCast = true;
+                Item.CooldownElapsedMs = 0;
+            }
+        }
+
+        public void ApplyFreeze(int freezeMs, int targetCount)
+        {
+            if (freezeMs <= 0 || targetCount <= 0) return;
+            var withCooldown = new List<int>();
+            var withoutCooldown = new List<int>();
+            for (int i = 0; i < Opp.Items.Count; i++)
+            {
+                if (Opp.Items[i].Destroyed) continue;
+                if (Opp.Items[i].GetCooldownMs() > 0) withCooldown.Add(i);
+                else withoutCooldown.Add(i);
+            }
+            var pool = withCooldown.Count > 0 ? withCooldown : withoutCooldown;
+            if (pool.Count == 0) return;
+            var targetNames = new List<string>();
+            for (int n = 0; n < targetCount; n++)
+            {
+                int idx = Random.Shared.Next(pool.Count);
+                var target = Opp.Items[pool[idx]];
+                target.FreezeRemainingMs = Math.Max(target.FreezeRemainingMs, freezeMs);
+                targetNames.Add(target.Template.Name);
+            }
+            string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
+            LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "冻结", freezeMs, TimeMs, isCrit: false, extraSuffix);
+        }
+
+        public void ApplySlow(int slowMs, int targetCount)
+        {
+            if (slowMs <= 0 || targetCount <= 0) return;
+            var withCooldown = new List<int>();
+            var withoutCooldown = new List<int>();
+            for (int i = 0; i < Opp.Items.Count; i++)
+            {
+                if (Opp.Items[i].Destroyed) continue;
+                if (Opp.Items[i].GetCooldownMs() > 0) withCooldown.Add(i);
+                else withoutCooldown.Add(i);
+            }
+            var pool = withCooldown.Count > 0 ? withCooldown : withoutCooldown;
+            if (pool.Count == 0) return;
+            var targetNames = new List<string>();
+            for (int n = 0; n < targetCount; n++)
+            {
+                int idx = Random.Shared.Next(pool.Count);
+                var target = Opp.Items[pool[idx]];
+                target.SlowRemainingMs = Math.Max(target.SlowRemainingMs, slowMs);
+                targetNames.Add(target.Template.Name);
+            }
+            string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
+            LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "减速", slowMs, TimeMs, isCrit: false, extraSuffix);
+        }
+
+        public void AddWeaponDamageBonusToCasterSide(int value)
+        {
+            foreach (var wi in Side.Items)
+            {
+                if (wi.Destroyed) continue;
+                if (wi.Template.Tags.Contains(Tag.Weapon))
+                    wi.Template.Damage = wi.Template.Damage.Add(value);
+            }
+        }
+
+        public void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false) =>
+            LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, effectName, value, TimeMs, showCrit, extraSuffix);
+    }
 
     /// <summary>将能力加入队列或合并 PendingCount：先查 currentAbilityQueue，再查 nextAbilityQueue；都没有则新建，仅 Immediate 入 current，其余入 next。</summary>
     private static void AddOrMergeAbility(int sideIdx, int itemIdx, int abilityIdx, AbilityDefinition ability, int pendingCount, int lastTriggerMs,
@@ -540,7 +530,16 @@ public class BattleSimulator
                 {
                     var ab = item.Template.Abilities[a];
                     if (ab.TriggerName != triggerName) continue;
-                    if (!TriggerConditionEvaluator.Evaluate(triggerName, ab.Condition, sideIdx, itemIdx, sourceSideIdx, sourceItemIdx, context)) continue;
+                    var triggerCtx = new ConditionContext
+                    {
+                        CandidateSide = sideIdx,
+                        CandidateItem = itemIdx,
+                        SourceSide = sourceSideIdx,
+                        SourceItem = sourceItemIdx,
+                        UsedTemplate = context?.UsedTemplate,
+                        CandidateTemplate = item.Template,
+                    };
+                    if (ab.Condition != null && !ab.Condition.Evaluate(triggerCtx)) continue;
                     int lastMs = triggerName == Trigger.BattleStart ? lastTriggerMsForBattleStart : item.LastTriggerMsByAbility[a];
                     AddOrMergeAbility(sideIdx, itemIdx, a, ab, pendingCount, lastMs, current, next);
                 }
@@ -559,31 +558,29 @@ public class BattleSimulator
         int critMultiplier = isCrit ? Math.Max(1, critDamagePercent / 100) : 1;
         foreach (var eff in ability.Effects)
         {
-            string key = eff.ValueKey ?? eff.Kind.GetDefaultTemplateKey();
-            int baseValue = eff.ResolveValue(item.Template, item.Tier, key);
-            int value = (eff.Kind == EffectKind.Charge || eff.Kind == EffectKind.Freeze) ? baseValue : baseValue * critMultiplier;
-            if (GetEffectApplier(eff.Kind) is { } applier)
+            if (eff.Apply == null) continue;
+            int value = 0;
+            if (eff.ValueKey != null)
             {
-                var ctx = new EffectApplyContext
-                {
-                    Side = side,
-                    Opp = opp,
-                    Item = item,
-                    Value = value,
-                    IsCrit = isCrit,
-                    TimeMs = timeMs,
-                    LogSink = logSink,
-                    SideIndex = sideIndex,
-                    ItemIndex = itemIndex,
-                    LogName = eff.Kind.GetLogName(),
-                    ChargeInducedCastQueue = chargeInducedCastQueue,
-                };
-                applier(in ctx);
+                int baseValue = eff.ResolveValue(item.Template, item.Tier, eff.ValueKey);
+                bool applyCrit = TemplateHasAnyCrittableField(item.Template, item.Tier) && eff.ApplyCritMultiplier;
+                value = applyCrit ? baseValue * critMultiplier : baseValue;
             }
-            else
+            var ctx = new EffectApplyContextImpl
             {
-                CustomEffectHandlers.TryExecute(eff.CustomEffectId ?? "", sideIndex, itemIndex, item, ability, eff, side0, side1, timeMs, logSink);
-            }
+                Side = side,
+                Opp = opp,
+                Item = item,
+                Value = value,
+                CritMultiplier = critMultiplier,
+                IsCrit = isCrit,
+                TimeMs = timeMs,
+                LogSink = logSink,
+                SideIndex = sideIndex,
+                ItemIndex = itemIndex,
+                ChargeInducedCastQueue = chargeInducedCastQueue,
+            };
+            eff.Apply(ctx);
         }
     }
 }

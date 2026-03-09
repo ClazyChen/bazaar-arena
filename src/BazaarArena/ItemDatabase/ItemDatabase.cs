@@ -40,23 +40,24 @@ public class ItemDatabase : IItemTemplateResolver
             {
                 TriggerName = a.TriggerName,
                 Priority = a.Priority,
-                Condition = EnsureTriggerCondition(a.TriggerName, CloneCondition(a.Condition)),
-                Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, CustomEffectId = e.CustomEffectId }).ToList(),
+                Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
+                Effects = a.Effects.Select(e => new EffectDefinition { Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, ApplyCritMultiplier = e.ApplyCritMultiplier, Apply = e.Apply }).ToList(),
             })],
-            Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = CloneCondition(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
+            Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
         };
         clone.SetIntsByTier(t.GetIntsByTierSnapshot());
         return clone;
     }
 
-    private static Condition? CloneCondition(Condition? c) =>
-        c == null ? null : new Condition { Kind = c.Kind, Tag = c.Tag };
-
+    /// <summary>UseItem → SameAsSource；UseOtherItem 始终叠加己方其他物品（And(DifferentFromSource, SameSide)），再与显式 Condition（如 WithTag）取与。</summary>
     private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
     {
-        if (condition != null) return condition;
-        if (triggerName == Trigger.UseItem) return Condition.SameAsSource;
-        if (triggerName == Trigger.UseOtherItem) return Condition.DifferentFromSource;
-        return null;
+        if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
+        if (triggerName == Trigger.UseOtherItem)
+        {
+            Condition baseSameSideOther = Condition.And(Condition.DifferentFromSource, Condition.SameSide);
+            return condition != null ? Condition.And(baseSameSideOther, condition) : baseSameSideOther;
+        }
+        return condition;
     }
 }

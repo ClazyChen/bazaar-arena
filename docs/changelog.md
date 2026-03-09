@@ -1,5 +1,33 @@
 # 变更记录
 
+## Condition 与 Effect 委托化重构、UseOtherItem 己方约束、暴击按效果显示
+
+### Condition：委托 + ConditionContext，移除 ConditionKind
+
+- **Core/Condition.cs**：`Condition` 改为持有一个 `Func<ConditionContext, bool>?` 委托；新增 `ConditionContext`（CandidateSide/Item、SourceSide/Item、UsedTemplate、CandidateTemplate）。静态工厂：`SameAsSource`、`DifferentFromSource`、`SameSide`、`AdjacentToSource`、`WithTag(tag)`、`And(a, b)`。移除 `ConditionKind` 枚举与 `Tag` 字段。
+- **评估**：触发器与光环处构建 `ConditionContext` 后调用 `condition.Evaluate(ctx)`，不再使用 BattleSimulator 内的 TriggerConditionEvaluator/AuraConditionEvaluator switch。
+
+### UseOtherItem 始终叠加「己方其他物品」
+
+- **EnsureTriggerCondition**（ItemDatabase、BattleSimulator）：UseOtherItem 时**始终**先设基础条件 `And(DifferentFromSource, SameSide)`；若能力有显式 Condition（如姜饼人 `WithTag(Tag.Tool)`），则返回 `And(baseSameSideOther, condition)`，避免对方使用工具触发己方能力。
+
+### Effect：委托驱动，移除 EffectKind 与 CustomEffectHandlers
+
+- **移除**：`EffectKind`、`EffectKindKeys`、`EffectKindExtensions`；`BattleSimulator` 内 `GetEffectApplier` 与各 `ApplyXxx` 静态方法；`CustomEffectHandlers.cs`。`EffectDefinition` 移除 `Kind`、`CustomEffectId`。
+- **Core**：新增 `IEffectApplyContext`（Value、HasLifeSteal、IsCrit、GetResolvedValue、GetCasterItemInt、各类 Apply/Log）；`EffectDefinition` 增加 `ApplyCritMultiplier`、`Apply` 委托。预定义效果在 **Core/Effect.cs** 内为每条设置 `Apply`，只读效果用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), ...)` 取值，仅 WeaponDamageBonus 保留 ValueKey。
+- **暴击**：由物品六字段（Damage/Burn/Poison/Heal/Shield/Regen 任一 > 0）与 `eff.ApplyCritMultiplier` 决定是否乘暴击倍率；`TemplateHasAnyCrittableField` + 队列侧 `ability.Effects.Any(e => e.Apply != null && e.ApplyCritMultiplier)` 决定是否掷暴击。
+
+### 暴击日志按效果区分
+
+- **LogEffect** 增加参数 `showCrit`；可暴击效果（Damage/Burn/Poison/Shield/Heal/Regen）传 `showCrit: ctx.IsCrit`，不可暴击效果（Charge/Freeze/Slow/WeaponDamageBonus）传 false。多效果能力（如毒刺）暴击时，仅伤害等可暴击部分显示「（暴击）」，减速等不显示。
+
+### 文档与规则
+
+- **docs/implementation-notes.md**：新增「Condition 与 Effect 委托化重构」；旧「EffectKind 集中映射」「触发器 Condition 自动补全」标为已废弃或收紧为当前约定。
+- **.cursor/rules**：item-design.mdc、battle-simulator-ability-queue.mdc、data-and-logging.mdc 更新为委托式 Condition/Effect、UseOtherItem 己方约束、按效果 showCrit。
+
+---
+
 ## 魔法字符串消除、EffectKind 简化与暴击伤害
 
 ### 魔法字符串消除

@@ -1,7 +1,7 @@
 ---
-description: 物品与效果设计经验：触发器、数值、自定义效果、光环、Tooltip 与战斗内修改
+description: 物品与效果设计经验：触发器、数值、效果委托、光环、Tooltip 与战斗内修改
 alwaysApply: false
-globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/ItemTemplate.cs","**/Core/Aura*.cs","**/BattleSimulator/CustomEffectHandlers.cs"
+globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/ItemTemplate.cs","**/Core/Aura*.cs","**/Core/IEffectApplyContext.cs","**/Core/Condition.cs"
 ---
 
 # 物品设计经验
@@ -13,21 +13,21 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 - **时间一律用秒**：物品定义中表示时间时用秒以保证可读性（见 **project-conventions.mdc**）。充能用 `ChargeSeconds = 1.0`；冻结用 `FreezeSeconds = new[] { 3.0, 4.0, 5.0, 6.0 }`、`FreezeTargetCount = 1`，内部由模板转为毫秒存储。
 - **描述占位符**：`Desc` 中可用 `{Damage}`、`{Cooldown}`、`{Burn}`、`{Poison}`、`{Custom_0}` 等；支持前缀/后缀格式 `{+Custom_0%}`（大括号内非字母数字下划线的连续字符为前缀/后缀，与数值一并替换并参与加粗与 tier 着色）。`ItemDescHelper` 用正则动态解析，无需单独登记 key；`{Cooldown}` 映射为 `CooldownMs` 并按秒显示。
 - **战斗内模板**：每场战斗 `BuildSide` 时每个槽位用卡组 template 克隆一份；`BattleItemState.Template` 即该克隆，可直接修改（如 `Template.Damage = Template.Damage.Add(delta)`），无需额外字段。
-- **光环**：`Auras` 为 `List<AuraDefinition>`；每条含 `AttributeName`、`Condition`（如 `AuraConditionKind.AdjacentToSource`、`AuraConditionKind.SameAsSource` 仅自身）、`FixedValueKey`、`PercentValueKey`。AttributeName/Key 用 `nameof(ItemTemplate.xxx)`（如 `nameof(ItemTemplate.CritRatePercent)`）。仅在战斗内读取属性且传入 `IAuraContext` 时生效；公式为 `(基础 + Σ固定) × (1 + Σ百分比/100)`，被摧毁物品不提供光环。
+- **光环**：`Auras` 为 `List<AuraDefinition>`；每条含 `AttributeName`、`Condition`（委托式，如 `Condition.AdjacentToSource`、`Condition.SameAsSource`），`FixedValueKey`、`PercentValueKey`。AttributeName/Key 用 `nameof(ItemTemplate.xxx)`。仅在战斗内读取属性且传入 `IAuraContext` 时生效；公式为 `(基础 + Σ固定) × (1 + Σ百分比/100)`，被摧毁物品不提供光环。
 
 ## 触发器与能力
 
-- **使用物品**：冷却转好后施放，能力进入队列，按 250ms 间隔与优先级结算；`TriggerName = Trigger.UseItem`，`Priority` 为 `AbilityPriority` 枚举（High、Medium 等）。
-- **战斗开始**：第 0 帧触发一次；`TriggerName = Trigger.BattleStart`。模拟器通过统一 `InvokeTrigger(Trigger.BattleStart, ...)` 入队，仅 Immediate 入 current、其余入 next，执行在步骤 8（或下一帧步骤 8），与使用物品等触发器一致（见 **battle-simulator-ability-queue.mdc**）。
-- **能力**：`AbilityDefinition` 含 `TriggerName`、`Priority`、`Effects`（`EffectDefinition` 列表）。每条效果有 `Kind`、`Value`、可选 `ValueResolver`、可选 `ValueKey`、以及 `Kind == Other` 时的 `CustomEffectId`。
+- **使用物品**：冷却转好后施放，能力进入队列，按 250ms 间隔与优先级结算；`TriggerName = Trigger.UseItem`，`Priority` 为 `AbilityPriority` 枚举。
+- **使用其他物品**：`TriggerName = Trigger.UseOtherItem`；Condition 由 `EnsureTriggerCondition` 自动叠加「己方其他物品」`And(DifferentFromSource, SameSide)`，再与显式 Condition（如 `Condition.WithTag(Tag.Tool)`）取与。见 **battle-simulator-ability-queue.mdc**。
+- **战斗开始**：第 0 帧触发一次；`TriggerName = Trigger.BattleStart`。模拟器通过统一 `InvokeTrigger` 入队，条件用 `Condition.Evaluate(ConditionContext)` 评估。
+- **能力**：`AbilityDefinition` 含 `TriggerName`、`Priority`、`Condition`（可选）、`Effects`（`EffectDefinition` 列表）。每条效果有 `Value`、可选 `ValueResolver`、可选 `ValueKey`、`ApplyCritMultiplier`、`Apply` 委托。
 
-## 效果与数值解析
+## 效果与数值（委托驱动）
 
-- **内置效果**：`Effect.Damage`、`Effect.Burn`、`Effect.Poison`、`Effect.Shield`、`Effect.Heal`、`Effect.Regen`、`Effect.Freeze` 等仅设 `Kind` 与 `ValueKey`，由 `ResolveValue` 通过 ValueKey 从模板取值。多目标效果（如冻结）可读模板的额外字段（如 `FreezeTargetCount`），在 Apply 中实现选取与日志；日志通过 `OnEffect(..., extraSuffix: " →[物品名]..."` 显示目标。
-- **数值解析顺序**：`EffectDefinition.ResolveValue(template, tier, defaultKey)` 顺序为：`ValueResolver` → `ValueKey` → `defaultKey`（调用方传 `eff.ValueKey ?? eff.Kind.GetDefaultTemplateKey()`）→ `Value`。优先用 `ValueKey`（如 `nameof(ItemTemplate.Custom_0)`）指定字段。
-- **EffectKind 元数据**：`EffectKindKeys.GetDefaultTemplateKey(kind)`、`GetLogName(kind)` 与扩展方法 `kind.GetDefaultTemplateKey()`、`kind.GetLogName()` 集中维护；模拟器用策略表 `GetEffectApplier(EffectKind)` 派发应用逻辑，新增标准效果时在 EffectKindKeys 与策略表中扩展。
-- **自定义效果（Other）**：`Kind = EffectKind.Other`，`CustomEffectId` 指定逻辑（如 `"WeaponDamageBonus"`）。实现放在 `BattleSimulator/CustomEffectHandlers.cs`，按 id 注册到 `Handlers`，模拟器在 Other 分支调用 `CustomEffectHandlers.TryExecute(...)`。
-- **预定义自定义效果**：无专用属性的可包装到 `Core/Effect.cs`，例如 `Effect.WeaponDamageBonus(ValueKey: null)`（默认 ValueKey 为 `nameof(ItemTemplate.Custom_0)`）；物品侧写 `Effects = [Effect.WeaponDamageBonus()]` 或显式传 ValueKey。
+- **效果应用**：`EffectDefinition.Apply` 为 `Action<IEffectApplyContext>`；模拟器构建 `IEffectApplyContext` 实现后调用 `eff.Apply(ctx)`。预定义效果在 **Core/Effect.cs** 内设置 `Apply`；只读效果在委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), applyCritMultiplier)` 取值，用 `ctx.GetCasterItemInt(nameof(ItemTemplate.FreezeTargetCount), 1)` 等取目标数，避免魔法字符串。
+- **ValueKey**：仅需由调用方指定数值来源的效果（如 `Effect.WeaponDamageBonus(ValueKey: nameof(ItemTemplate.Custom_0))`）保留 ValueKey；模拟器仅在 `eff.ValueKey != null` 时解析并填入 `ctx.Value`。
+- **暴击**：是否乘暴击由物品六字段（Damage/Burn/Poison/Heal/Shield/Regen 任一 > 0）与 `eff.ApplyCritMultiplier` 决定。日志「（暴击）」仅对可暴击效果显示：`LogEffect(..., showCrit: ctx.IsCrit)` 用于伤害/灼烧等，Charge/Freeze/Slow 等传 `showCrit: false`。
+- **扩展效果**：在 `Core/Effect.cs` 新增静态 `EffectDefinition` 并设置 `Apply` 与可选 `ApplyCritMultiplier`、`ValueKey` 即可，无需单独 Handler 文件。
 
 ## 战斗内修改与 IntOrByTier
 
@@ -47,7 +47,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 ## 新增公共物品流程
 
-1. 在 `ItemDatabase/Common.cs` 写工厂方法（如 `LiftingGloves()`），设置 Name、Desc、MinTier、Size、Tags、数值属性、`Abilities`（含 TriggerName、Priority、Effects）；若为纯光环物品可无 Abilities，仅设 `Auras`（如轻步靴）。
-2. 若为自定义效果：在 `CustomEffectHandlers.cs` 注册 id → Handler；若可复用通用字段，在 `Effect.cs` 增加如 `Effect.WeaponDamageBonus(ValueKey = "Custom_0")`。
+1. 在 `ItemDatabase/Common.cs` 写工厂方法，设置 Name、Desc、MinTier、Size、Tags、数值属性、`Abilities`（含 TriggerName、Priority、Condition 如需、Effects）；若为纯光环物品可仅设 `Auras`。
+2. 效果使用 `Effect.Damage`、`Effect.WeaponDamageBonus(ValueKey: nameof(ItemTemplate.Custom_0))` 等；若需新效果，在 `Core/Effect.cs` 增加静态 `EffectDefinition` 并设置 `Apply` 委托。
 3. 在 `Common.RegisterAll` 中 `db.Register(XXX())`。
-4. 占位符由 `ItemDescHelper` 正则解析，新 key（字母数字下划线）自动支持；若需前缀/后缀（如 `{+Custom_0%}`），直接写在 Desc 即可。
+4. 占位符由 `ItemDescHelper` 正则解析，新 key 自动支持；前缀/后缀（如 `{+Custom_0%}`）直接写在 Desc 即可。

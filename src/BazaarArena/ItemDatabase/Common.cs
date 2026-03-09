@@ -279,6 +279,33 @@ public static class Common
         };
     }
 
+    /// <summary>毒刺（Stinger）：7s 小 铜 武器，造成 5 » 10 » 20 » 40 伤害；减速 1 » 2 » 3 » 4 件物品 1 秒；吸血。</summary>
+    public static ItemTemplate Stinger()
+    {
+        return new ItemTemplate
+        {
+            Name = "毒刺",
+            Desc = "造成 {Damage} 伤害；减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；吸血",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = [Tag.Weapon],
+            Cooldown = 7.0,
+            Damage = [5, 10, 20, 40],
+            LifeSteal = 1,
+            SlowSeconds = 1.0,
+            SlowTargetCount = [1, 2, 3, 4],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Damage, Effect.Slow],
+                },
+            ],
+        };
+    }
+
     /// <summary>姜饼人（Gingerbread Man）：5s 小 铜 食物 伙伴；获得 10 » 20 » 30 » 40 护盾（优先级 Low）；使用工具时为此物品充能 1 秒（优先级 Medium）。</summary>
     public static ItemTemplate GingerbreadMan()
     {
@@ -325,6 +352,7 @@ public static class Common
         db.Register(Claws());
         db.Register(Bluenanas());
         db.Register(Icicle());
+        db.Register(Stinger());
         db.Register(GingerbreadMan());
     }
 }

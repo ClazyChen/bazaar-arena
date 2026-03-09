@@ -13,16 +13,17 @@ public static class ItemDescHelper
     /// <summary>大括号内：可选前缀(非字母数字下划线) + key(字母数字下划线) + 可选后缀(非字母数字下划线)。</summary>
     private static readonly Regex PlaceholderRegex = new(@"\{([^a-zA-Z0-9_]*)([a-zA-Z0-9_]+)([^a-zA-Z0-9_]*)\}", RegexOptions.Compiled);
 
-    /// <summary>描述中可用 {Cooldown} 表示冷却秒数，实际读 CooldownMs；{ChargeSeconds} 表示充能秒数，实际读 Charge（毫秒）；{FreezeSeconds} 表示冻结秒数，实际读 Freeze（毫秒）。</summary>
+    /// <summary>描述中可用 {Cooldown} 表示冷却秒数，实际读 CooldownMs；{ChargeSeconds} 表示充能秒数，实际读 Charge（毫秒）；{FreezeSeconds} 表示冻结秒数，实际读 Freeze（毫秒）；{SlowSeconds} 表示减速秒数，实际读 Slow（毫秒）。</summary>
     private static string ResolveKey(string key) => key switch
     {
         "Cooldown" => "CooldownMs",
         "ChargeSeconds" => "Charge",
         "FreezeSeconds" => "Freeze",
+        "SlowSeconds" => "Slow",
         _ => key,
     };
 
-    private static bool IsSecondsKey(string key) => key == "CooldownMs" || key == "Charge" || key == "Freeze";
+    private static bool IsSecondsKey(string key) => key == "CooldownMs" || key == "Charge" || key == "Freeze" || key == "Slow";
 
     /// <summary>解析文本中所有占位符，返回 (索引, 占位符全长, 前缀, Key, 后缀)。</summary>
     private static List<(int Index, int Length, string Prefix, string Key, string Suffix)> ParsePlaceholders(string text)

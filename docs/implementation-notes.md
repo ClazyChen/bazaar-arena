@@ -80,11 +80,10 @@
 - **战斗内模板**：`BuildSide` 时每个卡组槽位从 resolver 取 template 后**克隆**一份（新 ItemTemplate + SetIntsByTier），再创建 `BattleItemState(clone, tier)`。因此 `BattleItemState.Template` 为当局专用，可直接修改，例如 `wi.Template.Damage = wi.Template.Damage.Add(value)`，无需额外 DamageBonus 字段。
 - **Damage 的 getter**：若需对 Damage 做「整体加 delta」并写回，模板的 Damage 属性 get 需返回**完整按等级列表**（如通过 GetIntOrByTier），否则 get 只返回单值会丢失其他 tier。
 
-### 自定义效果（EffectKind.Other）与 ValueKey
+### 效果数值与 Apply 委托（当前约定）
 
-- **EffectDefinition**：`ValueKey`（如 `"Custom_0"`）表示「未设 ValueResolver 时用 template.GetInt(ValueKey, tier) 取值」；`ResolveValue(template, tier, defaultKey)` 统一顺序：ValueResolver → ValueKey → defaultKey → Value。新增物品时优先写 `ValueKey = "Custom_0"`，避免手写 lambda。
-- **CustomEffectHandlers**：自定义效果实现集中在 `BattleSimulator/CustomEffectHandlers.cs`，按 `CustomEffectId` 注册；BattleSimulator 仅调用 `CustomEffectHandlers.TryExecute(...)`，不在此文件内堆具体逻辑。
-- **预定义**：无专用属性的自定义效果可放在 `Core/Effect.cs`，如 `Effect.WeaponDamageBonus(ValueKey = "Custom_0")`，物品侧写 `Effects = [Effect.WeaponDamageBonus(ValueKey: "Custom_0")]`。详见 **.cursor/rules/item-design.mdc**。
+- **EffectDefinition**：保留 `ValueKey`、`ValueResolver`、`ResolveValue`；增加 `ApplyCritMultiplier`（默认 true）、`Apply`（`Action<IEffectApplyContext>?`）。只读效果（Damage/Burn 等）在 **Core/Effect.cs** 的 Apply 委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), applyCritMultiplier)` 取值；仅需指定数值来源字段的效果（如 WeaponDamageBonus）保留 `ValueKey`，由模拟器解析后填入 `ctx.Value`。
+- **自定义/扩展效果**：在 `Core/Effect.cs` 中新增静态 `EffectDefinition` 并设置 `Apply` 委托即可；无需单独 Handler 字典。详见 **.cursor/rules/item-design.mdc**。
 
 ---
 
@@ -128,24 +127,9 @@
 
 ---
 
-## EffectKind 集中映射与策略表
+## EffectKind 集中映射与策略表（已废弃）
 
-### 元数据集中
-
-- **EffectKindKeys**（`Core/EffectKindKeys.cs`）：`GetDefaultTemplateKey(EffectKind)` 与 `GetLogName(EffectKind)` 集中维护「Kind → 模板字段名」和「Kind → 日志显示名」。Shield、Regen 因 ItemTemplate 无对应公开属性仍用字面量 `"Shield"`、`"Regen"`。
-- **EffectKindExtensions**（`Core/EffectKindExtensions.cs`）：`kind.GetDefaultTemplateKey()`、`kind.GetLogName()` 将元数据强绑定到枚举，调用处统一写 `eff.Kind.GetDefaultTemplateKey()`、`eff.Kind.GetLogName()`。
-- **可暴击判断**：`IsCrittableEffect(k)` 简化为 `k != EffectKind.Other`，新增可暴击 Kind 无需改此处。
-
-### 数值解析与预定义效果
-
-- **ResolveValue 的 key**：BattleSimulator 中 `key = eff.ValueKey ?? eff.Kind.GetDefaultTemplateKey()`，不再在模拟器内维护 Kind→key 映射。
-- **预定义效果**（`Core/Effect.cs`）：Damage、Burn、Poison、Shield、Heal、Regen 仅设 `Kind` 与 `ValueKey = EffectKind.XXX.GetDefaultTemplateKey()`，不设 ValueResolver，与 WeaponDamageBonus 等自定义效果写法一致。
-
-### 策略表替代 switch
-
-- **EffectApplyContext**：只读结构体，包含 Side、Opp、Item、Value、IsCrit、TimeMs、LogSink、SideIndex、ItemIndex、LogName，供应用策略使用。
-- **EffectApplier**：委托 `void(in EffectApplyContext ctx)`。每个标准 Kind 对应一个静态方法（ApplyDamage、ApplyBurn、ApplyPoison、ApplyShield、ApplyHeal、ApplyRegen），只做「改状态 + 打一条日志」。
-- **GetEffectApplier(EffectKind)**：返回登记的策略；Other 返回 null，由 ExecuteOneEffect 走 CustomEffectHandlers.TryExecute。新增标准效果时：在 EffectKindKeys 加 key/日志名、在 GetEffectApplier 加分支、实现一个 ApplyXxx(in ctx)，无需改 ExecuteOneEffect 循环。
+本节所述 EffectKind、EffectKindKeys、GetEffectApplier、CustomEffectHandlers 已在此前重构中移除，改为**委托驱动的 Condition 与 Effect**。当前约定见「Condition 与 Effect 委托化重构」一节。
 
 ---
 
@@ -189,12 +173,42 @@
 - **UTF-8 不转义**：`DeckManager` 的 `JsonSerializerOptions` 增加 `Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping`，保存卡组集时中文等字符正常写入，不再输出 `\uXXXX`。
 - **default.json 不覆盖**：构建时 `Data/Decks/*.json` 复制到输出目录时**排除 default.json**（csproj 中 `Exclude="..\..\Data\Decks\default.json"`）；应用启动时若 `default.json` **不存在**才 `NewCollection()` 并 `SaveCollection(defaultPath)` 生成空集，避免每次构建或运行覆盖用户测试用文件。
 
-### 触发器统一与 Condition 自动补全
-
-- **InvokeTrigger**：所有触发器（战斗开始、使用物品、使用其他物品）统一通过 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用，遍历双方所有物品，用 `TriggerConditionEvaluator` 根据 `Condition`（SameAsSource / DifferentFromSource / WithTag）判断是否触发，再 `AddOrMergeAbility`。只有 Immediate 入 currentAbilityQueue，其余入 nextAbilityQueue。
-- **战斗开始**：步骤 1 只调用 `InvokeTrigger(Trigger.BattleStart, -1, -1, null, ...)` 入队，不直接执行，与 UseItem/UseOtherItem 一致遵守「本帧入队、步骤 8 或下一帧执行」。
-- **Condition 自动补全**：`AbilityDefinition` 生成/克隆时（BuildSide、ItemDatabase.CloneTemplate）：`TriggerName == UseItem` 且 `Condition == null` → `Condition.SameAsSource`；`TriggerName == UseOtherItem` 且 `Condition == null` → `Condition.DifferentFromSource`。`ConditionKind.DifferentFromSource` 在触发器评估中表示「候选物品 ≠ 来源物品」；UseOtherItem 时即使有 WithTag 也会先排除来源物品再判 WithTag。
+### 触发器统一与 Condition 自动补全（已重构，见下节）
 
 ### 小结
 
-新增「持续时间 + 多目标」类效果时：时间在模板中用秒、内部毫秒；多目标可复用 extraSuffix 与 FormatEffectValue；若有「剩余时间」且影响冷却，须保证**先处理冷却、再减少剩余时间**。触发器扩展时沿用 InvokeTrigger + TriggerConditionEvaluator，并在生成能力时按需补 SameAsSource/DifferentFromSource。
+新增「持续时间 + 多目标」类效果时：时间在模板中用秒、内部毫秒；多目标可复用 extraSuffix 与 FormatEffectValue；若有「剩余时间」且影响冷却，须保证**先处理冷却、再减少剩余时间**。触发器与条件见下节「Condition 与 Effect 委托化重构」。
+
+---
+
+## Condition 与 Effect 委托化重构
+
+本节记录 Condition / Effect 脱离枚举与 switch、改为委托驱动的重构经验，便于后续扩展触发器条件与效果时对照。
+
+### Condition：委托 + ConditionContext，支持 And 组合
+
+- **移除**：`ConditionKind` 枚举与 `Tag` 字段；原基于 switch 的 `TriggerConditionEvaluator` / `AuraConditionEvaluator`。
+- **Core/Condition.cs**：`Condition` 类仅持有一个 `Func<ConditionContext, bool>?` 委托；`ConditionContext` 为只读结构体，含 `CandidateSide`/`CandidateItem`、`SourceSide`/`SourceItem`、`UsedTemplate`、`CandidateTemplate`。评估时调用 `condition.Evaluate(ctx)`。
+- **静态工厂**：`SameAsSource`、`DifferentFromSource`、`SameSide`、`AdjacentToSource`、`WithTag(tag)`、`And(a, b)`。`WithTag` 的 tag 由闭包捕获；`And` 组合两个条件，用于「己方其他物品」等语义。
+- **克隆**：`Condition.Clone(c)` 在 Core 中提供，复制委托引用，供 BuildSide / ItemDatabase 克隆能力时使用。
+
+### UseOtherItem 默认与显式 Condition：始终叠加己方
+
+- **问题**：若 UseOtherItem 仅在有显式 Condition（如姜饼人 `WithTag(Tag.Tool)`）时直接返回该 Condition，则不会限制「己方」，对方使用工具也会触发己方能力。
+- **正确做法**：UseOtherItem **始终**先叠加「己方其他物品」基础条件 `baseSameSideOther = And(DifferentFromSource, SameSide)`。若原 Condition 为 null，则 `return baseSameSideOther`；若非 null，则 `return And(baseSameSideOther, condition)`。这样「使用工具时充能」等显式条件与「仅己方」同时满足。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。
+
+### Effect：脱离 EffectKind，委托驱动 + IEffectApplyContext
+
+- **移除**：`EffectKind` 枚举、`EffectKindKeys`、`EffectKindExtensions`；`GetEffectApplier(EffectKind)` 与 `CustomEffectHandlers` 字典；`EffectDefinition.Kind`、`CustomEffectId`。
+- **Core**：`IEffectApplyContext` 定义 `Value`、`HasLifeSteal`、`IsCrit`、`GetResolvedValue(key, applyCritMultiplier)`、`GetCasterItemInt(key, default)` 以及各类 Apply/Log 方法；`EffectDefinition` 增加 `ApplyCritMultiplier`（默认 true）、`Apply`（`Action<IEffectApplyContext>?`）。预定义效果在 **Core/Effect.cs** 内为每条效果设置 `Apply` 委托；只读效果在委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), true/false)` 按 key 取值，不依赖 ValueKey（仅 WeaponDamageBonus 保留 ValueKey 以指定数值来源）。
+- **暴击**：是否参与暴击由**物品**六字段（Damage/Burn/Poison/Heal/Shield/Regen 任一 > 0）与 **EffectDefinition.ApplyCritMultiplier** 共同决定；模拟器用 `TemplateHasAnyCrittableField` 判断，不再依赖 EffectKind。
+- **BattleSimulator**：实现 `EffectApplyContextImpl : IEffectApplyContext`，在 `ExecuteOneEffect` 中构建上下文（含 `CritMultiplier`），对每条效果若 `eff.Apply != null` 则 `eff.Apply(ctx)`；仅当 `eff.ValueKey != null` 时才解析并填入 `ctx.Value`（供 WeaponDamageBonus 等使用）。
+
+### 暴击日志：按效果区分是否显示「（暴击）」
+
+- **问题**：多效果能力（如毒刺：伤害+减速）暴击时，若整条能力共用 `isCrit`，则不可暴击的减速也会显示「（暴击）」。
+- **做法**：`LogEffect(effectName, value, extraSuffix, showCrit)` 增加 `showCrit` 参数；可暴击效果（Damage/Burn/Poison/Shield/Heal/Regen）在委托内传 `showCrit: ctx.IsCrit`，不可暴击效果（Charge/Freeze/Slow/WeaponDamageBonus）传 false 或不传（默认 false）。上下文内部打日志的方法（如 ApplyFreeze/ApplySlow/ChargeCasterItem）固定传 `isCrit: false`。
+
+### 小结
+
+扩展新触发器条件时在 Core 增加 Condition 静态工厂或 `And` 组合；扩展新效果时在 Core/Effect.cs 增加 `EffectDefinition` 并设置 `Apply` 委托与可选 `ApplyCritMultiplier`。UseOtherItem 的 EnsureTriggerCondition 必须始终叠加 SameSide，显式 Condition 只作额外过滤。

@@ -1,39 +1,52 @@
 namespace BazaarArena.Core;
 
-/// <summary>通用条件：用于光环或能力触发时的谓词判断（如目标是否与来源相同、被使用物品是否带某标签等）。</summary>
-public class Condition
+/// <summary>条件评估上下文：候选与来源的阵营/物品下标，以及可选的「被使用物品」/「候选物品」模板（供 WithTag 等使用）。</summary>
+public readonly struct ConditionContext
 {
-    /// <summary>条件种类。</summary>
-    public ConditionKind Kind { get; set; }
-
-    /// <summary>当 Kind 为 WithTag 时，要检查的标签。</summary>
-    public string? Tag { get; set; }
-
-    /// <summary>目标与来源相同（光环：targetItemIndex == sourceItemIndex；触发器：仅来源物品触发）。无参，不带括号使用。</summary>
-    public static Condition SameAsSource { get; } = new() { Kind = ConditionKind.SameAsSource };
-
-    /// <summary>目标与来源不同（触发器：除来源物品外的物品触发，如 UseOtherItem）。无参，不带括号使用。</summary>
-    public static Condition DifferentFromSource { get; } = new() { Kind = ConditionKind.DifferentFromSource };
-
-    /// <summary>目标与来源相邻（光环：|sourceIndex - targetIndex| == 1）。无参，不带括号使用。</summary>
-    public static Condition AdjacentToSource { get; } = new() { Kind = ConditionKind.AdjacentToSource };
-
-    /// <summary>有参条件：被使用物品带指定标签时成立。使用方式：Condition.WithTag(Tag.Tool)。</summary>
-    public static Condition WithTag(string tag) => new() { Kind = ConditionKind.WithTag, Tag = tag };
+    public int CandidateSide { get; init; }
+    public int CandidateItem { get; init; }
+    public int SourceSide { get; init; }
+    public int SourceItem { get; init; }
+    /// <summary>触发时「被使用的物品」模板（如 UseOtherItem）；光环评估时为 null。</summary>
+    public ItemTemplate? UsedTemplate { get; init; }
+    /// <summary>候选/目标物品模板（光环评估时用；触发时也可填）。用于 WithTag 等。</summary>
+    public ItemTemplate? CandidateTemplate { get; init; }
 }
 
-/// <summary>条件种类。</summary>
-public enum ConditionKind
+/// <summary>通用条件：由委托表示谓词，用于光环或能力触发。支持 And 组合（如「己方其他物品」= DifferentFromSource && SameSide）。</summary>
+public class Condition
 {
-    /// <summary>目标与来源相同。</summary>
-    SameAsSource,
+    private readonly Func<ConditionContext, bool>? _evaluate;
 
-    /// <summary>目标与来源不同（如 UseOtherItem 时排除施放物品自身）。</summary>
-    DifferentFromSource,
+    /// <summary>使用给定委托创建条件（用于克隆等）。</summary>
+    public Condition(Func<ConditionContext, bool>? evaluate) => _evaluate = evaluate;
 
-    /// <summary>目标与来源相邻。</summary>
-    AdjacentToSource,
+    /// <summary>评估条件；null 委托视为恒真。</summary>
+    public bool Evaluate(ConditionContext ctx) => _evaluate?.Invoke(ctx) ?? true;
 
-    /// <summary>带指定标签（如用于「被使用的物品」带 Tool 标签）。</summary>
-    WithTag,
+    /// <summary>克隆（复制委托引用），供模板克隆时使用。</summary>
+    public static Condition? Clone(Condition? c) => c == null ? null : new Condition(c._evaluate);
+
+    /// <summary>目标与来源相同（光环：自身；触发器：仅来源物品触发）。</summary>
+    public static Condition SameAsSource { get; } = new(ctx =>
+        ctx.CandidateSide == ctx.SourceSide && ctx.CandidateItem == ctx.SourceItem);
+
+    /// <summary>目标与来源不同（触发器：除来源外的物品；不限定己方/敌方）。</summary>
+    public static Condition DifferentFromSource { get; } = new(ctx =>
+        ctx.CandidateSide != ctx.SourceSide || ctx.CandidateItem != ctx.SourceItem);
+
+    /// <summary>候选与来源同侧（己方）。</summary>
+    public static Condition SameSide { get; } = new(ctx =>
+        ctx.CandidateSide == ctx.SourceSide);
+
+    /// <summary>目标与来源相邻（同侧且 |sourceIndex - targetIndex| == 1）。</summary>
+    public static Condition AdjacentToSource { get; } = new(ctx =>
+        ctx.CandidateSide == ctx.SourceSide && Math.Abs(ctx.CandidateItem - ctx.SourceItem) == 1);
+
+    /// <summary>有参条件：被使用物品或候选物品带指定标签。触发时看 UsedTemplate，光环时看 CandidateTemplate。</summary>
+    public static Condition WithTag(string tag) => new(ctx =>
+        (ctx.UsedTemplate?.Tags?.Contains(tag) ?? false) || (ctx.CandidateTemplate?.Tags?.Contains(tag) ?? false));
+
+    /// <summary>两个条件的与，用于组合语义（如「己方其他物品」= And(DifferentFromSource, SameSide)）。</summary>
+    public static Condition And(Condition a, Condition b) => new(ctx => a.Evaluate(ctx) && b.Evaluate(ctx));
 }
