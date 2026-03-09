@@ -64,6 +64,7 @@ public class ItemTemplate
     private const string KeyDamage = "Damage";
     private const string KeyBurn = "Burn";
     private const string KeyPoison = "Poison";
+    private const string KeyHeal = "Heal";
     private const string KeyCustom_0 = "Custom_0";
 
     /// <summary>根据字段名读取 int 值（无 tier 时按第一档），不存在则返回 0。</summary>
@@ -126,6 +127,9 @@ public class ItemTemplate
 
     /// <summary>剧毒值（可单值或按等级）。</summary>
     public IntOrByTier Poison { get => GetInt(KeyPoison, 0); set => SetIntOrByTier(KeyPoison, value.ToList()); }
+
+    /// <summary>治疗值（可单值或按等级）。</summary>
+    public IntOrByTier Heal { get => GetInt(KeyHeal, 0); set => SetIntOrByTier(KeyHeal, value.ToList()); }
 
     /// <summary>自定义变量 0（可单值或按等级），用于如举重手套的武器伤害提升量等。</summary>
     public IntOrByTier Custom_0 { get => GetInt(KeyCustom_0, 0); set => SetIntOrByTier(KeyCustom_0, value.ToList()); }

@@ -102,6 +102,102 @@ public static class Common
         };
     }
 
+    /// <summary>符文手斧（Rune Axe）：8s 武器 小 铜，造成 15 » 30 » 60 » 120 伤害。</summary>
+    public static ItemTemplate RuneAxe()
+    {
+        return new ItemTemplate
+        {
+            Name = "符文手斧",
+            Desc = "造成 {Damage} 伤害",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = ["武器"],
+            Cooldown = 8.0,
+            Damage = [15, 30, 60, 120],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = "使用物品",
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Damage],
+                },
+            ],
+        };
+    }
+
+    /// <summary>放大镜（Magnifying Glass）：6s 武器 工具 小 铜，造成 5 » 15 » 30 » 50 伤害。</summary>
+    public static ItemTemplate MagnifyingGlass()
+    {
+        return new ItemTemplate
+        {
+            Name = "放大镜",
+            Desc = "造成 {Damage} 伤害",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = ["武器", "工具"],
+            Cooldown = 6.0,
+            Damage = [5, 15, 30, 50],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = "使用物品",
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Damage],
+                },
+            ],
+        };
+    }
+
+    /// <summary>古董剑（Old Sword）：5s 武器 小 铜，造成 5 » 10 » 20 » 40 伤害。</summary>
+    public static ItemTemplate OldSword()
+    {
+        return new ItemTemplate
+        {
+            Name = "古董剑",
+            Desc = "造成 {Damage} 伤害",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = ["武器"],
+            Cooldown = 5.0,
+            Damage = [5, 10, 20, 40],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = "使用物品",
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Damage],
+                },
+            ],
+        };
+    }
+
+    /// <summary>蓝蕉（Bluenanas）：10s 食物 小 铜，治疗 10 » 20 » 40 » 80 生命值。</summary>
+    public static ItemTemplate Bluenanas()
+    {
+        return new ItemTemplate
+        {
+            Name = "蓝蕉",
+            Desc = "治疗 {Heal} 生命值",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = ["食物"],
+            Cooldown = 10.0,
+            Heal = [10, 20, 40, 80],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = "使用物品",
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Heal],
+                },
+            ],
+        };
+    }
+
     /// <summary>注册所有公共物品到数据库。</summary>
     public static void RegisterAll(ItemDatabase db)
     {
@@ -109,5 +205,9 @@ public static class Common
         db.Register(LavaCore());
         db.Register(TrainedSpider());
         db.Register(LiftingGloves());
+        db.Register(RuneAxe());
+        db.Register(MagnifyingGlass());
+        db.Register(OldSword());
+        db.Register(Bluenanas());
     }
 }
