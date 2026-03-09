@@ -25,13 +25,15 @@ public class FileBattleLogSink : IBattleLogSink, IDisposable
         _writer.WriteLine($"[帧 {frame}] 时间 {timeMs}ms");
     }
 
-    public void OnCast(int sideIndex, string itemName, int timeMs)
+    public void OnHpSnapshot(int timeMs, int side0Hp, int side1Hp) { }
+
+    public void OnCast(int sideIndex, int itemIndex, string itemName, int timeMs)
     {
         if (_level != BattleLogLevel.Detailed) return;
         _writer.WriteLine($"  玩家{sideIndex + 1} 施放 [{itemName}] @ {timeMs}ms");
     }
 
-    public void OnEffect(int sideIndex, string itemName, string effectKind, int value, int timeMs)
+    public void OnEffect(int sideIndex, int itemIndex, string itemName, string effectKind, int value, int timeMs)
     {
         if (_level != BattleLogLevel.Detailed) return;
         _writer.WriteLine($"  玩家{sideIndex + 1} [{itemName}] {effectKind} {value} @ {timeMs}ms");

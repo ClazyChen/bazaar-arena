@@ -22,11 +22,29 @@ public class DeckManager
         Directory.CreateDirectory(_baseDir);
     }
 
+    /// <summary>用于列表/下拉框显示：ID、等级与显示文本「[等级] 卡组名」。</summary>
+    public sealed class DeckListItem
+    {
+        public string Id { get; init; } = "";
+        public int Level { get; init; }
+        public string Display => $"[{Level}] {Id}";
+    }
+
     /// <summary>列出已保存的卡组 ID（文件名无扩展名）。</summary>
     public IEnumerable<string> List()
     {
         foreach (var f in Directory.EnumerateFiles(_baseDir, "*.json"))
             yield return Path.GetFileNameWithoutExtension(f);
+    }
+
+    /// <summary>列出卡组并带玩家等级，用于界面显示「[等级] 卡组名」。</summary>
+    public IEnumerable<DeckListItem> ListWithLevels()
+    {
+        foreach (var id in List())
+        {
+            var deck = Load(id);
+            yield return new DeckListItem { Id = id, Level = deck?.PlayerLevel ?? 1 };
+        }
     }
 
     /// <summary>按 ID 读取卡组，不存在则返回 null。</summary>

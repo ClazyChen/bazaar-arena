@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -13,7 +14,7 @@ public partial class MainWindow
 {
     private readonly DeckManager.DeckManager _deckManager;
     private readonly ItemDatabase.ItemDatabase _itemDatabase;
-    private readonly ObservableCollection<string> _deckNames = [];
+    private readonly ObservableCollection<DeckManager.DeckManager.DeckListItem> _deckListItems = [];
     private readonly ObservableCollection<SlotRowViewModel> _slotRows = [];
     private string? _currentDeckId;
     private IReadOnlyList<string> _itemNames = [];
@@ -33,7 +34,7 @@ public partial class MainWindow
         _itemDatabase = app.ItemDatabase;
         _itemNames = _itemDatabase.GetAllNames();
 
-        DeckListBox.ItemsSource = _deckNames;
+        DeckListBox.ItemsSource = _deckListItems;
 
         for (int i = 1; i <= 20; i++)
             PlayerLevelCombo.Items.Add(i);
@@ -54,9 +55,9 @@ public partial class MainWindow
 
     private void RefreshDeckList()
     {
-        _deckNames.Clear();
-        foreach (var id in _deckManager.List())
-            _deckNames.Add(id);
+        _deckListItems.Clear();
+        foreach (var item in _deckManager.ListWithLevels())
+            _deckListItems.Add(item);
     }
 
     private void ShowEditor(bool show)
@@ -77,9 +78,9 @@ public partial class MainWindow
 
     private void OpenDeck_Click(object sender, RoutedEventArgs e)
     {
-        if (DeckListBox.SelectedItem is string id)
+        if (DeckListBox.SelectedItem is DeckManager.DeckManager.DeckListItem item)
         {
-            LoadDeckIntoEditor(id);
+            LoadDeckIntoEditor(item.Id);
             return;
         }
         MessageBox.Show("请先在左侧列表中选择要打开的卡组。", "打开卡组", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -87,8 +88,8 @@ public partial class MainWindow
 
     private void DeckListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (DeckListBox.SelectedItem is not string id) return;
-        LoadDeckIntoEditor(id);
+        if (DeckListBox.SelectedItem is not DeckManager.DeckManager.DeckListItem item) return;
+        LoadDeckIntoEditor(item.Id);
     }
 
     private void LoadDeckIntoEditor(string id)
@@ -117,12 +118,13 @@ public partial class MainWindow
 
     private void DeleteDeck_Click(object sender, RoutedEventArgs e)
     {
-        if (DeckListBox.SelectedItem is not string id)
+        if (DeckListBox.SelectedItem is not DeckManager.DeckManager.DeckListItem item)
         {
             MessageBox.Show("请先选择要删除的卡组。", "删除", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        if (MessageBox.Show($"确定要删除卡组「{id}」吗？", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        string id = item.Id;
+        if (MessageBox.Show($"确定要删除卡组「{item.Display}」吗？", "确认删除", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
         _deckManager.Delete(id);
         if (_currentDeckId == id)
@@ -198,6 +200,7 @@ public partial class MainWindow
 
         RebuildTierRow();
         RebuildDeckImageRow();
+        RebuildDeckNameRow();
     }
 
     private void RebuildTierRow()
@@ -305,7 +308,6 @@ public partial class MainWindow
                 Background = new SolidColorBrush(Colors.Transparent),
                 Tag = item.ViewModel,
                 Cursor = Cursors.Hand,
-                ToolTip = item.ViewModel.ItemName,
                 Child = new Image
                 {
                     Source = ItemImageHelper.GetImageSource(item.ViewModel.ItemName),
@@ -316,6 +318,30 @@ public partial class MainWindow
             Grid.SetColumn(border, item.StartColumn);
             Grid.SetColumnSpan(border, item.ColumnSpan);
             DeckImageRowGrid.Children.Add(border);
+        }
+    }
+
+    private void RebuildDeckNameRow()
+    {
+        if (DeckNameRowGrid == null) return;
+        DeckNameRowGrid.Children.Clear();
+        const int colGap = 2;
+        var cellMargin = new Thickness(colGap, 2, colGap, 0);
+        foreach (var item in DeckSlotDisplays)
+        {
+            var text = new TextBlock
+            {
+                Text = item.ViewModel.ItemName,
+                TextWrapping = TextWrapping.Wrap,
+                HorizontalAlignment = item.ColumnSpan > 1 ? HorizontalAlignment.Center : HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = cellMargin,
+                FontSize = 11,
+                Foreground = new SolidColorBrush(Colors.White),
+            };
+            Grid.SetColumn(text, item.StartColumn);
+            Grid.SetColumnSpan(text, item.ColumnSpan);
+            DeckNameRowGrid.Children.Add(text);
         }
     }
 
@@ -497,7 +523,7 @@ public partial class MainWindow
             _deckManager.Save(deck, id, _itemDatabase);
             _currentDeckId = id;
             RefreshDeckList();
-            DeckListBox.SelectedItem = id;
+            DeckListBox.SelectedItem = _deckListItems.FirstOrDefault(x => x.Id == id);
             MessageBox.Show("另存为成功。", "保存", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (ArgumentException ex)

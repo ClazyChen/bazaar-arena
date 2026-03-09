@@ -18,21 +18,21 @@ public partial class BatchSimulateWindow
         _deckManager = app.DeckManager;
         _itemDatabase = app.ItemDatabase;
 
-        foreach (var id in _deckManager.List())
+        foreach (var item in _deckManager.ListWithLevels())
         {
-            DeckACombo.Items.Add(id);
-            DeckBCombo.Items.Add(id);
+            DeckACombo.Items.Add(item);
+            DeckBCombo.Items.Add(item);
         }
     }
 
     private void Run_Click(object sender, RoutedEventArgs e)
     {
-        if (DeckACombo.SelectedItem is not string idA)
+        if (DeckACombo.SelectedItem is not DeckManager.DeckManager.DeckListItem itemA)
         {
             MessageBox.Show("请选择玩家1 的卡组。", "批量模拟", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        if (DeckBCombo.SelectedItem is not string idB)
+        if (DeckBCombo.SelectedItem is not DeckManager.DeckManager.DeckListItem itemB)
         {
             MessageBox.Show("请选择玩家2 的卡组。", "批量模拟", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
@@ -43,8 +43,8 @@ public partial class BatchSimulateWindow
             return;
         }
 
-        var deckA = _deckManager.Load(idA);
-        var deckB = _deckManager.Load(idB);
+        var deckA = _deckManager.Load(itemA.Id);
+        var deckB = _deckManager.Load(itemB.Id);
         if (deckA == null || deckB == null)
         {
             MessageBox.Show("无法加载所选卡组。", "批量模拟", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -87,7 +87,7 @@ public partial class BatchSimulateWindow
             {
                 runButton.IsEnabled = true;
                 ProgressText.Text = $"共 {n} 场";
-                ResultText.Text = $"玩家1（{idA}）胜率：{p0:F1}%  |  玩家2（{idB}）胜率：{p1:F1}%  |  平局：{pd:F1}%";
+                ResultText.Text = $"玩家1（{itemA.Display}）胜率：{p0:F1}%  |  玩家2（{itemB.Display}）胜率：{p1:F1}%  |  平局：{pd:F1}%";
             });
         });
     }

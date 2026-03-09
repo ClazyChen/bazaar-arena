@@ -26,6 +26,8 @@ public class BattleRunStats
 public class ItemStatRow
 {
     public int SideIndex { get; set; }
+    /// <summary>显示用玩家编号（1 或 2）。</summary>
+    public int Player => SideIndex + 1;
     public string ItemName { get; set; } = "";
     public int CastCount { get; set; }
     public int Damage { get; set; }
@@ -54,4 +56,6 @@ public class StrengthCurvePoint
     public int Regen { get; set; }
     /// <summary>总量（伤害+灼烧+剧毒+护盾+治疗+再生），用于纵轴。</summary>
     public int Total => Damage + Burn + Poison + Shield + Heal + Regen;
+    /// <summary>该时刻该侧当前生命值（纵轴为当前生命值时使用）。</summary>
+    public int Hp { get; set; }
 }

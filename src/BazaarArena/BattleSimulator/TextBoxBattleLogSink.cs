@@ -14,49 +14,53 @@ public class TextBoxBattleLogSink : IBattleLogSink
 
     public void OnFrameStart(int timeMs, int frame)
     {
-        if (_level != BattleLogLevel.Detailed) return;
-        _appendLine($"[帧 {frame}] 时间 {timeMs}ms");
+        // GUI 单次模拟只保留能力相关日志，不输出每帧行
+        return;
     }
 
-    public void OnCast(int sideIndex, string itemName, int timeMs)
+    public void OnHpSnapshot(int timeMs, int side0Hp, int side1Hp) { }
+
+    private static string TimeSec(int timeMs) => (timeMs / 1000.0).ToString("F2") + "s";
+
+    public void OnCast(int sideIndex, int itemIndex, string itemName, int timeMs)
     {
-        if (_level != BattleLogLevel.Detailed) return;
-        _appendLine($"  玩家{sideIndex + 1} 施放 [{itemName}] @ {timeMs}ms");
+        // 日志只保留实际触发的效果，不输出施放
+        return;
     }
 
-    public void OnEffect(int sideIndex, string itemName, string effectKind, int value, int timeMs)
+    public void OnEffect(int sideIndex, int itemIndex, string itemName, string effectKind, int value, int timeMs)
     {
         if (_level != BattleLogLevel.Detailed) return;
-        _appendLine($"  玩家{sideIndex + 1} [{itemName}] {effectKind} {value} @ {timeMs}ms");
+        _appendLine($"[{TimeSec(timeMs)}] 玩家{sideIndex + 1} [{itemName}] {effectKind} {value}");
     }
 
     public void OnBurnTick(int sideIndex, int burnDamage, int remainingBurn, int timeMs)
     {
         if (_level != BattleLogLevel.Detailed) return;
-        _appendLine($"  灼烧结算 玩家{sideIndex + 1} 受到{burnDamage} 剩余灼烧{remainingBurn} @ {timeMs}ms");
+        _appendLine($"[{TimeSec(timeMs)}] 灼烧结算 玩家{sideIndex + 1} 受到{burnDamage} 剩余灼烧{remainingBurn}");
     }
 
     public void OnPoisonTick(int sideIndex, int poisonDamage, int timeMs)
     {
         if (_level != BattleLogLevel.Detailed) return;
-        _appendLine($"  剧毒结算 玩家{sideIndex + 1} 受到{poisonDamage} @ {timeMs}ms");
+        _appendLine($"[{TimeSec(timeMs)}] 剧毒结算 玩家{sideIndex + 1} 受到{poisonDamage}");
     }
 
     public void OnRegenTick(int sideIndex, int heal, int timeMs)
     {
         if (_level != BattleLogLevel.Detailed) return;
-        _appendLine($"  生命再生 玩家{sideIndex + 1} 回复{heal} @ {timeMs}ms");
+        _appendLine($"[{TimeSec(timeMs)}] 生命再生 玩家{sideIndex + 1} 回复{heal}");
     }
 
     public void OnSandstormTick(int damage, int timeMs)
     {
         if (_level != BattleLogLevel.Detailed) return;
-        _appendLine($"  沙尘暴 双方受到{damage} @ {timeMs}ms");
+        _appendLine($"[{TimeSec(timeMs)}] 沙尘暴 双方受到{damage}");
     }
 
     public void OnResult(int winnerSideIndex, int timeMs, bool isDraw)
     {
         if (_level == BattleLogLevel.None) return;
-        _appendLine(isDraw ? $"[结果] 平局 @ {timeMs}ms" : $"[结果] 玩家{winnerSideIndex + 1} 获胜 @ {timeMs}ms");
+        _appendLine(isDraw ? $"[{TimeSec(timeMs)}] [结果] 平局" : $"[{TimeSec(timeMs)}] [结果] 玩家{winnerSideIndex + 1} 获胜");
     }
 }

@@ -31,7 +31,7 @@
                 <StackPanel>
                     <TextBlock Text="已保存的卡组" FontWeight="Bold" Margin="0,0,0,6"/>
                     <ListBox x:Name="DeckListBox" Height="280" SelectionChanged="DeckListBox_SelectionChanged"
-                             DisplayMemberPath="."/>
+                             DisplayMemberPath="Display"/>
                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                         <Button Content="新建" Click="NewDeck_Click" Padding="8,4" Margin="0,0,4,0"/>
                         <Button Content="删除" Click="DeleteDeck_Click" Padding="8,4"/>
@@ -60,12 +60,13 @@
                                     VerticalAlignment="Stretch" AllowDrop="True" DragOver="DeleteZone_DragOver" Drop="DeleteZone_Drop">
                                 <TextBlock Text="删除" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#CCC" FontSize="12"/>
                             </Border>
-                            <Border x:Name="DeckGridDropZone" Grid.Column="1" BorderBrush="#ccc" BorderThickness="1" CornerRadius="4" Padding="4" Background="#1a1a1a"
+                            <Border x:Name="DeckGridDropZone" Grid.Column="1" VerticalAlignment="Top" BorderBrush="#ccc" BorderThickness="1" CornerRadius="4" Padding="4" Background="#1a1a1a"
                                     AllowDrop="True" DragOver="DeckGrid_DragOver" Drop="DeckGrid_Drop">
                                 <Grid x:Name="DeckGridInner" SizeChanged="DeckGridInner_SizeChanged">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="14"/>
                                         <RowDefinition Height="80"/>
+                                        <RowDefinition Height="Auto" MinHeight="28"/>
                                     </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -107,9 +108,23 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                     </Grid>
+                                    <Grid x:Name="DeckNameRowGrid" Grid.Row="2" Grid.ColumnSpan="10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                    </Grid>
                                 </Grid>
                             </Border>
-                            <Border Grid.Column="2" Width="56" MinHeight="140" Margin="8,0,0,0" Background="Transparent"/>
+                            <Border Grid.Column="2" Width="56" Margin="8,0,0,0" Background="Transparent"/>
                         </Grid>
                         <TextBlock Text="添加物品（拖拽到卡组中加入）" FontWeight="Bold" Margin="0,0,0,4"/>
                         <ItemsControl x:Name="ItemPoolList" Margin="0,0,0,12">
@@ -120,13 +135,13 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Width="64" Margin="0,0,8,8" Padding="4" Background="#2a2a2a" BorderBrush="#555" BorderThickness="1" CornerRadius="4"
+                                    <Border MinWidth="64" Width="96" Margin="0,0,8,8" Padding="4" Background="#2a2a2a" BorderBrush="#555" BorderThickness="1" CornerRadius="4"
                                             Cursor="Hand" PreviewMouseLeftButtonDown="ItemPoolTile_PreviewMouseLeftButtonDown">
                                         <StackPanel>
                                             <Border Height="48" Margin="0,0,0,4" Background="#333" CornerRadius="2">
                                                 <Image Source="{Binding Converter={StaticResource ItemNameToImage}}" Stretch="Uniform" Height="48"/>
                                             </Border>
-                                            <TextBlock Text="{Binding}" FontSize="11" Foreground="#eee" TextTrimming="CharacterEllipsis" MaxWidth="56" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{Binding}" FontSize="11" Foreground="#eee" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"/>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>

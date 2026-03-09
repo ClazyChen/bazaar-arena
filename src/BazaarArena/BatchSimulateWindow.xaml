@@ -13,9 +13,9 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
             <TextBlock Text="玩家1 卡组：" VerticalAlignment="Center" Margin="0,0,6,0"/>
-            <ComboBox x:Name="DeckACombo" MinWidth="180" Margin="0,0,16,0"/>
+            <ComboBox x:Name="DeckACombo" MinWidth="180" Margin="0,0,16,0" DisplayMemberPath="Display"/>
             <TextBlock Text="玩家2 卡组：" VerticalAlignment="Center" Margin="0,0,6,0"/>
-            <ComboBox x:Name="DeckBCombo" MinWidth="180"/>
+            <ComboBox x:Name="DeckBCombo" MinWidth="180" DisplayMemberPath="Display"/>
         </StackPanel>
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
             <TextBlock Text="模拟场次：" VerticalAlignment="Center" Margin="0,0,6,0"/>

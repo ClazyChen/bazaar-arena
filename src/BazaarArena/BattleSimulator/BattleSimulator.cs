@@ -44,6 +44,7 @@ public class BattleSimulator
         {
             if (logLevel == BattleLogLevel.Detailed)
                 logSink.OnFrameStart(timeMs, frame);
+            logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);
 
             // 1. 第 0 帧触发「游戏开始时」
             if (frame == 0)
@@ -106,7 +107,7 @@ public class BattleSimulator
                 var item = side.Items[itemIdx];
                 if (item.GetAmmoCap() > 0)
                     item.AmmoRemaining--;
-                logSink.OnCast(sideIdx, item.Template.Name, timeMs);
+                logSink.OnCast(sideIdx, itemIdx, item.Template.Name, timeMs);
                 int multicast = item.GetMulticast();
                 for (int a = 0; a < item.Template.Abilities.Count; a++)
                 {
@@ -320,19 +321,19 @@ public class BattleSimulator
             {
                 case EffectKind.Damage:
                     ApplyDamageToSide(opp, value, isBurn: false);
-                    logSink.OnEffect(sideIndex, item.Template.Name, "伤害", value, timeMs);
+                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "伤害", value, timeMs);
                     break;
                 case EffectKind.Burn:
                     opp.Burn += value;
-                    logSink.OnEffect(sideIndex, item.Template.Name, "灼烧", value, timeMs);
+                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "灼烧", value, timeMs);
                     break;
                 case EffectKind.Poison:
                     opp.Poison += value;
-                    logSink.OnEffect(sideIndex, item.Template.Name, "剧毒", value, timeMs);
+                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "剧毒", value, timeMs);
                     break;
                 case EffectKind.Shield:
                     side.Shield += value;
-                    logSink.OnEffect(sideIndex, item.Template.Name, "护盾", value, timeMs);
+                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "护盾", value, timeMs);
                     break;
                 case EffectKind.Heal:
                     int heal = Math.Min(value, side.MaxHp - side.Hp);
@@ -340,11 +341,11 @@ public class BattleSimulator
                     int clear = RatioUtil.PercentFloor(heal, 5);
                     side.Burn = Math.Max(0, side.Burn - clear);
                     side.Poison = Math.Max(0, side.Poison - clear);
-                    logSink.OnEffect(sideIndex, item.Template.Name, "治疗", heal, timeMs);
+                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "治疗", heal, timeMs);
                     break;
                 case EffectKind.Regen:
                     side.Regen += value;
-                    logSink.OnEffect(sideIndex, item.Template.Name, "生命再生", value, timeMs);
+                    logSink.OnEffect(sideIndex, itemIndex, item.Template.Name, "生命再生", value, timeMs);
                     break;
             }
         }
