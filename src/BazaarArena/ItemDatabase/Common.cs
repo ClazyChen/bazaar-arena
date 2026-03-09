@@ -255,6 +255,30 @@ public static class Common
         };
     }
 
+    /// <summary>冰锥（Icicle）：小、铜；每场战斗开始时，冻结一件物品 3 » 4 » 5 » 6 秒。有冷却的敌人物品优先被选取。</summary>
+    public static ItemTemplate Icicle()
+    {
+        return new ItemTemplate
+        {
+            Name = "冰锥",
+            Desc = "每场战斗开始时，冻结一件物品 {FreezeSeconds} 秒",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = [],
+            FreezeSeconds = new[] { 3.0, 4.0, 5.0, 6.0 },
+            FreezeTargetCount = 1,
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.BattleStart,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Freeze],
+                },
+            ],
+        };
+    }
+
     /// <summary>姜饼人（Gingerbread Man）：5s 小 铜 食物 伙伴；获得 10 » 20 » 30 » 40 护盾（优先级 Low）；使用工具时为此物品充能 1 秒（优先级 Medium）。</summary>
     public static ItemTemplate GingerbreadMan()
     {
@@ -300,6 +324,7 @@ public static class Common
         db.Register(AgilityBoots());
         db.Register(Claws());
         db.Register(Bluenanas());
+        db.Register(Icicle());
         db.Register(GingerbreadMan());
     }
 }

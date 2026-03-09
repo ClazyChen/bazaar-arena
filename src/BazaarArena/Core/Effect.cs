@@ -52,6 +52,13 @@ public static class Effect
         ValueKey = EffectKind.Charge.GetDefaultTemplateKey(),
     };
 
+    /// <summary>冻结：根据模板的 Freeze（毫秒）与 FreezeTargetCount，随机选取敌人物品施加冻结；有冷却的物品优先，每次选取独立可重复。</summary>
+    public static readonly EffectDefinition Freeze = new()
+    {
+        Kind = EffectKind.Freeze,
+        ValueKey = EffectKind.Freeze.GetDefaultTemplateKey(),
+    };
+
     /// <summary>武器伤害提升（自定义效果）：对己方所有带「武器」tag 的物品，将其 Damage 增加指定量；数值来自模板的 valueKey 字段（默认 Custom_0）。</summary>
     public static EffectDefinition WeaponDamageBonus(string? ValueKey = null) => new()
     {

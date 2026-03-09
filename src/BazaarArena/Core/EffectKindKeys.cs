@@ -13,6 +13,7 @@ public static class EffectKindKeys
         EffectKind.Heal => nameof(ItemTemplate.Heal),
         EffectKind.Regen => "Regen",
         EffectKind.Charge => nameof(ItemTemplate.Charge),
+        EffectKind.Freeze => nameof(ItemTemplate.Freeze),
         EffectKind.Other => nameof(ItemTemplate.Custom_0),
         _ => "",
     };
@@ -27,6 +28,7 @@ public static class EffectKindKeys
         EffectKind.Heal => "治疗",
         EffectKind.Regen => "生命再生",
         EffectKind.Charge => "充能",
+        EffectKind.Freeze => "冻结",
         EffectKind.Other => "",
         _ => "",
     };

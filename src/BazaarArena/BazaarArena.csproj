@@ -10,8 +10,9 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <!-- 不复制 default.json，避免每次构建覆盖用户测试用的卡组集；仅在没有该文件时由应用创建空集 -->
   <ItemGroup>
-    <None Include="..\..\Data\Decks\*.json" Link="Data\Decks\%(Filename)%(Extension)">
+    <None Include="..\..\Data\Decks\*.json" Link="Data\Decks\%(Filename)%(Extension)" Exclude="..\..\Data\Decks\default.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\..\Data\levelups.json" Link="Data\levelups.json">

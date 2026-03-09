@@ -1,7 +1,25 @@
 using System.Collections;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace BazaarArena.Core;
+
+/// <summary>秒数：单值或按等级。用于物品定义中时间类属性（如 FreezeSeconds），保证以秒为单位可读。</summary>
+public readonly struct SecondsOrByTier
+{
+    private readonly double[]? _values;
+
+    private SecondsOrByTier(double[] values) => _values = values;
+
+    internal static SecondsOrByTier FromFirstTierMs(int ms) => new([ms / 1000.0]);
+
+    public static implicit operator SecondsOrByTier(double single) => new([single]);
+    public static implicit operator SecondsOrByTier(double[] byTier) => new(byTier);
+
+    internal List<int> ToFreezeMs() => _values?.Select(s => (int)(s * 1000)).ToList() ?? [];
+
+    public static implicit operator double(SecondsOrByTier s) => s._values?.Length > 0 ? s._values[0] : 0;
+}
 
 /// <summary>单值或按等级列表，用于对象初始器中支持 Damage = 40 与 Damage = [25, 35, 45, 55] 两种写法。</summary>
 [CollectionBuilder(typeof(IntOrByTier), "Create")]
@@ -68,6 +86,8 @@ public class ItemTemplate
     private const string KeyHeal = "Heal";
     private const string KeyShield = "Shield";
     private const string KeyCharge = "Charge";
+    private const string KeyFreeze = "Freeze";
+    private const string KeyFreezeTargetCount = "FreezeTargetCount";
     private const string KeyCustom_0 = "Custom_0";
 
     /// <summary>根据字段名读取 int 值（无 tier 时按第一档），不存在则返回 0。</summary>
@@ -155,6 +175,15 @@ public class ItemTemplate
 
     /// <summary>充能时间（秒）。设置时转换为 Charge 毫秒（仅支持单值）；定义物品时可用此属性以秒书写。</summary>
     public double ChargeSeconds { get => GetInt(KeyCharge, 0) / 1000.0; set => SetInt(KeyCharge, (int)(value * 1000)); }
+
+    /// <summary>冻结时长（毫秒，可单值或按等级）；用于冻结效果。内部存储用，定义物品时请用 FreezeSeconds（秒）以保证可读性。</summary>
+    public IntOrByTier Freeze { get => GetIntOrByTier(KeyFreeze); set => SetIntOrByTier(KeyFreeze, value.ToList()); }
+
+    /// <summary>冻结时长（秒）。可赋单值或按等级 [3.0, 4.0, 5.0, 6.0]，内部转换为毫秒存储。物品定义中时间一律用秒。</summary>
+    public SecondsOrByTier FreezeSeconds { get => SecondsOrByTier.FromFirstTierMs(GetInt(KeyFreeze, 0)); set => SetIntOrByTier(KeyFreeze, value.ToFreezeMs()); }
+
+    /// <summary>冻结目标数量（可单值或按等级）；随机选取敌人物品时选取的次数（每次独立，可能重复）。</summary>
+    public IntOrByTier FreezeTargetCount { get => GetInt(KeyFreezeTargetCount, 1); set => SetIntOrByTier(KeyFreezeTargetCount, value.ToList()); }
 
     /// <summary>自定义变量 0（可单值或按等级），用于如举重手套的武器伤害提升量等。</summary>
     public IntOrByTier Custom_0 { get => GetInt(KeyCustom_0, 0); set => SetIntOrByTier(KeyCustom_0, value.ToList()); }

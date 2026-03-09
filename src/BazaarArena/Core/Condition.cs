@@ -9,8 +9,11 @@ public class Condition
     /// <summary>当 Kind 为 WithTag 时，要检查的标签。</summary>
     public string? Tag { get; set; }
 
-    /// <summary>目标与来源相同（光环：targetItemIndex == sourceItemIndex）。无参，不带括号使用。</summary>
+    /// <summary>目标与来源相同（光环：targetItemIndex == sourceItemIndex；触发器：仅来源物品触发）。无参，不带括号使用。</summary>
     public static Condition SameAsSource { get; } = new() { Kind = ConditionKind.SameAsSource };
+
+    /// <summary>目标与来源不同（触发器：除来源物品外的物品触发，如 UseOtherItem）。无参，不带括号使用。</summary>
+    public static Condition DifferentFromSource { get; } = new() { Kind = ConditionKind.DifferentFromSource };
 
     /// <summary>目标与来源相邻（光环：|sourceIndex - targetIndex| == 1）。无参，不带括号使用。</summary>
     public static Condition AdjacentToSource { get; } = new() { Kind = ConditionKind.AdjacentToSource };
@@ -24,6 +27,9 @@ public enum ConditionKind
 {
     /// <summary>目标与来源相同。</summary>
     SameAsSource,
+
+    /// <summary>目标与来源不同（如 UseOtherItem 时排除施放物品自身）。</summary>
+    DifferentFromSource,
 
     /// <summary>目标与来源相邻。</summary>
     AdjacentToSource,

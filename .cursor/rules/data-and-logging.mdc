@@ -10,7 +10,8 @@ globs: "**/*.cs"
 
 - **位置**：游戏数据（如卡组、等级表）放在 `Data/` 下，例如 `Data/Decks/`、`Data/levelups.json`。程序优先从当前目录找 `Data`，否则用程序目录下的 `Data`。
 - **等级→生命值**：来自游戏的 levelups 类 JSON 中，**L 级最大生命值 = 300 + Level1 的 HealthIncrease + … + Level(L-1) 的 HealthIncrease**（2 级 = 300 + Level1 的增量，不是 Level2 的增量）。解析时用「上一级」的 HealthIncrease 累加。
-- **发布**：需随程序分发的 JSON 在 csproj 中通过 `None` + `CopyToOutputDirectory` 复制到输出目录的对应路径（如 `Data/levelups.json`）。
+- **发布**：需随程序分发的 JSON 在 csproj 中通过 `None` + `CopyToOutputDirectory` 复制到输出目录的对应路径（如 `Data/levelups.json`）。**default.json 不参与复制**（Exclude），避免每次构建覆盖用户测试用卡组集；应用启动时仅当 `Data/Decks/default.json` 不存在时才生成空卡组集。
+- **保存 JSON**：卡组集保存使用 `JsonSerializerOptions` 的 `Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping`，使中文等 UTF-8 字符正常写入文件而非 `\uXXXX` 转义。
 
 ## 运行期日志
 

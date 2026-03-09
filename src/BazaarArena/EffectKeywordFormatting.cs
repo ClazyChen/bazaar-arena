@@ -22,6 +22,7 @@ public static class EffectKeywordFormatting
         ("剧毒", Color.FromRgb(14, 190, 79), false),
         ("护盾", Color.FromRgb(244, 207, 32), false),
         ("充能", Color.FromRgb(0, 236, 195), false),
+        ("冻结", Color.FromRgb(63, 200, 247), false),
         ("生命值", Color.FromRgb(142, 234, 49), false),
         ("治疗", Color.FromRgb(142, 234, 49), false),
         ("回复", Color.FromRgb(142, 234, 49), false),

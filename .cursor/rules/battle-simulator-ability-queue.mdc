@@ -27,7 +27,9 @@ alwaysApply: false
 
 ## 触发器调用方式与 PendingCount
 
-- 使用统一的「触发器调用」方法：如 `InvokeUseItemTrigger(...)`、`InvokeUseOtherItemTrigger(...)`，在方法内遍历双方卡组寻找可触发能力，而不是在步骤 7 里手写多套循环。
+- 所有触发器（战斗开始、使用物品、使用其他物品）均通过**统一**的 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用：传入触发器名、来源物品与上下文，遍历双方所有物品，用 `TriggerConditionEvaluator` 根据 Condition（SameAsSource / DifferentFromSource / WithTag）判断是否触发，再入队。**只有 Immediate 优先级入 currentAbilityQueue，其余入 nextAbilityQueue**（与步骤 7 施放触发的规则一致）。
+- **战斗开始**：步骤 1 只调用 `InvokeTrigger(Trigger.BattleStart, -1, -1, null, ...)` 入队，不直接执行；执行在步骤 8（或下一帧步骤 8）进行。
+- **UseItem / UseOtherItem**：生成/克隆能力时自动补 Condition：`TriggerName == UseItem` 且 Condition 为 null → `Condition.SameAsSource`；`TriggerName == UseOtherItem` 且 Condition 为 null → `Condition.DifferentFromSource`。这样统一 invoke 只需根据 Condition 判断来源/非来源与 WithTag。
 - **PendingCount 合并顺序（AddOrMergeAbility）**：
   1. 先在 **currentAbilityQueue** 中查找同 (SideIndex, ItemIndex, AbilityIndex)，找到则只做 `PendingCount += pendingCount`，不新建。
   2. 再在 **nextAbilityQueue** 中查找同上键，找到则只做 `PendingCount += pendingCount`，不新建。

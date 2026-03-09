@@ -40,7 +40,7 @@
    ExecuteOneEffect 执行效果时可能触发新能力（如后续扩展的触发器）。这些新能力入队规则：**仅优先级为 Immediate 的加入 currentAbilityQueue**（本帧继续被步骤 8 处理），**其余一律加入 nextAbilityQueue**。因此 ExecuteOneEffect 需要接收 current/next 两个队列参数，供未来触发器调用使用。
 
 4. **触发器调用方式与 PendingCount 合并**  
-   - 以「触发器调用」方式统一处理：如 `InvokeUseItemTrigger(...)`、`InvokeUseOtherItemTrigger(...)`，遍历双方卡组寻找可触发能力，而不是在步骤 7 里手写两套循环。  
+   - 所有触发器通过**统一**的 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用，遍历双方所有物品，用 `TriggerConditionEvaluator` 根据 Condition（SameAsSource / DifferentFromSource / WithTag）判断是否触发；战斗开始也经此入队，不直接执行。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。  
    - **PendingCount 为通用机制**：新能力入队时，**先查 currentAbilityQueue** 是否存在同 (SideIndex, ItemIndex, AbilityIndex)，有则只加 PendingCount；**再查 nextAbilityQueue**，有则只加 PendingCount；**都没有**才新建条目，且新建时仅 Immediate 入 current，其余入 next。
 
 5. **总结**  
@@ -159,3 +159,42 @@
 ### Desc 按分号分两行
 
 - **显示**：物品 Desc 中可用分号（`;` 或 `；`）分段。MainWindow 的卡组内/物品池 Tooltip 对 `template.Desc` 按分号 Split 后，每段 trim 再单独做占位符替换与 BuildLineInlines，每段一个 TextBlock，实现两行或多行显示。
+
+---
+
+## 冰锥与冻结、相关修复与约定总结
+
+本节记录「冰锥」物品加入过程中涉及的实现选择与修复，便于后续扩展类似效果（多目标、持续时间、日志与持久化）时对照。
+
+### 冻结（Freeze）与冰锥物品
+
+- **属性设计**：与充能（Charge）一致，**内部存毫秒**，物品定义用**秒**。`ItemTemplate` 提供 `Freeze`（`IntOrByTier` 毫秒）、`FreezeSeconds`（`SecondsOrByTier`：可赋单值或 `new[] { 3.0, 4.0, 5.0, 6.0 }`，内部转毫秒）、`FreezeTargetCount`（冻结目标数量，可单值或按等级）。
+- **SecondsOrByTier**：`Core/ItemTemplate.cs` 中新增结构体，支持从 `double` / `double[]` 隐式转换，提供 `ToFreezeMs()` 与 `FromFirstTierMs(ms)`，供定义时写 `FreezeSeconds = new[] { 3.0, 4.0, 5.0, 6.0 }`，符合「物品定义中时间一律用秒」的约定（见 **.cursor/rules/project-conventions.mdc**）。
+- **预定义效果**：`Effect.Freeze` 使用模板的 `Freeze`（毫秒）与 `FreezeTargetCount`；模拟器 `ApplyFreeze` 从敌人物品中**随机选取**目标，**有冷却的物品优先**，每次选取独立可重复；对每个目标 `FreezeRemainingMs = Math.Max(当前, freezeMs)`。冻结不可暴击。
+- **BattleItemState**：已有 `FreezeRemainingMs`；`ProcessCooldown` 中 `FreezeRemainingMs > 0` 时不推进冷却；每帧在某一步中减少 `FreezeRemainingMs`（见下）。
+
+### 加速/减速/冻结剩余时间与冷却顺序
+
+- **问题**：若先「减少加速、减速、冻结剩余时间」再「处理冷却」，则冻结最后一帧会少 1 帧：本帧初剩余 50ms 被减为 0，再处理冷却时已不视为冻结，冷却会推进。
+- **正确顺序**：**先处理冷却**（冻结状态下不推进），**再**减少加速、减速、冻结剩余时间 50ms。这样冻结最后一帧仍在本帧内阻挡冷却，持续时间足额。设计文档「每一帧的结算顺序」与「帧的结算规则」已同步为：步骤 2 处理冷却，步骤 3 加速/减速/冻结减少。
+
+### 多目标效果与日志
+
+- **extraSuffix**：`IBattleLogSink.OnEffect` 增加可选参数 `string? extraSuffix = null`。冻结等多目标效果在应用时收集目标物品名，拼成 `" →[物品名1] →[物品名2]..."` 传入，各 sink 在数值后追加显示。
+- **时间类效果显示秒**：`EffectLogFormat.FormatEffectValue` 对「充能」「冻结」将毫秒格式化为「N 秒」或「N.F 秒」，与物品描述一致。
+- **冻结关键词颜色**：`EffectKeywordFormatting` 中「冻结」使用 `Color.FromRgb(63, 200, 247)`。
+
+### JSON 与 default.json
+
+- **UTF-8 不转义**：`DeckManager` 的 `JsonSerializerOptions` 增加 `Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping`，保存卡组集时中文等字符正常写入，不再输出 `\uXXXX`。
+- **default.json 不覆盖**：构建时 `Data/Decks/*.json` 复制到输出目录时**排除 default.json**（csproj 中 `Exclude="..\..\Data\Decks\default.json"`）；应用启动时若 `default.json` **不存在**才 `NewCollection()` 并 `SaveCollection(defaultPath)` 生成空集，避免每次构建或运行覆盖用户测试用文件。
+
+### 触发器统一与 Condition 自动补全
+
+- **InvokeTrigger**：所有触发器（战斗开始、使用物品、使用其他物品）统一通过 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用，遍历双方所有物品，用 `TriggerConditionEvaluator` 根据 `Condition`（SameAsSource / DifferentFromSource / WithTag）判断是否触发，再 `AddOrMergeAbility`。只有 Immediate 入 currentAbilityQueue，其余入 nextAbilityQueue。
+- **战斗开始**：步骤 1 只调用 `InvokeTrigger(Trigger.BattleStart, -1, -1, null, ...)` 入队，不直接执行，与 UseItem/UseOtherItem 一致遵守「本帧入队、步骤 8 或下一帧执行」。
+- **Condition 自动补全**：`AbilityDefinition` 生成/克隆时（BuildSide、ItemDatabase.CloneTemplate）：`TriggerName == UseItem` 且 `Condition == null` → `Condition.SameAsSource`；`TriggerName == UseOtherItem` 且 `Condition == null` → `Condition.DifferentFromSource`。`ConditionKind.DifferentFromSource` 在触发器评估中表示「候选物品 ≠ 来源物品」；UseOtherItem 时即使有 WithTag 也会先排除来源物品再判 WithTag。
+
+### 小结
+
+新增「持续时间 + 多目标」类效果时：时间在模板中用秒、内部毫秒；多目标可复用 extraSuffix 与 FormatEffectValue；若有「剩余时间」且影响冷却，须保证**先处理冷却、再减少剩余时间**。触发器扩展时沿用 InvokeTrigger + TriggerConditionEvaluator，并在生成能力时按需补 SameAsSource/DifferentFromSource。

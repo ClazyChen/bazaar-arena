@@ -46,31 +46,16 @@ public class BattleSimulator
                 logSink.OnFrameStart(timeMs, frame);
             logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);
 
-            // 1. 第 0 帧触发「战斗开始」
+            // 1. 第 0 帧触发「战斗开始」：统一 invoke 入队，仅 Immediate 入 current、其余入 next，步骤 8 再执行
             if (frame == 0)
-            {
-                var battleStartEntries = new List<(int SideIndex, int ItemIndex, int AbilityIndex, AbilityDefinition Ability)>();
-                foreach (var (sideIdx, side) in new[] { (0, side0), (1, side1) })
-                {
-                    for (int i = 0; i < side.Items.Count; i++)
-                    {
-                        var item = side.Items[i];
-                        for (int a = 0; a < item.Template.Abilities.Count; a++)
-                        {
-                            var ab = item.Template.Abilities[a];
-                            if (ab.TriggerName == Trigger.BattleStart)
-                                battleStartEntries.Add((sideIdx, i, a, ab));
-                        }
-                    }
-                }
-                battleStartEntries.Sort((x, y) => x.Ability.Priority.CompareTo(y.Ability.Priority));
-                foreach (var (sideIdx, itemIdx, abilityIdx, ability) in battleStartEntries)
-                {
-                    ExecuteOneEffect(sideIdx, itemIdx, ability, isCrit: false, critDamagePercent: 200, side0, side1, 0, logSink, null, currentAbilityQueue, nextAbilityQueue);
-                }
-            }
+                InvokeTrigger(Trigger.BattleStart, -1, -1, null, 0, side0, side1, currentAbilityQueue, nextAbilityQueue);
 
-            // 2. 加速、减速、冻结剩余时间减少 50ms
+            // 2. 处理冷却，充能完成则加入施放队列（冻结时冷却不推进）
+            castQueue.Clear();
+            ProcessCooldown(side0, 0, timeMs, castQueue);
+            ProcessCooldown(side1, 1, timeMs, castQueue);
+
+            // 3. 加速、减速、冻结剩余时间减少 50ms（放在冷却之后，保证持续时间足额）
             foreach (var side in new[] { side0, side1 })
             {
                 foreach (var item in side.Items)
@@ -80,11 +65,6 @@ public class BattleSimulator
                     if (item.FreezeRemainingMs > 0) item.FreezeRemainingMs = Math.Max(0, item.FreezeRemainingMs - FrameMs);
                 }
             }
-
-            // 3. 处理冷却，充能完成则加入施放队列
-            castQueue.Clear();
-            ProcessCooldown(side0, 0, timeMs, castQueue);
-            ProcessCooldown(side1, 1, timeMs, castQueue);
 
             // 4. 1000ms 倍数：剧毒、生命再生
             if (timeMs > 0 && timeMs % PoisonRegenTickIntervalMs == 0)
@@ -132,8 +112,8 @@ public class BattleSimulator
                         item.AmmoRemaining--;
                     logSink.OnCast(sideIdx, itemIdx, item.Template.Name, timeMs);
                     int multicast = item.GetMulticast();
-                    InvokeUseItemTrigger(side0, side1, sideIdx, itemIdx, multicast, currentAbilityQueue, nextAbilityQueue);
-                    InvokeUseOtherItemTrigger(side0, side1, item.Template, sideIdx, itemIdx, currentAbilityQueue, nextAbilityQueue);
+                    InvokeTrigger(Trigger.UseItem, sideIdx, itemIdx, new TriggerInvokeContext { Multicast = multicast }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                    InvokeTrigger(Trigger.UseOtherItem, sideIdx, itemIdx, new TriggerInvokeContext { UsedTemplate = item.Template }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
                 }
 
                 // 8. 处理能力队列（只处理 currentAbilityQueue）；延后或未消耗的加入 nextAbilityQueue；充能导致物品满时加入 castQueue
@@ -206,7 +186,7 @@ public class BattleSimulator
         }
     }
 
-    private static bool IsCrittableEffect(EffectKind k) => k != EffectKind.Other && k != EffectKind.Charge;
+    private static bool IsCrittableEffect(EffectKind k) => k != EffectKind.Other && k != EffectKind.Charge && k != EffectKind.Freeze;
 
     /// <summary>战斗内光环上下文：持有己方与目标物品下标，在 GetAuraModifiers 中遍历己方未摧毁物品的光环并累加。</summary>
     private sealed class BattleAuraContext(BattleSide side, int targetItemIndex) : IAuraContext
@@ -241,6 +221,7 @@ public class BattleSimulator
             return condition.Kind switch
             {
                 ConditionKind.SameAsSource => sourceItemIndex == targetItemIndex,
+                ConditionKind.DifferentFromSource => sourceItemIndex != targetItemIndex,
                 ConditionKind.AdjacentToSource => Math.Abs(sourceItemIndex - targetItemIndex) == 1,
                 ConditionKind.WithTag => side.Items[targetItemIndex].Template.Tags.Contains(condition.Tag ?? ""),
                 _ => false,
@@ -248,16 +229,27 @@ public class BattleSimulator
         }
     }
 
-    /// <summary>能力条件谓词（如 UseOtherItem）：根据被使用的物品模板判断是否触发。</summary>
-    private static class AbilityConditionEvaluator
+    /// <summary>触发器调用上下文：传入 InvokeTrigger，用于条件判断与 PendingCount。</summary>
+    private sealed class TriggerInvokeContext
     {
-        public static bool EvaluateForAbility(Condition? condition, ItemTemplate usedItemTemplate)
+        public int? Multicast { get; init; }
+        public ItemTemplate? UsedTemplate { get; init; }
+    }
+
+    /// <summary>统一触发器条件评估：根据来源、候选与上下文判断能力是否触发。UseOtherItem 时始终排除来源物品（再叠加 WithTag 等）。</summary>
+    private static class TriggerConditionEvaluator
+    {
+        public static bool Evaluate(string triggerName, Condition? condition, int candidateSide, int candidateItem, int sourceSide, int sourceItem, TriggerInvokeContext? context)
         {
+            if (triggerName == Trigger.UseOtherItem && sourceSide >= 0 && sourceItem >= 0 && candidateSide == sourceSide && candidateItem == sourceItem)
+                return false;
             if (condition == null) return true;
             return condition.Kind switch
             {
-                ConditionKind.WithTag => usedItemTemplate.Tags.Contains(condition.Tag ?? ""),
-                ConditionKind.SameAsSource or ConditionKind.AdjacentToSource => true,
+                ConditionKind.SameAsSource => sourceSide >= 0 && sourceItem >= 0 && candidateSide == sourceSide && candidateItem == sourceItem,
+                ConditionKind.DifferentFromSource => sourceSide < 0 || sourceItem < 0 || candidateSide != sourceSide || candidateItem != sourceItem,
+                ConditionKind.WithTag => context?.UsedTemplate?.Tags.Contains(condition.Tag ?? "") ?? false,
+                ConditionKind.AdjacentToSource => sourceSide >= 0 && sourceItem >= 0 && candidateSide == sourceSide && Math.Abs(candidateItem - sourceItem) == 1,
                 _ => false,
             };
         }
@@ -287,7 +279,7 @@ public class BattleSimulator
                 {
                     TriggerName = a.TriggerName,
                     Priority = a.Priority,
-                    Condition = CloneCondition(a.Condition),
+                    Condition = EnsureTriggerCondition(a.TriggerName, CloneCondition(a.Condition)),
                     Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, CustomEffectId = e.CustomEffectId }).ToList(),
                 }).ToList(),
                 Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = CloneCondition(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
@@ -305,6 +297,15 @@ public class BattleSimulator
 
     private static Condition? CloneCondition(Condition? c) =>
         c == null ? null : new Condition { Kind = c.Kind, Tag = c.Tag };
+
+    /// <summary>UseItem / UseOtherItem 生成时自动补 Condition：UseItem → SameAsSource，UseOtherItem → DifferentFromSource（仅当原 Condition 为 null 时）。</summary>
+    private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
+    {
+        if (condition != null) return condition;
+        if (triggerName == Trigger.UseItem) return Condition.SameAsSource;
+        if (triggerName == Trigger.UseOtherItem) return Condition.DifferentFromSource;
+        return null;
+    }
 
     private static void ProcessCooldown(BattleSide side, int sideIndex, int timeMs, List<(int, int)> castQueue)
     {
@@ -454,6 +455,38 @@ public class BattleSimulator
         }
     }
 
+    /// <summary>冻结：根据 FreezeTargetCount 与 ctx.Value（毫秒），从敌人物品中随机选取目标；有冷却的物品优先，每次选取独立可重复。</summary>
+    private static void ApplyFreeze(in EffectApplyContext ctx)
+    {
+        int freezeMs = ctx.Value;
+        int count = ctx.Item.Template.GetInt("FreezeTargetCount", ctx.Item.Tier, 1);
+        if (freezeMs <= 0 || count <= 0) return;
+        var opp = ctx.Opp;
+        var withCooldown = new List<int>();
+        var withoutCooldown = new List<int>();
+        for (int i = 0; i < opp.Items.Count; i++)
+        {
+            if (opp.Items[i].Destroyed) continue;
+            if (opp.Items[i].GetCooldownMs() > 0)
+                withCooldown.Add(i);
+            else
+                withoutCooldown.Add(i);
+        }
+        var pool = withCooldown.Count > 0 ? withCooldown : withoutCooldown;
+        if (pool.Count == 0) return;
+        var targetNames = new List<string>();
+        for (int n = 0; n < count; n++)
+        {
+            int idx = Random.Shared.Next(pool.Count);
+            int itemIdx = pool[idx];
+            var target = opp.Items[itemIdx];
+            target.FreezeRemainingMs = Math.Max(target.FreezeRemainingMs, freezeMs);
+            targetNames.Add(target.Template.Name);
+        }
+        string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
+        ctx.LogSink.OnEffect(ctx.SideIndex, ctx.ItemIndex, ctx.Item.Template.Name, ctx.LogName, freezeMs, ctx.TimeMs, ctx.IsCrit, extraSuffix);
+    }
+
     /// <summary>效果类型 → 应用策略；Other 无登记，由调用方走 CustomEffectHandlers。</summary>
     private static EffectApplier? GetEffectApplier(EffectKind kind) => kind switch
     {
@@ -464,6 +497,7 @@ public class BattleSimulator
         EffectKind.Heal => ApplyHeal,
         EffectKind.Regen => ApplyRegen,
         EffectKind.Charge => ApplyCharge,
+        EffectKind.Freeze => ApplyFreeze,
         _ => null,
     };
 
@@ -489,37 +523,26 @@ public class BattleSimulator
             next.Add(entry);
     }
 
-    /// <summary>调用「使用物品」触发器：遍历双方卡组寻找该触发器；此处仅来源物品的 UseItem 能力，加入队列（先合并 current 再 next）。</summary>
-    private static void InvokeUseItemTrigger(BattleSide side0, BattleSide side1, int sourceSideIdx, int sourceItemIdx, int multicast,
-        List<AbilityQueueEntry> current, List<AbilityQueueEntry> next)
+    /// <summary>统一触发器调用：给定触发器名、来源物品与上下文，遍历双方所有物品，条件匹配的能力加入队列（Immediate→current，其余→next）。</summary>
+    private static void InvokeTrigger(string triggerName, int sourceSideIdx, int sourceItemIdx, TriggerInvokeContext? context, int timeMs,
+        BattleSide side0, BattleSide side1, List<AbilityQueueEntry> current, List<AbilityQueueEntry> next)
     {
-        var side = sourceSideIdx == 0 ? side0 : side1;
-        var item = side.Items[sourceItemIdx];
-        for (int a = 0; a < item.Template.Abilities.Count; a++)
-        {
-            var ab = item.Template.Abilities[a];
-            if (ab.TriggerName != Trigger.UseItem) continue;
-            AddOrMergeAbility(sourceSideIdx, sourceItemIdx, a, ab, multicast, item.LastTriggerMsByAbility[a], current, next);
-        }
-    }
+        int pendingCount = triggerName == Trigger.UseItem && context?.Multicast is int m ? m : 1;
+        int lastTriggerMsForBattleStart = -TriggerIntervalMs;
 
-    /// <summary>调用「使用其他物品」触发器：遍历双方卡组（排除被使用的物品），条件匹配的 UseOtherItem 能力加入队列（先合并 current 再 next）。</summary>
-    private static void InvokeUseOtherItemTrigger(BattleSide side0, BattleSide side1, ItemTemplate usedTemplate, int usedSideIdx, int usedItemIdx,
-        List<AbilityQueueEntry> current, List<AbilityQueueEntry> next)
-    {
         foreach (var (sideIdx, side) in new[] { (0, side0), (1, side1) })
         {
-            for (int i = 0; i < side.Items.Count; i++)
+            for (int itemIdx = 0; itemIdx < side.Items.Count; itemIdx++)
             {
-                if (sideIdx == usedSideIdx && i == usedItemIdx) continue;
-                var other = side.Items[i];
-                if (other.Destroyed) continue;
-                for (int a = 0; a < other.Template.Abilities.Count; a++)
+                var item = side.Items[itemIdx];
+                if (item.Destroyed) continue;
+                for (int a = 0; a < item.Template.Abilities.Count; a++)
                 {
-                    var ab = other.Template.Abilities[a];
-                    if (ab.TriggerName != Trigger.UseOtherItem) continue;
-                    if (!AbilityConditionEvaluator.EvaluateForAbility(ab.Condition, usedTemplate)) continue;
-                    AddOrMergeAbility(sideIdx, i, a, ab, 1, other.LastTriggerMsByAbility[a], current, next);
+                    var ab = item.Template.Abilities[a];
+                    if (ab.TriggerName != triggerName) continue;
+                    if (!TriggerConditionEvaluator.Evaluate(triggerName, ab.Condition, sideIdx, itemIdx, sourceSideIdx, sourceItemIdx, context)) continue;
+                    int lastMs = triggerName == Trigger.BattleStart ? lastTriggerMsForBattleStart : item.LastTriggerMsByAbility[a];
+                    AddOrMergeAbility(sideIdx, itemIdx, a, ab, pendingCount, lastMs, current, next);
                 }
             }
         }
@@ -538,7 +561,7 @@ public class BattleSimulator
         {
             string key = eff.ValueKey ?? eff.Kind.GetDefaultTemplateKey();
             int baseValue = eff.ResolveValue(item.Template, item.Tier, key);
-            int value = eff.Kind == EffectKind.Charge ? baseValue : baseValue * critMultiplier;
+            int value = (eff.Kind == EffectKind.Charge || eff.Kind == EffectKind.Freeze) ? baseValue : baseValue * critMultiplier;
             if (GetEffectApplier(eff.Kind) is { } applier)
             {
                 var ctx = new EffectApplyContext

@@ -90,7 +90,7 @@ public class StatsCollectingSink : IBattleLogSink
         TryRecordCurve(timeMs);
     }
 
-    public void OnEffect(int sideIndex, int itemIndex, string itemName, string effectKind, int value, int timeMs, bool isCrit = false)
+    public void OnEffect(int sideIndex, int itemIndex, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)
     {
         var key = (sideIndex, itemIndex);
         if (!_itemAccum.TryGetValue(key, out var entry))

@@ -15,4 +15,6 @@ alwaysApply: true
 
 命名空间与文件夹对应，例如 `BazaarArena.DeckManager`、`BazaarArena.ItemDatabase`、`BazaarArena.BattleSimulator`。
 
+- **物品定义中的时间**：表示时间时，在物品定义代码中一律使用**秒**作为单位以保证可读性（如 `FreezeSeconds = new[] { 3.0, 4.0, 5.0, 6.0 }`、`Cooldown = 5.0`、`ChargeSeconds = 1.0`）；内部存储可为毫秒，由模板属性做转换。
+
 - **对战模拟器能力队列**：修改 `BattleSimulator` 中能力队列、施放队列或触发器逻辑时，必须遵守 **.cursor/rules/battle-simulator-ability-queue.mdc**（仅步骤 11 做 next→current、cast 触发的能力入 next、步骤 8 只处理 current、新能力按优先级入 current/next、PendingCount 先 current 再 next）。

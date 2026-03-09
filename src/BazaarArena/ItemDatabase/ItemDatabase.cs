@@ -40,7 +40,7 @@ public class ItemDatabase : IItemTemplateResolver
             {
                 TriggerName = a.TriggerName,
                 Priority = a.Priority,
-                Condition = CloneCondition(a.Condition),
+                Condition = EnsureTriggerCondition(a.TriggerName, CloneCondition(a.Condition)),
                 Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, CustomEffectId = e.CustomEffectId }).ToList(),
             })],
             Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = CloneCondition(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
@@ -51,4 +51,12 @@ public class ItemDatabase : IItemTemplateResolver
 
     private static Condition? CloneCondition(Condition? c) =>
         c == null ? null : new Condition { Kind = c.Kind, Tag = c.Tag };
+
+    private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
+    {
+        if (condition != null) return condition;
+        if (triggerName == Trigger.UseItem) return Condition.SameAsSource;
+        if (triggerName == Trigger.UseOtherItem) return Condition.DifferentFromSource;
+        return null;
+    }
 }

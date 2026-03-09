@@ -58,6 +58,20 @@ public partial class MainWindow
             }
             catch { /* 启动时加载失败则保持空列表 */ }
         }
+        else
+        {
+            // 仅在没有 default.json 时生成空卡组集，避免覆盖用户测试用的文件
+            try
+            {
+                var dir = Path.GetDirectoryName(defaultPath);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+                _deckManager.NewCollection();
+                _deckManager.SaveCollection(defaultPath);
+                RefreshDeckList();
+            }
+            catch { /* 无法创建则保持空列表 */ }
+        }
         UpdateWindowTitle();
     }
 

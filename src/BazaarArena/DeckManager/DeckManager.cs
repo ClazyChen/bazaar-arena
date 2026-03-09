@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using BazaarArena.Core;
 using BazaarArena.ItemDatabase;
@@ -14,6 +15,7 @@ public class DeckManager
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping, // UTF-8 中文等正常写入，不转义为 \uXXXX
     };
 
     private readonly Dictionary<string, Deck> _decks = [];
