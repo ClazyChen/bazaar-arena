@@ -204,6 +204,7 @@ public class BattleSimulator
             var clone = new ItemTemplate
             {
                 Name = t.Name,
+                Desc = t.Desc,
                 MinTier = t.MinTier,
                 Size = t.Size,
                 Tags = [..t.Tags],
@@ -211,7 +212,7 @@ public class BattleSimulator
                 {
                     TriggerName = a.TriggerName,
                     Priority = a.Priority,
-                    Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value }).ToList(),
+                    Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value, ValueResolver = e.ValueResolver }).ToList(),
                 }).ToList(),
                 Auras = [..t.Auras],
             };
@@ -318,7 +319,9 @@ public class BattleSimulator
         foreach (var eff in ability.Effects)
         {
             string key = GetTemplateKeyForEffect(eff.Kind);
-            int baseValue = item.Template.GetInt(key, item.Tier);
+            int baseValue = eff.ValueResolver != null
+                ? eff.ValueResolver(item.Template, item.Tier)
+                : item.Template.GetInt(key, item.Tier);
             if (baseValue == 0) baseValue = eff.Value;
             int value = baseValue * critMultiplier;
             switch (eff.Kind)

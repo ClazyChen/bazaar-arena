@@ -10,14 +10,14 @@ globs: "**/*.cs","**/*.xaml","**/docs/**"
 
 - **src/BazaarArena/**：主项目（WPF 应用 + 核心逻辑）。子目录与命名空间：`DeckManager/`、`ItemDatabase/`、`BattleSimulator/`、`Core/`。
 - **Data/**：静态与默认数据。`Data/Decks/` 为卡组集 JSON 默认目录；`Data/levelups.json` 为等级生命表。启动时若存在 `Data/Decks/default.json` 则自动加载为当前卡组集。
-- **docs/**：设计文档、实现笔记、GUI 说明。详见 `docs/Bazaar Arena 设计文档.md`、`docs/implementation-notes.md`、`docs/gui-overview.md`。
+- **docs/**：设计文档、实现笔记、GUI 说明、变更记录。详见 `docs/Bazaar Arena 设计文档.md`、`docs/implementation-notes.md`、`docs/gui-overview.md`、`docs/changelog.md`。
 - **.cursor/rules/**：项目约定与开发经验规则，供 AI 与人工查阅。
 
 ## 卡组集模型
 
 - **一个 JSON 文件 = 一个卡组集**：格式为 `DeckCollectionFile`（version + decks 数组），每项为 `DeckEntry`（id + deck）。见 `DeckManager/DeckCollectionFile.cs`。
-- **DeckManager**：无参构造，维护内存中的 `_decks` 与 `_currentCollectionPath`。`OpenCollection(path)` 从文件加载并切换列表；`SaveCollection(path?)` 写回 path 或当前路径；`NewCollection()` 清空内存并清空路径。列表/加载/保存/删除均针对当前卡组集。
-- **自动保存**：保存卡组、另存为卡组、删除卡组、新建卡组集（选路径后）都会在可能时写回当前卡组集文件；若无路径则弹出“保存卡组集”另存为（初始目录 `App.DecksDirectory` = Data/Decks）。
+- **DeckManager**：无参构造，维护内存中的 `_decks`、`_order` 与 `_currentCollectionPath`。`OpenCollection(path)` 从文件加载并切换列表；`SaveCollection(path?)` 写回 path 或当前路径；`NewCollection()` 清空内存并清空路径。支持 `Rename`、`MoveUp`、`MoveDown`；列表顺序与 JSON 中 `decks` 数组一致。列表/加载/保存/删除/重命名/移动均针对当前卡组集。
+- **自动保存**：保存卡组、另存为卡组、删除卡组、重命名卡组、上移/下移卡组、新建卡组集（选路径后）都会在可能时写回当前卡组集文件；若无路径则弹出“保存卡组集”另存为（初始目录 `App.DecksDirectory` = Data/Decks）。
 - **打开/新建卡组集**：文件对话框的 `InitialDirectory` 设为 `App.DecksDirectory`，新建卡组集时用 SaveFileDialog 在 Decks 下创建新 JSON。
 
 ## GUI 约定
@@ -35,10 +35,20 @@ globs: "**/*.cs","**/*.xaml","**/docs/**"
 ## 物品与数据
 
 - **按等级属性、集合表达式**：物品模板扩展属性用 `_intsByTier`；`IntOrByTier` + `[CollectionBuilder]` + `IEnumerable<int>` 支持 `Damage = [25,35,45,55]` 等写法。详见 `docs/implementation-notes.md` 与 `csharp-standards.mdc`。
+- **公共物品**：仅保留 `ItemDatabase/Common.cs` 注册公共物品（如獠牙）；`App`/`Program` 只调用 `Common.RegisterAll`。新增公共物品在 Common 中写工厂方法并在 `RegisterAll` 中注册。
+- **ItemTemplate.Desc**：物品模板有 `Desc` 属性，可含占位符 `{Damage}`、`{Cooldown}`、`{Burn}` 等；卡组编辑区悬停时替换为当前 tier 或全 tier 数值，并与 `EffectKeywordFormatting` 关键词着色一致。克隆/序列化时需复制 `Desc`。
+- **效果预定义**：`Core/Effect.cs` 提供 `Effect.Damage`、`Effect.Burn` 等，使用 `ValueResolver` 从模板字段取值；物品可写 `Effects = [Effect.Damage]`。
 - **数据与日志路径**：见 `data-and-logging.mdc`（Data/、Logs/、levelups 解析、CopyToOutputDirectory）。
+
+## Tooltip 与悬停说明
+
+- **延后构建防卡顿**：不在 MouseEnter 时构建 Tooltip 内容。卡组内物品：为 Border 设置空 `ToolTip`，在 `ToolTip.Opened` 中根据 `PlacementTarget.Tag`（SlotRowViewModel）再构建并赋 `Content`。物品池：使用 `ToolTipService.ToolTipOpening`，在事件里根据 DataContext（itemName）构建或从缓存取，赋给该元素的 `ToolTip.Content`。
+- **物品池缓存**：`_poolToolTipCache`（Dictionary<itemName, Border>）缓存已构建的物品池 Tooltip，同一物品多次悬停不重复构建。
+- **等级颜色**：Tier 使用标准色（Bronze 180,98,65；Silver 192,192,192；Gold 255,215,0；Diamond 0,255,255），`TierToBrush` 与 `TierToBrushConverter` 一致。Tooltip 背景 `#35322e`，默认文字白色。
 
 ## 修改与扩展时注意
 
 - 新增窗口或对话框时记得设置 `Owner`，并在需要时在 Loaded 中聚焦输入控件。
 - 修改战斗结算顺序或能力队列移动时机时，对照设计文档的帧顺序与 `implementation-notes.md` 的帧边界说明。
-- 卡组集相关逻辑集中在 DeckManager 与 MainWindow 的“保存/另存为/删除/新建卡组集”中，保持“有路径则写回，无路径则弹窗”的一致性。
+- 卡组集相关逻辑集中在 DeckManager 与 MainWindow 的保存/另存为/删除/重命名/上移下移/新建卡组集中，保持“有路径则写回，无路径则弹窗”的一致性；卡组列表顺序由 DeckManager 的 `_order` 维护，与 JSON 中 `decks` 数组一致。
+- 卡组内移除物品：编辑区 StackPanel 设 `AllowDrop`，拖拽卡组内物品到非卡组区域时在 `EditorArea_Drop` 中调用 `RemoveSlotRow`，无需单独“删除”区。

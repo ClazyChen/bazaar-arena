@@ -2,22 +2,22 @@
   "version": "1.0",
   "decks": [
     {
-      "id": "test_deck_a",
+      "id": "deck_a",
       "deck": {
         "playerLevel": 5,
         "slots": [
-          { "itemName": "测试伤害", "tier": 0 },
-          { "itemName": "测试灼烧", "tier": 0 }
+          { "itemName": "獠牙", "tier": 0 },
+          { "itemName": "獠牙", "tier": 1 }
         ]
       }
     },
     {
-      "id": "test_deck_b",
+      "id": "deck_b",
       "deck": {
         "playerLevel": 5,
         "slots": [
-          { "itemName": "测试暴击伤害", "tier": 0 },
-          { "itemName": "测试伤害", "tier": 0 }
+          { "itemName": "獠牙", "tier": 2 },
+          { "itemName": "獠牙", "tier": 3 }
         ]
       }
     }

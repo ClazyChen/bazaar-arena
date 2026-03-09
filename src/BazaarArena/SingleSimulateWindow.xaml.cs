@@ -101,7 +101,7 @@ public partial class SingleSimulateWindow
         {
             Dispatcher.Invoke(() =>
             {
-                var para = BuildColoredParagraph(line);
+                var para = EffectKeywordFormatting.BuildParagraph(line);
                 LogBox.Document.Blocks.Add(para);
                 LogScrollViewer.ScrollToBottom();
             });
@@ -261,82 +261,4 @@ public partial class SingleSimulateWindow
         CurveCanvas.Children.Add(xLabel);
     }
 
-    /// <summary>将一行日志按关键词拆成带颜色的 Run，组成一个 Paragraph。</summary>
-    private static Paragraph BuildColoredParagraph(string line)
-    {
-        var para = new Paragraph { Margin = new Thickness(0) };
-        if (string.IsNullOrEmpty(line))
-        {
-            para.Inlines.Add(new Run(line ?? ""));
-            return para;
-        }
-
-        // 关键词与样式（按长度从长到短排序，避免“生命再生”被拆成“再生”）
-        var rules = new (string keyword, Color color, bool bold)[]
-        {
-            ("生命再生", Color.FromRgb(0x27, 0xae, 0x60), false),
-            ("灼烧结算", Color.FromRgb(0xe6, 0x7e, 0x22), false),
-            ("剧毒结算", Color.FromRgb(0x9b, 0x59, 0xb6), false),
-            ("沙尘暴", Color.FromRgb(0x95, 0xa5, 0xa6), false),
-            ("伤害", Color.FromRgb(0xf5, 0x50, 0x3d), true),
-            ("灼烧", Color.FromRgb(0xe6, 0x7e, 0x22), false),
-            ("剧毒", Color.FromRgb(0x9b, 0x59, 0xb6), false),
-            ("护盾", Color.FromRgb(0x34, 0x98, 0xdb), false),
-            ("治疗", Color.FromRgb(0x2e, 0xcc, 0x71), false),
-            ("回复", Color.FromRgb(0x2e, 0xcc, 0x71), false),
-            ("受到", Color.FromRgb(0xe7, 0x4c, 0x3c), false),
-            ("施放", Color.FromRgb(0x7f, 0x8c, 0x8d), false),
-            ("结果", Color.FromRgb(0x7f, 0x8c, 0x8d), false),
-        };
-
-        int pos = 0;
-        while (pos < line.Length)
-        {
-            int nextIndex = line.Length;
-            (string keyword, Color color, bool bold)? matched = null;
-            foreach (var (keyword, color, bold) in rules)
-            {
-                int idx = line.IndexOf(keyword, pos, StringComparison.Ordinal);
-                if (idx >= 0 && idx < nextIndex)
-                {
-                    nextIndex = idx;
-                    matched = (keyword, color, bold);
-                }
-            }
-            if (matched == null)
-            {
-                para.Inlines.Add(new Run(line[pos..]));
-                break;
-            }
-            if (nextIndex > pos)
-                para.Inlines.Add(new Run(line.Substring(pos, nextIndex - pos)));
-            // 方括号内（如物品名）的关键词不着色，保持整体
-            bool insideBrackets = IsInsideSquareBrackets(line, nextIndex);
-            if (insideBrackets)
-                para.Inlines.Add(new Run(matched.Value.keyword));
-            else
-            {
-                var run = new Run(matched.Value.keyword)
-                {
-                    Foreground = new SolidColorBrush(matched.Value.color),
-                    FontWeight = matched.Value.bold ? FontWeights.Bold : FontWeights.Normal
-                };
-                para.Inlines.Add(run);
-            }
-            pos = nextIndex + matched.Value.keyword.Length;
-        }
-        return para;
-    }
-
-    /// <summary>判断位置是否在方括号内（如物品名 [xxx]），在此处不应对关键词着色。</summary>
-    private static bool IsInsideSquareBrackets(string line, int position)
-    {
-        int depth = 0;
-        for (int i = 0; i < position; i++)
-        {
-            if (line[i] == '[') depth++;
-            else if (line[i] == ']') depth--;
-        }
-        return depth > 0;
-    }
 }

@@ -27,6 +27,6 @@ public partial class App : Application
             LevelUpTable.Load(levelupsPath);
         DeckManager = new DeckManager.DeckManager();
         ItemDatabase = new ItemDatabase.ItemDatabase();
-        TestItems.RegisterAll(ItemDatabase);
+        Common.RegisterAll(ItemDatabase);
     }
 }

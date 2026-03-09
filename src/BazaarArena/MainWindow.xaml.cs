@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using BazaarArena.Core;
@@ -20,6 +21,8 @@ public partial class MainWindow
     private readonly ObservableCollection<SlotRowViewModel> _slotRows = [];
     private string? _currentDeckId;
     private IReadOnlyList<string> _itemNames = [];
+    /// <summary>物品池 ToolTip 缓存（按 itemName），仅在即将显示时构建并缓存，避免 MouseEnter 卡顿。</summary>
+    private readonly Dictionary<string, Border> _poolToolTipCache = [];
 
     /// <summary>卡组表格第二行中每个物品的显示项（起始列、跨列、视图模型）。</summary>
     public ObservableCollection<DeckSlotDisplayItem> DeckSlotDisplays { get; } = [];
@@ -178,6 +181,50 @@ public partial class MainWindow
         ShowEditor(true);
     }
 
+    private void RenameDeck_Click(object sender, RoutedEventArgs e)
+    {
+        if (DeckListBox.SelectedItem is not DeckManager.DeckManager.DeckListItem item)
+        {
+            MessageBox.Show("请先选择要重命名的卡组。", "重命名", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var dlg = new SaveAsDialog { Owner = this, InitialDeckId = item.Id };
+        if (dlg.ShowDialog() != true || string.IsNullOrWhiteSpace(dlg.DeckId)) return;
+        string newId = dlg.DeckId.Trim();
+        if (newId == item.Id) return;
+        try
+        {
+            _deckManager.Rename(item.Id, newId);
+            if (_currentDeckId == item.Id)
+                _currentDeckId = newId;
+            RefreshDeckList();
+            TrySaveCollectionToFile();
+            DeckListBox.SelectedItem = _deckListItems.FirstOrDefault(x => x.Id == newId);
+        }
+        catch (ArgumentException ex)
+        {
+            MessageBox.Show(ex.Message, "重命名失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void MoveDeckUp_Click(object sender, RoutedEventArgs e)
+    {
+        if (DeckListBox.SelectedItem is not DeckManager.DeckManager.DeckListItem item) return;
+        if (!_deckManager.MoveUp(item.Id)) return;
+        RefreshDeckList();
+        TrySaveCollectionToFile();
+        DeckListBox.SelectedItem = _deckListItems.FirstOrDefault(x => x.Id == item.Id);
+    }
+
+    private void MoveDeckDown_Click(object sender, RoutedEventArgs e)
+    {
+        if (DeckListBox.SelectedItem is not DeckManager.DeckManager.DeckListItem item) return;
+        if (!_deckManager.MoveDown(item.Id)) return;
+        RefreshDeckList();
+        TrySaveCollectionToFile();
+        DeckListBox.SelectedItem = _deckListItems.FirstOrDefault(x => x.Id == item.Id);
+    }
+
     private void DeleteDeck_Click(object sender, RoutedEventArgs e)
     {
         if (DeckListBox.SelectedItem is not DeckManager.DeckManager.DeckListItem item)
@@ -229,10 +276,10 @@ public partial class MainWindow
     {
         return tier switch
         {
-            ItemTier.Bronze => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#CD7F32")),
-            ItemTier.Silver => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#C0C0C0")),
-            ItemTier.Gold => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD700")),
-            ItemTier.Diamond => new SolidColorBrush((Color)ColorConverter.ConvertFromString("#B9F2FF")),
+            ItemTier.Bronze => new SolidColorBrush(Color.FromRgb(180, 98, 65)),
+            ItemTier.Silver => new SolidColorBrush(Color.FromRgb(192, 192, 192)),
+            ItemTier.Gold => new SolidColorBrush(Color.FromRgb(255, 215, 0)),
+            ItemTier.Diamond => new SolidColorBrush(Color.FromRgb(0, 255, 255)),
             _ => EmptySlotBrush,
         };
     }
@@ -365,6 +412,7 @@ public partial class MainWindow
         var cellMargin = new Thickness(colGap, 0, colGap, 0);
         foreach (var item in DeckSlotDisplays)
         {
+            var template = _itemDatabase.GetTemplate(item.ViewModel.ItemName);
             var border = new Border
             {
                 Margin = cellMargin,
@@ -378,10 +426,100 @@ public partial class MainWindow
                 },
             };
             border.PreviewMouseLeftButtonDown += DeckItem_PreviewMouseLeftButtonDown;
+            var tt = new ToolTip();
+            tt.Opened += DeckSlot_ToolTipOpened;
+            border.ToolTip = tt;
+            System.Windows.Controls.ToolTipService.SetInitialShowDelay(border, 400);
             Grid.SetColumn(border, item.StartColumn);
             Grid.SetColumnSpan(border, item.ColumnSpan);
             DeckImageRowGrid.Children.Add(border);
         }
+    }
+
+    private static readonly Brush ToolTipBackground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#35322e"));
+    private static readonly Brush ToolTipForeground = Brushes.White;
+
+    /// <summary>卡组内 ToolTip 即将显示时再构建内容，避免 MouseEnter 时卡顿。</summary>
+    private void DeckSlot_ToolTipOpened(object sender, EventArgs e)
+    {
+        if (sender is not ToolTip tt || tt.PlacementTarget is not Border border || border.Tag is not SlotRowViewModel row) return;
+        var template = _itemDatabase.GetTemplate(row.ItemName);
+        if (template != null)
+            tt.Content = BuildDeckSlotToolTip(template, row.Tier);
+    }
+
+    /// <summary>卡组内物品悬停：三行（名称按 tier 色、冷却、Desc），占位符为单 tier 数值并加粗。</summary>
+    private static Border BuildDeckSlotToolTip(ItemTemplate template, ItemTier tier)
+    {
+        var panel = new StackPanel { Margin = new Thickness(2) };
+        var line1 = new TextBlock { Foreground = ToolTipForeground };
+        line1.Inlines.Add(new Run(template.Name) { FontWeight = FontWeights.Bold, Foreground = TierToBrush(tier) });
+        panel.Children.Add(line1);
+        var (line2, ranges2) = ItemDescHelper.ReplacePlaceholdersSingle(template, tier, "冷却时间：{Cooldown} 秒");
+        var tb2 = new TextBlock { Foreground = ToolTipForeground };
+        foreach (var inline in ItemDescHelper.BuildLineInlines(line2, ranges2, null))
+            tb2.Inlines.Add(inline);
+        panel.Children.Add(tb2);
+        if (!string.IsNullOrEmpty(template.Desc))
+        {
+            var (line3, ranges3) = ItemDescHelper.ReplacePlaceholdersSingle(template, tier, template.Desc);
+            var tb3 = new TextBlock { Foreground = ToolTipForeground };
+            foreach (var inline in ItemDescHelper.BuildLineInlines(line3, ranges3, null))
+                tb3.Inlines.Add(inline);
+            panel.Children.Add(tb3);
+        }
+        var wrap = new Border
+        {
+            Background = ToolTipBackground,
+            Child = panel,
+            Padding = new Thickness(2, 2, 2, 2),
+        };
+        return wrap;
+    }
+
+    /// <summary>物品池悬停：三行（名称、冷却、Desc），占位符为全 tier「5 » 10 » 15 » 20」并加粗按 tier 着色。</summary>
+    private Border BuildPoolItemToolTip(string itemName)
+    {
+        var panel = new StackPanel { Margin = new Thickness(2) };
+        var template = _itemDatabase.GetTemplate(itemName);
+        if (template == null)
+        {
+            panel.Children.Add(new TextBlock { Text = itemName, FontWeight = FontWeights.Bold, Foreground = ToolTipForeground });
+            return new Border { Background = ToolTipBackground, Child = panel, Padding = new Thickness(2, 2, 2, 2) };
+        }
+        var line1 = new TextBlock { Foreground = ToolTipForeground };
+        line1.Inlines.Add(new Run(template.Name) { FontWeight = FontWeights.Bold, Foreground = ToolTipForeground });
+        panel.Children.Add(line1);
+        var (line2, ranges2) = ItemDescHelper.ReplacePlaceholdersAllTiers(template, "冷却时间：{Cooldown} 秒");
+        var tb2 = new TextBlock { Foreground = ToolTipForeground };
+        var ranges2Simple = ranges2.Select(r => (r.Start, r.Length)).ToList();
+        foreach (var inline in ItemDescHelper.BuildLineInlines(line2, ranges2Simple, null))
+            tb2.Inlines.Add(inline);
+        panel.Children.Add(tb2);
+        if (!string.IsNullOrEmpty(template.Desc))
+        {
+            var (line3, ranges3) = ItemDescHelper.ReplacePlaceholdersAllTiers(template, template.Desc);
+            var tb3 = new TextBlock { Foreground = ToolTipForeground };
+            foreach (var inline in ItemDescHelper.BuildLineInlinesWithTiers(line3, ranges3, TierToBrush))
+                tb3.Inlines.Add(inline);
+            panel.Children.Add(tb3);
+        }
+        return new Border { Background = ToolTipBackground, Child = panel, Padding = new Thickness(2, 2, 2, 2) };
+    }
+
+    /// <summary>物品池 ToolTip 即将显示时再构建（或从缓存取），避免 MouseEnter 卡顿。</summary>
+    private void ItemPoolTile_ToolTipOpening(object sender, ToolTipEventArgs e)
+    {
+        if (sender is not FrameworkElement el || el.DataContext is not string itemName) return;
+        if (el.ToolTip is not ToolTip tt) return;
+        if (_poolToolTipCache.TryGetValue(itemName, out var cached))
+        {
+            tt.Content = cached;
+            return;
+        }
+        var content = BuildPoolItemToolTip(itemName);
+        _poolToolTipCache[itemName] = content;
+        tt.Content = content;
     }
 
     private void RebuildDeckNameRow()
@@ -396,11 +534,12 @@ public partial class MainWindow
             {
                 Text = item.ViewModel.ItemName,
                 TextWrapping = TextWrapping.Wrap,
-                HorizontalAlignment = item.ColumnSpan > 1 ? HorizontalAlignment.Center : HorizontalAlignment.Left,
+                HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Top,
                 Margin = cellMargin,
                 FontSize = 11,
                 Foreground = new SolidColorBrush(Colors.White),
+                TextAlignment = TextAlignment.Center,
             };
             Grid.SetColumn(text, item.StartColumn);
             Grid.SetColumnSpan(text, item.ColumnSpan);
@@ -422,13 +561,14 @@ public partial class MainWindow
         DragDrop.DoDragDrop(el, data, DragDropEffects.Copy);
     }
 
-    private void DeleteZone_DragOver(object sender, DragEventArgs e)
+    /// <summary>拖拽卡组内物品到编辑区非卡组区域（如物品池、空白处）时视为移除。</summary>
+    private void EditorArea_DragOver(object sender, DragEventArgs e)
     {
         e.Effects = e.Data.GetDataPresent(SlotRowViewModelFormat) ? DragDropEffects.Move : DragDropEffects.None;
         e.Handled = true;
     }
 
-    private void DeleteZone_Drop(object sender, DragEventArgs e)
+    private void EditorArea_Drop(object sender, DragEventArgs e)
     {
         if (!e.Data.GetDataPresent(SlotRowViewModelFormat)) return;
         if (e.Data.GetData(SlotRowViewModelFormat) is SlotRowViewModel row)

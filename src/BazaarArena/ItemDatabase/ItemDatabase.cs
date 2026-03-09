@@ -32,6 +32,7 @@ public class ItemDatabase : IItemTemplateResolver
         var clone = new ItemTemplate
         {
             Name = t.Name,
+            Desc = t.Desc,
             MinTier = t.MinTier,
             Size = t.Size,
             Tags = [..t.Tags],
@@ -39,7 +40,7 @@ public class ItemDatabase : IItemTemplateResolver
             {
                 TriggerName = a.TriggerName,
                 Priority = a.Priority,
-                Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value }).ToList(),
+                Effects = a.Effects.Select(e => new EffectDefinition { Kind = e.Kind, Value = e.Value, ValueResolver = e.ValueResolver }).ToList(),
             })],
             Auras = [..t.Auras],
         };

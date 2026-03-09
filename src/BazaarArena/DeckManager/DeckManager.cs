@@ -17,6 +17,8 @@ public class DeckManager
     };
 
     private readonly Dictionary<string, Deck> _decks = [];
+    /// <summary>卡组 ID 顺序，与 JSON 中 decks 数组顺序一致。</summary>
+    private readonly List<string> _order = [];
     private string? _currentCollectionPath;
 
     public DeckManager() { }
@@ -36,6 +38,7 @@ public class DeckManager
     public void NewCollection()
     {
         _decks.Clear();
+        _order.Clear();
         _currentCollectionPath = null;
     }
 
@@ -46,10 +49,13 @@ public class DeckManager
         var file = JsonSerializer.Deserialize<DeckCollectionFile>(json, JsonOptions)
             ?? new DeckCollectionFile();
         _decks.Clear();
+        _order.Clear();
         foreach (var entry in file.Decks)
         {
             if (string.IsNullOrWhiteSpace(entry.Id)) continue;
-            _decks[entry.Id.Trim()] = entry.Deck ?? new Deck();
+            var id = entry.Id.Trim();
+            _order.Add(id);
+            _decks[id] = entry.Deck ?? new Deck();
         }
         _currentCollectionPath = Path.GetFullPath(path);
     }
@@ -62,7 +68,7 @@ public class DeckManager
         target = Path.GetFullPath(target);
         var file = new DeckCollectionFile
         {
-            Decks = _decks.Select(kv => new DeckEntry { Id = kv.Key, Deck = kv.Value }).ToList()
+            Decks = _order.Select(id => new DeckEntry { Id = id, Deck = _decks[id] }).ToList()
         };
         var json = JsonSerializer.Serialize(file, JsonOptions);
         var dir = Path.GetDirectoryName(target);
@@ -73,18 +79,21 @@ public class DeckManager
         return true;
     }
 
-    /// <summary>列出当前卡组集中所有卡组 ID。</summary>
+    /// <summary>列出当前卡组集中所有卡组 ID（顺序与 JSON 一致）。</summary>
     public IEnumerable<string> List()
     {
-        foreach (var id in _decks.Keys)
+        foreach (var id in _order)
             yield return id;
     }
 
-    /// <summary>列出卡组并带玩家等级，用于界面显示「[等级] 卡组名」。</summary>
+    /// <summary>列出卡组并带玩家等级，用于界面显示「[等级] 卡组名」；顺序与 JSON 一致。</summary>
     public IEnumerable<DeckListItem> ListWithLevels()
     {
-        foreach (var kv in _decks)
-            yield return new DeckListItem { Id = kv.Key, Level = kv.Value.PlayerLevel };
+        foreach (var id in _order)
+        {
+            if (_decks.TryGetValue(id, out var deck))
+                yield return new DeckListItem { Id = id, Level = deck.PlayerLevel };
+        }
     }
 
     /// <summary>按 ID 读取卡组，不存在则返回 null。</summary>
@@ -99,12 +108,51 @@ public class DeckManager
         if (resolver != null)
             Validate(deck, resolver);
         _decks[id] = deck;
+        if (!_order.Contains(id))
+            _order.Add(id);
     }
 
     /// <summary>从当前卡组集中删除指定卡组。</summary>
     public void Delete(string id)
     {
         _decks.Remove(id);
+        _order.Remove(id);
+    }
+
+    /// <summary>重命名卡组；若新名称已存在则抛出 <see cref="ArgumentException"/>。</summary>
+    public void Rename(string oldId, string newId)
+    {
+        if (string.IsNullOrWhiteSpace(newId))
+            throw new ArgumentException("卡组名称不能为空。", nameof(newId));
+        newId = newId.Trim();
+        if (oldId == newId) return;
+        if (!_decks.TryGetValue(oldId, out var deck))
+            throw new ArgumentException($"卡组不存在：{oldId}", nameof(oldId));
+        if (_decks.ContainsKey(newId))
+            throw new ArgumentException($"已存在同名卡组：{newId}", nameof(newId));
+        _decks.Remove(oldId);
+        _decks[newId] = deck;
+        var idx = _order.IndexOf(oldId);
+        if (idx >= 0)
+            _order[idx] = newId;
+    }
+
+    /// <summary>将卡组上移一位；已在首位则无效果。返回是否发生了移动。</summary>
+    public bool MoveUp(string id)
+    {
+        var i = _order.IndexOf(id);
+        if (i <= 0) return false;
+        (_order[i - 1], _order[i]) = (_order[i], _order[i - 1]);
+        return true;
+    }
+
+    /// <summary>将卡组下移一位；已在末位则无效果。返回是否发生了移动。</summary>
+    public bool MoveDown(string id)
+    {
+        var i = _order.IndexOf(id);
+        if (i < 0 || i >= _order.Count - 1) return false;
+        (_order[i], _order[i + 1]) = (_order[i + 1], _order[i]);
+        return true;
     }
 
     /// <summary>校验槽位总占用、等级与玩家等级限制。</summary>

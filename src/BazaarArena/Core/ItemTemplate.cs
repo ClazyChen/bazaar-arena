@@ -40,6 +40,8 @@ public readonly struct IntOrByTier : IEnumerable<int>
 public class ItemTemplate
 {
     public string Name { get; set; } = "";
+    /// <summary>描述文本，可含占位符如 {Damage}、{Cooldown}，用于悬停说明等。</summary>
+    public string Desc { get; set; } = "";
     public ItemTier MinTier { get; set; }
     public ItemSize Size { get; set; }
     public List<string> Tags { get; set; } = [];
@@ -86,14 +88,17 @@ public class ItemTemplate
     /// <summary>冷却时间（毫秒）。设计文档：最低只能减到 1 秒。</summary>
     public IntOrByTier CooldownMs { get => GetInt(KeyCooldownMs); set => SetIntOrByTier(KeyCooldownMs, value.ToList()); }
 
-    /// <summary>暴击率（百分比，0–100）。</summary>
-    public IntOrByTier CritRatePercent { get => GetInt(KeyCritRatePercent); set => SetIntOrByTier(KeyCritRatePercent, value.ToList()); }
+    /// <summary>冷却时间（秒）。设置时转换为 CooldownMs（仅支持单值）；不指定时可省略。</summary>
+    public double Cooldown { get => GetInt(KeyCooldownMs) / 1000.0; set => SetInt(KeyCooldownMs, (int)(value * 1000)); }
 
-    /// <summary>多重触发，默认 1。</summary>
+    /// <summary>暴击率（百分比，0–100）。默认 0，不指定时可省略。</summary>
+    public IntOrByTier CritRatePercent { get => GetInt(KeyCritRatePercent, 0); set => SetIntOrByTier(KeyCritRatePercent, value.ToList()); }
+
+    /// <summary>多重触发。默认 1，不指定时可省略。</summary>
     public IntOrByTier Multicast { get => GetInt(KeyMulticast, 1); set => SetIntOrByTier(KeyMulticast, value.ToList()); }
 
-    /// <summary>弹药上限，0 表示不依赖弹药。</summary>
-    public IntOrByTier AmmoCap { get => GetInt(KeyAmmoCap); set => SetIntOrByTier(KeyAmmoCap, value.ToList()); }
+    /// <summary>弹药上限，0 表示不依赖弹药。默认 0，不指定时可省略。</summary>
+    public IntOrByTier AmmoCap { get => GetInt(KeyAmmoCap, 0); set => SetIntOrByTier(KeyAmmoCap, value.ToList()); }
 
     /// <summary>伤害值（可单值或按等级）。</summary>
     public IntOrByTier Damage { get => GetInt(KeyDamage); set => SetIntOrByTier(KeyDamage, value.ToList()); }

@@ -19,14 +19,14 @@ if (File.Exists(levelupsPath))
 
 var deckManager = new DeckManager();
 var db = new ItemDatabase();
-TestItems.RegisterAll(db);
+Common.RegisterAll(db);
 
 var defaultCollectionPath = Path.Combine(decksDir, "default.json");
 if (File.Exists(defaultCollectionPath))
     deckManager.OpenCollection(defaultCollectionPath);
 
-Deck? deckA = deckManager.Load("test_deck_a");
-Deck? deckB = deckManager.Load("test_deck_b");
+Deck? deckA = deckManager.Load("deck_a");
+Deck? deckB = deckManager.Load("deck_b");
 
 if (deckA == null || deckB == null)
 {
@@ -36,8 +36,8 @@ if (deckA == null || deckB == null)
         PlayerLevel = 5,
         Slots =
         [
-            new() { ItemName = "伤害随等级", Tier = ItemTier.Bronze },
-            new() { ItemName = "冷却随等级", Tier = ItemTier.Silver },
+            new() { ItemName = "獠牙", Tier = ItemTier.Bronze },
+            new() { ItemName = "獠牙", Tier = ItemTier.Silver },
         ],
     };
     deckB = new Deck
@@ -45,11 +45,11 @@ if (deckA == null || deckB == null)
         PlayerLevel = 5,
         Slots =
         [
-            new() { ItemName = "伤害随等级", Tier = ItemTier.Gold },
-            new() { ItemName = "冷却随等级", Tier = ItemTier.Diamond },
+            new() { ItemName = "獠牙", Tier = ItemTier.Gold },
+            new() { ItemName = "獠牙", Tier = ItemTier.Diamond },
         ],
     };
-    Console.WriteLine("使用内存测试卡组（未找到 Data/Decks 下的 JSON）。");
+    Console.WriteLine("使用内存卡组（未找到 Data/Decks 下的 JSON）。");
 }
 
 var argsList = args.Select(a => a.Trim()).ToList();
