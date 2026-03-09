@@ -51,6 +51,9 @@ public interface IEffectApplyContext
     /// <summary>己方所有武器物品的 Damage 增加 value。</summary>
     void AddWeaponDamageBonusToCasterSide(int value);
 
+    /// <summary>遍历对方护盾物品（按导入快照判断），将每件物品的 Shield 属性减少 reduceBy，最多减到 0（限本场战斗）。</summary>
+    void ReduceOpponentShieldItemsShield(int reduceBy);
+
     /// <summary>记录效果日志。showCrit 为 true 时显示「（暴击）」；仅对实际参与暴击的效果传 true（如伤害/灼烧/治疗等），冻结/减速等不可暴击效果传 false。</summary>
     void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false);
 }

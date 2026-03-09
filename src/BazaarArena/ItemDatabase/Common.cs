@@ -306,6 +306,48 @@ public static class Common
         };
     }
 
+    /// <summary>裂盾刀（Sunderer）：5s 小 铜 武器，造成 10 » 20 » 30 » 40 伤害；敌人的护盾物品损失 5 » 10 » 15 » 20 护盾（限本场战斗）（优先级 High）。</summary>
+    public static ItemTemplate Sunderer()
+    {
+        return new ItemTemplate
+        {
+            Name = "裂盾刀",
+            Desc = "造成 {Damage} 伤害；敌人的护盾物品损失 {Custom_0} 护盾（限本场战斗）",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Small,
+            Tags = [Tag.Weapon],
+            Cooldown = 5.0,
+            Damage = [10, 20, 30, 40],
+            Custom_0 = [5, 10, 15, 20],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Damage],
+                },
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.High,
+                    Effects =
+                    [
+                        new EffectDefinition
+                        {
+                            ApplyCritMultiplier = false,
+                            Apply = ctx =>
+                            {
+                                int value = ctx.GetResolvedValue(nameof(ItemTemplate.Custom_0), applyCritMultiplier: false);
+                                ctx.ReduceOpponentShieldItemsShield(value);
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+    }
+
     /// <summary>姜饼人（Gingerbread Man）：5s 小 铜 食物 伙伴；获得 10 » 20 » 30 » 40 护盾（优先级 Low）；使用工具时为此物品充能 1 秒（优先级 Medium）。</summary>
     public static ItemTemplate GingerbreadMan()
     {
@@ -353,6 +395,7 @@ public static class Common
         db.Register(Bluenanas());
         db.Register(Icicle());
         db.Register(Stinger());
+        db.Register(Sunderer());
         db.Register(GingerbreadMan());
     }
 }

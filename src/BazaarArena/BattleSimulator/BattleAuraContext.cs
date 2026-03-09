@@ -1,0 +1,35 @@
+using BazaarArena.Core;
+
+namespace BazaarArena.BattleSimulator;
+
+/// <summary>战斗内光环上下文：持有己方与目标物品下标，在 GetAuraModifiers 中遍历己方未摧毁物品的光环并累加。</summary>
+internal sealed class BattleAuraContext(BattleSide side, int targetItemIndex) : IAuraContext
+{
+    public void GetAuraModifiers(string attributeName, out int fixedSum, out int percentSum)
+    {
+        fixedSum = 0;
+        percentSum = 0;
+        for (int i = 0; i < side.Items.Count; i++)
+        {
+            var source = side.Items[i];
+            if (source.Destroyed) continue;
+            foreach (var aura in source.Template.Auras)
+            {
+                if (aura.AttributeName != attributeName) continue;
+                var auraCtx = new ConditionContext
+                {
+                    CandidateSide = 0,
+                    SourceSide = 0,
+                    CandidateItem = targetItemIndex,
+                    SourceItem = i,
+                    CandidateTemplate = side.Items[targetItemIndex].Template,
+                };
+                if (aura.Condition != null && !aura.Condition.Evaluate(auraCtx)) continue;
+                if (!string.IsNullOrEmpty(aura.FixedValueKey))
+                    fixedSum += source.Template.GetInt(aura.FixedValueKey, source.Tier, 0);
+                if (!string.IsNullOrEmpty(aura.PercentValueKey))
+                    percentSum += source.Template.GetInt(aura.PercentValueKey, source.Tier, 0);
+            }
+        }
+    }
+}

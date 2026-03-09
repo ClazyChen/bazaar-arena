@@ -212,3 +212,54 @@
 ### 小结
 
 扩展新触发器条件时在 Core 增加 Condition 静态工厂或 `And` 组合；扩展新效果时在 Core/Effect.cs 增加 `EffectDefinition` 并设置 `Apply` 委托与可选 `ApplyCritMultiplier`。UseOtherItem 的 EnsureTriggerCondition 必须始终叠加 SameSide，显式 Condition 只作额外过滤。
+
+---
+
+## 能力优先级与步骤 8 执行顺序
+
+### 问题
+
+同一帧内可能有多条能力入队（如己方使用裂盾刀、对方姜饼人 UseOtherItem 等）。若步骤 8 按入队顺序遍历 `currentAbilityQueue`，则执行顺序取决于 InvokeTrigger 遍历双方物品的顺序，**与能力的 Priority 无关**，会导致例如裂盾（High）晚于护盾（Low）触发。
+
+### 正确做法
+
+- 步骤 8 在**处理能力队列前**，对 `toProcessAbilities`（current 的拷贝）按**能力优先级**排序。
+- 排序主键：`AbilityPriority` 枚举值升序（Immediate → Highest → High → Medium → Low → Lowest），数字小的先执行。
+- 同优先级时按 (SideIndex, ItemIndex, AbilityIndex) 作为次键，保证顺序稳定、可复现。
+
+这样同一帧内触发的多条能力会严格按「高优先级先于低优先级」执行，与设计意图一致。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。
+
+---
+
+## 物品类型快照（ItemTypeSnapshot）
+
+### 背景
+
+战斗内会修改物品模板数值（如裂盾刀减少对方护盾物品的 Shield）。若用**当前**模板数值判断「是否为护盾物品」「是否可暴击」，则护盾被减到 0 后会被误判为非护盾/不可暴击。
+
+### 做法
+
+- **Core/ItemTypeSnapshot.cs**：只读结构体，含 `IsDamageItem`、`IsBurnItem`、`IsPoisonItem`、`IsHealItem`、`IsShieldItem`、`IsRegenItem` 及 `HasAnyCrittableField`。
+- **导入时生成**：`BuildSide` 在应用 `entry.Overrides` 后、加入 `side.Items` 前，对每个物品调用 `ItemTypeSnapshot.FromTemplate(clone, entry.Tier)` 并赋给 `BattleItemState.TypeSnapshot`。
+- **判断时使用快照**：模拟器判断「是否可暴击」改为 `ItemHasAnyCrittableField(item)`，内部用 `item.TypeSnapshot.HasAnyCrittableField`；裂盾等效果在遍历「对方护盾物品」时用 `oppItem.TypeSnapshot.IsShieldItem`，不再读当前 `Template.Shield`。
+
+这样护盾/伤害/灼烧等类型与可暴击性在整场战斗中以导入时快照为准，不受战斗内数值修改影响。
+
+---
+
+## BattleSimulator 文件拆分与代码结构
+
+### 约定
+
+除 **ItemDatabase/Common.cs** 等以数据定义为主的文件外，单文件不宜过长；可将嵌套类、静态辅助拆到同命名空间下的独立源文件。
+
+### BattleSimulator 已拆分出的文件
+
+| 文件 | 职责 |
+|------|------|
+| **BattleSideDamage.cs** | 静态方法 `ApplyDamageToSide(BattleSide, int, bool)`，护盾吸收与伤害结算，供模拟器与效果上下文共用。 |
+| **EffectApplyContextImpl.cs** | `IEffectApplyContext` 实现，承载效果应用逻辑（伤害/治疗/护盾/冻结/减速/裂盾等）。 |
+| **BattleAuraContext.cs** | `IAuraContext` 实现，战斗内光环属性累加。 |
+| **TriggerInvokeContext.cs** | 触发器调用上下文（Multicast、UsedTemplate）。 |
+
+以上类型均为 `internal`，仅本程序集使用。主逻辑与帧循环保留在 **BattleSimulator.cs**，便于阅读与遵守 **.cursor/rules/battle-simulator-ability-queue.mdc**。

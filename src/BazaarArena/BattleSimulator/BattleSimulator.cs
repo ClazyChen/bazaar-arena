@@ -116,9 +116,20 @@ public class BattleSimulator
                     InvokeTrigger(Trigger.UseOtherItem, sideIdx, itemIdx, new TriggerInvokeContext { UsedTemplate = item.Template }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
                 }
 
-                // 8. 处理能力队列（只处理 currentAbilityQueue）；延后或未消耗的加入 nextAbilityQueue；充能导致物品满时加入 castQueue
+                // 8. 处理能力队列（只处理 currentAbilityQueue）；按优先级从高到低执行（Immediate/Highest/High 先于 Medium/Low/Lowest），同优先级按入队顺序
                 var toProcessAbilities = new List<AbilityQueueEntry>(currentAbilityQueue);
                 currentAbilityQueue.Clear();
+                toProcessAbilities.Sort((a, b) =>
+                {
+                    var sideA = a.SideIndex == 0 ? side0 : side1;
+                    var sideB = b.SideIndex == 0 ? side0 : side1;
+                    int priA = (int)sideA.Items[a.ItemIndex].Template.Abilities[a.AbilityIndex].Priority;
+                    int priB = (int)sideB.Items[b.ItemIndex].Template.Abilities[b.AbilityIndex].Priority;
+                    if (priA != priB) return priA.CompareTo(priB);
+                    if (a.SideIndex != b.SideIndex) return a.SideIndex.CompareTo(b.SideIndex);
+                    if (a.ItemIndex != b.ItemIndex) return a.ItemIndex.CompareTo(b.ItemIndex);
+                    return a.AbilityIndex.CompareTo(b.AbilityIndex);
+                });
                 foreach (var entry in toProcessAbilities)
                 {
                     if (timeMs - entry.LastTriggerMs < TriggerIntervalMs)
@@ -132,7 +143,7 @@ public class BattleSimulator
                     item.LastTriggerMsByAbility[entry.AbilityIndex] = timeMs;
                     entry.LastTriggerMs = timeMs;
                     var ability = item.Template.Abilities[entry.AbilityIndex];
-                    bool canCrit = TemplateHasAnyCrittableField(item.Template, item.Tier) && ability.Effects.Any(e => e.Apply != null && e.ApplyCritMultiplier);
+                    bool canCrit = ItemHasAnyCrittableField(item) && ability.Effects.Any(e => e.Apply != null && e.ApplyCritMultiplier);
                     bool isCrit = false;
                     int critDamagePercent = 200;
                     var auraContext = new BattleAuraContext(side, entry.ItemIndex);
@@ -186,56 +197,9 @@ public class BattleSimulator
         }
     }
 
-    /// <summary>物品是否具备可暴击的六类数值之一（Damage/Burn/Poison/Heal/Shield/Regen 任一 &gt; 0）。</summary>
-    private static bool TemplateHasAnyCrittableField(ItemTemplate template, ItemTier tier)
-    {
-        if (template.GetInt(nameof(ItemTemplate.Damage), tier, 0) > 0) return true;
-        if (template.GetInt(nameof(ItemTemplate.Burn), tier, 0) > 0) return true;
-        if (template.GetInt(nameof(ItemTemplate.Poison), tier, 0) > 0) return true;
-        if (template.GetInt(nameof(ItemTemplate.Heal), tier, 0) > 0) return true;
-        if (template.GetInt(nameof(ItemTemplate.Shield), tier, 0) > 0) return true;
-        if (template.GetInt("Regen", tier, 0) > 0) return true;
-        return false;
-    }
-
-    /// <summary>战斗内光环上下文：持有己方与目标物品下标，在 GetAuraModifiers 中遍历己方未摧毁物品的光环并累加。</summary>
-    private sealed class BattleAuraContext(BattleSide side, int targetItemIndex) : IAuraContext
-    {
-        public void GetAuraModifiers(string attributeName, out int fixedSum, out int percentSum)
-        {
-            fixedSum = 0;
-            percentSum = 0;
-            for (int i = 0; i < side.Items.Count; i++)
-            {
-                var source = side.Items[i];
-                if (source.Destroyed) continue;
-                foreach (var aura in source.Template.Auras)
-                {
-                    if (aura.AttributeName != attributeName) continue;
-                    var auraCtx = new ConditionContext
-                    {
-                        CandidateSide = 0,
-                        SourceSide = 0,
-                        CandidateItem = targetItemIndex,
-                        SourceItem = i,
-                        CandidateTemplate = side.Items[targetItemIndex].Template,
-                    };
-                    if (aura.Condition != null && !aura.Condition.Evaluate(auraCtx)) continue;
-                    if (!string.IsNullOrEmpty(aura.FixedValueKey))
-                        fixedSum += source.Template.GetInt(aura.FixedValueKey, source.Tier, 0);
-                    if (!string.IsNullOrEmpty(aura.PercentValueKey))
-                        percentSum += source.Template.GetInt(aura.PercentValueKey, source.Tier, 0);
-                }
-            }
-        }
-    }
-
-    /// <summary>触发器调用上下文：传入 InvokeTrigger，用于条件判断与 PendingCount。</summary>
-    private sealed class TriggerInvokeContext
-    {
-        public int? Multicast { get; init; }
-        public ItemTemplate? UsedTemplate { get; init; }
-    }
+    /// <summary>物品是否具备可暴击的六类数值之一；使用导入时的类型快照，避免战斗内数值被修改后误判。</summary>
+    private static bool ItemHasAnyCrittableField(BattleItemState item) =>
+        item.TypeSnapshot.HasAnyCrittableField;
 
     private static BattleSide? BuildSide(Deck deck, IItemTemplateResolver resolver)
     {
@@ -272,7 +236,11 @@ public class BattleSimulator
                 foreach (var kv in entry.Overrides)
                     clone.SetInt(kv.Key, kv.Value);
             }
-            side.Items.Add(new BattleItemState(clone, entry.Tier));
+            var state = new BattleItemState(clone, entry.Tier)
+            {
+                TypeSnapshot = ItemTypeSnapshot.FromTemplate(clone, entry.Tier),
+            };
+            side.Items.Add(state);
         }
         return side;
     }
@@ -317,7 +285,7 @@ public class BattleSimulator
     {
         if (victim.Burn <= 0) return;
         int damage = victim.Burn;
-        ApplyDamageToSide(victim, damage, isBurn: true);
+        BattleSideDamage.ApplyDamageToSide(victim, damage, isBurn: true);
         int decay = RatioUtil.PercentFloor(victim.Burn, 3); // 衰减量：当前灼烧的 3%（至少为 1），灼烧 1 时衰减 1 变为 0
         victim.Burn = Math.Max(0, victim.Burn - decay);
         logSink.OnBurnTick(victimSideIndex, damage, victim.Burn, timeMs);
@@ -327,7 +295,7 @@ public class BattleSimulator
     {
         if (victim.Poison <= 0) return;
         int damage = victim.Poison;
-        ApplyDamageToSide(victim, damage, isBurn: false);
+        BattleSideDamage.ApplyDamageToSide(victim, damage, isBurn: false);
         logSink.OnPoisonTick(victimSideIndex, damage, timeMs);
     }
 
@@ -341,154 +309,7 @@ public class BattleSimulator
 
     private static void ApplySandstorm(BattleSide side, int damage, IBattleLogSink logSink, int timeMs)
     {
-        _ = ApplyDamageToSide(side, damage, isBurn: false);
-    }
-
-    /// <summary>对一方造成伤害，返回实际扣减的生命值（用于吸血等）。</summary>
-    private static int ApplyDamageToSide(BattleSide side, int damage, bool isBurn)
-    {
-        if (isBurn)
-        {
-            int shieldConsume = Math.Min(side.Shield, (damage + 1) / 2);
-            int shieldDamage = shieldConsume * 2;
-            side.Shield -= shieldConsume;
-            damage = Math.Max(0, damage - shieldDamage);
-        }
-        else
-        {
-            int shieldConsume = Math.Min(side.Shield, damage);
-            side.Shield -= shieldConsume;
-            damage -= shieldConsume;
-        }
-        int actualHpDamage = Math.Max(0, damage);
-        side.Hp -= actualHpDamage;
-        return actualHpDamage;
-    }
-
-    /// <summary>效果应用上下文：实现 IEffectApplyContext，供 EffectDefinition.Apply 委托使用。</summary>
-    private sealed class EffectApplyContextImpl : IEffectApplyContext
-    {
-        public required BattleSide Side { get; init; }
-        public required BattleSide Opp { get; init; }
-        public required BattleItemState Item { get; init; }
-        public int Value { get; init; }
-        public int CritMultiplier { get; init; }
-        public bool IsCrit { get; init; }
-        public int TimeMs { get; init; }
-        public required IBattleLogSink LogSink { get; init; }
-        public int SideIndex { get; init; }
-        public int ItemIndex { get; init; }
-        public List<(int, int)>? ChargeInducedCastQueue { get; init; }
-
-        public bool HasLifeSteal => Item.Template.GetInt(nameof(ItemTemplate.LifeSteal), Item.Tier, 0) != 0;
-
-        public int GetResolvedValue(string key, bool applyCritMultiplier)
-        {
-            int baseValue = Item.Template.GetInt(key, Item.Tier, 0);
-            return applyCritMultiplier ? baseValue * CritMultiplier : baseValue;
-        }
-
-        public int GetCasterItemInt(string key, int defaultValue) => Item.Template.GetInt(key, Item.Tier, defaultValue);
-
-        public int ApplyDamageToOpp(int value, bool isBurn) => ApplyDamageToSide(Opp, value, isBurn);
-        public void HealCaster(int amount) { Side.Hp = Math.Min(Side.MaxHp, Side.Hp + amount); }
-        public void AddBurnToOpp(int value) => Opp.Burn += value;
-        public void AddPoisonToOpp(int value) => Opp.Poison += value;
-        public void AddShieldToCaster(int value) => Side.Shield += value;
-
-        public int HealCasterWithDebuffClear(int requestedHeal)
-        {
-            int heal = Math.Min(requestedHeal, Side.MaxHp - Side.Hp);
-            Side.Hp += heal;
-            int clear = RatioUtil.PercentFloor(heal, 5);
-            Side.Burn = Math.Max(0, Side.Burn - clear);
-            Side.Poison = Math.Max(0, Side.Poison - clear);
-            return heal;
-        }
-
-        public void AddRegenToCaster(int value) => Side.Regen += value;
-
-        public void ChargeCasterItem(int chargeMs, out bool fullAndShouldCast)
-        {
-            fullAndShouldCast = false;
-            int cooldownMs = Item.GetCooldownMs();
-            if (cooldownMs <= 0) return;
-            int newElapsed = Math.Min(cooldownMs, Item.CooldownElapsedMs + chargeMs);
-            int added = newElapsed - Item.CooldownElapsedMs;
-            Item.CooldownElapsedMs = newElapsed;
-            if (added > 0)
-                LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "充能", added, TimeMs, isCrit: false);
-            if (Item.CooldownElapsedMs >= cooldownMs && ChargeInducedCastQueue != null)
-            {
-                if (Item.GetAmmoCap() <= 0 || Item.AmmoRemaining > 0)
-                    ChargeInducedCastQueue.Add((SideIndex, ItemIndex));
-                fullAndShouldCast = true;
-                Item.CooldownElapsedMs = 0;
-            }
-        }
-
-        public void ApplyFreeze(int freezeMs, int targetCount)
-        {
-            if (freezeMs <= 0 || targetCount <= 0) return;
-            var withCooldown = new List<int>();
-            var withoutCooldown = new List<int>();
-            for (int i = 0; i < Opp.Items.Count; i++)
-            {
-                if (Opp.Items[i].Destroyed) continue;
-                if (Opp.Items[i].GetCooldownMs() > 0) withCooldown.Add(i);
-                else withoutCooldown.Add(i);
-            }
-            var pool = withCooldown.Count > 0 ? withCooldown : withoutCooldown;
-            if (pool.Count == 0) return;
-            var targetNames = new List<string>();
-            for (int n = 0; n < targetCount; n++)
-            {
-                int idx = Random.Shared.Next(pool.Count);
-                var target = Opp.Items[pool[idx]];
-                target.FreezeRemainingMs = Math.Max(target.FreezeRemainingMs, freezeMs);
-                targetNames.Add(target.Template.Name);
-            }
-            string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
-            LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "冻结", freezeMs, TimeMs, isCrit: false, extraSuffix);
-        }
-
-        public void ApplySlow(int slowMs, int targetCount)
-        {
-            if (slowMs <= 0 || targetCount <= 0) return;
-            var withCooldown = new List<int>();
-            var withoutCooldown = new List<int>();
-            for (int i = 0; i < Opp.Items.Count; i++)
-            {
-                if (Opp.Items[i].Destroyed) continue;
-                if (Opp.Items[i].GetCooldownMs() > 0) withCooldown.Add(i);
-                else withoutCooldown.Add(i);
-            }
-            var pool = withCooldown.Count > 0 ? withCooldown : withoutCooldown;
-            if (pool.Count == 0) return;
-            var targetNames = new List<string>();
-            for (int n = 0; n < targetCount; n++)
-            {
-                int idx = Random.Shared.Next(pool.Count);
-                var target = Opp.Items[pool[idx]];
-                target.SlowRemainingMs = Math.Max(target.SlowRemainingMs, slowMs);
-                targetNames.Add(target.Template.Name);
-            }
-            string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
-            LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "减速", slowMs, TimeMs, isCrit: false, extraSuffix);
-        }
-
-        public void AddWeaponDamageBonusToCasterSide(int value)
-        {
-            foreach (var wi in Side.Items)
-            {
-                if (wi.Destroyed) continue;
-                if (wi.Template.Tags.Contains(Tag.Weapon))
-                    wi.Template.Damage = wi.Template.Damage.Add(value);
-            }
-        }
-
-        public void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false) =>
-            LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, effectName, value, TimeMs, showCrit, extraSuffix);
+        _ = BattleSideDamage.ApplyDamageToSide(side, damage, isBurn: false);
     }
 
     /// <summary>将能力加入队列或合并 PendingCount：先查 currentAbilityQueue，再查 nextAbilityQueue；都没有则新建，仅 Immediate 入 current，其余入 next。</summary>
@@ -563,7 +384,7 @@ public class BattleSimulator
             if (eff.ValueKey != null)
             {
                 int baseValue = eff.ResolveValue(item.Template, item.Tier, eff.ValueKey);
-                bool applyCrit = TemplateHasAnyCrittableField(item.Template, item.Tier) && eff.ApplyCritMultiplier;
+                bool applyCrit = ItemHasAnyCrittableField(item) && eff.ApplyCritMultiplier;
                 value = applyCrit ? baseValue * critMultiplier : baseValue;
             }
             var ctx = new EffectApplyContextImpl

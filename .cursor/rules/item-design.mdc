@@ -27,7 +27,8 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 - **效果应用**：`EffectDefinition.Apply` 为 `Action<IEffectApplyContext>`；模拟器构建 `IEffectApplyContext` 实现后调用 `eff.Apply(ctx)`。预定义效果在 **Core/Effect.cs** 内设置 `Apply`；只读效果在委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), applyCritMultiplier)` 取值，用 `ctx.GetCasterItemInt(nameof(ItemTemplate.FreezeTargetCount), 1)` 等取目标数，避免魔法字符串。
 - **ValueKey**：仅需由调用方指定数值来源的效果（如 `Effect.WeaponDamageBonus(ValueKey: nameof(ItemTemplate.Custom_0))`）保留 ValueKey；模拟器仅在 `eff.ValueKey != null` 时解析并填入 `ctx.Value`。
 - **暴击**：是否乘暴击由物品六字段（Damage/Burn/Poison/Heal/Shield/Regen 任一 > 0）与 `eff.ApplyCritMultiplier` 决定。日志「（暴击）」仅对可暴击效果显示：`LogEffect(..., showCrit: ctx.IsCrit)` 用于伤害/灼烧等，Charge/Freeze/Slow 等传 `showCrit: false`。
-- **扩展效果**：在 `Core/Effect.cs` 新增静态 `EffectDefinition` 并设置 `Apply` 与可选 `ApplyCritMultiplier`、`ValueKey` 即可，无需单独 Handler 文件。
+- **扩展效果**：在 `Core/Effect.cs` 新增静态 `EffectDefinition` 并设置 `Apply` 与可选 `ApplyCritMultiplier`、`ValueKey` 即可，无需单独 Handler 文件。若效果为某物品独有、不必放入通用 Effect，可在**物品定义内**直接 `new EffectDefinition { ApplyCritMultiplier = false, Apply = ctx => { ... } }`（如裂盾刀的裂盾效果）。
+- **物品类型快照**：判断「是否为护盾/伤害/灼烧物品」「是否可暴击」时使用 `BattleItemState.TypeSnapshot`（导入时由 `ItemTypeSnapshot.FromTemplate` 生成），避免战斗内数值被修改（如裂盾减 Shield）后误判。见 `docs/implementation-notes.md` 中「物品类型快照」。
 
 ## 战斗内修改与 IntOrByTier
 
