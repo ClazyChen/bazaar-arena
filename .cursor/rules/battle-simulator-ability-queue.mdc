@@ -29,7 +29,7 @@ alwaysApply: false
 
 - 所有触发器均通过**统一**的 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用：遍历双方所有物品，构建 `ConditionContext` 后调用 `condition.Evaluate(ctx)` 判断是否触发，再入队。**只有 Immediate 优先级入 currentAbilityQueue，其余入 nextAbilityQueue**（与步骤 7 施放触发的规则一致）。
 - **战斗开始**：步骤 1 只调用 `InvokeTrigger(Trigger.BattleStart, -1, -1, null, ...)` 入队，不直接执行；执行在步骤 8（或下一帧步骤 8）进行。
-- **UseItem / UseOtherItem**：生成/克隆能力时 `EnsureTriggerCondition` 补 Condition：`UseItem` 且 Condition 为 null → `Condition.SameAsSource`；**UseOtherItem 始终叠加「己方其他物品」**：基础为 `And(DifferentFromSource, SameSide)`，若能力有显式 Condition（如 `WithTag(Tag.Tool)`）则返回 `And(baseSameSideOther, condition)`，保证仅己方其他物品触发，避免对方操作触发己方能力。
+- **UseItem / UseOtherItem / OnCrit**：生成/克隆能力时 `EnsureTriggerCondition` 补 Condition：`UseItem` 且 Condition 为 null → `Condition.SameAsSource`；**UseOtherItem 始终叠加「己方其他物品」**：基础为 `And(DifferentFromSource, SameSide)`，若能力有显式 Condition（如 `WithTag(Tag.Tool)`）则返回 `And(baseSameSideOther, condition)`；**OnCrit**（造成暴击时）默认 `Condition.SameSide`（己方有人暴击即触发己方所有带该能力的物品）。来源=暴击施放者，在 `ExecuteOneEffect` 全部效果执行完后若 `isCrit` 则调用 `InvokeTrigger(Trigger.OnCrit, ...)`。
 - **PendingCount 合并顺序（AddOrMergeAbility）**：
   1. 先在 **currentAbilityQueue** 中查找同 (SideIndex, ItemIndex, AbilityIndex)，找到则只做 `PendingCount += pendingCount`，不新建。
   2. 再在 **nextAbilityQueue** 中查找同上键，找到则只做 `PendingCount += pendingCount`，不新建。
@@ -43,6 +43,7 @@ alwaysApply: false
 ## 效果数值与光环
 
 - 执行效果时，`IEffectApplyContext.GetResolvedValue` 用于取 Damage、Shield 等。实现（如 `EffectApplyContextImpl`）**必须**传入 `IAuraContext` 调用 `Item.Template.GetInt(key, tier, default, auraContext)`，否则「基础 0 + 光环加成」类物品施放时数值仍为 0。见 `docs/implementation-notes.md` 中「光环（Aura）与属性读取」→「效果数值必须带光环上下文」。
+- **战斗内读属性统一带光环**：凡有 `(side, itemIndex)` 的战斗内读（Multicast、CooldownMs、AmmoCap 等）应使用 **`BattleSide.GetItemInt(itemIndex, key, defaultValue)`**，内部用 `BattleAuraContext(this, itemIndex)` 调用 `Template.GetInt(..., context)`，保证依赖变量的光环（如「飞行时 +1 多重释放」）正确生效。
 
 ## 设计文档对照
 

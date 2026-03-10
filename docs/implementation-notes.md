@@ -124,7 +124,35 @@
 ### 暴击与日志、关键词样式
 
 - **暴击日志**：`IBattleLogSink.OnEffect(..., bool isCrit = false)`；当 `isCrit` 为 true 时，Console/TextBox/File 等 sink 在效果行末尾追加「 （暴击）」。
-- **关键词着色**：`EffectKeywordFormatting` 中「伤害」「灼烧」「暴击」「暴击率」「暴击伤害」等仅修改颜色，**不加粗**；加粗仅用于物品名称和嵌入的数值区段（由 ItemDescHelper 的 valueRanges 控制）。
+- **关键词着色**：`EffectKeywordFormatting` 中「伤害」「灼烧」「暴击」「暴击率」「暴击伤害」等仅修改颜色，**不加粗**；加粗仅用于物品名称和嵌入的数值区段（由 ItemDescHelper 的 valueRanges 控制）。「飞行」与护盾同色（rgb(244,207,32)），Tooltip 与战斗日志一致。
+
+---
+
+## 飞行机制、造成暴击时与战斗内属性统一带光环
+
+### 飞行（In Flight）
+
+- **运行时状态**：`BattleItemState.InFlight`，战斗开始为 false；由「开始飞行」「结束飞行」类效果修改。
+- **效果**：`Effect.StartFlying` 调用 `ctx.SetCasterInFlight(true)` 并 `ctx.LogEffect("开始飞行", 0, showCrit: false)`。若 `ctx.IsCasterInFlight` 已为 true 则**不**设置、不记日志（幂等）。
+- **光环条件**：`Condition.InFlight` 依赖 `ConditionContext.SourceInFlight`；`BattleAuraContext` 在遍历光环来源时设置 `SourceInFlight = source.InFlight`，用于如「此物品飞行时 +1 多重释放」。
+- **日志与 UI**：`EffectLogFormat.FormatEffectValue("开始飞行", value)` 返回空串，避免显示 0；`EffectKeywordFormatting` 中「飞行」与护盾同色。
+
+### 造成暴击时（Trigger.OnCrit）
+
+- **触发时机**：`ExecuteOneEffect` 内所有效果执行完毕后，若 `isCrit == true` 则调用 `InvokeTrigger(Trigger.OnCrit, sideIndex, itemIndex, null, ...)`，来源=暴击施放者。
+- **条件**：`EnsureTriggerCondition(Trigger.OnCrit)` 默认 `Condition.SameSide`，即己方任意一次暴击会触发己方所有带 `TriggerName = Trigger.OnCrit` 的能力（如宇宙护符「造成暴击时此物品开始飞行」）。
+
+### 战斗内属性统一带光环（BattleSide.GetItemInt）
+
+- **原则**：游戏运行时读取任意物品字段都应包含光环上下文，避免「依赖变量的光环」漏算（如 Burn += Damage 时读 Damage 也需光环）。
+- **统一入口**：`BattleSide.GetItemInt(itemIndex, key, defaultValue)` 内部用 `new BattleAuraContext(this, itemIndex)` 调用 `Items[itemIndex].Template.GetInt(key, tier, default, context)`。
+- **调用点**：BattleSimulator 步骤 7（AmmoCap、Multicast）、ProcessCooldown（CooldownMs、AmmoCap）；EffectApplyContextImpl 内 ChargeCasterItem、GetTargetIndices、ChargeItemAt、HasLifeSteal 等，凡有 (side, itemIndex) 的读属性均改为 `side.GetItemInt(...)`。
+- **光环内部**：`BattleAuraContext.GetAuraModifiers` 中 FixedValueKey/PercentValueKey 的读取改为带 `new BattleAuraContext(side, i)`；公式求值传入 `sourceIndex`，`AuraFormulaEvaluator.Evaluate` 依赖来源属性时（如 `Formula.SourceDamage`）用 `BattleAuraContext(side, sourceIndex)` 读值。
+
+### Formula.SourceDamage 与依赖变量的光环
+
+- **用途**：如「Burn = 0 + 自身 Damage（含光环）」：Aura 的 `AttributeName = Burn`、`FixedValueFormula = Formula.SourceDamage`，SameAsSource。
+- **实现**：`AuraFormulaEvaluator.Evaluate` 增加参数 `sourceIndex`；case `Formula.SourceDamage` 返回 `source.Template.GetInt("Damage", source.Tier, 0, new BattleAuraContext(side, sourceIndex))`，保证读 Damage 时带光环且不形成 Burn↔Burn 循环。
 
 ---
 

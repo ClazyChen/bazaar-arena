@@ -1,5 +1,16 @@
 # 变更记录
 
+## 飞行机制、OnCrit、统一光环读取与三件新物品
+
+- **飞行（In Flight）**：`BattleItemState.InFlight` 运行时状态；`Effect.StartFlying` 设置并记日志「开始飞行」，若已在飞行则不重复结算（幂等）。`Condition.InFlight`、`ConditionContext.SourceInFlight` 供光环使用。Tooltip/日志「飞行」与护盾同色。
+- **造成暴击时**：`Trigger.OnCrit`；`ExecuteOneEffect` 结束后若 `isCrit` 则 `InvokeTrigger(Trigger.OnCrit, ...)`；`EnsureTriggerCondition` 默认 SameSide。
+- **战斗内属性统一带光环**：`BattleSide.GetItemInt(itemIndex, key, default)` 统一入口；BattleSimulator、EffectApplyContextImpl、BattleAuraContext 中战斗内读属性改为通过 GetItemInt 或带 context 的 GetInt。光环内 FixedValueKey/PercentValueKey 与公式求值（含 `Formula.SourceDamage`）均带 `BattleAuraContext(side, sourceIndex)`。
+- **Formula.SourceDamage**：光环固定加成 = 来源物品 Damage（含光环），用于如巨龙崽崽 Burn = 自身 Damage；`AuraFormulaEvaluator.Evaluate` 增加 `sourceIndex` 参数。
+- **Tag.Dragon**、**按 tier 冷却**：物品可设 `CooldownMs = [9000, 8000, 7000]`；新增 `Tag.Dragon = "巨龙"`。
+- **三件新物品**：断裂镣铐（8s 银 小，武器伤害+4/8/12、使用武器时充能 2s）、宇宙护符（5s 银 小 遗物，加速 1 件 1/2/3s、暴击时开始飞行、飞行时 +1 多重释放）、巨龙崽崽（9/8/7s 银 小 武器 伙伴 巨龙，5 伤害、灼烧等量伤害 Aura、开始飞行）。文档与规则：item-design.mdc、battle-simulator-ability-queue.mdc、implementation-notes.md 已更新。
+
+---
+
 ## MinTier/IntOrByTier 约定、卡组 GUI tier、Git 提交格式
 
 - **IntOrByTier 与 MinTier**：最小 tier 为银/金/钻的物品，其按等级列表仅存该 tier 起的数值（如最小银则 list 为 [银,金,钻] 三档）。**ItemTemplate.GetInt(key, tier)** 按 `listIndex = (int)tier - (int)MinTier` 映射列表下标；越界时用首/末档兜底。属性读取与战斗逻辑统一按此约定。

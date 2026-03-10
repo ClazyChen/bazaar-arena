@@ -25,6 +25,7 @@ public static class EffectKeywordFormatting
         ("剧毒", Color.FromRgb(14, 190, 79), false),
         ("裂盾", Color.FromRgb(244, 207, 32), false),
         ("护盾", Color.FromRgb(244, 207, 32), false),
+        ("飞行", Color.FromRgb(244, 207, 32), false),
         ("充能", Color.FromRgb(0, 236, 195), false),
         ("修复", Color.FromRgb(143, 252, 188), false),
         ("冻结", Color.FromRgb(63, 200, 247), false),

@@ -15,4 +15,6 @@ public static class Tag
     public const string Vehicle = "载具";
     /// <summary>遗物。</summary>
     public const string Relic = "遗物";
+    /// <summary>巨龙。</summary>
+    public const string Dragon = "巨龙";
 }

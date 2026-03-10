@@ -428,6 +428,113 @@ public static class CommonSmall
         };
     }
 
+    /// <summary>断裂镣铐（Broken Shackles）：8s 小 银；武器伤害提高 4 » 8 » 12（限本场战斗）（优先级 High）；使用武器时为此物品充能 2 秒。</summary>
+    public static ItemTemplate BrokenShackles()
+    {
+        return new ItemTemplate
+        {
+            Name = "断裂镣铐",
+            Desc = "武器伤害提高 {Custom_0}（限本场战斗）；使用武器时，为此物品充能 {ChargeSeconds} 秒",
+            MinTier = ItemTier.Silver,
+            Size = ItemSize.Small,
+            Tags = [],
+            Cooldown = 8.0,
+            Custom_0 = [4, 8, 12],
+            ChargeSeconds = 2.0,
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.High,
+                    Effects = [Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.WithTag(Tag.Weapon))],
+                },
+                new()
+                {
+                    TriggerName = Trigger.UseOtherItem,
+                    Priority = AbilityPriority.Medium,
+                    Condition = Condition.WithTag(Tag.Weapon),
+                    Effects = [Effect.ChargeSelf],
+                },
+            ],
+        };
+    }
+
+    /// <summary>宇宙护符（Cosmic Amulet）：5s 小 银 遗物；加速一件物品 1 » 2 » 3 秒；造成暴击时此物品开始飞行（优先级 Low）；此物品飞行时 +1 多重释放。</summary>
+    public static ItemTemplate CosmicAmulet()
+    {
+        return new ItemTemplate
+        {
+            Name = "宇宙护符",
+            Desc = "加速一件物品 {HasteSeconds} 秒；造成暴击时，此物品开始飞行；此物品飞行时，+1 多重释放",
+            MinTier = ItemTier.Silver,
+            Size = ItemSize.Small,
+            Tags = [Tag.Relic],
+            Cooldown = 5.0,
+            HasteSeconds = new[] { 1.0, 2.0, 3.0 },
+            HasteTargetCount = 1,
+            Custom_0 = 1,
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Haste],
+                },
+                new()
+                {
+                    TriggerName = Trigger.OnCrit,
+                    Priority = AbilityPriority.Low,
+                    Effects = [Effect.StartFlying],
+                },
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = nameof(ItemTemplate.Multicast),
+                    Condition = Condition.And(Condition.SameAsSource, Condition.InFlight),
+                    FixedValueKey = nameof(ItemTemplate.Custom_0),
+                },
+            ],
+        };
+    }
+
+    /// <summary>巨龙崽崽（Dragon Whelp）：9 » 8 » 7s 小 银 武器 伙伴 巨龙；造成 5 伤害；造成灼烧等量于此物品伤害；此物品开始飞行。</summary>
+    public static ItemTemplate DragonWhelp()
+    {
+        return new ItemTemplate
+        {
+            Name = "巨龙崽崽",
+            Desc = "造成 {Damage} 伤害；造成灼烧，等量于此物品伤害；此物品开始飞行",
+            MinTier = ItemTier.Silver,
+            Size = ItemSize.Small,
+            Tags = [Tag.Weapon, Tag.Friend, Tag.Dragon],
+            CooldownMs = [9000, 8000, 7000],
+            Damage = 5,
+            Burn = 0,
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Damage, Effect.Burn, Effect.StartFlying],
+                },
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = nameof(ItemTemplate.Burn),
+                    Condition = Condition.SameAsSource,
+                    FixedValueFormula = Formula.SourceDamage,
+                },
+            ],
+        };
+    }
+
     /// <summary>姜饼人（Gingerbread Man）：5s 小 铜 食物 伙伴；获得 10 » 20 » 30 » 40 护盾（优先级 Low）；使用工具时为此物品充能 1 秒（优先级 Medium）。</summary>
     public static ItemTemplate GingerbreadMan()
     {
@@ -480,5 +587,8 @@ public static class CommonSmall
         db.Register(ForgottenGod());
         db.Register(NeuralToxin());
         db.Register(GingerbreadMan());
+        db.Register(BrokenShackles());
+        db.Register(CosmicAmulet());
+        db.Register(DragonWhelp());
     }
 }

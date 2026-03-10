@@ -5,14 +5,15 @@ namespace BazaarArena.BattleSimulator;
 /// <summary>光环固定加成公式求值：根据 <see cref="AuraDefinition.FixedValueFormula"/> 计算固定加成的数值，避免公式逻辑堆在 <see cref="BattleAuraContext"/>。</summary>
 internal static class AuraFormulaEvaluator
 {
-    /// <summary>根据公式名、施放源物品、己方阵营与可选敌方阵营计算固定加成值；未知公式返回 0。</summary>
-    public static int Evaluate(string? formulaName, BattleItemState source, BattleSide side, BattleSide? opp = null)
+    /// <summary>根据公式名、施放源物品、来源下标、己方阵营与可选敌方阵营计算固定加成值；未知公式返回 0。sourceIndex 用于依赖来源属性的公式（如 SourceDamage）。</summary>
+    public static int Evaluate(string? formulaName, BattleItemState source, int sourceIndex, BattleSide side, BattleSide? opp = null)
     {
         if (string.IsNullOrEmpty(formulaName)) return 0;
         return formulaName switch
         {
             Formula.SmallCountStash => EvaluateSmallCountStash(source, side),
             Formula.OpponentPoison => opp?.Poison ?? 0,
+            Formula.SourceDamage => source.Template.GetInt("Damage", source.Tier, 0, new BattleAuraContext(side, sourceIndex)),
             _ => 0,
         };
     }

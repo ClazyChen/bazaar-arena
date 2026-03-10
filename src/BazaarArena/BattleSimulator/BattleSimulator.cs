@@ -108,10 +108,11 @@ public class BattleSimulator
                 {
                     var side = sideIdx == 0 ? side0 : side1;
                     var item = side.Items[itemIdx];
-                    if (item.GetAmmoCap() > 0)
+                    int ammoCap = side.GetItemInt(itemIdx, nameof(ItemTemplate.AmmoCap), 0);
+                    if (ammoCap > 0)
                         item.AmmoRemaining--;
-                    logSink.OnCast(sideIdx, itemIdx, item.Template.Name, timeMs, item.GetAmmoCap() > 0 ? item.AmmoRemaining : null);
-                    int multicast = item.GetMulticast();
+                    logSink.OnCast(sideIdx, itemIdx, item.Template.Name, timeMs, ammoCap > 0 ? item.AmmoRemaining : null);
+                    int multicast = side.GetItemInt(itemIdx, nameof(ItemTemplate.Multicast), 1);
                     InvokeTrigger(Trigger.UseItem, sideIdx, itemIdx, new TriggerInvokeContext { Multicast = multicast }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
                     InvokeTrigger(Trigger.UseOtherItem, sideIdx, itemIdx, new TriggerInvokeContext { UsedTemplate = item.Template }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
                 }
@@ -257,6 +258,7 @@ public class BattleSimulator
         }
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.OnCrit) return condition ?? Condition.SameSide;
         return condition;
     }
 
@@ -266,7 +268,7 @@ public class BattleSimulator
         {
             var item = side.Items[i];
             if (item.Destroyed) continue;
-            int cooldownMs = item.GetCooldownMs();
+            int cooldownMs = side.GetItemInt(i, "CooldownMs", 0);
             if (cooldownMs <= 0) continue;
             if (item.FreezeRemainingMs > 0) continue; // 冰冻不推进冷却
             int advanceMs = FrameMs;
@@ -277,7 +279,8 @@ public class BattleSimulator
             item.CooldownElapsedMs += advanceMs;
             if (item.CooldownElapsedMs >= cooldownMs)
             {
-                if (item.GetAmmoCap() > 0 && item.AmmoRemaining <= 0) continue;
+                int ammoCap = side.GetItemInt(i, "AmmoCap", 0);
+                if (ammoCap > 0 && item.AmmoRemaining <= 0) continue;
                 item.CooldownElapsedMs = 0;
                 castQueue.Add((sideIndex, i));
             }
@@ -409,5 +412,7 @@ public class BattleSimulator
             };
             eff.Apply(ctx);
         }
+        if (isCrit)
+            InvokeTrigger(Trigger.OnCrit, sideIndex, itemIndex, null, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
     }
 }

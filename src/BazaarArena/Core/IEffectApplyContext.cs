@@ -9,6 +9,9 @@ public interface IEffectApplyContext
     /// <summary>施放者物品是否带吸血（LifeSteal &gt; 0）。</summary>
     bool HasLifeSteal { get; }
 
+    /// <summary>施放者物品当前是否处于飞行状态。</summary>
+    bool IsCasterInFlight { get; }
+
     /// <summary>本轮能力是否掷出暴击；可暴击效果在 LogEffect 时传 showCrit: IsCrit，不可暴击效果传 false。</summary>
     bool IsCrit { get; }
 
@@ -68,4 +71,7 @@ public interface IEffectApplyContext
 
     /// <summary>记录效果日志。showCrit 为 true 时显示「（暴击）」；仅对实际参与暴击的效果传 true（如伤害/灼烧/治疗等），冻结/减速等不可暴击效果传 false。</summary>
     void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false);
+
+    /// <summary>设置施放者物品的飞行状态（开始/结束飞行）。</summary>
+    void SetCasterInFlight(bool inFlight);
 }

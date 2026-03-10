@@ -23,14 +23,15 @@ internal sealed class BattleAuraContext(BattleSide side, int targetItemIndex, Ba
                     CandidateItem = targetItemIndex,
                     SourceItem = i,
                     CandidateTemplate = side.Items[targetItemIndex].Template,
+                    SourceInFlight = source.InFlight,
                 };
                 if (aura.Condition != null && !aura.Condition.Evaluate(auraCtx)) continue;
                 if (!string.IsNullOrEmpty(aura.FixedValueFormula))
-                    fixedSum += AuraFormulaEvaluator.Evaluate(aura.FixedValueFormula, source, side, opp);
+                    fixedSum += AuraFormulaEvaluator.Evaluate(aura.FixedValueFormula, source, i, side, opp);
                 else if (!string.IsNullOrEmpty(aura.FixedValueKey))
-                    fixedSum += source.Template.GetInt(aura.FixedValueKey, source.Tier, 0);
+                    fixedSum += source.Template.GetInt(aura.FixedValueKey, source.Tier, 0, new BattleAuraContext(side, i));
                 if (!string.IsNullOrEmpty(aura.PercentValueKey))
-                    percentSum += source.Template.GetInt(aura.PercentValueKey, source.Tier, 0);
+                    percentSum += source.Template.GetInt(aura.PercentValueKey, source.Tier, 0, new BattleAuraContext(side, i));
             }
         }
     }

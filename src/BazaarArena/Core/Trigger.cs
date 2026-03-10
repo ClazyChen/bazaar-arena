@@ -11,4 +11,6 @@ public static class Trigger
     public const string Freeze = "触发冻结";
     /// <summary>己方施加减速时触发（每减速一个目标计一次，由 PendingCount 控制 250ms 间隔）。</summary>
     public const string Slow = "触发减速";
+    /// <summary>己方造成暴击时触发（来源=暴击施放者，候选=己方所有带此能力的物品）。</summary>
+    public const string OnCrit = "造成暴击时";
 }

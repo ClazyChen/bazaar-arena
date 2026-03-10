@@ -147,4 +147,15 @@ public static class Effect
         },
     };
 
+    /// <summary>施放者物品开始飞行（设置运行时飞行状态）；若已在飞行则不重复结算、不记日志。</summary>
+    public static readonly EffectDefinition StartFlying = new()
+    {
+        ApplyCritMultiplier = false,
+        Apply = ctx =>
+        {
+            if (ctx.IsCasterInFlight) return;
+            ctx.SetCasterInFlight(true);
+            ctx.LogEffect("开始飞行", 0, showCrit: false);
+        },
+    };
 }

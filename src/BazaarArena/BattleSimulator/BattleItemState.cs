@@ -17,6 +17,8 @@ public class BattleItemState
     public int HasteRemainingMs { get; set; }
     public int SlowRemainingMs { get; set; }
     public int FreezeRemainingMs { get; set; }
+    /// <summary>是否处于飞行状态；战斗开始为 false，「开始飞行」/「结束飞行」效果可修改。</summary>
+    public bool InFlight { get; set; }
     public bool Destroyed { get; set; }
     public int AmmoRemaining { get; set; }
 

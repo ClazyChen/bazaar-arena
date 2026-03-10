@@ -21,7 +21,8 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     /// <summary>己方施加减速后由模拟器注入，用于触发「触发减速」能力入队（传入本次减速目标数）。</summary>
     public Action<int>? OnSlowApplied { get; init; }
 
-    public bool HasLifeSteal => Item.Template.GetInt(nameof(ItemTemplate.LifeSteal), Item.Tier, 0) != 0;
+    public bool HasLifeSteal => Side.GetItemInt(ItemIndex, nameof(ItemTemplate.LifeSteal), 0) != 0;
+    public bool IsCasterInFlight => Item.InFlight;
 
     public int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0)
     {
@@ -53,7 +54,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public void ChargeCasterItem(int chargeMs, out bool fullAndShouldCast)
     {
         fullAndShouldCast = false;
-        int cooldownMs = Item.GetCooldownMs();
+        int cooldownMs = Side.GetItemInt(ItemIndex, "CooldownMs", 0);
         if (cooldownMs <= 0) return;
         int newElapsed = Math.Min(cooldownMs, Item.CooldownElapsedMs + chargeMs);
         int added = newElapsed - Item.CooldownElapsedMs;
@@ -62,7 +63,8 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "充能", added, TimeMs, isCrit: false);
         if (Item.CooldownElapsedMs >= cooldownMs && ChargeInducedCastQueue != null)
         {
-            if (Item.GetAmmoCap() <= 0 || Item.AmmoRemaining > 0)
+            int ammoCap = Side.GetItemInt(ItemIndex, "AmmoCap", 0);
+            if (ammoCap <= 0 || Item.AmmoRemaining > 0)
                 ChargeInducedCastQueue.Add((SideIndex, ItemIndex));
             fullAndShouldCast = true;
             Item.CooldownElapsedMs = 0;
@@ -76,7 +78,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         for (int i = 0; i < fromSide.Items.Count; i++)
         {
             var it = fromSide.Items[i];
-            if (it.Destroyed || it.GetCooldownMs() <= 0) continue;
+            if (it.Destroyed || fromSide.GetItemInt(i, "CooldownMs", 0) <= 0) continue;
             var ctx = new ConditionContext
             {
                 CandidateSide = fromSideIndex,
@@ -179,13 +181,14 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     private string ChargeItemAt(int sideIndex, int itemIndex, int chargeMs)
     {
         var target = Side.Items[itemIndex];
-        int cooldownMs = target.GetCooldownMs();
+        int cooldownMs = Side.GetItemInt(itemIndex, "CooldownMs", 0);
         if (cooldownMs <= 0) return target.Template.Name;
         int newElapsed = Math.Min(cooldownMs, target.CooldownElapsedMs + chargeMs);
         target.CooldownElapsedMs = newElapsed;
         if (target.CooldownElapsedMs >= cooldownMs && ChargeInducedCastQueue != null)
         {
-            if (target.GetAmmoCap() <= 0 || target.AmmoRemaining > 0)
+            int ammoCap = Side.GetItemInt(itemIndex, "AmmoCap", 0);
+            if (ammoCap <= 0 || target.AmmoRemaining > 0)
                 ChargeInducedCastQueue.Add((sideIndex, itemIndex));
             target.CooldownElapsedMs = 0;
         }
@@ -298,4 +301,6 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
 
     public void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false) =>
         LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, effectName, value, TimeMs, showCrit, extraSuffix);
+
+    public void SetCasterInFlight(bool inFlight) => Side.Items[ItemIndex].InFlight = inFlight;
 }

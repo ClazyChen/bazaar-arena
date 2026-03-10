@@ -11,6 +11,8 @@ public readonly struct ConditionContext
     public ItemTemplate? UsedTemplate { get; init; }
     /// <summary>候选/目标物品模板（光环评估时用；触发时也可填）。用于 WithTag 等。</summary>
     public ItemTemplate? CandidateTemplate { get; init; }
+    /// <summary>光环评估时：提供光环的物品是否处于飞行状态。用于 Condition.InFlight。</summary>
+    public bool SourceInFlight { get; init; }
     /// <summary>候选物品的类型快照（如 ReduceAttribute 遍历敌方时填入）。用于 IsShieldItem 等条件。</summary>
     public ItemTypeSnapshot? CandidateTypeSnapshot { get; init; }
 }
@@ -67,4 +69,7 @@ public class Condition
 
     /// <summary>两个条件的与，用于组合语义（如「己方其他物品」= And(DifferentFromSource, SameSide)）。</summary>
     public static Condition And(Condition a, Condition b) => new(ctx => a.Evaluate(ctx) && b.Evaluate(ctx));
+
+    /// <summary>光环时：提供光环的物品处于飞行状态（SourceInFlight）。</summary>
+    public static Condition InFlight { get; } = new(ctx => ctx.SourceInFlight);
 }
