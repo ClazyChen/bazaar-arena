@@ -338,3 +338,9 @@
 
 - **AddWeaponDamageBonusToCasterSideItem(value, targetItemIndexOnCasterSide)**：仅对己方指定下标物品生效；若该物品带 `Tag.Weapon` 则 `Damage.Add(value)` 并 `LogEffect("伤害提高", value, " →[目标名]")`，非武器则不操作、不记日志。
 - **Effect.WeaponDamageBonusToRightItem(ValueKey)**：从 ValueKey 取值，对 `ctx.ItemIndex + 1` 调用上述方法，用于暗影斗篷「若右侧为武器则伤害提高」。
+
+---
+
+## 开发与提交
+
+- **Git 提交信息**：须符合 **.cursor/rules/git-commit-format.mdc**。格式为 `<type>(<scope>): <subject>`，主题用中文、句末无句号；type 取 `feat` / `fix` / `refactor` / `docs` / `chore`，scope 可选（如 `gui`、`sim`、`item-db`）。提交前可在 `docs/changelog.md` 中补充分条说明。

@@ -399,7 +399,9 @@ public partial class MainWindow
     {
         if (sender is not Border border || border.Tag is not SlotRowViewModel row) return;
         int level = GetPlayerLevel();
-        ItemTier next = CycleToNextAllowedTier(row.Tier, level);
+        var template = _itemDatabase.GetTemplate(row.ItemName);
+        ItemTier minTier = template?.MinTier ?? ItemTier.Bronze;
+        ItemTier next = CycleToNextAllowedTier(row.Tier, level, minTier);
         if (next != row.Tier)
         {
             row.Tier = next;
@@ -409,31 +411,38 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>将模板的 OverridableAttributes 按指定 tier 的默认值写入 row.Overrides（仅更新这些键）。</summary>
+    /// <summary>将模板的 OverridableAttributes 按指定 tier 的默认值写入 row.Overrides（仅更新这些键）。MinTier 物品的列表仅含该 tier 起各档，按列表内偏移取值。</summary>
     private void ApplyOverridableDefaultsForTier(SlotRowViewModel row, ItemTier tier)
     {
         var template = _itemDatabase.GetTemplate(row.ItemName);
         if (template?.OverridableAttributes == null) return;
+        int minIdx = (int)template.MinTier;
         foreach (var kv in template.OverridableAttributes)
         {
             var list = kv.Value.ToList();
-            int ti = (int)tier;
-            int val = ti >= 0 && ti < list.Count ? list[ti] : (list.Count > 0 ? list[0] : 0);
+            int listIndex = (int)tier - minIdx;
+            if (listIndex < 0) listIndex = 0;
+            int val = listIndex < list.Count ? list[listIndex] : (list.Count > 0 ? list[0] : 0);
             row.SetOverride(kv.Key, val);
         }
     }
 
-    private static ItemTier CycleToNextAllowedTier(ItemTier current, int playerLevel)
+    /// <summary>在满足物品最低 tier 且当前等级允许的 tier 中循环到下一个。</summary>
+    private static ItemTier CycleToNextAllowedTier(ItemTier current, int playerLevel, ItemTier minTier)
     {
         var order = new[] { ItemTier.Bronze, ItemTier.Silver, ItemTier.Gold, ItemTier.Diamond };
-        int i = Array.IndexOf(order, current);
-        for (int k = 1; k <= 4; k++)
+        int minIdx = (int)minTier;
+        var allowed = new List<ItemTier>();
+        for (int j = minIdx; j <= 3; j++)
         {
-            ItemTier candidate = order[(i + k) % 4];
-            if (Deck.TierAllowedForLevel(candidate, playerLevel))
-                return candidate;
+            if (Deck.TierAllowedForLevel(order[j], playerLevel))
+                allowed.Add(order[j]);
         }
-        return current;
+        if (allowed.Count == 0) return current;
+        ItemTier effective = (int)current < minIdx ? minTier : current;
+        int idx = allowed.IndexOf(effective);
+        if (idx < 0) idx = -1;
+        return allowed[(idx + 1) % allowed.Count];
     }
 
     private void RebuildDeckImageRow()
@@ -701,8 +710,19 @@ public partial class MainWindow
 
     private void DeckGrid_DragOver(object sender, DragEventArgs e)
     {
-        if (e.Data.GetDataPresent(SlotRowViewModelFormat) || e.Data.GetDataPresent(DataFormats.Text))
-            e.Effects = e.Data.GetDataPresent(SlotRowViewModelFormat) ? DragDropEffects.Move : DragDropEffects.Copy;
+        if (e.Data.GetDataPresent(SlotRowViewModelFormat))
+        {
+            e.Effects = DragDropEffects.Move;
+        }
+        else if (e.Data.GetDataPresent(DataFormats.Text) && e.Data.GetData(DataFormats.Text) is string itemName)
+        {
+            var template = _itemDatabase.GetTemplate(itemName);
+            int level = GetPlayerLevel();
+            if (template != null && Deck.TierAllowedForLevel(template.MinTier, level))
+                e.Effects = DragDropEffects.Copy;
+            else
+                e.Effects = DragDropEffects.None;
+        }
         else
             e.Effects = DragDropEffects.None;
         e.Handled = true;
@@ -729,7 +749,9 @@ public partial class MainWindow
         }
         if (e.Data.GetDataPresent(DataFormats.Text) && e.Data.GetData(DataFormats.Text) is string itemName)
         {
-            TryInsertItemAt(itemName, ItemTier.Bronze, logicalSlot);
+            var template = _itemDatabase.GetTemplate(itemName);
+            if (template != null && Deck.TierAllowedForLevel(template.MinTier, level))
+                TryInsertItemAt(itemName, template.MinTier, logicalSlot);
             e.Handled = true;
         }
     }
@@ -772,11 +794,13 @@ public partial class MainWindow
         if (template.OverridableAttributes != null)
         {
             var overrides = new Dictionary<string, int>();
+            int minIdx = (int)template.MinTier;
             foreach (var kv in template.OverridableAttributes)
             {
                 var list = kv.Value.ToList();
-                int ti = (int)tier;
-                overrides[kv.Key] = ti >= 0 && ti < list.Count ? list[ti] : (list.Count > 0 ? list[0] : 0);
+                int listIndex = (int)tier - minIdx;
+                if (listIndex < 0) listIndex = 0;
+                overrides[kv.Key] = listIndex < list.Count ? list[listIndex] : (list.Count > 0 ? list[0] : 0);
             }
             newRow.Overrides = overrides;
         }

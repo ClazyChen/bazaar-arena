@@ -105,15 +105,20 @@ public class ItemTemplate
     /// <summary>根据字段名读取 int 值（无 tier 时按第一档），不存在则返回指定默认值。</summary>
     public int GetInt(string key, int defaultValue) => GetInt(key, ItemTier.Bronze, defaultValue);
 
-    /// <summary>根据字段名与当前等级读取：若列表长度为 1 则返回该值，否则按 tier 下标取；不存在则返回默认值。</summary>
+    /// <summary>根据字段名与当前等级读取：若列表长度为 1 则返回该值，否则按 tier 取；列表仅含 MinTier 起的各档（如最小银则 list[0]=银、list[1]=金、list[2]=钻），按偏移映射。不存在则返回默认值。</summary>
     public int GetInt(string key, ItemTier tier, int defaultValue = 0)
     {
         if (!_intsByTier.TryGetValue(key, out var list) || list.Count == 0)
             return defaultValue;
         if (list.Count == 1)
             return list[0];
-        int ti = (int)tier;
-        return ti >= 0 && ti < list.Count ? list[ti] : defaultValue;
+        int minIdx = (int)MinTier;
+        int listIndex = (int)tier - minIdx;
+        if (listIndex < 0)
+            return list[0];
+        if (listIndex >= list.Count)
+            return list[list.Count - 1];
+        return list[listIndex];
     }
 
     /// <summary>根据字段名与等级读取，若有光环上下文则先取基础值再叠加光环：最终值 = (基础 + Σ固定) × (1 + Σ百分比/100)。</summary>

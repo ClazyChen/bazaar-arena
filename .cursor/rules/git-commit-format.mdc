@@ -1,0 +1,47 @@
+---
+description: Git 提交信息格式约定（Conventional Commits 风格，中文主题）
+alwaysApply: true
+---
+
+# Git 提交信息格式
+
+所有 commit 须符合本约定，便于历史可读与 changelog 生成。
+
+## 格式
+
+```
+<type>(<scope>): <subject>
+
+[可选正文]
+```
+
+- **一行以内**：首行即完整摘要，总长度建议不超过 72 字符。
+- **主题使用中文**，简要说明本次提交；句末不加句号。
+- **scope 可选**：仅在对模块/区域有明确范围时加上，如 `(gui)`、`(sim)`、`(item-db)`。
+
+## Type 类型
+
+| type     | 含义 |
+|----------|------|
+| `feat`   | 新功能或新内容（物品、机制、UI 等） |
+| `fix`    | 修复 bug 或错误行为 |
+| `refactor` | 重构（不改变对外行为） |
+| `docs`   | 仅文档或注释变更 |
+| `chore`  | 构建、脚本、规则、配置等杂项 |
+
+同一提交若同时含功能与修复，以主要目的选一个 type；必要时在正文或 changelog 中分条列出。
+
+## 示例
+
+```text
+feat(gui): 卡组管理支持 MinTier 银/金/钻物品的 tier 显示与拖拽
+fix: ItemTemplate.GetInt 按 MinTier 映射 IntOrByTier 列表下标
+refactor(sim): 能力入队逻辑抽成 InvokeTrigger
+docs: 实现笔记补充 MinTier 与 IntOrByTier 约定
+chore: 规定 git commit 格式并写入 .cursor/rules
+```
+
+## 避免
+
+- 中英混杂、无 type 前缀的随意短句（如「更新文档」「fix bug」）。
+- 多个不相关改动塞进一次提交；可拆成多个 commit，或在一个 commit 的正文/changelog 中分点写清。

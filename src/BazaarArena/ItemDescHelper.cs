@@ -77,18 +77,21 @@ public static class ItemDescHelper
             {
                 string seg = prefix + (IsSecondsKey(actualKey) ? FormatCooldownSeconds(0) : "0") + suffix;
                 result = result.Remove(idx, length).Insert(idx, seg);
-                valueRanges.Add((idx, seg.Length, ItemTier.Bronze, singleValueBrush));
+                valueRanges.Add((idx, seg.Length, template.MinTier, singleValueBrush));
                 offset += seg.Length - length;
                 continue;
             }
+            // IntOrByTier 仅含 MinTier 起的各档（如最小银则 list 为 [银,金,钻] 共 3 个），直接按 list 展示，着色用 MinTier 偏移
+            int minTierIdx = (int)template.MinTier;
             var segments = list.Select(v => prefix + (IsSecondsKey(actualKey) ? FormatCooldownSeconds(v) : v.ToString()) + suffix).ToList();
             string replaceStr = string.Join(" » ", segments);
             result = result.Remove(idx, length).Insert(idx, replaceStr);
-            bool isSingleValue = list.Count == 1;
+            bool isSingleValue = segments.Count == 1;
             int off = 0;
             for (int i = 0; i < segments.Count; i++)
             {
-                valueRanges.Add((idx + off, segments[i].Length, (ItemTier)i, isSingleValue ? singleValueBrush : null));
+                ItemTier segmentTier = (ItemTier)Math.Min(minTierIdx + i, 3);
+                valueRanges.Add((idx + off, segments[i].Length, segmentTier, isSingleValue ? singleValueBrush : null));
                 off += segments[i].Length + (i < segments.Count - 1 ? 3 : 0); // " » "
             }
             offset += replaceStr.Length - length;

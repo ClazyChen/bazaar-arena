@@ -1,5 +1,14 @@
 # 变更记录
 
+## MinTier/IntOrByTier 约定、卡组 GUI tier、Git 提交格式
+
+- **IntOrByTier 与 MinTier**：最小 tier 为银/金/钻的物品，其按等级列表仅存该 tier 起的数值（如最小银则 list 为 [银,金,钻] 三档）。**ItemTemplate.GetInt(key, tier)** 按 `listIndex = (int)tier - (int)MinTier` 映射列表下标；越界时用首/末档兜底。属性读取与战斗逻辑统一按此约定。
+- **可加入物品区展示**：**ItemDescHelper.ReplacePlaceholdersAllTiers** 直接使用模板列表（不再 Skip(minTierIdx)），数值段着色用 `(ItemTier)(minTierIdx + i)`，最小银物品显示银、金、钻石三色。
+- **卡组 GUI**：拖拽入卡组时使用 **template.MinTier** 作为初始 tier；若当前等级不允许该 tier（如 1–2 级拖最小银物品）则禁止放入（DragOver 设 None、Drop 不插入）。卡组内点击 tier 块切换时 **CycleToNextAllowedTier** 仅在各物 MinTier 及以上且等级允许的 tier 间循环。OverridableAttributes 取值用 `listIndex = (int)tier - (int)MinTier`。
+- **Git 提交信息格式**：新增 **.cursor/rules/git-commit-format.mdc**，约定 `<type>(<scope>): <subject>`（中文主题，type: feat/fix/refactor/docs/chore）。**project-conventions.mdc** 与 **docs/implementation-notes.md** 增加对提交格式的引用与简要说明。
+
+---
+
 ## AddAttribute/ReduceAttribute 统一、默认参数、文档与规则
 
 - **Effect.AddAttribute / ReduceAttribute**：己方加属性、敌方减属性统一用 `Effect.AddAttribute(attributeName, amountKey?, targetCondition?)` 与 `Effect.ReduceAttribute(...)`；默认 `amountKey = Custom_0`、`targetCondition = SameAsSource`，简化「自身 + Custom_0」类效果（如失落神祇 `Effect.AddAttribute(nameof(ItemTemplate.Poison))`）。
