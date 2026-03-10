@@ -47,6 +47,10 @@ public class Condition
     public static Condition WithTag(string tag) => new(ctx =>
         (ctx.UsedTemplate?.Tags?.Contains(tag) ?? false) || (ctx.CandidateTemplate?.Tags?.Contains(tag) ?? false));
 
+    /// <summary>UseOtherItem 时：被使用的物品在来源（能力持有者）的右侧，即同侧且 UsedItemIndex == SourceItemIndex + 1。InvokeTrigger 中 Source=被使用物品、Candidate=能力持有者，故为 SameSide 且 SourceItem == CandidateItem + 1。</summary>
+    public static Condition UsedItemRightOfSource { get; } = new(ctx =>
+        ctx.CandidateSide == ctx.SourceSide && ctx.SourceItem == ctx.CandidateItem + 1);
+
     /// <summary>两个条件的与，用于组合语义（如「己方其他物品」= And(DifferentFromSource, SameSide)）。</summary>
     public static Condition And(Condition a, Condition b) => new(ctx => a.Evaluate(ctx) && b.Evaluate(ctx));
 }

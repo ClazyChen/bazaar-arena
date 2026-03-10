@@ -114,14 +114,43 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "减速", slowMs, TimeMs, isCrit: false, extraSuffix);
     }
 
+    public void ApplyHaste(int hasteMs, int targetItemIndexOnCasterSide)
+    {
+        if (hasteMs <= 0 || targetItemIndexOnCasterSide < 0 || targetItemIndexOnCasterSide >= Side.Items.Count) return;
+        var target = Side.Items[targetItemIndexOnCasterSide];
+        if (target.Destroyed) return;
+        target.HasteRemainingMs = Math.Max(target.HasteRemainingMs, hasteMs);
+        string extraSuffix = " →[" + target.Template.Name + "]";
+        LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "加速", hasteMs, TimeMs, isCrit: false, extraSuffix);
+    }
+
     public void AddWeaponDamageBonusToCasterSide(int value)
     {
+        var targetNames = new List<string>();
         foreach (var wi in Side.Items)
         {
             if (wi.Destroyed) continue;
             if (wi.Template.Tags.Contains(Tag.Weapon))
+            {
                 wi.Template.Damage = wi.Template.Damage.Add(value);
+                targetNames.Add(wi.Template.Name);
+            }
         }
+        if (targetNames.Count > 0)
+        {
+            string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
+            LogEffect("伤害提高", value, extraSuffix, showCrit: false);
+        }
+    }
+
+    public void AddWeaponDamageBonusToCasterSideItem(int value, int targetItemIndexOnCasterSide)
+    {
+        if (value <= 0 || targetItemIndexOnCasterSide < 0 || targetItemIndexOnCasterSide >= Side.Items.Count) return;
+        var target = Side.Items[targetItemIndexOnCasterSide];
+        if (target.Destroyed || !target.Template.Tags.Contains(Tag.Weapon)) return;
+        target.Template.Damage = target.Template.Damage.Add(value);
+        string extraSuffix = " →[" + target.Template.Name + "]";
+        LogEffect("伤害提高", value, extraSuffix, showCrit: false);
     }
 
     public void ReduceOpponentShieldItemsShield(int reduceBy)
@@ -140,7 +169,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         if (targetNames.Count > 0)
         {
             string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
-            LogEffect("裂盾", reduceBy, extraSuffix, showCrit: false);
+            LogEffect("护盾降低", reduceBy, extraSuffix, showCrit: false);
         }
     }
 

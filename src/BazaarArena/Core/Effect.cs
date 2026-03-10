@@ -108,15 +108,30 @@ public static class Effect
         },
     };
 
-    /// <summary>武器伤害提升：对己方所有武器物品 Damage 增加指定量；数值来自 ValueKey 字段（默认 Custom_0），故保留 ValueKey。</summary>
+    /// <summary>武器伤害提升：对己方所有武器物品 Damage 增加指定量；数值来自 ValueKey 字段（默认 Custom_0）。日志为「伤害提高 →[目标]」。</summary>
     public static EffectDefinition WeaponDamageBonus(string? ValueKey = null) => new()
     {
         ValueKey = ValueKey ?? nameof(ItemTemplate.Custom_0),
         ApplyCritMultiplier = false,
+        Apply = ctx => ctx.AddWeaponDamageBonusToCasterSide(ctx.Value),
+    };
+
+    /// <summary>加速：对施放者右侧物品（ItemIndex+1）施加加速，时长来自模板 Haste（毫秒）或 HasteSeconds（秒）。</summary>
+    public static readonly EffectDefinition Accelerate = new()
+    {
+        ApplyCritMultiplier = false,
         Apply = ctx =>
         {
-            ctx.AddWeaponDamageBonusToCasterSide(ctx.Value);
-            ctx.LogEffect("武器伤害提升", ctx.Value);
+            int hasteMs = ctx.GetResolvedValue(nameof(ItemTemplate.Haste), applyCritMultiplier: false);
+            ctx.ApplyHaste(hasteMs, ctx.ItemIndex + 1);
         },
+    };
+
+    /// <summary>对施放者右侧物品（ItemIndex+1）若为武器则增加伤害；数值来自 ValueKey（默认 Custom_0）。日志为「伤害提高 →[目标]」。</summary>
+    public static EffectDefinition WeaponDamageBonusToRightItem(string? ValueKey = null) => new()
+    {
+        ValueKey = ValueKey ?? nameof(ItemTemplate.Custom_0),
+        ApplyCritMultiplier = false,
+        Apply = ctx => ctx.AddWeaponDamageBonusToCasterSideItem(ctx.Value, ctx.ItemIndex + 1),
     };
 }

@@ -104,6 +104,7 @@ public class StatsCollectingSink : IBattleLogSink
         switch (effectKind)
         {
             case "伤害":
+            case "吸血": // 吸血与伤害为同一数值，仅展示不同，统计时均计入伤害
                 a.Damage += value;
                 AddSide(sideIndex, damage: value);
                 break;

@@ -251,7 +251,7 @@
 
 ### 约定
 
-除 **ItemDatabase/Common.cs** 等以数据定义为主的文件外，单文件不宜过长；可将嵌套类、静态辅助拆到同命名空间下的独立源文件。
+除 **ItemDatabase/CommonSmall.cs**、**CommonMedium.cs** 等以数据定义为主的文件外，单文件不宜过长；可将嵌套类、静态辅助拆到同命名空间下的独立源文件。
 
 ### BattleSimulator 已拆分出的文件
 
@@ -263,3 +263,47 @@
 | **TriggerInvokeContext.cs** | 触发器调用上下文（Multicast、UsedTemplate）。 |
 
 以上类型均为 `internal`，仅本程序集使用。主逻辑与帧循环保留在 **BattleSimulator.cs**，便于阅读与遵守 **.cursor/rules/battle-simulator-ability-queue.mdc**。
+
+---
+
+## 伤害报表与效果类型（吸血、护盾降低、伤害提高）
+
+### 问题：吸血伤害未统计
+
+- **现象**：毒刺等带 `LifeSteal` 的物品造成伤害时，`Effect.Damage` 为区分展示会以 **「吸血」** 调用 `LogEffect`（`ctx.LogEffect(ctx.HasLifeSteal ? "吸血" : "伤害", value, ...)`），而 **StatsCollectingSink** 的 `OnEffect` 仅对 `effectKind == "伤害"` 累加 `a.Damage` 与 `AddSide(damage: value)`，导致吸血那一下的数值未进入伤害报表。
+- **修复**：在 **StatsCollectingSink** 的 switch 中，将 **「吸血」** 与 **「伤害」** 同等处理：`case "伤害": case "吸血":` 均执行 `a.Damage += value` 与 `AddSide(sideIndex, damage: value)`。吸血与伤害为同一数值，仅展示不同，统计时均计入伤害。
+
+### 定向效果日志格式统一
+
+- **约定**：定向/多目标效果统一为「[物品名] 效果名 数值 →[目标]」形式，便于报表与日志解析一致。
+- **护盾降低**：裂盾刀等减少对方护盾物品 Shield 时，日志用 **「护盾降低」**（不再用「裂盾」），`extraSuffix = " →[" + string.Join("、", targetNames) + "]"`。
+- **伤害提高**：举重手套、暗影斗篷等增加武器伤害时，日志用 **「伤害提高」**（不再用「武器伤害提升」），由 `AddWeaponDamageBonusToCasterSide` / `AddWeaponDamageBonusToCasterSideItem` 内建 targetNames 并调用 `LogEffect("伤害提高", value, extraSuffix)`。报表统计不依赖 effectKind 为「伤害提高」（该效果不进入 Damage 累加），仅伤害类效果（伤害/吸血）计入 Damage。
+
+### 小结
+
+新增或修改 `effectKind` 时，若该效果**实质为造成伤害**（如吸血），需在 **StatsCollectingSink.OnEffect** 中与「伤害」一并计入 `a.Damage` 与 `AddSide(damage)`；定向效果命名与格式见 **data-and-logging.mdc**。
+
+---
+
+## UseOtherItem 右侧条件与加速效果
+
+本节记录「暗影斗篷」等「使用此物品右侧物品时」触发、以及加速（Haste）效果的实现经验。
+
+### Condition.UsedItemRightOfSource
+
+- **语义**：UseOtherItem 时，仅当**被使用的物品**在**能力持有者**的**右侧**时触发（同侧且 `UsedItemIndex == SourceItemIndex + 1`）。
+- **InvokeTrigger 约定**：调用 `InvokeTrigger(Trigger.UseOtherItem, sourceSideIdx, sourceItemIdx, ...)` 时，`sourceSideIdx/sourceItemIdx` 为**被使用物品**，遍历的 `(sideIdx, itemIdx)` 为**能力持有者**；故 `ConditionContext` 中 `Source*` = 被使用物品，`Candidate*` = 能力持有者。
+- **实现**：`Condition.UsedItemRightOfSource` 为 `CandidateSide == SourceSide && SourceItem == CandidateItem + 1`。与 `EnsureTriggerCondition` 叠加的「己方其他物品」`And(DifferentFromSource, SameSide)` 一起，得到「己方且被使用物品在己方右侧」。
+- **用途**：暗影斗篷等 `TriggerName = Trigger.UseOtherItem`、`Condition = Condition.UsedItemRightOfSource`，能力内对 `ItemIndex + 1` 施加加速或伤害提高。
+
+### 加速（Haste）与 HasteSeconds
+
+- **与减速对称**：`BattleItemState` 已有 `HasteRemainingMs`；每帧先处理冷却（加速时 `advanceMs *= 2`），再在步骤 3 中 `HasteRemainingMs = Math.Max(0, HasteRemainingMs - FrameMs)`。
+- **模板**：`ItemTemplate` 增加 `Haste`（毫秒）、`HasteSeconds`（秒，可单值或按等级），`SecondsOrByTier` 增加 `ToHasteMs()`；物品定义用 `HasteSeconds = new[] { 1.0, 2.0, 3.0, 4.0 }`。
+- **效果**：`Effect.Accelerate` 从施放者模板读 `Haste`（毫秒），调用 `ctx.ApplyHaste(hasteMs, ctx.ItemIndex + 1)`，对己方右侧物品施加加速。`IEffectApplyContext` 需暴露 `ItemIndex` 供「右侧」等相对目标使用。
+- **日志与 UI**：`EffectLogFormat` 对「加速」将毫秒格式化为「N 秒」；`EffectKeywordFormatting` 中「加速」颜色 `rgb(0,236,195)`；`ItemDescHelper` 支持 `{HasteSeconds}` → `Haste`。
+
+### 单目标武器伤害提高
+
+- **AddWeaponDamageBonusToCasterSideItem(value, targetItemIndexOnCasterSide)**：仅对己方指定下标物品生效；若该物品带 `Tag.Weapon` 则 `Damage.Add(value)` 并 `LogEffect("伤害提高", value, " →[目标名]")`，非武器则不操作、不记日志。
+- **Effect.WeaponDamageBonusToRightItem(ValueKey)**：从 ValueKey 取值，对 `ctx.ItemIndex + 1` 调用上述方法，用于暗影斗篷「若右侧为武器则伤害提高」。

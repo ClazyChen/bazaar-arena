@@ -19,7 +19,8 @@ if (File.Exists(levelupsPath))
 
 var deckManager = new DeckManager();
 var db = new ItemDatabase();
-Common.RegisterAll(db);
+CommonSmall.RegisterAll(db);
+CommonMedium.RegisterAll(db);
 
 var defaultCollectionPath = Path.Combine(decksDir, "default.json");
 if (File.Exists(defaultCollectionPath))

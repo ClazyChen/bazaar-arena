@@ -12,6 +12,9 @@ public interface IEffectApplyContext
     /// <summary>本轮能力是否掷出暴击；可暴击效果在 LogEffect 时传 showCrit: IsCrit，不可暴击效果传 false。</summary>
     bool IsCrit { get; }
 
+    /// <summary>施放者物品在己方一侧的下标（用于如「右侧物品」即 ItemIndex+1）。</summary>
+    int ItemIndex { get; }
+
     /// <summary>从施放者物品模板按 key 取基础值，若 applyCritMultiplier 则乘暴击倍率；用于只读效果在委托内按常量 key（如 nameof(ItemTemplate.Damage)）取值，避免依赖 EffectDefinition.ValueKey。</summary>
     int GetResolvedValue(string key, bool applyCritMultiplier);
 
@@ -48,8 +51,14 @@ public interface IEffectApplyContext
     /// <summary>对敌人物品施加减益：减速 slowMs 毫秒，选取 targetCount 个目标（有冷却优先）。</summary>
     void ApplySlow(int slowMs, int targetCount);
 
+    /// <summary>对己方指定位置物品施加加速 hasteMs 毫秒；targetItemIndexOnCasterSide 为施放者一侧的物品下标（如施放者右侧即 ItemIndex+1）。</summary>
+    void ApplyHaste(int hasteMs, int targetItemIndexOnCasterSide);
+
     /// <summary>己方所有武器物品的 Damage 增加 value。</summary>
     void AddWeaponDamageBonusToCasterSide(int value);
+
+    /// <summary>己方指定位置物品若为武器则 Damage 增加 value（限本场战斗），并记录日志「伤害提高 →[目标]」。</summary>
+    void AddWeaponDamageBonusToCasterSideItem(int value, int targetItemIndexOnCasterSide);
 
     /// <summary>遍历对方护盾物品（按导入快照判断），将每件物品的 Shield 属性减少 reduceBy，最多减到 0（限本场战斗）。</summary>
     void ReduceOpponentShieldItemsShield(int reduceBy);

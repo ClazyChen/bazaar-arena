@@ -18,6 +18,7 @@ public readonly struct SecondsOrByTier
 
     internal List<int> ToFreezeMs() => _values?.Select(s => (int)(s * 1000)).ToList() ?? [];
     internal List<int> ToSlowMs() => _values?.Select(s => (int)(s * 1000)).ToList() ?? [];
+    internal List<int> ToHasteMs() => _values?.Select(s => (int)(s * 1000)).ToList() ?? [];
 
     public static implicit operator double(SecondsOrByTier s) => s._values?.Length > 0 ? s._values[0] : 0;
 }
@@ -91,6 +92,7 @@ public class ItemTemplate
     private const string KeyFreezeTargetCount = "FreezeTargetCount";
     private const string KeySlow = "Slow";
     private const string KeySlowTargetCount = "SlowTargetCount";
+    private const string KeyHaste = "Haste";
     private const string KeyLifeSteal = "LifeSteal";
     private const string KeyCustom_0 = "Custom_0";
 
@@ -197,6 +199,12 @@ public class ItemTemplate
 
     /// <summary>减速目标数量（可单值或按等级）；随机选取敌人物品时选取的次数（每次独立，可能重复）。</summary>
     public IntOrByTier SlowTargetCount { get => GetInt(KeySlowTargetCount, 1); set => SetIntOrByTier(KeySlowTargetCount, value.ToList()); }
+
+    /// <summary>加速时长（毫秒，可单值或按等级）；用于加速效果。内部存储用，定义物品时请用 HasteSeconds（秒）。</summary>
+    public IntOrByTier Haste { get => GetIntOrByTier(KeyHaste); set => SetIntOrByTier(KeyHaste, value.ToList()); }
+
+    /// <summary>加速时长（秒）。可赋单值或按等级，内部转换为毫秒存储。物品定义中时间一律用秒。</summary>
+    public SecondsOrByTier HasteSeconds { get => SecondsOrByTier.FromFirstTierMs(GetInt(KeyHaste, 0)); set => SetIntOrByTier(KeyHaste, value.ToHasteMs()); }
 
     /// <summary>吸血：1 表示造成伤害时按实际伤害量治疗己方，0 表示无。用于伤害效果。</summary>
     public IntOrByTier LifeSteal { get => GetInt(KeyLifeSteal, 0); set => SetIntOrByTier(KeyLifeSteal, value.ToList()); }
