@@ -18,12 +18,14 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public List<(int, int)>? ChargeInducedCastQueue { get; init; }
     /// <summary>己方施加冻结后由模拟器注入，用于触发「触发冻结」能力入队（传入本次冻结目标数）。</summary>
     public Action<int>? OnFreezeApplied { get; init; }
+    /// <summary>己方施加减速后由模拟器注入，用于触发「触发减速」能力入队（传入本次减速目标数）。</summary>
+    public Action<int>? OnSlowApplied { get; init; }
 
     public bool HasLifeSteal => Item.Template.GetInt(nameof(ItemTemplate.LifeSteal), Item.Tier, 0) != 0;
 
     public int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0)
     {
-        var auraContext = new BattleAuraContext(Side, ItemIndex);
+        var auraContext = new BattleAuraContext(Side, ItemIndex, Opp);
         int baseValue = Item.Template.GetInt(key, Item.Tier, defaultValue, auraContext);
         return applyCritMultiplier ? baseValue * CritMultiplier : baseValue;
     }
@@ -158,6 +160,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }
         string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
         LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "减速", slowMs, TimeMs, isCrit: false, extraSuffix);
+        OnSlowApplied?.Invoke(indices.Count);
     }
 
     public void ApplyCharge(int chargeMs, int targetCount, Condition? targetCondition = null)
@@ -222,52 +225,74 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         LogEffect("修复", indices.Count, extraSuffix, showCrit: false);
     }
 
-    public void AddWeaponDamageBonusToCasterSide(int value)
+    public void AddAttributeToCasterSide(string attributeName, int value, Condition? targetCondition)
     {
+        if (value <= 0 || targetCondition == null) return;
         var targetNames = new List<string>();
-        foreach (var wi in Side.Items)
+        for (int i = 0; i < Side.Items.Count; i++)
         {
+            var wi = Side.Items[i];
             if (wi.Destroyed) continue;
-            if (wi.Template.Tags.Contains(Tag.Weapon))
+            var ctx = new ConditionContext
+            {
+                CandidateSide = SideIndex,
+                CandidateItem = i,
+                SourceSide = SideIndex,
+                SourceItem = ItemIndex,
+                CandidateTemplate = wi.Template,
+            };
+            if (!targetCondition.Evaluate(ctx)) continue;
+            if (attributeName == nameof(ItemTemplate.Damage))
             {
                 wi.Template.Damage = wi.Template.Damage.Add(value);
+                targetNames.Add(wi.Template.Name);
+            }
+            else if (attributeName == nameof(ItemTemplate.Poison))
+            {
+                wi.Template.Poison = wi.Template.Poison.Add(value);
                 targetNames.Add(wi.Template.Name);
             }
         }
         if (targetNames.Count > 0)
         {
+            string logName = attributeName == nameof(ItemTemplate.Damage) ? "伤害提高" : attributeName == nameof(ItemTemplate.Poison) ? "剧毒提高" : "属性提高";
             string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
-            LogEffect("伤害提高", value, extraSuffix, showCrit: false);
+            LogEffect(logName, value, extraSuffix, showCrit: false);
         }
     }
 
-    public void AddWeaponDamageBonusToCasterSideItem(int value, int targetItemIndexOnCasterSide)
+    public void ReduceAttributeToOpponentSide(string attributeName, int value, Condition? targetCondition)
     {
-        if (value <= 0 || targetItemIndexOnCasterSide < 0 || targetItemIndexOnCasterSide >= Side.Items.Count) return;
-        var target = Side.Items[targetItemIndexOnCasterSide];
-        if (target.Destroyed || !target.Template.Tags.Contains(Tag.Weapon)) return;
-        target.Template.Damage = target.Template.Damage.Add(value);
-        string extraSuffix = " →[" + target.Template.Name + "]";
-        LogEffect("伤害提高", value, extraSuffix, showCrit: false);
-    }
-
-    public void ReduceOpponentShieldItemsShield(int reduceBy)
-    {
-        if (reduceBy <= 0) return;
+        if (value <= 0 || targetCondition == null) return;
+        int oppSideIndex = 1 - SideIndex;
         var targetNames = new List<string>();
-        foreach (var oppItem in Opp.Items)
+        for (int i = 0; i < Opp.Items.Count; i++)
         {
-            if (oppItem.Destroyed) continue;
-            if (!oppItem.TypeSnapshot.IsShieldItem) continue;
-            int current = oppItem.Template.GetInt(nameof(ItemTemplate.Shield), oppItem.Tier, 0);
-            int newShield = Math.Max(0, current - reduceBy);
-            oppItem.Template.SetInt(nameof(ItemTemplate.Shield), newShield);
-            targetNames.Add(oppItem.Template.Name);
+            var wi = Opp.Items[i];
+            if (wi.Destroyed) continue;
+            var ctx = new ConditionContext
+            {
+                CandidateSide = oppSideIndex,
+                CandidateItem = i,
+                SourceSide = SideIndex,
+                SourceItem = ItemIndex,
+                CandidateTemplate = wi.Template,
+                CandidateTypeSnapshot = wi.TypeSnapshot,
+            };
+            if (!targetCondition.Evaluate(ctx)) continue;
+            if (attributeName == nameof(ItemTemplate.Shield))
+            {
+                int current = wi.Template.GetInt(nameof(ItemTemplate.Shield), wi.Tier, 0);
+                int newVal = Math.Max(0, current - value);
+                wi.Template.SetInt(nameof(ItemTemplate.Shield), newVal);
+                targetNames.Add(wi.Template.Name);
+            }
         }
         if (targetNames.Count > 0)
         {
+            string logName = attributeName == nameof(ItemTemplate.Shield) ? "护盾降低" : "属性降低";
             string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
-            LogEffect("护盾降低", reduceBy, extraSuffix, showCrit: false);
+            LogEffect(logName, value, extraSuffix, showCrit: false);
         }
     }
 

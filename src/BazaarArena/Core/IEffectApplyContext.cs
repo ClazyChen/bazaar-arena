@@ -3,7 +3,7 @@ namespace BazaarArena.Core;
 /// <summary>效果应用上下文接口：由模拟器实现，供 EffectDefinition.Apply 委托调用。不依赖具体战斗类型。</summary>
 public interface IEffectApplyContext
 {
-    /// <summary>当前效果数值（已乘暴击倍率，若适用）；仅当效果指定了 ValueKey（如 WeaponDamageBonus）时由模拟器填入，否则委托应使用 GetResolvedValue 按 key 取值。</summary>
+    /// <summary>当前效果数值（已乘暴击倍率，若适用）；仅当效果指定了 ValueKey（如 AddAttribute）时由模拟器填入，否则委托应使用 GetResolvedValue 按 key 取值。</summary>
     int Value { get; }
 
     /// <summary>施放者物品是否带吸血（LifeSteal &gt; 0）。</summary>
@@ -60,14 +60,11 @@ public interface IEffectApplyContext
     /// <summary>修复已摧毁物品：目标池为己方已摧毁且满足 targetCondition（默认 SameSide）；不放回随机选取至多 targetCount 个，将其设为未摧毁并重置冷却已过时间。</summary>
     void ApplyRepair(int targetCount, Condition? targetCondition = null);
 
-    /// <summary>己方所有武器物品的 Damage 增加 value。</summary>
-    void AddWeaponDamageBonusToCasterSide(int value);
+    /// <summary>对己方满足 targetCondition 的物品增加指定属性（限本场战斗）。attributeName 为模板属性名（如 Damage、Poison），value 为增加量；目标由 targetCondition 筛选（Source=施放者）。</summary>
+    void AddAttributeToCasterSide(string attributeName, int value, Condition? targetCondition);
 
-    /// <summary>己方指定位置物品若为武器则 Damage 增加 value（限本场战斗），并记录日志「伤害提高 →[目标]」。</summary>
-    void AddWeaponDamageBonusToCasterSideItem(int value, int targetItemIndexOnCasterSide);
-
-    /// <summary>遍历对方护盾物品（按导入快照判断），将每件物品的 Shield 属性减少 reduceBy，最多减到 0（限本场战斗）。</summary>
-    void ReduceOpponentShieldItemsShield(int reduceBy);
+    /// <summary>对敌方满足 targetCondition 的物品减少指定属性（限本场战斗，不低于 0）。attributeName 为模板属性名（如 Shield），value 为减少量；目标由 targetCondition 筛选（Source=施放者）。遍历敌方时会填入 CandidateTypeSnapshot 供 IsShieldItem 等条件使用。</summary>
+    void ReduceAttributeToOpponentSide(string attributeName, int value, Condition? targetCondition);
 
     /// <summary>记录效果日志。showCrit 为 true 时显示「（暴击）」；仅对实际参与暴击的效果传 true（如伤害/灼烧/治疗等），冻结/减速等不可暴击效果传 false。</summary>
     void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false);

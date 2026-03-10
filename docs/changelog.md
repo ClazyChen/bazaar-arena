@@ -1,5 +1,14 @@
 # 变更记录
 
+## AddAttribute/ReduceAttribute 统一、默认参数、文档与规则
+
+- **Effect.AddAttribute / ReduceAttribute**：己方加属性、敌方减属性统一用 `Effect.AddAttribute(attributeName, amountKey?, targetCondition?)` 与 `Effect.ReduceAttribute(...)`；默认 `amountKey = Custom_0`、`targetCondition = SameAsSource`，简化「自身 + Custom_0」类效果（如失落神祇 `Effect.AddAttribute(nameof(ItemTemplate.Poison))`）。
+- **过时 API 移除**：删除 `WeaponDamageBonus`、`WeaponDamageBonusToRightItem` 及 `AddWeaponDamageBonusToCasterSide`、`AddWeaponDamageBonusToCasterSideItem`、`AddPoisonToCasterSideItem`、`ReduceOpponentShieldItemsShield`；举重手套、暗影斗篷、冰冻钝器、失落神祇、裂盾刀均改用 AddAttribute/ReduceAttribute。
+- **ReduceAttribute 与 Condition**：`ConditionContext.CandidateTypeSnapshot` 可选，在 ReduceAttribute 遍历敌方时填入；`Condition.IsShieldItem` 供裂盾刀等「敌方护盾物品」筛选使用。
+- **文档与规则**：implementation-notes 新增「AddAttribute / ReduceAttribute 与统一属性增减」；item-design.mdc 更新效果约定（ValueKey、AddAttribute/ReduceAttribute 优先、Tag.Relic）、新增物品流程中效果列表。
+
+---
+
 ## CommonLarge、弹药、光环公式、属性复写与效果数值带光环
 
 - **CommonLarge**：新建 `ItemDatabase/CommonLarge.cs`，五大公共大型物品：临时避难所（7s 铜 大 地产，护盾 10»20»40»80）、哈库维发射器（3s 铜 大 武器，伤害 100»200»300»400，弹药 1）、观光缆车（5s 铜 大 载具，护盾 20»40»80»160）、温泉（6s 铜 大 地产，治疗 25»50»100»200）、废品场长枪（11s 铜 大 武器，Damage 基础 0，光环 SmallCountStash）。App/Program 中调用 `CommonLarge.RegisterAll`。

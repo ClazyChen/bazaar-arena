@@ -77,7 +77,7 @@ public static class CommonMedium
                     Priority = AbilityPriority.Low,
                     Condition = Condition.UsedItemRightOfSource,
                     TargetCondition = Condition.RightOfSource,
-                    Effects = [Effect.Haste, Effect.WeaponDamageBonusToRightItem(nameof(ItemTemplate.Custom_0))],
+                    Effects = [Effect.Haste, Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.And(Condition.RightOfSource, Condition.WithTag(Tag.Weapon)))],
                 },
             ],
         };
@@ -110,7 +110,7 @@ public static class CommonMedium
                 {
                     TriggerName = Trigger.Freeze,
                     Priority = AbilityPriority.Low,
-                    Effects = [Effect.WeaponDamageBonus(nameof(ItemTemplate.Custom_0))],
+                    Effects = [Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.WithTag(Tag.Weapon))],
                 },
             ],
         };

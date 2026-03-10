@@ -11,6 +11,8 @@ public readonly struct ConditionContext
     public ItemTemplate? UsedTemplate { get; init; }
     /// <summary>候选/目标物品模板（光环评估时用；触发时也可填）。用于 WithTag 等。</summary>
     public ItemTemplate? CandidateTemplate { get; init; }
+    /// <summary>候选物品的类型快照（如 ReduceAttribute 遍历敌方时填入）。用于 IsShieldItem 等条件。</summary>
+    public ItemTypeSnapshot? CandidateTypeSnapshot { get; init; }
 }
 
 /// <summary>通用条件：由委托表示谓词，用于光环或能力触发。支持 And 组合（如「己方其他物品」= DifferentFromSource && SameSide）。</summary>
@@ -54,6 +56,10 @@ public class Condition
     /// <summary>有参条件：被使用物品或候选物品带指定标签。触发时看 UsedTemplate，光环时看 CandidateTemplate。</summary>
     public static Condition WithTag(string tag) => new(ctx =>
         (ctx.UsedTemplate?.Tags?.Contains(tag) ?? false) || (ctx.CandidateTemplate?.Tags?.Contains(tag) ?? false));
+
+    /// <summary>候选物品为护盾物品（需在上下文中填入 CandidateTypeSnapshot，如 ReduceAttribute 遍历敌方时）。</summary>
+    public static Condition IsShieldItem { get; } = new(ctx =>
+        ctx.CandidateTypeSnapshot?.IsShieldItem ?? false);
 
     /// <summary>UseOtherItem 时：被使用的物品在来源（能力持有者）的右侧，即同侧且 UsedItemIndex == SourceItemIndex + 1。InvokeTrigger 中 Source=被使用物品、Candidate=能力持有者，故为 SameSide 且 SourceItem == CandidateItem + 1。</summary>
     public static Condition UsedItemRightOfSource { get; } = new(ctx =>

@@ -9,4 +9,6 @@ public static class Trigger
     public const string UseOtherItem = "使用其他物品";
     /// <summary>己方施加冻结时触发（每冻结一个目标计一次，由 PendingCount 控制 250ms 间隔）。</summary>
     public const string Freeze = "触发冻结";
+    /// <summary>己方施加减速时触发（每减速一个目标计一次，由 PendingCount 控制 250ms 间隔）。</summary>
+    public const string Slow = "触发减速";
 }

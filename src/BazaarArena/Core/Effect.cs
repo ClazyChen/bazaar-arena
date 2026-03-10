@@ -1,6 +1,6 @@
 namespace BazaarArena.Core;
 
-/// <summary>预定义效果：只读效果在委托内用 ctx.GetResolvedValue(key) 按常量 key 取值，不设 ValueKey；仅 WeaponDamageBonus 保留 ValueKey 以指定数值来源字段。</summary>
+/// <summary>预定义效果：只读效果在委托内用 ctx.GetResolvedValue(key) 按常量 key 取值，不设 ValueKey；指定了 ValueKey 的效果（如 AddAttribute、ReduceAttribute）由模拟器填入 ctx.Value。</summary>
 public static class Effect
 {
     /// <summary>模板中生命再生字段的 key（ItemTemplate 无 Regen 属性，用常量避免魔法字符串）。</summary>
@@ -108,12 +108,20 @@ public static class Effect
         },
     };
 
-    /// <summary>武器伤害提升：对己方所有武器物品 Damage 增加指定量；数值来自 ValueKey 字段（默认 Custom_0）。日志为「伤害提高 →[目标]」。</summary>
-    public static EffectDefinition WeaponDamageBonus(string? ValueKey = null) => new()
+    /// <summary>对己方满足 targetCondition 的物品增加指定属性（限本场战斗）。attributeName 为要增加的属性名（如 Damage、Poison）；amountKey 默认 Custom_0，targetCondition 默认 SameAsSource（自身）。</summary>
+    public static EffectDefinition AddAttribute(string attributeName, string? amountKey = null, Condition? targetCondition = null) => new()
     {
-        ValueKey = ValueKey ?? nameof(ItemTemplate.Custom_0),
+        ValueKey = amountKey ?? nameof(ItemTemplate.Custom_0),
         ApplyCritMultiplier = false,
-        Apply = ctx => ctx.AddWeaponDamageBonusToCasterSide(ctx.Value),
+        Apply = ctx => ctx.AddAttributeToCasterSide(attributeName, ctx.Value, targetCondition ?? Condition.SameAsSource),
+    };
+
+    /// <summary>对敌方满足 targetCondition 的物品减少指定属性（限本场战斗，不低于 0）。amountKey 默认 Custom_0，targetCondition 默认 SameAsSource（与 AddAttribute 一致；实际使用时通常传入如 IsShieldItem）。</summary>
+    public static EffectDefinition ReduceAttribute(string attributeName, string? amountKey = null, Condition? targetCondition = null) => new()
+    {
+        ValueKey = amountKey ?? nameof(ItemTemplate.Custom_0),
+        ApplyCritMultiplier = false,
+        Apply = ctx => ctx.ReduceAttributeToOpponentSide(attributeName, ctx.Value, targetCondition ?? Condition.SameAsSource),
     };
 
     /// <summary>加速：根据 HasteTargetCount 与 Haste（毫秒）选取己方有冷却且满足能力 TargetCondition 的物品施加加速；未设 TargetCondition 时默认 SameSide。</summary>
@@ -139,11 +147,4 @@ public static class Effect
         },
     };
 
-    /// <summary>对施放者右侧物品（ItemIndex+1）若为武器则增加伤害；数值来自 ValueKey（默认 Custom_0）。日志为「伤害提高 →[目标]」。</summary>
-    public static EffectDefinition WeaponDamageBonusToRightItem(string? ValueKey = null) => new()
-    {
-        ValueKey = ValueKey ?? nameof(ItemTemplate.Custom_0),
-        ApplyCritMultiplier = false,
-        Apply = ctx => ctx.AddWeaponDamageBonusToCasterSideItem(ctx.Value, ctx.ItemIndex + 1),
-    };
 }

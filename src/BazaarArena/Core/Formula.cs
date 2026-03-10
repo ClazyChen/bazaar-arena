@@ -5,4 +5,6 @@ public static class Formula
 {
     /// <summary>固定加成 = Custom_0 × (己方未摧毁小型物品数 + StashParameter)。</summary>
     public const string SmallCountStash = "SmallCountStash";
+    /// <summary>固定加成 = 敌方当前剧毒值（用于如灵质：获得治疗等量于敌人剧毒）。</summary>
+    public const string OpponentPoison = "OpponentPoison";
 }

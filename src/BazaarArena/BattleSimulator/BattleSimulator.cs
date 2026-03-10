@@ -256,6 +256,7 @@ public class BattleSimulator
             return condition != null ? Condition.And(baseSameSideOther, condition) : baseSameSideOther;
         }
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
         return condition;
     }
 
@@ -340,7 +341,7 @@ public class BattleSimulator
     private static void InvokeTrigger(string triggerName, int sourceSideIdx, int sourceItemIdx, TriggerInvokeContext? context, int timeMs,
         BattleSide side0, BattleSide side1, List<AbilityQueueEntry> current, List<AbilityQueueEntry> next)
     {
-        int pendingCount = (triggerName == Trigger.UseItem || triggerName == Trigger.Freeze) && context?.Multicast is int m ? m : 1;
+        int pendingCount = (triggerName == Trigger.UseItem || triggerName == Trigger.Freeze || triggerName == Trigger.Slow) && context?.Multicast is int m ? m : 1;
         int lastTriggerMsForBattleStart = -TriggerIntervalMs;
 
         foreach (var (sideIdx, side) in new[] { (0, side0), (1, side1) })
@@ -404,6 +405,7 @@ public class BattleSimulator
                 ChargeInducedCastQueue = chargeInducedCastQueue,
                 TargetCondition = ability.TargetCondition,
                 OnFreezeApplied = (count) => InvokeTrigger(Trigger.Freeze, sideIndex, itemIndex, new TriggerInvokeContext { Multicast = count }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue),
+                OnSlowApplied = (count) => InvokeTrigger(Trigger.Slow, sideIndex, itemIndex, new TriggerInvokeContext { Multicast = count }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue),
             };
             eff.Apply(ctx);
         }

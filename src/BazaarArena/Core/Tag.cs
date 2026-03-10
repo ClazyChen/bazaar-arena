@@ -13,4 +13,6 @@ public static class Tag
     public const string Property = "地产";
     /// <summary>载具。</summary>
     public const string Vehicle = "载具";
+    /// <summary>遗物。</summary>
+    public const string Relic = "遗物";
 }

@@ -2,8 +2,8 @@ using BazaarArena.Core;
 
 namespace BazaarArena.BattleSimulator;
 
-/// <summary>战斗内光环上下文：持有己方与目标物品下标，在 GetAuraModifiers 中遍历己方未摧毁物品的光环并累加。</summary>
-internal sealed class BattleAuraContext(BattleSide side, int targetItemIndex) : IAuraContext
+/// <summary>战斗内光环上下文：持有己方与目标物品下标，在 GetAuraModifiers 中遍历己方未摧毁物品的光环并累加。可选传入敌方阵营供公式（如 OpponentPoison）使用。</summary>
+internal sealed class BattleAuraContext(BattleSide side, int targetItemIndex, BattleSide? opp = null) : IAuraContext
 {
     public void GetAuraModifiers(string attributeName, out int fixedSum, out int percentSum)
     {
@@ -26,7 +26,7 @@ internal sealed class BattleAuraContext(BattleSide side, int targetItemIndex) : 
                 };
                 if (aura.Condition != null && !aura.Condition.Evaluate(auraCtx)) continue;
                 if (!string.IsNullOrEmpty(aura.FixedValueFormula))
-                    fixedSum += AuraFormulaEvaluator.Evaluate(aura.FixedValueFormula, source, side);
+                    fixedSum += AuraFormulaEvaluator.Evaluate(aura.FixedValueFormula, source, side, opp);
                 else if (!string.IsNullOrEmpty(aura.FixedValueKey))
                     fixedSum += source.Template.GetInt(aura.FixedValueKey, source.Tier, 0);
                 if (!string.IsNullOrEmpty(aura.PercentValueKey))

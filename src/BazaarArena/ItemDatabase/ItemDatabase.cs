@@ -61,6 +61,7 @@ public class ItemDatabase : IItemTemplateResolver
             return condition != null ? Condition.And(baseSameSideOther, condition) : baseSameSideOther;
         }
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
         return condition;
     }
 }

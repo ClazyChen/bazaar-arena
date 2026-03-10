@@ -82,8 +82,16 @@
 
 ### 效果数值与 Apply 委托（当前约定）
 
-- **EffectDefinition**：保留 `ValueKey`、`ValueResolver`、`ResolveValue`；增加 `ApplyCritMultiplier`（默认 true）、`Apply`（`Action<IEffectApplyContext>?`）。只读效果（Damage/Burn 等）在 **Core/Effect.cs** 的 Apply 委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), applyCritMultiplier)` 取值；仅需指定数值来源字段的效果（如 WeaponDamageBonus）保留 `ValueKey`，由模拟器解析后填入 `ctx.Value`。
+- **EffectDefinition**：保留 `ValueKey`、`ValueResolver`、`ResolveValue`；增加 `ApplyCritMultiplier`（默认 true）、`Apply`（`Action<IEffectApplyContext>?`）。只读效果（Damage/Burn 等）在 **Core/Effect.cs** 的 Apply 委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), applyCritMultiplier)` 取值；指定了 `ValueKey` 的效果（如 AddAttribute、ReduceAttribute）由模拟器解析后填入 `ctx.Value`。
 - **自定义/扩展效果**：在 `Core/Effect.cs` 中新增静态 `EffectDefinition` 并设置 `Apply` 委托即可；无需单独 Handler 字典。详见 **.cursor/rules/item-design.mdc**。
+
+### AddAttribute / ReduceAttribute 与统一属性增减
+
+- **统一入口**：「给己方某类物品加属性」「给敌方某类物品减属性」不再写自定义 `EffectDefinition` 或专用 API（如已删除的 WeaponDamageBonus、ReduceOpponentShieldItemsShield），统一用 **Effect.AddAttribute** / **Effect.ReduceAttribute**。
+- **AddAttribute(attributeName, amountKey?, targetCondition?)**：对己方满足 `targetCondition` 的物品增加指定属性（限本场战斗）。默认 `amountKey = nameof(ItemTemplate.Custom_0)`，`targetCondition = Condition.SameAsSource`（自身）。目标由 `IEffectApplyContext.AddAttributeToCasterSide` 遍历己方物品、用 `ConditionContext`（Source=施放者，Candidate=当前物品）求值；支持属性目前为 Damage、Poison，日志为「伤害提高」「剧毒提高」。
+- **ReduceAttribute(attributeName, amountKey?, targetCondition?)**：对敌方满足 `targetCondition` 的物品减少指定属性（不低于 0）。默认同上；实际使用时通常传入 `targetCondition: Condition.IsShieldItem` 等。遍历敌方时填入 `ConditionContext.CandidateTypeSnapshot`，供 **Condition.IsShieldItem** 使用；支持属性目前为 Shield，日志为「护盾降低」。
+- **ConditionContext.CandidateTypeSnapshot**：可选，在 ReduceAttribute 遍历敌方物品时由实现填入，用于 IsShieldItem 等依赖「导入时类型快照」的条件。
+- **简化写法**：仅需「自身 + Custom_0」时可省略后两参，如 `Effect.AddAttribute(nameof(ItemTemplate.Poison))`（失落神祇）；需指定目标时用命名参数，如 `Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.WithTag(Tag.Weapon))`（举重手套、冰冻钝器）、`Effect.ReduceAttribute(nameof(ItemTemplate.Shield), targetCondition: Condition.IsShieldItem)`（裂盾刀）。
 
 ---
 

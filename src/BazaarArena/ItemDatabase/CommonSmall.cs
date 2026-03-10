@@ -96,7 +96,7 @@ public static class CommonSmall
                 {
                     TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.High,
-                    Effects = [Effect.WeaponDamageBonus(ValueKey: nameof(ItemTemplate.Custom_0))],
+                    Effects = [Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.WithTag(Tag.Weapon))],
                 },
             ],
         };
@@ -331,18 +331,98 @@ public static class CommonSmall
                 {
                     TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.High,
-                    Effects =
-                    [
-                        new EffectDefinition
-                        {
-                            ApplyCritMultiplier = false,
-                            Apply = ctx =>
-                            {
-                                int value = ctx.GetResolvedValue(nameof(ItemTemplate.Custom_0));
-                                ctx.ReduceOpponentShieldItemsShield(value);
-                            },
-                        },
-                    ],
+                    Effects = [Effect.ReduceAttribute(nameof(ItemTemplate.Shield), targetCondition: Condition.IsShieldItem)],
+                },
+            ],
+        };
+    }
+
+    /// <summary>灵质（Ectoplasm）：7s 银 小；造成 10 » 20 » 30 剧毒；获得治疗，等量于敌人的剧毒（Heal=0，光环将敌人剧毒加到 Heal）。</summary>
+    public static ItemTemplate Ectoplasm()
+    {
+        return new ItemTemplate
+        {
+            Name = "灵质",
+            Desc = "造成 {Poison} 剧毒；获得治疗，等量于敌人的剧毒",
+            MinTier = ItemTier.Silver,
+            Size = ItemSize.Small,
+            Tags = [],
+            Cooldown = 7.0,
+            Poison = [10, 20, 30],
+            Heal = 0,
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Poison, Effect.Heal],
+                },
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = nameof(ItemTemplate.Heal),
+                    Condition = Condition.SameAsSource,
+                    FixedValueFormula = Formula.OpponentPoison,
+                },
+            ],
+        };
+    }
+
+    /// <summary>失落神祇（Forgotten God）：6s 银 小 遗物；造成 4 剧毒；相邻物品触发减速时，此物品获得 4 » 8 » 12 剧毒（限本场战斗）（优先级 Low）。</summary>
+    public static ItemTemplate ForgottenGod()
+    {
+        return new ItemTemplate
+        {
+            Name = "失落神祇",
+            Desc = "造成 {Poison} 剧毒；相邻物品触发减速时，此物品获得 {Custom_0} 剧毒（限本场战斗）",
+            MinTier = ItemTier.Silver,
+            Size = ItemSize.Small,
+            Tags = [Tag.Relic],
+            Cooldown = 6.0,
+            Poison = 4,
+            Custom_0 = [4, 8, 12],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Poison],
+                },
+                new()
+                {
+                    TriggerName = Trigger.Slow,
+                    Priority = AbilityPriority.Low,
+                    Condition = Condition.AdjacentToSource,
+                    Effects = [Effect.AddAttribute(nameof(ItemTemplate.Poison))],
+                },
+            ],
+        };
+    }
+
+    /// <summary>神经毒素（Neural Toxin）：银 小；使用相邻武器时，减速 1 件物品 1 » 2 » 3 秒。</summary>
+    public static ItemTemplate NeuralToxin()
+    {
+        return new ItemTemplate
+        {
+            Name = "神经毒素",
+            Desc = "使用相邻武器时，减速 1 件物品 {SlowSeconds} 秒",
+            MinTier = ItemTier.Silver,
+            Size = ItemSize.Small,
+            Tags = [],
+            SlowSeconds = new[] { 1.0, 2.0, 3.0 },
+            SlowTargetCount = 1,
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseOtherItem,
+                    Priority = AbilityPriority.Medium,
+                    Condition = Condition.And(Condition.AdjacentToSource, Condition.WithTag(Tag.Weapon)),
+                    Effects = [Effect.Slow],
                 },
             ],
         };
@@ -396,6 +476,9 @@ public static class CommonSmall
         db.Register(Icicle());
         db.Register(Stinger());
         db.Register(Sunderer());
+        db.Register(Ectoplasm());
+        db.Register(ForgottenGod());
+        db.Register(NeuralToxin());
         db.Register(GingerbreadMan());
     }
 }
