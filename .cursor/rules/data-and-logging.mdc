@@ -20,4 +20,6 @@ globs: "**/*.cs"
 - **默认行为**：默认同时输出到控制台和日志文件。**文件日志始终使用 Detailed 级别**，保证日志文件包含完整战斗过程；控制台按参数为 Summary（仅结果）或 Detailed。若不需要写文件，可传参 `nolog` 或 `nofile`。
 - **忽略**：`.gitignore` 中已忽略 `Logs/`，不提交运行期日志文件。
 - **暴击**：效果日志 `OnEffect(..., isCrit)` 中 `isCrit` 由**每条效果**的 `LogEffect(..., showCrit)` 传入；仅可暴击效果（伤害/灼烧/剧毒/护盾/治疗/生命再生）在暴击时显示「 （暴击）」，不可暴击效果（充能/冻结/减速/伤害提高）不显示。关键词「暴击」「暴击率」等在 `EffectKeywordFormatting` 中与「伤害」同色、不加粗。
+- **摧毁/修复 日志**：`EffectLogFormat.FormatEffectValue` 对「摧毁」「修复」返回空串，日志行只显示效果名与 extraSuffix（如「[牵引光束] 摧毁 →[工蜂]」「[废品场维修机器人] 修复 →[xxx]」），不显示数值。各 sink 在拼行时仅当 valueStr 非空才加空格与数值（`valuePart = string.IsNullOrEmpty(valueStr) ? "" : " " + valueStr`）。
+- **效果关键词颜色**：「摧毁」在 `EffectKeywordFormatting` 中为 rgb(255, 50, 120)；「修复」为 rgb(143, 252, 188)。与 Tooltip、战斗日志一致。
 - **伤害报表**：`StatsCollectingSink.OnEffect` 按 `effectKind` 累加物品与阵营统计。**「伤害」与「吸血」** 均计入伤害（同一数值，仅展示不同）；定向效果「护盾降低」「伤害提高」不参与 Damage 累加，格式为「[物品名] 效果名 数值 →[目标]」。

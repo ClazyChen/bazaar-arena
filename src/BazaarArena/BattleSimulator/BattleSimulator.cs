@@ -259,6 +259,7 @@ public class BattleSimulator
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.OnCrit) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.OnDestroy) return condition ?? Condition.SameSide;
         return condition;
     }
 
@@ -365,6 +366,8 @@ public class BattleSimulator
                         SourceItem = sourceItemIdx,
                         UsedTemplate = context?.UsedTemplate,
                         CandidateTemplate = item.Template,
+                        DestroyedItemTemplate = triggerName == Trigger.OnDestroy ? context?.DestroyedItemTemplate : null,
+                        DestroyedItemInFlight = triggerName == Trigger.OnDestroy && (context?.DestroyedItemInFlight ?? false),
                     };
                     if (ab.Condition != null && !ab.Condition.Evaluate(triggerCtx)) continue;
                     int lastMs = triggerName == Trigger.BattleStart ? lastTriggerMsForBattleStart : item.LastTriggerMsByAbility[a];
@@ -409,6 +412,12 @@ public class BattleSimulator
                 TargetCondition = ability.TargetCondition,
                 OnFreezeApplied = (count) => InvokeTrigger(Trigger.Freeze, sideIndex, itemIndex, new TriggerInvokeContext { Multicast = count }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue),
                 OnSlowApplied = (count) => InvokeTrigger(Trigger.Slow, sideIndex, itemIndex, new TriggerInvokeContext { Multicast = count }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue),
+                OnDestroyApplied = (destroyedItemIdx) =>
+                {
+                    var destroyed = side.Items[destroyedItemIdx];
+                    InvokeTrigger(Trigger.OnDestroy, sideIndex, itemIndex, new TriggerInvokeContext { DestroyedItemTemplate = destroyed.Template, DestroyedItemInFlight = destroyed.InFlight }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                    side.Items[destroyedItemIdx].Destroyed = true;
+                },
             };
             eff.Apply(ctx);
         }

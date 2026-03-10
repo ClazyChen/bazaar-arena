@@ -62,6 +62,7 @@ public class ItemDatabase : IItemTemplateResolver
         }
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.OnDestroy) return condition ?? Condition.SameSide;
         return condition;
     }
 }

@@ -14,6 +14,9 @@ internal static class AuraFormulaEvaluator
             Formula.SmallCountStash => EvaluateSmallCountStash(source, side),
             Formula.OpponentPoison => opp?.Poison ?? 0,
             Formula.SourceDamage => source.Template.GetInt("Damage", source.Tier, 0, new BattleAuraContext(side, sourceIndex)),
+            Formula.CompanionCountTimesCustom0 => EvaluateCompanionCountTimesCustom0(source, side),
+            Formula.Minus1sPerAdjacentCompanion => EvaluateMinus1sPerAdjacentCompanion(sourceIndex, side),
+            Formula.OnlyCompanionCritBonus => EvaluateOnlyCompanionCritBonus(source, sourceIndex, side),
             _ => 0,
         };
     }
@@ -29,5 +32,48 @@ internal static class AuraFormulaEvaluator
         int custom0 = source.Template.GetInt("Custom_0", source.Tier, 0);
         int stash = source.Template.GetInt("StashParameter", source.Tier, 0);
         return custom0 * (smallCount + stash);
+    }
+
+    private static int EvaluateCompanionCountTimesCustom0(BattleItemState source, BattleSide side)
+    {
+        int companionCount = 0;
+        for (int j = 0; j < side.Items.Count; j++)
+        {
+            var it = side.Items[j];
+            if (!it.Destroyed && it.Template.Tags?.Contains(Tag.Friend) == true) companionCount++;
+        }
+        int custom0 = source.Template.GetInt("Custom_0", source.Tier, 0);
+        return custom0 * companionCount;
+    }
+
+    private static int EvaluateMinus1sPerAdjacentCompanion(int sourceIndex, BattleSide side)
+    {
+        int count = 0;
+        for (int d = -1; d <= 1; d += 2)
+        {
+            int j = sourceIndex + d;
+            if (j < 0 || j >= side.Items.Count) continue;
+            var it = side.Items[j];
+            if (!it.Destroyed && it.Template.Tags?.Contains(Tag.Friend) == true) count++;
+        }
+        return -1000 * count;
+    }
+
+    private static int EvaluateOnlyCompanionCritBonus(BattleItemState source, int sourceIndex, BattleSide side)
+    {
+        int companionCount = 0;
+        int onlyCompanionIndex = -1;
+        for (int j = 0; j < side.Items.Count; j++)
+        {
+            var it = side.Items[j];
+            if (!it.Destroyed && it.Template.Tags?.Contains(Tag.Friend) == true)
+            {
+                companionCount++;
+                onlyCompanionIndex = j;
+            }
+        }
+        if (companionCount == 1 && onlyCompanionIndex == sourceIndex)
+            return source.Template.GetInt("Custom_0", source.Tier, 0);
+        return 0;
     }
 }

@@ -13,4 +13,6 @@ public static class Trigger
     public const string Slow = "触发减速";
     /// <summary>己方造成暴击时触发（来源=暴击施放者，候选=己方所有带此能力的物品）。</summary>
     public const string OnCrit = "造成暴击时";
+    /// <summary>己方某物品被摧毁时触发（来源=造成本次摧毁的物品，候选=持有该能力的物品）；须在将目标标记为 Destroyed 之前调用。</summary>
+    public const string OnDestroy = "摧毁物品时";
 }

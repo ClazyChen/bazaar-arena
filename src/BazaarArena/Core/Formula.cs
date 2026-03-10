@@ -9,4 +9,10 @@ public static class Formula
     public const string OpponentPoison = "OpponentPoison";
     /// <summary>固定加成 = 光环来源物品的 Damage（含光环），用于如「Burn += 自身 Damage」。</summary>
     public const string SourceDamage = "SourceDamage";
+    /// <summary>固定加成 = 己方伙伴数 × 来源的 Custom_0（用于如纳米机器人：每拥有一位伙伴造成 N 伤害）。</summary>
+    public const string CompanionCountTimesCustom0 = "CompanionCountTimesCustom0";
+    /// <summary>固定加成 = -(相邻且为伙伴的物品数) × 1000（毫秒），用于缩短冷却。</summary>
+    public const string Minus1sPerAdjacentCompanion = "Minus1sPerAdjacentCompanion";
+    /// <summary>固定加成 = 若己方唯一伙伴即为来源则返回来源的 Custom_0，否则 0（用于如友好玩偶：唯一伙伴时暴击率加成）。</summary>
+    public const string OnlyCompanionCritBonus = "OnlyCompanionCritBonus";
 }

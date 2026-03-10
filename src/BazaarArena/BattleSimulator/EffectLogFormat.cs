@@ -12,7 +12,7 @@ public static class EffectLogFormat
                 return $"{value / 1000} 秒";
             return $"{value / 1000.0:F1} 秒";
         }
-        if (effectKind == "开始飞行")
+        if (effectKind == "开始飞行" || effectKind == "摧毁" || effectKind == "修复")
             return "";
         return value.ToString();
     }

@@ -39,7 +39,8 @@ public class FileBattleLogSink : IBattleLogSink, IDisposable
         if (_level != BattleLogLevel.Detailed) return;
         string critSuffix = isCrit ? " （暴击）" : "";
         string valueStr = EffectLogFormat.FormatEffectValue(effectKind, value);
-        _writer.WriteLine($"  玩家{sideIndex + 1} [{itemName}] {effectKind} {valueStr}{extraSuffix}{critSuffix} @ {timeMs}ms");
+        string valuePart = string.IsNullOrEmpty(valueStr) ? "" : " " + valueStr;
+        _writer.WriteLine($"  玩家{sideIndex + 1} [{itemName}] {effectKind}{valuePart}{extraSuffix}{critSuffix} @ {timeMs}ms");
     }
 
     public void OnBurnTick(int sideIndex, int burnDamage, int remainingBurn, int timeMs)

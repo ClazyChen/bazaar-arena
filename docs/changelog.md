@@ -1,5 +1,14 @@
 # 变更记录
 
+## 牵引光束、摧毁触发器、摧毁/修复日志与规则文档
+
+- **牵引光束（Tractor Beam）**：6s 小 银 武器；使用物品时摧毁己方右侧下一件未摧毁物品（`Effect.DestroyNextItemToRightOfCaster`），造成 150»300»600 伤害；若被毁物品为大型或飞行再造成等量伤害。三能力：UseItem High → 摧毁；OnDestroy Medium SameAsSource → 伤害；OnDestroy Medium SameAsSource + DestroyedTargetIsLargeOrInFlight → 再伤害。
+- **摧毁物品时（Trigger.OnDestroy）**：新增触发器；须在标记 Destroyed 之前调用 InvokeTrigger。`ConditionContext`/`TriggerInvokeContext` 增加 `DestroyedItemTemplate`、`DestroyedItemInFlight`；`Condition.DestroyedTargetIsLargeOrInFlight` 供能力 3 判定。`IEffectApplyContext.DestroyNextItemToRightOfCaster`、`Effect.DestroyNextItemToRightOfCaster`；`EffectApplyContextImpl.OnDestroyApplied` 由模拟器注入，回调内先触发再标记。
+- **摧毁/修复 日志**：`EffectLogFormat` 对「摧毁」「修复」返回空串，日志行只显示效果名与 extraSuffix（不显示「摧毁 0」「修复 1」）；各 log sink 仅当 valueStr 非空才拼接空格与数值。「摧毁」颜色 rgb(255,50,120)，`EffectKeywordFormatting` 与 data-and-logging.mdc 已补充。
+- **文档与规则**：implementation-notes 新增「摧毁（Destroy）与『摧毁物品时』触发器」；item-design.mdc 补充 Tag.Drone/Toy、Trigger.OnDestroy、Effect.DestroyNextItemToRightOfCaster、摧毁/修复日志约定；data-and-logging.mdc 补充摧毁/修复显示与颜色；battle-simulator-ability-queue.mdc 补充 OnDestroy；TriggerInvokeContext 表更新。
+
+---
+
 ## 飞行机制、OnCrit、统一光环读取与三件新物品
 
 - **飞行（In Flight）**：`BattleItemState.InFlight` 运行时状态；`Effect.StartFlying` 设置并记日志「开始飞行」，若已在飞行则不重复结算（幂等）。`Condition.InFlight`、`ConditionContext.SourceInFlight` 供光环使用。Tooltip/日志「飞行」与护盾同色。

@@ -33,7 +33,8 @@ public class TextBoxBattleLogSink : IBattleLogSink
         if (_level != BattleLogLevel.Detailed) return;
         string critSuffix = isCrit ? " （暴击）" : "";
         string valueStr = EffectLogFormat.FormatEffectValue(effectKind, value);
-        _appendLine($"[{TimeSec(timeMs)}] 玩家{sideIndex + 1} [{itemName}] {effectKind} {valueStr}{extraSuffix}{critSuffix}");
+        string valuePart = string.IsNullOrEmpty(valueStr) ? "" : " " + valueStr;
+        _appendLine($"[{TimeSec(timeMs)}] 玩家{sideIndex + 1} [{itemName}] {effectKind}{valuePart}{extraSuffix}{critSuffix}");
     }
 
     public void OnBurnTick(int sideIndex, int burnDamage, int remainingBurn, int timeMs)

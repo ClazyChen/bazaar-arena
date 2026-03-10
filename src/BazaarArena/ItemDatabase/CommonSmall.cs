@@ -567,6 +567,164 @@ public static class CommonSmall
         };
     }
 
+    /// <summary>纳米机器人（Nanobot）：6s 小 银 武器 伙伴；每拥有一位伙伴造成 15 » 20 » 25 伤害；每有一个相邻的伙伴，冷却时间缩短 1 秒。</summary>
+    public static ItemTemplate Nanobot()
+    {
+        return new ItemTemplate
+        {
+            Name = "纳米机器人",
+            Desc = "每拥有一位伙伴，造成 {Custom_0} 伤害；每有一个相邻的伙伴，冷却时间缩短 1 秒",
+            MinTier = ItemTier.Silver,
+            Size = ItemSize.Small,
+            Tags = [Tag.Weapon, Tag.Friend],
+            Cooldown = 6.0,
+            Custom_0 = [15, 20, 25],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Damage],
+                },
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = nameof(ItemTemplate.Damage),
+                    Condition = Condition.SameAsSource,
+                    FixedValueFormula = Formula.CompanionCountTimesCustom0,
+                },
+                new AuraDefinition
+                {
+                    AttributeName = nameof(ItemTemplate.CooldownMs),
+                    Condition = Condition.SameAsSource,
+                    FixedValueFormula = Formula.Minus1sPerAdjacentCompanion,
+                },
+            ],
+        };
+    }
+
+    /// <summary>工蜂（Busy Bee）：6s 小 银 武器 伙伴 无人机；造成 5 » 10 » 20 伤害。</summary>
+    public static ItemTemplate BusyBee()
+    {
+        return new ItemTemplate
+        {
+            Name = "工蜂",
+            Desc = "造成 {Damage} 伤害",
+            MinTier = ItemTier.Silver,
+            Size = ItemSize.Small,
+            Tags = [Tag.Weapon, Tag.Friend, Tag.Drone],
+            Cooldown = 6.0,
+            Damage = [5, 10, 20],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Damage],
+                },
+            ],
+        };
+    }
+
+    /// <summary>口器（Proboscis）：小 银 武器；触发减速时造成 8 » 12 » 16 伤害（优先级 Low）。</summary>
+    public static ItemTemplate Proboscis()
+    {
+        return new ItemTemplate
+        {
+            Name = "口器",
+            Desc = "触发减速时，造成 {Damage} 伤害",
+            MinTier = ItemTier.Silver,
+            Size = ItemSize.Small,
+            Tags = [Tag.Weapon],
+            Damage = [8, 12, 16],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.Slow,
+                    Priority = AbilityPriority.Low,
+                    Effects = [Effect.Damage],
+                },
+            ],
+        };
+    }
+
+    /// <summary>友好玩偶（Friendly Doll）：3s 小 银 武器 伙伴 玩具；造成 5 » 15 » 25 伤害；若此为唯一伙伴，暴击率 +50% » +75% » +100%（可超过 100%）。</summary>
+    public static ItemTemplate FriendlyDoll()
+    {
+        return new ItemTemplate
+        {
+            Name = "友好玩偶",
+            Desc = "造成 {Damage} 伤害；若此为唯一伙伴，暴击率 {+Custom_0%}",
+            MinTier = ItemTier.Silver,
+            Size = ItemSize.Small,
+            Tags = [Tag.Weapon, Tag.Friend, Tag.Toy],
+            Cooldown = 3.0,
+            Damage = [5, 15, 25],
+            Custom_0 = [50, 75, 100],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Damage],
+                },
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = nameof(ItemTemplate.CritRatePercent),
+                    Condition = Condition.SameAsSource,
+                    FixedValueFormula = Formula.OnlyCompanionCritBonus,
+                },
+            ],
+        };
+    }
+
+    /// <summary>牵引光束（Tractor Beam）：6s 小 银 武器；使用物品时摧毁右侧下一件己方物品，造成 150 » 300 » 600 伤害；若被毁物品为大型或飞行，再造成等量伤害。</summary>
+    public static ItemTemplate TractorBeam()
+    {
+        return new ItemTemplate
+        {
+            Name = "牵引光束",
+            Desc = "摧毁右侧下一件己方物品，造成 {Damage} 伤害；若被毁物品为大型或飞行，再造成 {Damage} 伤害",
+            MinTier = ItemTier.Silver,
+            Size = ItemSize.Small,
+            Tags = [Tag.Weapon],
+            Cooldown = 6.0,
+            Damage = [150, 300, 600],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.High,
+                    Effects = [Effect.DestroyNextItemToRightOfCaster],
+                },
+                new()
+                {
+                    TriggerName = Trigger.OnDestroy,
+                    Priority = AbilityPriority.Medium,
+                    Condition = Condition.SameAsSource,
+                    Effects = [Effect.Damage],
+                },
+                new()
+                {
+                    TriggerName = Trigger.OnDestroy,
+                    Priority = AbilityPriority.Medium,
+                    Condition = Condition.And(Condition.SameAsSource, Condition.DestroyedTargetIsLargeOrInFlight),
+                    Effects = [Effect.Damage],
+                },
+            ],
+        };
+    }
+
     /// <summary>注册所有公共小物品到数据库。</summary>
     public static void RegisterAll(ItemDatabase db)
     {
@@ -590,5 +748,10 @@ public static class CommonSmall
         db.Register(BrokenShackles());
         db.Register(CosmicAmulet());
         db.Register(DragonWhelp());
+        db.Register(Nanobot());
+        db.Register(BusyBee());
+        db.Register(Proboscis());
+        db.Register(FriendlyDoll());
+        db.Register(TractorBeam());
     }
 }

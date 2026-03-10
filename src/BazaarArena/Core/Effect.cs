@@ -158,4 +158,11 @@ public static class Effect
             ctx.LogEffect("开始飞行", 0, showCrit: false);
         },
     };
+
+    /// <summary>摧毁己方施放者右侧下一件未摧毁物品（牵引光束等）；先触发「摧毁物品时」，再标记 Destroyed。</summary>
+    public static readonly EffectDefinition DestroyNextItemToRightOfCaster = new()
+    {
+        ApplyCritMultiplier = false,
+        Apply = ctx => ctx.DestroyNextItemToRightOfCaster(),
+    };
 }

@@ -15,6 +15,10 @@ public readonly struct ConditionContext
     public bool SourceInFlight { get; init; }
     /// <summary>候选物品的类型快照（如 ReduceAttribute 遍历敌方时填入）。用于 IsShieldItem 等条件。</summary>
     public ItemTypeSnapshot? CandidateTypeSnapshot { get; init; }
+    /// <summary>OnDestroy 触发时：被摧毁物品的模板（用于如「被毁目标为大型」判定）。</summary>
+    public ItemTemplate? DestroyedItemTemplate { get; init; }
+    /// <summary>OnDestroy 触发时：被摧毁物品是否处于飞行状态。</summary>
+    public bool DestroyedItemInFlight { get; init; }
 }
 
 /// <summary>通用条件：由委托表示谓词，用于光环或能力触发。支持 And 组合（如「己方其他物品」= DifferentFromSource && SameSide）。</summary>
@@ -72,4 +76,8 @@ public class Condition
 
     /// <summary>光环时：提供光环的物品处于飞行状态（SourceInFlight）。</summary>
     public static Condition InFlight { get; } = new(ctx => ctx.SourceInFlight);
+
+    /// <summary>OnDestroy 触发时：被摧毁目标为大型物品或处于飞行状态。</summary>
+    public static Condition DestroyedTargetIsLargeOrInFlight { get; } = new(ctx =>
+        ctx.DestroyedItemTemplate?.Size == ItemSize.Large || ctx.DestroyedItemInFlight);
 }

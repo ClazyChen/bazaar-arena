@@ -20,6 +20,8 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public Action<int>? OnFreezeApplied { get; init; }
     /// <summary>己方施加减速后由模拟器注入，用于触发「触发减速」能力入队（传入本次减速目标数）。</summary>
     public Action<int>? OnSlowApplied { get; init; }
+    /// <summary>摧毁施放者右侧下一件物品时由模拟器注入；回调内先 InvokeTrigger(OnDestroy)，再标记 Destroyed。</summary>
+    public Action<int>? OnDestroyApplied { get; init; }
 
     public bool HasLifeSteal => Side.GetItemInt(ItemIndex, nameof(ItemTemplate.LifeSteal), 0) != 0;
     public bool IsCasterInFlight => Item.InFlight;
@@ -303,4 +305,19 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, effectName, value, TimeMs, showCrit, extraSuffix);
 
     public void SetCasterInFlight(bool inFlight) => Side.Items[ItemIndex].InFlight = inFlight;
+
+    public void DestroyNextItemToRightOfCaster()
+    {
+        for (int i = ItemIndex + 1; i < Side.Items.Count; i++)
+        {
+            if (Side.Items[i].Destroyed) continue;
+            var target = Side.Items[i];
+            LogEffect("摧毁", 0, " →[" + target.Template.Name + "]", showCrit: false);
+            if (OnDestroyApplied != null)
+                OnDestroyApplied(i);
+            else
+                Side.Items[i].Destroyed = true;
+            return;
+        }
+    }
 }

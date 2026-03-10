@@ -230,6 +230,16 @@
 
 ---
 
+## 摧毁（Destroy）与「摧毁物品时」触发器
+
+- **Trigger.OnDestroy**：`Core/Trigger.cs` 新增 `OnDestroy = "摧毁物品时"`。语义：Source = 造成本次摧毁的物品，Candidate = 持有该能力的物品；`EnsureTriggerCondition` 默认 `Condition.SameSide`，能力上常用 `SameAsSource` 表示「仅造成这次摧毁的物品」触发。
+- **执行顺序**：「摧毁物品时」必须在**将目标标记为 Destroyed 之前**调用，以便被毁物品自身能力仍可触发。实现：`Effect.DestroyNextItemToRightOfCaster` 找到右侧下一件未摧毁物品后，调用 `OnDestroyApplied(destroyedItemIdx)`；回调内先 `InvokeTrigger(Trigger.OnDestroy, ..., new TriggerInvokeContext { DestroyedItemTemplate, DestroyedItemInFlight })`，再 `Side.Items[destroyedItemIdx].Destroyed = true`。
+- **ConditionContext / TriggerInvokeContext 扩展**：OnDestroy 时需传递被毁目标信息供能力条件使用。`ConditionContext` 增加 `DestroyedItemTemplate`、`DestroyedItemInFlight`；`TriggerInvokeContext` 增加同名字段。`InvokeTrigger` 构建 `ConditionContext` 时，若 `triggerName == Trigger.OnDestroy` 且 context 非空，则填入上述两字段。`Condition.DestroyedTargetIsLargeOrInFlight` 判定被毁目标为大型（`DestroyedItemTemplate?.Size == ItemSize.Large`）或飞行（`DestroyedItemInFlight`）。
+- **Effect.DestroyNextItemToRightOfCaster**：从 `ItemIndex + 1` 起向右扫描，取第一个 `!Side.Items[i].Destroyed` 的 i；若无则 return。找到后记日志「摧毁」+ extraSuffix（→[物品名]），再调用 `OnDestroyApplied(i)`（或未注入时直接设 `Destroyed = true`）。牵引光束：能力 1 UseItem High → 该效果；能力 2/3 OnDestroy Medium，SameAsSource 造成伤害，能力 3 额外条件 `DestroyedTargetIsLargeOrInFlight` 再造成伤害。
+- **日志与颜色**：`EffectLogFormat.FormatEffectValue("摧毁"|"修复", value)` 返回空串，日志只显示效果名与 extraSuffix；`EffectKeywordFormatting` 中「摧毁」rgb(255,50,120)，「修复」rgb(143,252,188)。见 **.cursor/rules/data-and-logging.mdc**。
+
+---
+
 ## 修复（Repair）机制
 
 - **语义**：修复将**已摧毁**的己方物品恢复为未摧毁，并重置其 `CooldownElapsedMs = 0`，使该物品重新进入冷却循环。无时长参数。
@@ -320,7 +330,7 @@
 | **BattleSideDamage.cs** | 静态方法 `ApplyDamageToSide(BattleSide, int, bool)`，护盾吸收与伤害结算，供模拟器与效果上下文共用。 |
 | **EffectApplyContextImpl.cs** | `IEffectApplyContext` 实现，承载效果应用逻辑（伤害/治疗/护盾/冻结/减速/裂盾等）。 |
 | **BattleAuraContext.cs** | `IAuraContext` 实现，战斗内光环属性累加。 |
-| **TriggerInvokeContext.cs** | 触发器调用上下文（Multicast、UsedTemplate）。 |
+| **TriggerInvokeContext.cs** | 触发器调用上下文（Multicast、UsedTemplate；OnDestroy 时含 DestroyedItemTemplate、DestroyedItemInFlight）。 |
 
 以上类型均为 `internal`，仅本程序集使用。主逻辑与帧循环保留在 **BattleSimulator.cs**，便于阅读与遵守 **.cursor/rules/battle-simulator-ability-queue.mdc**。
 
