@@ -117,7 +117,7 @@
 
 ### 设计选择
 
-- **标签**：`Core/Tag.cs` 提供 `Tag.Weapon`、`Tag.Tool`、`Tag.Apparel`、`Tag.Friend`、`Tag.Food` 等常量，对应「武器」「工具」「服饰」「伙伴」「食物」。物品的 `Tags = [Tag.Weapon]`，CustomEffectHandlers 等用 `Tags.Contains(Tag.Weapon)`，不再手写字符串。
+- **标签**：`Core/Tag.cs` 提供 `Tag.Weapon`、`Tag.Tool`、`Tag.Apparel`、`Tag.Friend`、`Tag.Food`、`Tag.Tech` 等常量，对应「武器」「工具」「服饰」「伙伴」「食物」「科技」。物品的 `Tags = [Tag.Weapon]`、`Tags = [Tag.Friend, Tag.Tech]` 等，条件与效果处用 `Tags.Contains(Tag.Weapon)`，不再手写字符串。
 - **触发器**：`Core/Trigger.cs` 提供 `Trigger.UseItem`、`Trigger.BattleStart`。能力定义用 `TriggerName = Trigger.UseItem`；模拟器判断用 `ab.TriggerName == Trigger.BattleStart`、`ab.TriggerName != Trigger.UseItem`。
 - **属性名与 key**：AuraDefinition 的 `AttributeName`、`FixedValueKey`、`PercentValueKey` 以及 Effect 的 `ValueKey` 使用 `nameof(ItemTemplate.xxx)`，如 `nameof(ItemTemplate.CritRatePercent)`、`nameof(ItemTemplate.Custom_0)`。BattleSimulator 中 `GetInt(nameof(ItemTemplate.CritDamagePercent), ...)` 等同理，重命名属性时编译期可发现漏改。
 
@@ -184,6 +184,17 @@
 ### 小结
 
 新增「持续时间 + 多目标」类效果时：时间在模板中用秒、内部毫秒；多目标可复用 extraSuffix 与 FormatEffectValue；若有「剩余时间」且影响冷却，须保证**先处理冷却、再减少剩余时间**。目标选择统一为「有冷却 + Condition + 不放回」。触发器与条件见下节「Condition 与 Effect 委托化重构」。
+
+---
+
+## 修复（Repair）机制
+
+- **语义**：修复将**已摧毁**的己方物品恢复为未摧毁，并重置其 `CooldownElapsedMs = 0`，使该物品重新进入冷却循环。无时长参数。
+- **目标选择**：与充能/加速不同，目标池为**已摧毁**（`it.Destroyed == true`）且满足能力 `TargetCondition` 的物品，**不**要求有冷却时间；默认 `TargetCondition` 为 SameSide。不放回随机选取至多 `RepairTargetCount` 个。
+- **实现**：`EffectApplyContextImpl` 内单独实现 `GetRepairTargetIndices(fromSide, fromSideIndex, targetCount, condition)`，池子过滤条件为 `Destroyed`，不检查 `GetCooldownMs()`。`ApplyRepair` 对选中目标执行 `Destroyed = false`、`CooldownElapsedMs = 0`，并记日志「修复」+ 实际目标数 + `→[物品名]`。
+- **模板与效果**：`ItemTemplate.RepairTargetCount`（可单值或按等级，默认 1）；`Effect.Repair` 读该值并调用 `ctx.ApplyRepair(count, ctx.TargetCondition)`。占位符 `{RepairTargetCount}` 由 ItemDescHelper 解析。
+- **标签**：新增 `Tag.Tech = "科技"`（`Core/Tag.cs`），用于如废品场维修机器人等科技类物品。
+- **日志着色**：`EffectKeywordFormatting` 中「修复」使用 rgb(143,252,188)。
 
 ---
 

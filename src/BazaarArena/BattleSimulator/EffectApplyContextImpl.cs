@@ -95,6 +95,35 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         return pool.Take(take).ToList();
     }
 
+    /// <summary>从 fromSide 中选取至多 targetCount 个已摧毁且满足 condition 的物品索引；不放回随机选取。</summary>
+    private List<int> GetRepairTargetIndices(BattleSide fromSide, int fromSideIndex, int targetCount, Condition condition)
+    {
+        var pool = new List<int>();
+        for (int i = 0; i < fromSide.Items.Count; i++)
+        {
+            var it = fromSide.Items[i];
+            if (!it.Destroyed) continue;
+            var ctx = new ConditionContext
+            {
+                CandidateSide = fromSideIndex,
+                CandidateItem = i,
+                SourceSide = SideIndex,
+                SourceItem = ItemIndex,
+                CandidateTemplate = it.Template,
+            };
+            if (!condition.Evaluate(ctx)) continue;
+            pool.Add(i);
+        }
+        int take = Math.Min(targetCount, pool.Count);
+        if (take <= 0) return [];
+        for (int n = 0; n < take; n++)
+        {
+            int j = Random.Shared.Next(n, pool.Count);
+            (pool[n], pool[j]) = (pool[j], pool[n]);
+        }
+        return pool.Take(take).ToList();
+    }
+
     public void ApplyFreeze(int freezeMs, int targetCount, Condition? targetCondition = null)
     {
         if (freezeMs <= 0 || targetCount <= 0) return;
@@ -173,6 +202,23 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }
         string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
         LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "加速", hasteMs, TimeMs, isCrit: false, extraSuffix);
+    }
+
+    public void ApplyRepair(int targetCount, Condition? targetCondition = null)
+    {
+        if (targetCount <= 0) return;
+        var indices = GetRepairTargetIndices(Side, SideIndex, targetCount, targetCondition ?? Condition.SameSide);
+        if (indices.Count == 0) return;
+        var targetNames = new List<string>();
+        foreach (int i in indices)
+        {
+            var target = Side.Items[i];
+            target.Destroyed = false;
+            target.CooldownElapsedMs = 0;
+            targetNames.Add(target.Template.Name);
+        }
+        string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
+        LogEffect("修复", indices.Count, extraSuffix, showCrit: false);
     }
 
     public void AddWeaponDamageBonusToCasterSide(int value)

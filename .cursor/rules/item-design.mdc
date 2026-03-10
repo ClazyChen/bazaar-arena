@@ -8,9 +8,9 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 ## 物品模板（ItemTemplate）
 
-- **基础**：`Name`、`Desc`、`MinTier`（铜/银/金/钻）、`Size`（小/中/大）、`Tags`（用 `Tag.Weapon`、`Tag.Friend`、`Tag.Tool`、`Tag.Apparel`、`Tag.Food`，如 `Tags = [Tag.Weapon]`、`Tags = [Tag.Tool, Tag.Apparel]`）。
+- **基础**：`Name`、`Desc`、`MinTier`（铜/银/金/钻）、`Size`（小/中/大）、`Tags`（用 `Tag.Weapon`、`Tag.Friend`、`Tag.Tool`、`Tag.Apparel`、`Tag.Food`、`Tag.Tech`，如 `Tags = [Tag.Weapon]`、`Tags = [Tag.Tool, Tag.Apparel]`、`Tags = [Tag.Friend, Tag.Tech]`）。
 - **数值**：按等级用 `IntOrByTier`，支持单值或列表：`Damage = [5,10,15,20]`、`Burn = [6,9,12,15]`、`Poison = [1,2,3,4]`、`Custom_0 = [1,2,3,4]`。冷却用 `Cooldown = 5.0`（秒），无冷却则不设或为 0。
-- **时间一律用秒**：物品定义中表示时间时用秒以保证可读性（见 **project-conventions.mdc**）。充能用 `ChargeSeconds = 1.0`；冻结用 `FreezeSeconds`、`FreezeTargetCount`；减速用 `SlowSeconds`、`SlowTargetCount`；加速用 `HasteSeconds`、`HasteTargetCount`（目标数，默认 1），内部由模板转为毫秒存储。多目标效果的目标选择仅限**有冷却**物品，可选 `AbilityDefinition.TargetCondition`（默认冻结/减速为 DifferentSide，充能/加速为 SameSide）。
+- **时间一律用秒**：物品定义中表示时间时用秒以保证可读性（见 **project-conventions.mdc**）。充能用 `ChargeSeconds = 1.0`；冻结用 `FreezeSeconds`、`FreezeTargetCount`；减速用 `SlowSeconds`、`SlowTargetCount`；加速用 `HasteSeconds`、`HasteTargetCount`（目标数，默认 1），内部由模板转为毫秒存储。多目标效果的目标选择：冻结/减速/充能/加速的**目标池为有冷却**物品，可选 `AbilityDefinition.TargetCondition`（默认冻结/减速为 DifferentSide，充能/加速为 SameSide）；**修复**的目标池为**已摧毁**物品，无时长，用 `RepairTargetCount`（默认 1），默认 TargetCondition 为 SameSide。
 - **描述占位符**：`Desc` 中可用 `{Damage}`、`{Cooldown}`、`{Burn}`、`{Poison}`、`{Custom_0}` 等；支持前缀/后缀格式 `{+Custom_0%}`（大括号内非字母数字下划线的连续字符为前缀/后缀，与数值一并替换并参与加粗与 tier 着色）。`ItemDescHelper` 用正则动态解析，无需单独登记 key；`{Cooldown}` 映射为 `CooldownMs` 并按秒显示。
 - **战斗内模板**：每场战斗 `BuildSide` 时每个槽位用卡组 template 克隆一份；`BattleItemState.Template` 即该克隆，可直接修改（如 `Template.Damage = Template.Damage.Add(delta)`），无需额外字段。
 - **光环**：`Auras` 为 `List<AuraDefinition>`；每条含 `AttributeName`、`Condition`（委托式，如 `Condition.AdjacentToSource`、`Condition.SameAsSource`），`FixedValueKey`、`PercentValueKey`。AttributeName/Key 用 `nameof(ItemTemplate.xxx)`。仅在战斗内读取属性且传入 `IAuraContext` 时生效；公式为 `(基础 + Σ固定) × (1 + Σ百分比/100)`，被摧毁物品不提供光环。
@@ -49,6 +49,6 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 ## 新增公共物品流程
 
 1. 按尺寸放入 `ItemDatabase/CommonSmall.cs` 或 `CommonMedium.cs`，写工厂方法，设置 Name、Desc、MinTier、Size、Tags、数值属性、`Abilities`（含 TriggerName、Priority、Condition 如需、Effects）；若为纯光环物品可仅设 `Auras`。
-2. 效果使用 `Effect.Damage`、`Effect.WeaponDamageBonus`、`Effect.Haste`、`Effect.WeaponDamageBonusToRightItem(ValueKey)` 等；加速用 `Effect.Haste`，目标数与条件在物品能力上设 `HasteTargetCount`、`TargetCondition`（如暗影斗篷 `TargetCondition = Condition.RightOfSource`、`HasteTargetCount = 1`）。若需新效果，在 `Core/Effect.cs` 增加静态 `EffectDefinition` 并设置 `Apply` 委托。
+2. 效果使用 `Effect.Damage`、`Effect.WeaponDamageBonus`、`Effect.Haste`、`Effect.Repair`、`Effect.WeaponDamageBonusToRightItem(ValueKey)` 等；加速用 `Effect.Haste`，目标数与条件在物品能力上设 `HasteTargetCount`、`TargetCondition`（如暗影斗篷 `TargetCondition = Condition.RightOfSource`、`HasteTargetCount = 1`）；修复用 `Effect.Repair`，设 `RepairTargetCount`（默认 1）、可选 `TargetCondition`（默认己方 SameSide）。若需新效果，在 `Core/Effect.cs` 增加静态 `EffectDefinition` 并设置 `Apply` 委托。
 3. 在对应 `CommonSmall.RegisterAll` 或 `CommonMedium.RegisterAll` 中 `db.Register(XXX())`；Program/App 启动时已调用两者。
 4. 占位符由 `ItemDescHelper` 正则解析，新 key 自动支持；时间类可用 `{HasteSeconds}` 等，前缀/后缀（如 `{+Custom_0%}`）直接写在 Desc 即可。

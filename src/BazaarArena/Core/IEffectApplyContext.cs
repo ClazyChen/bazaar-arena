@@ -57,6 +57,9 @@ public interface IEffectApplyContext
     /// <summary>对目标施加加速 hasteMs 毫秒。目标池：己方有冷却时间且满足 targetCondition（默认 SameSide）；不放回随机选取至多 targetCount 个。</summary>
     void ApplyHaste(int hasteMs, int targetCount, Condition? targetCondition = null);
 
+    /// <summary>修复已摧毁物品：目标池为己方已摧毁且满足 targetCondition（默认 SameSide）；不放回随机选取至多 targetCount 个，将其设为未摧毁并重置冷却已过时间。</summary>
+    void ApplyRepair(int targetCount, Condition? targetCondition = null);
+
     /// <summary>己方所有武器物品的 Damage 增加 value。</summary>
     void AddWeaponDamageBonusToCasterSide(int value);
 

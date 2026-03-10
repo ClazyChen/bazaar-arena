@@ -128,6 +128,17 @@ public static class Effect
         },
     };
 
+    /// <summary>修复：根据 RepairTargetCount 与能力 TargetCondition 选取己方已摧毁物品进行修复（未摧毁、冷却重置）；默认 SameSide。</summary>
+    public static readonly EffectDefinition Repair = new()
+    {
+        ApplyCritMultiplier = false,
+        Apply = ctx =>
+        {
+            int count = ctx.GetResolvedValue(nameof(ItemTemplate.RepairTargetCount), defaultValue: 1);
+            ctx.ApplyRepair(count, ctx.TargetCondition);
+        },
+    };
+
     /// <summary>对施放者右侧物品（ItemIndex+1）若为武器则增加伤害；数值来自 ValueKey（默认 Custom_0）。日志为「伤害提高 →[目标]」。</summary>
     public static EffectDefinition WeaponDamageBonusToRightItem(string? ValueKey = null) => new()
     {

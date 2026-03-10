@@ -94,6 +94,7 @@ public class ItemTemplate
     private const string KeySlowTargetCount = "SlowTargetCount";
     private const string KeyHaste = "Haste";
     private const string KeyHasteTargetCount = "HasteTargetCount";
+    private const string KeyRepairTargetCount = "RepairTargetCount";
     private const string KeyLifeSteal = "LifeSteal";
     private const string KeyCustom_0 = "Custom_0";
 
@@ -209,6 +210,9 @@ public class ItemTemplate
 
     /// <summary>加速目标数量（可单值或按等级）；与 TargetCondition 配合，从己方有冷却物品中选取。</summary>
     public IntOrByTier HasteTargetCount { get => GetInt(KeyHasteTargetCount, 1); set => SetIntOrByTier(KeyHasteTargetCount, value.ToList()); }
+
+    /// <summary>修复目标数量（可单值或按等级）；与 TargetCondition 配合，从己方已摧毁物品中选取。</summary>
+    public IntOrByTier RepairTargetCount { get => GetInt(KeyRepairTargetCount, 1); set => SetIntOrByTier(KeyRepairTargetCount, value.ToList()); }
 
     /// <summary>吸血：1 表示造成伤害时按实际伤害量治疗己方，0 表示无。用于伤害效果。</summary>
     public IntOrByTier LifeSteal { get => GetInt(KeyLifeSteal, 0); set => SetIntOrByTier(KeyLifeSteal, value.ToList()); }

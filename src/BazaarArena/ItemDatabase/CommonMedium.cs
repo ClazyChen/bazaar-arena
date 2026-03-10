@@ -116,6 +116,207 @@ public static class CommonMedium
         };
     }
 
+    /// <summary>发条刀（Clockwork Blades）：4s 中 铜 武器，造成 20 » 40 » 80 » 160 伤害。</summary>
+    public static ItemTemplate ClockworkBlades()
+    {
+        return new ItemTemplate
+        {
+            Name = "发条刀",
+            Desc = "造成 {Damage} 伤害",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Medium,
+            Tags = [Tag.Weapon],
+            Cooldown = 4.0,
+            Damage = [20, 40, 80, 160],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Damage],
+                },
+            ],
+        };
+    }
+
+    /// <summary>大理石鳞甲（Marble Scalemail）：9s 中 铜 服饰，获得 20 » 60 » 120 » 200 护盾。</summary>
+    public static ItemTemplate MarbleScalemail()
+    {
+        return new ItemTemplate
+        {
+            Name = "大理石鳞甲",
+            Desc = "获得 {Shield} 护盾",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Medium,
+            Tags = [Tag.Apparel],
+            Cooldown = 9.0,
+            Shield = [20, 60, 120, 200],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Shield],
+                },
+            ],
+        };
+    }
+
+    /// <summary>废品场大棒（Junkyard Club）：11s 中 铜 武器，造成 30 » 60 » 120 » 240 伤害。</summary>
+    public static ItemTemplate JunkyardClub()
+    {
+        return new ItemTemplate
+        {
+            Name = "废品场大棒",
+            Desc = "造成 {Damage} 伤害",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Medium,
+            Tags = [Tag.Weapon],
+            Cooldown = 11.0,
+            Damage = [30, 60, 120, 240],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Damage],
+                },
+            ],
+        };
+    }
+
+    /// <summary>火箭靴（Rocket Boots）：5s 中 铜 工具 服饰，加速相邻物品 1 » 2 » 3 » 4 秒（优先级 High）。</summary>
+    public static ItemTemplate RocketBoots()
+    {
+        return new ItemTemplate
+        {
+            Name = "火箭靴",
+            Desc = "加速相邻物品 {HasteSeconds} 秒",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Medium,
+            Tags = [Tag.Tool, Tag.Apparel],
+            Cooldown = 5.0,
+            HasteSeconds = new[] { 1.0, 2.0, 3.0, 4.0 },
+            HasteTargetCount = 2,
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.High,
+                    TargetCondition = Condition.AdjacentToSource,
+                    Effects = [Effect.Haste],
+                },
+            ],
+        };
+    }
+
+    /// <summary>火蜥幼兽（Salamander Pup）：8s 中 铜 伙伴，造成 4 » 6 » 8 » 10 灼烧。</summary>
+    public static ItemTemplate SalamanderPup()
+    {
+        return new ItemTemplate
+        {
+            Name = "火蜥幼兽",
+            Desc = "造成 {Burn} 灼烧",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Medium,
+            Tags = [Tag.Friend],
+            Cooldown = 8.0,
+            Burn = [4, 6, 8, 10],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Burn],
+                },
+            ],
+        };
+    }
+
+    /// <summary>简易路障（Makeshift Barricade）：7s 中 铜，减速 1 件物品 1 » 2 » 3 » 4 秒。</summary>
+    public static ItemTemplate MakeshiftBarricade()
+    {
+        return new ItemTemplate
+        {
+            Name = "简易路障",
+            Desc = "减速 1 件物品 {SlowSeconds} 秒",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Medium,
+            Tags = [],
+            Cooldown = 7.0,
+            SlowSeconds = new[] { 1.0, 2.0, 3.0, 4.0 },
+            SlowTargetCount = 1,
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Slow],
+                },
+            ],
+        };
+    }
+
+    /// <summary>外骨骼（Exoskeleton）：中 铜 服饰，相邻武器 +5 » +10 » +20 » +40 伤害。</summary>
+    public static ItemTemplate Exoskeleton()
+    {
+        return new ItemTemplate
+        {
+            Name = "外骨骼",
+            Desc = "相邻武器 {+Custom_0} 伤害",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Medium,
+            Tags = [Tag.Apparel],
+            Custom_0 = [5, 10, 20, 40],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = nameof(ItemTemplate.Damage),
+                    Condition = Condition.And(Condition.AdjacentToSource, Condition.WithTag(Tag.Weapon)),
+                    FixedValueKey = nameof(ItemTemplate.Custom_0),
+                },
+            ],
+        };
+    }
+
+    /// <summary>废品场维修机器人（Junkyard Repairbot）：5s 中 铜 伙伴 科技，修复 1 件物品（优先级 Lowest）；治疗 30 » 60 » 120 » 240 生命值。</summary>
+    public static ItemTemplate JunkyardRepairbot()
+    {
+        return new ItemTemplate
+        {
+            Name = "废品场维修机器人",
+            Desc = "修复 {RepairTargetCount} 件物品；治疗 {Heal} 生命值",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Medium,
+            Tags = [Tag.Friend, Tag.Tech],
+            Cooldown = 5.0,
+            RepairTargetCount = 1,
+            Heal = [30, 60, 120, 240],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Lowest,
+                    Effects = [Effect.Repair],
+                },
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Heal],
+                },
+            ],
+        };
+    }
+
     /// <summary>注册所有公共中物品到数据库。</summary>
     public static void RegisterAll(ItemDatabase db)
     {
@@ -123,5 +324,13 @@ public static class CommonMedium
         db.Register(ImprovisedBludgeon());
         db.Register(ShadowedCloak());
         db.Register(FrozenBludgeon());
+        db.Register(ClockworkBlades());
+        db.Register(MarbleScalemail());
+        db.Register(JunkyardClub());
+        db.Register(RocketBoots());
+        db.Register(SalamanderPup());
+        db.Register(MakeshiftBarricade());
+        db.Register(Exoskeleton());
+        db.Register(JunkyardRepairbot());
     }
 }

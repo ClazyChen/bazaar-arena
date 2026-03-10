@@ -8,4 +8,5 @@ public static class Tag
     public const string Apparel = "服饰";
     public const string Friend = "伙伴";
     public const string Food = "食物";
+    public const string Tech = "科技";
 }

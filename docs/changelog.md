@@ -1,5 +1,17 @@
 # 变更记录
 
+## 修复（Repair）机制、Tech 标签、废品场维修机器人
+
+- **修复效果**：新增 `Effect.Repair`，仿照加速：从模板读 `RepairTargetCount`（默认 1），调用 `ApplyRepair(count, ctx.TargetCondition)`。目标池为**己方已摧毁**物品（不要求有冷却），不放回随机选取至多 N 个；修复后 `Destroyed = false`、`CooldownElapsedMs = 0`。默认 `TargetCondition` 为 SameSide。
+- **ItemTemplate.RepairTargetCount**：新增，可单值或按等级；与 `TargetCondition` 配合。无时长参数。
+- **IEffectApplyContext.ApplyRepair**：新增；实现内使用 `GetRepairTargetIndices`（池子为 `it.Destroyed == true` + condition），与充能/加速的 `GetTargetIndices`（池子为未摧毁且有冷却）区分。
+- **标签 Tech**：`Core/Tag.cs` 新增 `Tag.Tech = "科技"`。
+- **废品场维修机器人**（Junkyard Repairbot）：5s 中 铜 伙伴+科技；两条 UseItem 能力——修复 1 件（Priority Lowest）、治疗 30»60»120»240（Priority Medium）；Desc 占位符 `{RepairTargetCount}`、`{Heal}`。
+- **日志着色**：`EffectKeywordFormatting` 增加「修复」rgb(143,252,188)。
+- **文档与规则**：implementation-notes 增加「修复（Repair）机制」；item-design.mdc 补充 Tag.Tech、RepairTargetCount、Effect.Repair 与目标池约定。
+
+---
+
 ## 充能/加速/减速/冻结统一目标选择、Haste 替代 Accelerate、GetResolvedValue 合并、暗影斗篷 TargetCondition
 
 - **统一目标选择**：充能、加速、减速、冻结均采用「目标数 + 时间」两属性；目标池**仅限有冷却时间**的物品，再按 `TargetCondition` 过滤，**不放回**随机选取至多 TargetCount 个；触发（如「触发冻结」）按实际目标数入队。默认：减速/冻结 `Condition.DifferentSide`，充能/加速 `Condition.SameSide`。
