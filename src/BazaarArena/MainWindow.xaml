@@ -75,6 +75,7 @@
                                     <RowDefinition Height="14"/>
                                     <RowDefinition Height="80"/>
                                     <RowDefinition Height="Auto" MinHeight="28"/>
+                                    <RowDefinition Height="Auto" MinHeight="24"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -117,6 +118,20 @@
                                     </Grid.ColumnDefinitions>
                                 </Grid>
                                 <Grid x:Name="DeckNameRowGrid" Grid.Row="2" Grid.ColumnSpan="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                </Grid>
+                                <Grid x:Name="DeckOverrideRowGrid" Grid.Row="3" Grid.ColumnSpan="10">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>

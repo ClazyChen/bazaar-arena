@@ -110,7 +110,7 @@ public class BattleSimulator
                     var item = side.Items[itemIdx];
                     if (item.GetAmmoCap() > 0)
                         item.AmmoRemaining--;
-                    logSink.OnCast(sideIdx, itemIdx, item.Template.Name, timeMs);
+                    logSink.OnCast(sideIdx, itemIdx, item.Template.Name, timeMs, item.GetAmmoCap() > 0 ? item.AmmoRemaining : null);
                     int multicast = item.GetMulticast();
                     InvokeTrigger(Trigger.UseItem, sideIdx, itemIdx, new TriggerInvokeContext { Multicast = multicast }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
                     InvokeTrigger(Trigger.UseOtherItem, sideIdx, itemIdx, new TriggerInvokeContext { UsedTemplate = item.Template }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
@@ -229,7 +229,7 @@ public class BattleSimulator
                     TargetCondition = Condition.Clone(a.TargetCondition),
                     Effects = a.Effects.Select(e => new EffectDefinition { Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, ApplyCritMultiplier = e.ApplyCritMultiplier, Apply = e.Apply }).ToList(),
                 }).ToList(),
-                Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
+                Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey, FixedValueFormula = a.FixedValueFormula }).ToList(),
             };
             clone.SetIntsByTier(t.GetIntsByTierSnapshot());
             if (entry.Overrides != null)

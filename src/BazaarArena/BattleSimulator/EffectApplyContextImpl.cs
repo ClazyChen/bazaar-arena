@@ -23,7 +23,8 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
 
     public int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0)
     {
-        int baseValue = Item.Template.GetInt(key, Item.Tier, defaultValue);
+        var auraContext = new BattleAuraContext(Side, ItemIndex);
+        int baseValue = Item.Template.GetInt(key, Item.Tier, defaultValue, auraContext);
         return applyCritMultiplier ? baseValue * CritMultiplier : baseValue;
     }
 

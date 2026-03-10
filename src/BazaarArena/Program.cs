@@ -21,6 +21,7 @@ var deckManager = new DeckManager();
 var db = new ItemDatabase();
 CommonSmall.RegisterAll(db);
 CommonMedium.RegisterAll(db);
+CommonLarge.RegisterAll(db);
 
 var defaultCollectionPath = Path.Combine(decksDir, "default.json");
 if (File.Exists(defaultCollectionPath))

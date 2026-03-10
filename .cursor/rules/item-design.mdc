@@ -8,12 +8,15 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 ## 物品模板（ItemTemplate）
 
-- **基础**：`Name`、`Desc`、`MinTier`（铜/银/金/钻）、`Size`（小/中/大）、`Tags`（用 `Tag.Weapon`、`Tag.Friend`、`Tag.Tool`、`Tag.Apparel`、`Tag.Food`、`Tag.Tech`，如 `Tags = [Tag.Weapon]`、`Tags = [Tag.Tool, Tag.Apparel]`、`Tags = [Tag.Friend, Tag.Tech]`）。
+- **基础**：`Name`、`Desc`、`MinTier`（铜/银/金/钻）、`Size`（小/中/大）、`Tags`（用 `Tag.Weapon`、`Tag.Friend`、`Tag.Tool`、`Tag.Apparel`、`Tag.Food`、`Tag.Tech`、`Tag.Property`、`Tag.Vehicle` 等，如 `Tags = [Tag.Weapon]`、`Tags = [Tag.Property]`）。
 - **数值**：按等级用 `IntOrByTier`，支持单值或列表：`Damage = [5,10,15,20]`、`Burn = [6,9,12,15]`、`Poison = [1,2,3,4]`、`Custom_0 = [1,2,3,4]`。冷却用 `Cooldown = 5.0`（秒），无冷却则不设或为 0。
 - **时间一律用秒**：物品定义中表示时间时用秒以保证可读性（见 **project-conventions.mdc**）。充能用 `ChargeSeconds = 1.0`；冻结用 `FreezeSeconds`、`FreezeTargetCount`；减速用 `SlowSeconds`、`SlowTargetCount`；加速用 `HasteSeconds`、`HasteTargetCount`（目标数，默认 1），内部由模板转为毫秒存储。多目标效果的目标选择：冻结/减速/充能/加速的**目标池为有冷却**物品，可选 `AbilityDefinition.TargetCondition`（默认冻结/减速为 DifferentSide，充能/加速为 SameSide）；**修复**的目标池为**已摧毁**物品，无时长，用 `RepairTargetCount`（默认 1），默认 TargetCondition 为 SameSide。
 - **描述占位符**：`Desc` 中可用 `{Damage}`、`{Cooldown}`、`{Burn}`、`{Poison}`、`{Custom_0}` 等；支持前缀/后缀格式 `{+Custom_0%}`（大括号内非字母数字下划线的连续字符为前缀/后缀，与数值一并替换并参与加粗与 tier 着色）。`ItemDescHelper` 用正则动态解析，无需单独登记 key；`{Cooldown}` 映射为 `CooldownMs` 并按秒显示。
 - **战斗内模板**：每场战斗 `BuildSide` 时每个槽位用卡组 template 克隆一份；`BattleItemState.Template` 即该克隆，可直接修改（如 `Template.Damage = Template.Damage.Add(delta)`），无需额外字段。
-- **光环**：`Auras` 为 `List<AuraDefinition>`；每条含 `AttributeName`、`Condition`（委托式，如 `Condition.AdjacentToSource`、`Condition.SameAsSource`），`FixedValueKey`、`PercentValueKey`。AttributeName/Key 用 `nameof(ItemTemplate.xxx)`。仅在战斗内读取属性且传入 `IAuraContext` 时生效；公式为 `(基础 + Σ固定) × (1 + Σ百分比/100)`，被摧毁物品不提供光环。
+- **光环**：`Auras` 为 `List<AuraDefinition>`；每条含 `AttributeName`、`Condition`（委托式）、`FixedValueKey`、`PercentValueKey`、可选 `FixedValueFormula`。公式名用 **`Formula.SmallCountStash`** 等常量（`Core/Formula.cs`），不可手写字符串；公式实现集中在 `BattleSimulator/AuraFormulaEvaluator.cs`，不在 BattleAuraContext 内堆分支。AttributeName/Key 用 `nameof(ItemTemplate.xxx)`。仅在战斗内读取属性且传入 `IAuraContext` 时生效；公式为 `(基础 + Σ固定) × (1 + Σ百分比/100)`，被摧毁物品不提供光环。
+- **可复写属性**：`OverridableAttributes` 为 `Dictionary<string, IntOrByTier>?`，表示卡组内可复写的属性及按 tier 的默认值；默认 null。拖入卡组或改 Tier 时用此初始化/更新槽位的 Overrides。如废品场长枪的 `StashParameter` 可复写，默认 `[1,2,3,4]`。
+- **StashParameter**：`IntOrByTier`，用于如废品场长枪「小型物品数 + StashParameter」类公式，默认 0。
+- **弹药**：`AmmoCap`（IntOrByTier，0 表示无弹药）；有弹药时使用后扣减 `AmmoRemaining`，日志可通过 `IBattleLogSink.OnCast(..., ammoRemainingAfter)` 显示剩余弹药。
 
 ## 触发器与能力
 
@@ -24,7 +27,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 ## 效果与数值（委托驱动）
 
-- **效果应用**：`EffectDefinition.Apply` 为 `Action<IEffectApplyContext>`；模拟器构建 `IEffectApplyContext` 实现后调用 `eff.Apply(ctx)`。预定义效果在 **Core/Effect.cs** 内设置 `Apply`；只读效果在委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX))` 或 `ctx.GetResolvedValue(nameof(ItemTemplate.FreezeTargetCount), defaultValue: 1)` 取值（已合并原 GetCasterItemInt，默认 `applyCritMultiplier = false`），避免魔法字符串。多目标效果（冻结/减速/充能/加速）的目标选择条件由能力的 `TargetCondition` 提供，通过 `ctx.TargetCondition` 传入。
+- **效果应用**：`EffectDefinition.Apply` 为 `Action<IEffectApplyContext>`；模拟器构建 `IEffectApplyContext` 实现后调用 `eff.Apply(ctx)`。预定义效果在 **Core/Effect.cs** 内设置 `Apply`；只读效果在委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), ...)` 取值。**GetResolvedValue 必须带光环上下文**：实现内应使用 `Item.Template.GetInt(key, tier, default, auraContext)`（如 `EffectApplyContextImpl` 创建 `BattleAuraContext(Side, ItemIndex)` 传入），否则「基础 0 + 光环」类物品施放时数值仍为 0。多目标效果的目标选择由 `TargetCondition` 经 `ctx.TargetCondition` 传入。
 - **ValueKey**：仅需由调用方指定数值来源的效果（如 `Effect.WeaponDamageBonus(ValueKey: nameof(ItemTemplate.Custom_0))`）保留 ValueKey；模拟器仅在 `eff.ValueKey != null` 时解析并填入 `ctx.Value`。
 - **暴击**：是否乘暴击由物品六字段（Damage/Burn/Poison/Heal/Shield/Regen 任一 > 0）与 `eff.ApplyCritMultiplier` 决定。日志「（暴击）」仅对可暴击效果显示：`LogEffect(..., showCrit: ctx.IsCrit)` 用于伤害/灼烧等，Charge/Freeze/Slow 等传 `showCrit: false`。
 - **扩展效果**：在 `Core/Effect.cs` 新增静态 `EffectDefinition` 并设置 `Apply` 与可选 `ApplyCritMultiplier`、`ValueKey` 即可，无需单独 Handler 文件。定向效果（护盾降低、伤害提高）日志格式为「[物品名] 效果名 数值 →[目标]」；若效果为某物品独有、不必放入通用 Effect，可在**物品定义内**直接 `new EffectDefinition { ... }`（如裂盾刀的护盾降低）。
@@ -48,7 +51,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 ## 新增公共物品流程
 
-1. 按尺寸放入 `ItemDatabase/CommonSmall.cs` 或 `CommonMedium.cs`，写工厂方法，设置 Name、Desc、MinTier、Size、Tags、数值属性、`Abilities`（含 TriggerName、Priority、Condition 如需、Effects）；若为纯光环物品可仅设 `Auras`。
-2. 效果使用 `Effect.Damage`、`Effect.WeaponDamageBonus`、`Effect.Haste`、`Effect.Repair`、`Effect.WeaponDamageBonusToRightItem(ValueKey)` 等；加速用 `Effect.Haste`，目标数与条件在物品能力上设 `HasteTargetCount`、`TargetCondition`（如暗影斗篷 `TargetCondition = Condition.RightOfSource`、`HasteTargetCount = 1`）；修复用 `Effect.Repair`，设 `RepairTargetCount`（默认 1）、可选 `TargetCondition`（默认己方 SameSide）。若需新效果，在 `Core/Effect.cs` 增加静态 `EffectDefinition` 并设置 `Apply` 委托。
-3. 在对应 `CommonSmall.RegisterAll` 或 `CommonMedium.RegisterAll` 中 `db.Register(XXX())`；Program/App 启动时已调用两者。
-4. 占位符由 `ItemDescHelper` 正则解析，新 key 自动支持；时间类可用 `{HasteSeconds}` 等，前缀/后缀（如 `{+Custom_0%}`）直接写在 Desc 即可。
+1. 按尺寸放入 `ItemDatabase/CommonSmall.cs`、`CommonMedium.cs` 或 **`CommonLarge.cs`**，写工厂方法，设置 Name、Desc、MinTier、Size、Tags、数值属性、`Abilities`；若为纯光环或「基础 0 + 光环」可设 `Auras`，公式用 `FixedValueFormula = Formula.SmallCountStash` 等（见 `Core/Formula.cs`），不手写字符串。
+2. 效果使用 `Effect.Damage`、`Effect.Shield`、`Effect.Heal`、`Effect.WeaponDamageBonus`、`Effect.Haste`、`Effect.Repair` 等；光环公式在 `AuraFormulaEvaluator` 中实现，新增公式时在 `Formula` 加常量、在 `AuraFormulaEvaluator.Evaluate` 加 case。若物品有卡组可复写属性，设 `OverridableAttributes`（如 `{ nameof(ItemTemplate.StashParameter): [1,2,3,4] }`）。
+3. 在对应 `RegisterAll` 中 `db.Register(XXX())`；Program/App 中需调用 `CommonLarge.RegisterAll`（若新增 CommonLarge 物品）。
+4. 占位符由 `ItemDescHelper` 正则解析；时间用秒、内部毫秒；`{AmmoCap}` 等自动支持。

@@ -77,7 +77,7 @@ public class StatsCollectingSink : IBattleLogSink
         }
     }
 
-    public void OnCast(int sideIndex, int itemIndex, string itemName, int timeMs)
+    public void OnCast(int sideIndex, int itemIndex, string itemName, int timeMs, int? ammoRemainingAfter = null)
     {
         var key = (sideIndex, itemIndex);
         if (!_itemAccum.TryGetValue(key, out var entry))

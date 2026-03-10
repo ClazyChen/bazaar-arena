@@ -9,4 +9,8 @@ public static class Tag
     public const string Friend = "伙伴";
     public const string Food = "食物";
     public const string Tech = "科技";
+    /// <summary>地产。</summary>
+    public const string Property = "地产";
+    /// <summary>载具。</summary>
+    public const string Vehicle = "载具";
 }

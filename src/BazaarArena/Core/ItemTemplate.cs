@@ -97,6 +97,7 @@ public class ItemTemplate
     private const string KeyRepairTargetCount = "RepairTargetCount";
     private const string KeyLifeSteal = "LifeSteal";
     private const string KeyCustom_0 = "Custom_0";
+    private const string KeyStashParameter = "StashParameter";
 
     /// <summary>根据字段名读取 int 值（无 tier 时按第一档），不存在则返回 0。</summary>
     public int GetInt(string key) => GetInt(key, ItemTier.Bronze, 0);
@@ -219,6 +220,12 @@ public class ItemTemplate
 
     /// <summary>自定义变量 0（可单值或按等级），用于如举重手套的武器伤害提升量等。</summary>
     public IntOrByTier Custom_0 { get => GetInt(KeyCustom_0, 0); set => SetIntOrByTier(KeyCustom_0, value.ToList()); }
+
+    /// <summary>储存箱等效参数（可单值或按等级），用于如废品场长枪的「卡组小型物品数 + StashParameter」公式。默认 0。</summary>
+    public IntOrByTier StashParameter { get => GetInt(KeyStashParameter, 0); set => SetIntOrByTier(KeyStashParameter, value.ToList()); }
+
+    /// <summary>可被卡组复写的属性及按 tier 的默认值（nameof(属性) → IntOrByTier）；null 表示无。拖入卡组或改 tier 时用此初始化/更新 Overrides。</summary>
+    public Dictionary<string, IntOrByTier>? OverridableAttributes { get; set; }
 
     public List<AbilityDefinition> Abilities { get; set; } = [];
     /// <summary>光环列表：当在战斗内读取属性并传入 IAuraContext 时，会按条件与公式叠加这些光环。</summary>

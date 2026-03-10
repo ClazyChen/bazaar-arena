@@ -34,6 +34,7 @@ public static class EffectKeywordFormatting
         ("受到", Color.FromRgb(0xe7, 0x4c, 0x3c), false),
         ("施放", Color.FromRgb(0x7f, 0x8c, 0x8d), false),
         ("结果", Color.FromRgb(0x7f, 0x8c, 0x8d), false),
+        ("弹药", Color.FromRgb(255, 142, 0), false),
     ];
 
     /// <summary>将一行文本按关键词拆成带颜色的 Run，返回 Inline 列表，供 TextBlock.Inlines 或 Paragraph 使用。</summary>

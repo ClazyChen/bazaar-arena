@@ -22,10 +22,10 @@ public class TextBoxBattleLogSink : IBattleLogSink
 
     private static string TimeSec(int timeMs) => (timeMs / 1000.0).ToString("F2") + "s";
 
-    public void OnCast(int sideIndex, int itemIndex, string itemName, int timeMs)
+    public void OnCast(int sideIndex, int itemIndex, string itemName, int timeMs, int? ammoRemainingAfter = null)
     {
-        // 日志只保留实际触发的效果，不输出施放
-        return;
+        if (!ammoRemainingAfter.HasValue) return; // 无弹药时不单独输出施放行
+        _appendLine($"[{TimeSec(timeMs)}] 玩家{sideIndex + 1} 施放 [{itemName}] 剩余弹药 {ammoRemainingAfter.Value}");
     }
 
     public void OnEffect(int sideIndex, int itemIndex, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)

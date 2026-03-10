@@ -1,5 +1,19 @@
 # 变更记录
 
+## CommonLarge、弹药、光环公式、属性复写与效果数值带光环
+
+- **CommonLarge**：新建 `ItemDatabase/CommonLarge.cs`，五大公共大型物品：临时避难所（7s 铜 大 地产，护盾 10»20»40»80）、哈库维发射器（3s 铜 大 武器，伤害 100»200»300»400，弹药 1）、观光缆车（5s 铜 大 载具，护盾 20»40»80»160）、温泉（6s 铜 大 地产，治疗 25»50»100»200）、废品场长枪（11s 铜 大 武器，Damage 基础 0，光环 SmallCountStash）。App/Program 中调用 `CommonLarge.RegisterAll`。
+- **标签**：`Tag.Property = "地产"`、`Tag.Vehicle = "载具"`（`Core/Tag.cs`）。
+- **弹药**：`AmmoCap`、`AmmoRemaining` 已有；`IBattleLogSink.OnCast` 增加可选参数 `int? ammoRemainingAfter`，使用后日志显示「剩余弹药 N」；`EffectKeywordFormatting` 增加「弹药」颜色 rgb(255,142,0)。
+- **光环公式**：`AuraDefinition.FixedValueFormula` 可选；公式名用 `Formula.SmallCountStash` 等常量（`Core/Formula.cs`），避免魔法字符串。公式逻辑集中在 `BattleSimulator/AuraFormulaEvaluator.cs`，不在 `BattleAuraContext` 内堆 if-else；新增公式时在 Formula 加常量、在 AuraFormulaEvaluator 加 case 与私有方法。
+- **废品场长枪**：`StashParameter`（IntOrByTier）、`OverridableAttributes`（`Dictionary<string, IntOrByTier>?`）；光环 `FixedValueFormula = Formula.SmallCountStash`，固定加成 = Custom_0 × (己方未摧毁小型物品数 + StashParameter)。克隆模板/光环时复制 `FixedValueFormula`、`OverridableAttributes`。
+- **效果数值与光环**：施放时效果取值必须带光环上下文，否则「基础 0 + 光环加成」类物品（如废品场长枪）伤害仍为 0。`EffectApplyContextImpl.GetResolvedValue` 内创建 `BattleAuraContext(Side, ItemIndex)` 并调用 `Item.Template.GetInt(key, tier, default, auraContext)`。
+- **卡组属性复写**：`DeckSlotEntry.Overrides` 已有；`SlotRowViewModel.Overrides`、`SetOverride`/`RemoveOverride`；加入卡组或改 Tier 时按模板 `OverridableAttributes` 初始化/更新 Overrides。BuildDeckFromEditor / LoadDeckIntoEditor 读写 Overrides。GUI：名称行下方增加「复写」按钮行，名称行显示物品名 + 每行一个复写（如 StashParameter: 2）；点击复写打开 `OverrideAttributeDialog`（下拉选属性、填数值）。
+- **Tier 变更后刷新**：切换 Tier 后调用 `RebuildDeckNameRow()`，复写显示立即更新。
+- **文档与规则**：implementation-notes 增加「光环公式（Formula + AuraFormulaEvaluator）」「效果数值必须带光环上下文」；item-design.mdc 补充 Tag.Property/Vehicle、AmmoCap、StashParameter、OverridableAttributes、FixedValueFormula/Formula、CommonLarge、复写流程；battle-simulator-ability-queue.mdc 补充 GetResolvedValue 与光环。
+
+---
+
 ## 修复（Repair）机制、Tech 标签、废品场维修机器人
 
 - **修复效果**：新增 `Effect.Repair`，仿照加速：从模板读 `RepairTargetCount`（默认 1），调用 `ApplyRepair(count, ctx.TargetCondition)`。目标池为**己方已摧毁**物品（不要求有冷却），不放回随机选取至多 N 个；修复后 `Destroyed = false`、`CooldownElapsedMs = 0`。默认 `TargetCondition` 为 SameSide。

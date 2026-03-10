@@ -14,4 +14,7 @@ public class AuraDefinition
 
     /// <summary>提供百分比加成的模板字段名（数值表示 +N%，加算）；无则 null。</summary>
     public string? PercentValueKey { get; set; }
+
+    /// <summary>固定加成公式名（如 "SmallCountStash"）；若设置则忽略 FixedValueKey，由 BattleAuraContext 按公式计算。</summary>
+    public string? FixedValueFormula { get; set; }
 }

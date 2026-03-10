@@ -28,6 +28,7 @@ public partial class App : Application
         DeckManager = new DeckManager.DeckManager();
         ItemDatabase = new ItemDatabase.ItemDatabase();
         CommonSmall.RegisterAll(ItemDatabase);
-CommonMedium.RegisterAll(ItemDatabase);
+        CommonMedium.RegisterAll(ItemDatabase);
+        CommonLarge.RegisterAll(ItemDatabase);
     }
 }

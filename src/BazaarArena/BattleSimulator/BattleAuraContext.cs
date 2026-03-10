@@ -25,7 +25,9 @@ internal sealed class BattleAuraContext(BattleSide side, int targetItemIndex) : 
                     CandidateTemplate = side.Items[targetItemIndex].Template,
                 };
                 if (aura.Condition != null && !aura.Condition.Evaluate(auraCtx)) continue;
-                if (!string.IsNullOrEmpty(aura.FixedValueKey))
+                if (!string.IsNullOrEmpty(aura.FixedValueFormula))
+                    fixedSum += AuraFormulaEvaluator.Evaluate(aura.FixedValueFormula, source, side);
+                else if (!string.IsNullOrEmpty(aura.FixedValueKey))
                     fixedSum += source.Template.GetInt(aura.FixedValueKey, source.Tier, 0);
                 if (!string.IsNullOrEmpty(aura.PercentValueKey))
                     percentSum += source.Template.GetInt(aura.PercentValueKey, source.Tier, 0);

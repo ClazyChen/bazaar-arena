@@ -40,6 +40,10 @@ alwaysApply: false
 - 步骤 8 在遍历处理 `currentAbilityQueue` 前，**先按能力优先级排序**：主键为 `AbilityPriority` 枚举值升序（Immediate → Highest → High → Medium → Low → Lowest），同优先级按 (SideIndex, ItemIndex, AbilityIndex) 稳定排序。
 - 这样同一帧内触发的多条能力会按「高优先级先于低优先级」执行（例如裂盾刀裂盾 High 先于姜饼人护盾 Low）。
 
+## 效果数值与光环
+
+- 执行效果时，`IEffectApplyContext.GetResolvedValue` 用于取 Damage、Shield 等。实现（如 `EffectApplyContextImpl`）**必须**传入 `IAuraContext` 调用 `Item.Template.GetInt(key, tier, default, auraContext)`，否则「基础 0 + 光环加成」类物品施放时数值仍为 0。见 `docs/implementation-notes.md` 中「光环（Aura）与属性读取」→「效果数值必须带光环上下文」。
+
 ## 设计文档对照
 
 - 实现与 `docs/Bazaar Arena 设计文档.md` 中「每一帧的结算顺序」步骤 7、8、11 一致。

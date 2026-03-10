@@ -189,6 +189,7 @@ public partial class MainWindow
                 ItemNames = _itemNames,
                 ItemName = entry.ItemName,
                 Tier = entry.Tier,
+                Overrides = entry.Overrides != null ? new Dictionary<string, int>(entry.Overrides) : null,
             });
         }
         UpdateSlotSummary();
@@ -325,6 +326,7 @@ public partial class MainWindow
         RebuildTierRow();
         RebuildDeckImageRow();
         RebuildDeckNameRow();
+        RebuildOverrideButtonRow();
     }
 
     private void RebuildTierRow()
@@ -401,7 +403,23 @@ public partial class MainWindow
         if (next != row.Tier)
         {
             row.Tier = next;
+            ApplyOverridableDefaultsForTier(row, next);
             RebuildTierRow();
+            RebuildDeckNameRow();
+        }
+    }
+
+    /// <summary>将模板的 OverridableAttributes 按指定 tier 的默认值写入 row.Overrides（仅更新这些键）。</summary>
+    private void ApplyOverridableDefaultsForTier(SlotRowViewModel row, ItemTier tier)
+    {
+        var template = _itemDatabase.GetTemplate(row.ItemName);
+        if (template?.OverridableAttributes == null) return;
+        foreach (var kv in template.OverridableAttributes)
+        {
+            var list = kv.Value.ToList();
+            int ti = (int)tier;
+            int val = ti >= 0 && ti < list.Count ? list[ti] : (list.Count > 0 ? list[0] : 0);
+            row.SetOverride(kv.Key, val);
         }
     }
 
@@ -576,20 +594,77 @@ public partial class MainWindow
         var cellMargin = new Thickness(colGap, 2, colGap, 0);
         foreach (var item in DeckSlotDisplays)
         {
-            var text = new TextBlock
+            var stack = new StackPanel
+            {
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = cellMargin,
+            };
+            stack.Children.Add(new TextBlock
             {
                 Text = item.ViewModel.ItemName,
                 TextWrapping = TextWrapping.Wrap,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = cellMargin,
                 FontSize = 11,
                 Foreground = new SolidColorBrush(Colors.White),
                 TextAlignment = TextAlignment.Center,
+            });
+            if (item.ViewModel.Overrides != null)
+            {
+                foreach (var kv in item.ViewModel.Overrides)
+                {
+                    stack.Children.Add(new TextBlock
+                    {
+                        Text = $"{kv.Key}: {kv.Value}",
+                        FontSize = 10,
+                        Foreground = new SolidColorBrush(Colors.LightGray),
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        TextAlignment = TextAlignment.Center,
+                    });
+                }
+            }
+            Grid.SetColumn(stack, item.StartColumn);
+            Grid.SetColumnSpan(stack, item.ColumnSpan);
+            DeckNameRowGrid.Children.Add(stack);
+        }
+    }
+
+    private void RebuildOverrideButtonRow()
+    {
+        if (DeckOverrideRowGrid == null) return;
+        DeckOverrideRowGrid.Children.Clear();
+        const int colGap = 2;
+        var cellMargin = new Thickness(colGap, 2, colGap, 0);
+        foreach (var item in DeckSlotDisplays)
+        {
+            var template = _itemDatabase.GetTemplate(item.ViewModel.ItemName);
+            var btn = new Button
+            {
+                Content = "复写",
+                Tag = item.ViewModel,
+                Margin = cellMargin,
+                Padding = new Thickness(6, 2, 6, 2),
+                FontSize = 10,
+                Visibility = template?.OverridableAttributes != null && template.OverridableAttributes.Count > 0
+                    ? Visibility.Visible
+                    : Visibility.Collapsed,
             };
-            Grid.SetColumn(text, item.StartColumn);
-            Grid.SetColumnSpan(text, item.ColumnSpan);
-            DeckNameRowGrid.Children.Add(text);
+            btn.Click += OverrideButton_Click;
+            Grid.SetColumn(btn, item.StartColumn);
+            Grid.SetColumnSpan(btn, item.ColumnSpan);
+            DeckOverrideRowGrid.Children.Add(btn);
+        }
+    }
+
+    private void OverrideButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.Tag is not SlotRowViewModel row) return;
+        var template = _itemDatabase.GetTemplate(row.ItemName);
+        if (template?.OverridableAttributes == null || template.OverridableAttributes.Count == 0) return;
+        var dlg = new OverrideAttributeDialog(row, template, this) { Owner = this };
+        if (dlg.ShowDialog() == true)
+        {
+            RebuildDeckNameRow();
         }
     }
 
@@ -693,7 +768,19 @@ public partial class MainWindow
         }
         if (used + (int)template.Size > maxSlots)
             return false;
-        _slotRows.Insert(insertIndex, new SlotRowViewModel { ItemNames = _itemNames, ItemName = itemName, Tier = tier });
+        var newRow = new SlotRowViewModel { ItemNames = _itemNames, ItemName = itemName, Tier = tier };
+        if (template.OverridableAttributes != null)
+        {
+            var overrides = new Dictionary<string, int>();
+            foreach (var kv in template.OverridableAttributes)
+            {
+                var list = kv.Value.ToList();
+                int ti = (int)tier;
+                overrides[kv.Key] = ti >= 0 && ti < list.Count ? list[ti] : (list.Count > 0 ? list[0] : 0);
+            }
+            newRow.Overrides = overrides;
+        }
+        _slotRows.Insert(insertIndex, newRow);
         UpdateSlotSummary();
         return true;
     }
@@ -735,7 +822,12 @@ public partial class MainWindow
         foreach (var row in _slotRows)
         {
             if (string.IsNullOrWhiteSpace(row.ItemName)) continue;
-            slots.Add(new DeckSlotEntry { ItemName = row.ItemName.Trim(), Tier = row.Tier });
+            slots.Add(new DeckSlotEntry
+            {
+                ItemName = row.ItemName.Trim(),
+                Tier = row.Tier,
+                Overrides = row.Overrides != null ? new Dictionary<string, int>(row.Overrides) : null,
+            });
         }
         return new Deck { PlayerLevel = level, Slots = slots };
     }

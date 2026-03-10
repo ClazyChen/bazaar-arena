@@ -99,6 +99,13 @@
 
 - **AuraDefinition**（Core）：`AttributeName`、`Condition`（`AuraConditionKind`）、`FixedValueKey`、`PercentValueKey`。条件首期支持 `AdjacentToSource`（`|sourceIndex - targetItemIndex| == 1`）；BuildSide 与 ItemDatabase 克隆模板时对 Auras 做深拷贝（逐个 `new AuraDefinition`）。
 - **战斗内读属性**：需要光环时传入 context，例如暴击率：`item.Template.GetInt("CritRatePercent", item.Tier, 0, auraContext)`；模拟器在能力队列处理处按当前 (side, itemIndex) 创建 `BattleAuraContext` 并传入。
+- **效果数值必须带光环上下文**：`IEffectApplyContext.GetResolvedValue` 用于效果委托内取 Damage、Shield 等。若实现内只调 `Item.Template.GetInt(key, tier, default)` 而不传 `IAuraContext`，则「基础 0 + 光环加成」类物品（如废品场长枪）施放时伤害仍为 0。**正确做法**：`EffectApplyContextImpl.GetResolvedValue` 内创建 `new BattleAuraContext(Side, ItemIndex)` 并调用 `GetInt(key, tier, default, auraContext)`，使施放时读取的数值已含光环。
+
+### 光环公式（Formula + AuraFormulaEvaluator）
+
+- **避免魔法字符串**：`AuraDefinition.FixedValueFormula` 使用 `Core/Formula.cs` 中的常量，如 `Formula.SmallCountStash`，不在物品或 BattleAuraContext 内手写 `"SmallCountStash"`。
+- **公式逻辑不堆在 BattleAuraContext**：固定加成公式的实现放在 `BattleSimulator/AuraFormulaEvaluator.cs`。`BattleAuraContext.GetAuraModifiers` 当 `FixedValueFormula` 非空时调用 `AuraFormulaEvaluator.Evaluate(formulaName, source, side)`，不再在 BattleAuraContext 内写长 if-else。
+- **新增公式**：在 `Formula` 中加常量；在 `AuraFormulaEvaluator.Evaluate` 的 switch 中加 case，并实现对应私有方法（如 `EvaluateSmallCountStash`）。克隆 AuraDefinition 时需复制 `FixedValueFormula`（ItemDatabase、BattleSimulator 的 BuildSide 均已处理）。
 
 ### 描述占位符：前缀/后缀
 
