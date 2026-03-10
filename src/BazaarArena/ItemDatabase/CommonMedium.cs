@@ -67,6 +67,7 @@ public static class CommonMedium
             Size = ItemSize.Medium,
             Tags = [Tag.Apparel],
             HasteSeconds = new[] { 1.0, 2.0, 3.0, 4.0 },
+            HasteTargetCount = 1,
             Custom_0 = [3, 5, 7, 9],
             Abilities =
             [
@@ -75,7 +76,41 @@ public static class CommonMedium
                     TriggerName = Trigger.UseOtherItem,
                     Priority = AbilityPriority.Low,
                     Condition = Condition.UsedItemRightOfSource,
-                    Effects = [Effect.Accelerate, Effect.WeaponDamageBonusToRightItem(nameof(ItemTemplate.Custom_0))],
+                    TargetCondition = Condition.RightOfSource,
+                    Effects = [Effect.Haste, Effect.WeaponDamageBonusToRightItem(nameof(ItemTemplate.Custom_0))],
+                },
+            ],
+        };
+    }
+
+    /// <summary>冰冻钝器（Frozen Bludgeon）：9s 中 铜 武器，造成 20 » 40 » 60 » 80 伤害；冻结 1 » 2 » 3 » 4 件物品 1 秒；触发冻结时，己方武器伤害提高 5 » 10 » 15 » 20（限本场战斗）。</summary>
+    public static ItemTemplate FrozenBludgeon()
+    {
+        return new ItemTemplate
+        {
+            Name = "冰冻钝器",
+            Desc = "造成 {Damage} 伤害；冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒；触发冻结时，己方武器伤害提高 {Custom_0}（限本场战斗）",
+            MinTier = ItemTier.Bronze,
+            Size = ItemSize.Medium,
+            Tags = [Tag.Weapon],
+            Cooldown = 9.0,
+            Damage = [20, 40, 60, 80],
+            FreezeSeconds = 1.0,
+            FreezeTargetCount = [1, 2, 3, 4],
+            Custom_0 = [5, 10, 15, 20],
+            Abilities =
+            [
+                new()
+                {
+                    TriggerName = Trigger.UseItem,
+                    Priority = AbilityPriority.Medium,
+                    Effects = [Effect.Damage, Effect.Freeze],
+                },
+                new()
+                {
+                    TriggerName = Trigger.Freeze,
+                    Priority = AbilityPriority.Low,
+                    Effects = [Effect.WeaponDamageBonus(nameof(ItemTemplate.Custom_0))],
                 },
             ],
         };
@@ -87,5 +122,6 @@ public static class CommonMedium
         db.Register(SpikedBuckler());
         db.Register(ImprovisedBludgeon());
         db.Register(ShadowedCloak());
+        db.Register(FrozenBludgeon());
     }
 }

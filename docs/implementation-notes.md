@@ -154,7 +154,7 @@
 
 - **属性设计**：与充能（Charge）一致，**内部存毫秒**，物品定义用**秒**。`ItemTemplate` 提供 `Freeze`（`IntOrByTier` 毫秒）、`FreezeSeconds`（`SecondsOrByTier`：可赋单值或 `new[] { 3.0, 4.0, 5.0, 6.0 }`，内部转毫秒）、`FreezeTargetCount`（冻结目标数量，可单值或按等级）。
 - **SecondsOrByTier**：`Core/ItemTemplate.cs` 中新增结构体，支持从 `double` / `double[]` 隐式转换，提供 `ToFreezeMs()` 与 `FromFirstTierMs(ms)`，供定义时写 `FreezeSeconds = new[] { 3.0, 4.0, 5.0, 6.0 }`，符合「物品定义中时间一律用秒」的约定（见 **.cursor/rules/project-conventions.mdc**）。
-- **预定义效果**：`Effect.Freeze` 使用模板的 `Freeze`（毫秒）与 `FreezeTargetCount`；模拟器 `ApplyFreeze` 从敌人物品中**随机选取**目标，**有冷却的物品优先**，每次选取独立可重复；对每个目标 `FreezeRemainingMs = Math.Max(当前, freezeMs)`。冻结不可暴击。
+- **预定义效果**：`Effect.Freeze` 使用模板的 `Freeze`（毫秒）与 `FreezeTargetCount`。目标选择见下节「充能、加速、减速、冻结统一目标选择」；冻结不可暴击；触发「触发冻结」时按**实际目标数**入队（PendingCount）。
 - **BattleItemState**：已有 `FreezeRemainingMs`；`ProcessCooldown` 中 `FreezeRemainingMs > 0` 时不推进冷却；每帧在某一步中减少 `FreezeRemainingMs`（见下）。
 
 ### 加速/减速/冻结剩余时间与冷却顺序
@@ -175,9 +175,15 @@
 
 ### 触发器统一与 Condition 自动补全（已重构，见下节）
 
+### 充能、加速、减速、冻结统一目标选择
+
+- **统一逻辑**：四类效果均采用「目标数 + 时间」两属性。目标池 = **仅含冷却时间 > 0 且未销毁的物品**，再按能力的 `TargetCondition`（可选）过滤；**不放回**随机选取至多 `TargetCount` 个；若满足条件的物品数不足则全部选中。触发类（如「触发冻结」）按**实际选中的目标数**入队（PendingCount）。
+- **默认 Condition**：减速、冻结默认 `Condition.DifferentSide`（敌方）；充能、加速默认 `Condition.SameSide`（己方）。物品/能力可通过 `AbilityDefinition.TargetCondition` 覆盖（如暗影斗篷用 `RightOfSource` 指定「施放者右侧物品」）。
+- **实现**：`EffectApplyContextImpl.GetTargetIndices(fromSide, fromSideIndex, targetCount, condition)` 构建候选池并 Fisher-Yates 不放回选取；`ApplyFreeze`/`ApplySlow`/`ApplyCharge`/`ApplyHaste` 均调用该逻辑。`IEffectApplyContext.TargetCondition` 由模拟器从当前能力的 `TargetCondition` 注入；`Effect.Haste` 读 `HasteTargetCount`（默认 1）并传 `ctx.TargetCondition` 给 `ApplyHaste`。
+
 ### 小结
 
-新增「持续时间 + 多目标」类效果时：时间在模板中用秒、内部毫秒；多目标可复用 extraSuffix 与 FormatEffectValue；若有「剩余时间」且影响冷却，须保证**先处理冷却、再减少剩余时间**。触发器与条件见下节「Condition 与 Effect 委托化重构」。
+新增「持续时间 + 多目标」类效果时：时间在模板中用秒、内部毫秒；多目标可复用 extraSuffix 与 FormatEffectValue；若有「剩余时间」且影响冷却，须保证**先处理冷却、再减少剩余时间**。目标选择统一为「有冷却 + Condition + 不放回」。触发器与条件见下节「Condition 与 Effect 委托化重构」。
 
 ---
 
@@ -200,7 +206,7 @@
 ### Effect：脱离 EffectKind，委托驱动 + IEffectApplyContext
 
 - **移除**：`EffectKind` 枚举、`EffectKindKeys`、`EffectKindExtensions`；`GetEffectApplier(EffectKind)` 与 `CustomEffectHandlers` 字典；`EffectDefinition.Kind`、`CustomEffectId`。
-- **Core**：`IEffectApplyContext` 定义 `Value`、`HasLifeSteal`、`IsCrit`、`GetResolvedValue(key, applyCritMultiplier)`、`GetCasterItemInt(key, default)` 以及各类 Apply/Log 方法；`EffectDefinition` 增加 `ApplyCritMultiplier`（默认 true）、`Apply`（`Action<IEffectApplyContext>?`）。预定义效果在 **Core/Effect.cs** 内为每条效果设置 `Apply` 委托；只读效果在委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), true/false)` 按 key 取值，不依赖 ValueKey（仅 WeaponDamageBonus 保留 ValueKey 以指定数值来源）。
+- **Core**：`IEffectApplyContext` 定义 `Value`、`HasLifeSteal`、`IsCrit`、`GetResolvedValue(key, applyCritMultiplier = false, defaultValue = 0)`（已合并原 `GetCasterItemInt`）、`TargetCondition`（当前能力的目标选择条件，用于冻结/减速/充能/加速）以及各类 Apply/Log 方法；`EffectDefinition` 增加 `ApplyCritMultiplier`（默认 true）、`Apply`（`Action<IEffectApplyContext>?`）。预定义效果在 **Core/Effect.cs** 内为每条效果设置 `Apply` 委托；只读效果在委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX))` 或带 `defaultValue` 取值，不依赖 ValueKey（仅 WeaponDamageBonus 保留 ValueKey 以指定数值来源）。
 - **暴击**：是否参与暴击由**物品**六字段（Damage/Burn/Poison/Heal/Shield/Regen 任一 > 0）与 **EffectDefinition.ApplyCritMultiplier** 共同决定；模拟器用 `TemplateHasAnyCrittableField` 判断，不再依赖 EffectKind。
 - **BattleSimulator**：实现 `EffectApplyContextImpl : IEffectApplyContext`，在 `ExecuteOneEffect` 中构建上下文（含 `CritMultiplier`），对每条效果若 `eff.Apply != null` 则 `eff.Apply(ctx)`；仅当 `eff.ValueKey != null` 时才解析并填入 `ctx.Value`（供 WeaponDamageBonus 等使用）。
 
@@ -289,18 +295,17 @@
 
 本节记录「暗影斗篷」等「使用此物品右侧物品时」触发、以及加速（Haste）效果的实现经验。
 
-### Condition.UsedItemRightOfSource
+### Condition.UsedItemRightOfSource 与 RightOfSource
 
-- **语义**：UseOtherItem 时，仅当**被使用的物品**在**能力持有者**的**右侧**时触发（同侧且 `UsedItemIndex == SourceItemIndex + 1`）。
-- **InvokeTrigger 约定**：调用 `InvokeTrigger(Trigger.UseOtherItem, sourceSideIdx, sourceItemIdx, ...)` 时，`sourceSideIdx/sourceItemIdx` 为**被使用物品**，遍历的 `(sideIdx, itemIdx)` 为**能力持有者**；故 `ConditionContext` 中 `Source*` = 被使用物品，`Candidate*` = 能力持有者。
-- **实现**：`Condition.UsedItemRightOfSource` 为 `CandidateSide == SourceSide && SourceItem == CandidateItem + 1`。与 `EnsureTriggerCondition` 叠加的「己方其他物品」`And(DifferentFromSource, SameSide)` 一起，得到「己方且被使用物品在己方右侧」。
-- **用途**：暗影斗篷等 `TriggerName = Trigger.UseOtherItem`、`Condition = Condition.UsedItemRightOfSource`，能力内对 `ItemIndex + 1` 施加加速或伤害提高。
+- **UsedItemRightOfSource**（触发条件）：UseOtherItem 时，仅当**被使用的物品**在**能力持有者**的**右侧**时触发（同侧且 `UsedItemIndex == SourceItemIndex + 1`）。`InvokeTrigger` 约定：`Source*` = 被使用物品，`Candidate*` = 能力持有者；故 `Condition.UsedItemRightOfSource` 为 `CandidateSide == SourceSide && SourceItem == CandidateItem + 1`。
+- **RightOfSource**（目标选择条件）：候选在来源同侧且紧贴右侧（`CandidateItem == SourceItem + 1`），用于多目标效果的目标筛选，如「对施放者右侧物品加速」。
+- **用途**：暗影斗篷等 `TriggerName = Trigger.UseOtherItem`、`Condition = Condition.UsedItemRightOfSource`，能力内用 `Effect.Haste` 并设 `TargetCondition = Condition.RightOfSource`、`HasteTargetCount = 1`，对右侧有冷却物品施加加速。
 
-### 加速（Haste）与 HasteSeconds
+### 加速（Haste）与 Effect.Haste
 
 - **与减速对称**：`BattleItemState` 已有 `HasteRemainingMs`；每帧先处理冷却（加速时 `advanceMs *= 2`），再在步骤 3 中 `HasteRemainingMs = Math.Max(0, HasteRemainingMs - FrameMs)`。
-- **模板**：`ItemTemplate` 增加 `Haste`（毫秒）、`HasteSeconds`（秒，可单值或按等级），`SecondsOrByTier` 增加 `ToHasteMs()`；物品定义用 `HasteSeconds = new[] { 1.0, 2.0, 3.0, 4.0 }`。
-- **效果**：`Effect.Accelerate` 从施放者模板读 `Haste`（毫秒），调用 `ctx.ApplyHaste(hasteMs, ctx.ItemIndex + 1)`，对己方右侧物品施加加速。`IEffectApplyContext` 需暴露 `ItemIndex` 供「右侧」等相对目标使用。
+- **模板**：`ItemTemplate` 提供 `Haste`（毫秒）、`HasteSeconds`（秒，可单值或按等级）、`HasteTargetCount`（目标数，默认 1）；物品定义用 `HasteSeconds = new[] { 1.0, 2.0, 3.0, 4.0 }`。
+- **效果**：**Effect.Haste**（已移除 Effect.Accelerate）从模板读 `Haste`、`HasteTargetCount`（默认 1），调用 `ctx.ApplyHaste(hasteMs, count, ctx.TargetCondition)`；目标由统一逻辑选取（己方有冷却 + 满足能力 `TargetCondition`，默认 SameSide）。暗影斗篷在能力上设 `TargetCondition = Condition.RightOfSource`、`HasteTargetCount = 1`，不在 Effect 内写死。
 - **日志与 UI**：`EffectLogFormat` 对「加速」将毫秒格式化为「N 秒」；`EffectKeywordFormatting` 中「加速」颜色 `rgb(0,236,195)`；`ItemDescHelper` 支持 `{HasteSeconds}` → `Haste`。
 
 ### 单目标武器伤害提高

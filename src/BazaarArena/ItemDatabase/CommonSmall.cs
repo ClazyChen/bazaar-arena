@@ -338,7 +338,7 @@ public static class CommonSmall
                             ApplyCritMultiplier = false,
                             Apply = ctx =>
                             {
-                                int value = ctx.GetResolvedValue(nameof(ItemTemplate.Custom_0), applyCritMultiplier: false);
+                                int value = ctx.GetResolvedValue(nameof(ItemTemplate.Custom_0));
                                 ctx.ReduceOpponentShieldItemsShield(value);
                             },
                         },

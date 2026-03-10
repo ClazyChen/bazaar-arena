@@ -15,11 +15,11 @@ public interface IEffectApplyContext
     /// <summary>施放者物品在己方一侧的下标（用于如「右侧物品」即 ItemIndex+1）。</summary>
     int ItemIndex { get; }
 
-    /// <summary>从施放者物品模板按 key 取基础值，若 applyCritMultiplier 则乘暴击倍率；用于只读效果在委托内按常量 key（如 nameof(ItemTemplate.Damage)）取值，避免依赖 EffectDefinition.ValueKey。</summary>
-    int GetResolvedValue(string key, bool applyCritMultiplier);
+    /// <summary>从施放者物品模板按 key 取值（缺省时用 defaultValue），若 applyCritMultiplier 则乘暴击倍率。用于数值与目标数等，key 建议用 nameof(ItemTemplate.XXX)。</summary>
+    int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0);
 
-    /// <summary>从施放者物品模板读取整数字段（如 FreezeTargetCount、SlowTargetCount）；key 建议用 nameof(ItemTemplate.XXX) 避免魔法字符串。</summary>
-    int GetCasterItemInt(string key, int defaultValue);
+    /// <summary>当前能力的目标选择条件（用于冻结/减速/充能/加速等多目标效果）；由模拟器从 AbilityDefinition.TargetCondition 注入。</summary>
+    Condition? TargetCondition { get; }
 
     /// <summary>对敌方造成伤害；isBurn 为灼烧结算。返回实际扣减的生命值（用于吸血等）。</summary>
     int ApplyDamageToOpp(int value, bool isBurn);
@@ -45,14 +45,17 @@ public interface IEffectApplyContext
     /// <summary>为施放者物品充能（毫秒）；fullAndShouldCast 表示是否已满且应加入施放队列。</summary>
     void ChargeCasterItem(int chargeMs, out bool fullAndShouldCast);
 
-    /// <summary>对敌人物品施加减益：冻结 freezeMs 毫秒，选取 targetCount 个目标（有冷却优先）。</summary>
-    void ApplyFreeze(int freezeMs, int targetCount);
+    /// <summary>对目标施加冻结 freezeMs 毫秒。目标池：有冷却时间的物品且满足 targetCondition（默认 DifferentSide）；不放回随机选取至多 targetCount 个；触发次数按实际目标数。</summary>
+    void ApplyFreeze(int freezeMs, int targetCount, Condition? targetCondition = null);
 
-    /// <summary>对敌人物品施加减益：减速 slowMs 毫秒，选取 targetCount 个目标（有冷却优先）。</summary>
-    void ApplySlow(int slowMs, int targetCount);
+    /// <summary>对目标施加减速 slowMs 毫秒。目标池：有冷却时间且满足 targetCondition（默认 DifferentSide）；不放回随机选取至多 targetCount 个。</summary>
+    void ApplySlow(int slowMs, int targetCount, Condition? targetCondition = null);
 
-    /// <summary>对己方指定位置物品施加加速 hasteMs 毫秒；targetItemIndexOnCasterSide 为施放者一侧的物品下标（如施放者右侧即 ItemIndex+1）。</summary>
-    void ApplyHaste(int hasteMs, int targetItemIndexOnCasterSide);
+    /// <summary>对目标施加充能 chargeMs 毫秒。目标池：己方有冷却时间且满足 targetCondition（默认 SameSide）；不放回随机选取至多 targetCount 个。</summary>
+    void ApplyCharge(int chargeMs, int targetCount, Condition? targetCondition = null);
+
+    /// <summary>对目标施加加速 hasteMs 毫秒。目标池：己方有冷却时间且满足 targetCondition（默认 SameSide）；不放回随机选取至多 targetCount 个。</summary>
+    void ApplyHaste(int hasteMs, int targetCount, Condition? targetCondition = null);
 
     /// <summary>己方所有武器物品的 Damage 增加 value。</summary>
     void AddWeaponDamageBonusToCasterSide(int value);

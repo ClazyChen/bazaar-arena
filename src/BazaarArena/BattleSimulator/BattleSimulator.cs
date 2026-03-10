@@ -226,6 +226,7 @@ public class BattleSimulator
                     TriggerName = a.TriggerName,
                     Priority = a.Priority,
                     Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
+                    TargetCondition = Condition.Clone(a.TargetCondition),
                     Effects = a.Effects.Select(e => new EffectDefinition { Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, ApplyCritMultiplier = e.ApplyCritMultiplier, Apply = e.Apply }).ToList(),
                 }).ToList(),
                 Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
@@ -245,7 +246,7 @@ public class BattleSimulator
         return side;
     }
 
-    /// <summary>UseItem → SameAsSource；UseOtherItem 始终叠加己方其他物品（And(DifferentFromSource, SameSide)），再与显式 Condition（如 WithTag）取与。</summary>
+    /// <summary>UseItem → SameAsSource；UseOtherItem 始终叠加己方其他物品（And(DifferentFromSource, SameSide)），再与显式 Condition（如 WithTag）取与；Freeze → SameSide（己方触发冻结时）。</summary>
     private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
     {
         if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
@@ -254,6 +255,7 @@ public class BattleSimulator
             Condition baseSameSideOther = Condition.And(Condition.DifferentFromSource, Condition.SameSide);
             return condition != null ? Condition.And(baseSameSideOther, condition) : baseSameSideOther;
         }
+        if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
         return condition;
     }
 
@@ -338,7 +340,7 @@ public class BattleSimulator
     private static void InvokeTrigger(string triggerName, int sourceSideIdx, int sourceItemIdx, TriggerInvokeContext? context, int timeMs,
         BattleSide side0, BattleSide side1, List<AbilityQueueEntry> current, List<AbilityQueueEntry> next)
     {
-        int pendingCount = triggerName == Trigger.UseItem && context?.Multicast is int m ? m : 1;
+        int pendingCount = (triggerName == Trigger.UseItem || triggerName == Trigger.Freeze) && context?.Multicast is int m ? m : 1;
         int lastTriggerMsForBattleStart = -TriggerIntervalMs;
 
         foreach (var (sideIdx, side) in new[] { (0, side0), (1, side1) })
@@ -400,6 +402,8 @@ public class BattleSimulator
                 SideIndex = sideIndex,
                 ItemIndex = itemIndex,
                 ChargeInducedCastQueue = chargeInducedCastQueue,
+                TargetCondition = ability.TargetCondition,
+                OnFreezeApplied = (count) => InvokeTrigger(Trigger.Freeze, sideIndex, itemIndex, new TriggerInvokeContext { Multicast = count }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue),
             };
             eff.Apply(ctx);
         }

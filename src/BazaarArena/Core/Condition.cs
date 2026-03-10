@@ -39,9 +39,17 @@ public class Condition
     public static Condition SameSide { get; } = new(ctx =>
         ctx.CandidateSide == ctx.SourceSide);
 
+    /// <summary>候选与来源异侧（敌方）。</summary>
+    public static Condition DifferentSide { get; } = new(ctx =>
+        ctx.CandidateSide != ctx.SourceSide);
+
     /// <summary>目标与来源相邻（同侧且 |sourceIndex - targetIndex| == 1）。</summary>
     public static Condition AdjacentToSource { get; } = new(ctx =>
         ctx.CandidateSide == ctx.SourceSide && Math.Abs(ctx.CandidateItem - ctx.SourceItem) == 1);
+
+    /// <summary>候选在来源同侧且紧贴来源右侧（CandidateItem == SourceItem + 1）。用于目标选择如「施放者右侧物品」。</summary>
+    public static Condition RightOfSource { get; } = new(ctx =>
+        ctx.CandidateSide == ctx.SourceSide && ctx.CandidateItem == ctx.SourceItem + 1);
 
     /// <summary>有参条件：被使用物品或候选物品带指定标签。触发时看 UsedTemplate，光环时看 CandidateTemplate。</summary>
     public static Condition WithTag(string tag) => new(ctx =>

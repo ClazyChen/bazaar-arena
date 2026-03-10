@@ -41,6 +41,7 @@ public class ItemDatabase : IItemTemplateResolver
                 TriggerName = a.TriggerName,
                 Priority = a.Priority,
                 Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
+                TargetCondition = Condition.Clone(a.TargetCondition),
                 Effects = a.Effects.Select(e => new EffectDefinition { Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, ApplyCritMultiplier = e.ApplyCritMultiplier, Apply = e.Apply }).ToList(),
             })],
             Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey }).ToList(),
@@ -49,7 +50,7 @@ public class ItemDatabase : IItemTemplateResolver
         return clone;
     }
 
-    /// <summary>UseItem → SameAsSource；UseOtherItem 始终叠加己方其他物品（And(DifferentFromSource, SameSide)），再与显式 Condition（如 WithTag）取与。</summary>
+    /// <summary>UseItem → SameAsSource；UseOtherItem 始终叠加己方其他物品（And(DifferentFromSource, SameSide)），再与显式 Condition（如 WithTag）取与；Freeze → SameSide（己方触发冻结时）。</summary>
     private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
     {
         if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
@@ -58,6 +59,7 @@ public class ItemDatabase : IItemTemplateResolver
             Condition baseSameSideOther = Condition.And(Condition.DifferentFromSource, Condition.SameSide);
             return condition != null ? Condition.And(baseSameSideOther, condition) : baseSameSideOther;
         }
+        if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
         return condition;
     }
 }

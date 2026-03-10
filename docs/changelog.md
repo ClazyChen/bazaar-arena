@@ -1,5 +1,18 @@
 # 变更记录
 
+## 充能/加速/减速/冻结统一目标选择、Haste 替代 Accelerate、GetResolvedValue 合并、暗影斗篷 TargetCondition
+
+- **统一目标选择**：充能、加速、减速、冻结均采用「目标数 + 时间」两属性；目标池**仅限有冷却时间**的物品，再按 `TargetCondition` 过滤，**不放回**随机选取至多 TargetCount 个；触发（如「触发冻结」）按实际目标数入队。默认：减速/冻结 `Condition.DifferentSide`，充能/加速 `Condition.SameSide`。
+- **AbilityDefinition.TargetCondition**：可选，多目标效果的目标筛选条件；由模拟器注入到 `IEffectApplyContext.TargetCondition`。克隆能力时一并克隆。
+- **Effect.Haste 替代 Effect.Accelerate**：加速统一使用 `Effect.Haste`；从模板读 `Haste`、`HasteTargetCount`（默认 1），调用 `ApplyHaste(hasteMs, count, ctx.TargetCondition)`。**Effect.Accelerate 已删除**。
+- **暗影斗篷**：在物品能力上设 `HasteTargetCount = 1`、`TargetCondition = Condition.RightOfSource`，使用 `Effect.Haste`，不再在预定义 Effect 内写死右侧逻辑。
+- **ItemTemplate.HasteTargetCount**：新增，默认 1；与 `TargetCondition` 配合用于加速目标选取。
+- **GetResolvedValue 合并 GetCasterItemInt**：`IEffectApplyContext.GetResolvedValue(key, applyCritMultiplier = false, int defaultValue = 0)`，缺省时用 defaultValue；**GetCasterItemInt 已移除**。效果内用 `ctx.GetResolvedValue(nameof(ItemTemplate.FreezeTargetCount), defaultValue: 1)` 等取目标数。
+- **Condition**：新增 `DifferentSide`（候选与来源异侧）、`RightOfSource`（候选在来源右侧相邻），供目标选择与暗影斗篷使用。
+- **文档与规则**：implementation-notes 增加「充能、加速、减速、冻结统一目标选择」、更新冻结/加速小节；item-design.mdc 更新效果列表（Accelerate→Haste）、GetResolvedValue、TargetCondition、HasteTargetCount。
+
+---
+
 ## Condition 与 Effect 委托化重构、UseOtherItem 己方约束、暴击按效果显示
 
 ### Condition：委托 + ConditionContext，移除 ConditionKind
@@ -14,7 +27,7 @@
 ### Effect：委托驱动，移除 EffectKind 与 CustomEffectHandlers
 
 - **移除**：`EffectKind`、`EffectKindKeys`、`EffectKindExtensions`；`BattleSimulator` 内 `GetEffectApplier` 与各 `ApplyXxx` 静态方法；`CustomEffectHandlers.cs`。`EffectDefinition` 移除 `Kind`、`CustomEffectId`。
-- **Core**：新增 `IEffectApplyContext`（Value、HasLifeSteal、IsCrit、GetResolvedValue、GetCasterItemInt、各类 Apply/Log）；`EffectDefinition` 增加 `ApplyCritMultiplier`、`Apply` 委托。预定义效果在 **Core/Effect.cs** 内为每条设置 `Apply`，只读效果用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), ...)` 取值，仅 WeaponDamageBonus 保留 ValueKey。
+- **Core**：新增 `IEffectApplyContext`（Value、HasLifeSteal、IsCrit、GetResolvedValue、各类 Apply/Log；后已合并 GetCasterItemInt 入 GetResolvedValue 并增加 TargetCondition）；`EffectDefinition` 增加 `ApplyCritMultiplier`、`Apply` 委托。预定义效果在 **Core/Effect.cs** 内为每条设置 `Apply`，只读效果用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), ...)` 取值，仅 WeaponDamageBonus 保留 ValueKey。
 - **暴击**：由物品六字段（Damage/Burn/Poison/Heal/Shield/Regen 任一 > 0）与 `eff.ApplyCritMultiplier` 决定是否乘暴击倍率；`TemplateHasAnyCrittableField` + 队列侧 `ability.Effects.Any(e => e.Apply != null && e.ApplyCritMultiplier)` 决定是否掷暴击。
 
 ### 暴击日志按效果区分

@@ -14,6 +14,9 @@ public class AbilityDefinition
     /// <summary>触发条件（如 UseOtherItem 时仅当被使用物品带某标签）。可选，null 表示不限制。</summary>
     public Condition? Condition { get; set; }
 
+    /// <summary>多目标效果（冻结/减速/充能/加速）的目标选择条件；如不设则由效果默认（DifferentSide 或 SameSide）。</summary>
+    public Condition? TargetCondition { get; set; }
+
     /// <summary>该能力触发的效果列表（伤害、灼烧等）。</summary>
     public List<EffectDefinition> Effects { get; set; } = [];
 }

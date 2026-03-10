@@ -16,16 +16,18 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public int SideIndex { get; init; }
     public int ItemIndex { get; init; }
     public List<(int, int)>? ChargeInducedCastQueue { get; init; }
+    /// <summary>己方施加冻结后由模拟器注入，用于触发「触发冻结」能力入队（传入本次冻结目标数）。</summary>
+    public Action<int>? OnFreezeApplied { get; init; }
 
     public bool HasLifeSteal => Item.Template.GetInt(nameof(ItemTemplate.LifeSteal), Item.Tier, 0) != 0;
 
-    public int GetResolvedValue(string key, bool applyCritMultiplier)
+    public int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0)
     {
-        int baseValue = Item.Template.GetInt(key, Item.Tier, 0);
+        int baseValue = Item.Template.GetInt(key, Item.Tier, defaultValue);
         return applyCritMultiplier ? baseValue * CritMultiplier : baseValue;
     }
 
-    public int GetCasterItemInt(string key, int defaultValue) => Item.Template.GetInt(key, Item.Tier, defaultValue);
+    public Condition? TargetCondition { get; init; }
 
     public int ApplyDamageToOpp(int value, bool isBurn) => BattleSideDamage.ApplyDamageToSide(Opp, value, isBurn);
     public void HealCaster(int amount) { Side.Hp = Math.Min(Side.MaxHp, Side.Hp + amount); }
@@ -64,49 +66,63 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }
     }
 
-    public void ApplyFreeze(int freezeMs, int targetCount)
+    /// <summary>从 fromSide 中选取至多 targetCount 个目标：仅考虑未销毁、有冷却时间的物品，且满足 condition（Source=施放者）；不放回随机选取。</summary>
+    private List<int> GetTargetIndices(BattleSide fromSide, int fromSideIndex, int targetCount, Condition condition)
+    {
+        var pool = new List<int>();
+        for (int i = 0; i < fromSide.Items.Count; i++)
+        {
+            var it = fromSide.Items[i];
+            if (it.Destroyed || it.GetCooldownMs() <= 0) continue;
+            var ctx = new ConditionContext
+            {
+                CandidateSide = fromSideIndex,
+                CandidateItem = i,
+                SourceSide = SideIndex,
+                SourceItem = ItemIndex,
+                CandidateTemplate = it.Template,
+            };
+            if (!condition.Evaluate(ctx)) continue;
+            pool.Add(i);
+        }
+        int take = Math.Min(targetCount, pool.Count);
+        if (take <= 0) return [];
+        for (int n = 0; n < take; n++)
+        {
+            int j = Random.Shared.Next(n, pool.Count);
+            (pool[n], pool[j]) = (pool[j], pool[n]);
+        }
+        return pool.Take(take).ToList();
+    }
+
+    public void ApplyFreeze(int freezeMs, int targetCount, Condition? targetCondition = null)
     {
         if (freezeMs <= 0 || targetCount <= 0) return;
-        var withCooldown = new List<int>();
-        var withoutCooldown = new List<int>();
-        for (int i = 0; i < Opp.Items.Count; i++)
-        {
-            if (Opp.Items[i].Destroyed) continue;
-            if (Opp.Items[i].GetCooldownMs() > 0) withCooldown.Add(i);
-            else withoutCooldown.Add(i);
-        }
-        var pool = withCooldown.Count > 0 ? withCooldown : withoutCooldown;
-        if (pool.Count == 0) return;
+        int oppSideIndex = 1 - SideIndex;
+        var indices = GetTargetIndices(Opp, oppSideIndex, targetCount, targetCondition ?? Condition.DifferentSide);
+        if (indices.Count == 0) return;
         var targetNames = new List<string>();
-        for (int n = 0; n < targetCount; n++)
+        foreach (int i in indices)
         {
-            int idx = Random.Shared.Next(pool.Count);
-            var target = Opp.Items[pool[idx]];
+            var target = Opp.Items[i];
             target.FreezeRemainingMs = Math.Max(target.FreezeRemainingMs, freezeMs);
             targetNames.Add(target.Template.Name);
         }
         string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
         LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "冻结", freezeMs, TimeMs, isCrit: false, extraSuffix);
+        OnFreezeApplied?.Invoke(indices.Count);
     }
 
-    public void ApplySlow(int slowMs, int targetCount)
+    public void ApplySlow(int slowMs, int targetCount, Condition? targetCondition = null)
     {
         if (slowMs <= 0 || targetCount <= 0) return;
-        var withCooldown = new List<int>();
-        var withoutCooldown = new List<int>();
-        for (int i = 0; i < Opp.Items.Count; i++)
-        {
-            if (Opp.Items[i].Destroyed) continue;
-            if (Opp.Items[i].GetCooldownMs() > 0) withCooldown.Add(i);
-            else withoutCooldown.Add(i);
-        }
-        var pool = withCooldown.Count > 0 ? withCooldown : withoutCooldown;
-        if (pool.Count == 0) return;
+        int oppSideIndex = 1 - SideIndex;
+        var indices = GetTargetIndices(Opp, oppSideIndex, targetCount, targetCondition ?? Condition.DifferentSide);
+        if (indices.Count == 0) return;
         var targetNames = new List<string>();
-        for (int n = 0; n < targetCount; n++)
+        foreach (int i in indices)
         {
-            int idx = Random.Shared.Next(pool.Count);
-            var target = Opp.Items[pool[idx]];
+            var target = Opp.Items[i];
             target.SlowRemainingMs = Math.Max(target.SlowRemainingMs, slowMs);
             targetNames.Add(target.Template.Name);
         }
@@ -114,13 +130,48 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "减速", slowMs, TimeMs, isCrit: false, extraSuffix);
     }
 
-    public void ApplyHaste(int hasteMs, int targetItemIndexOnCasterSide)
+    public void ApplyCharge(int chargeMs, int targetCount, Condition? targetCondition = null)
     {
-        if (hasteMs <= 0 || targetItemIndexOnCasterSide < 0 || targetItemIndexOnCasterSide >= Side.Items.Count) return;
-        var target = Side.Items[targetItemIndexOnCasterSide];
-        if (target.Destroyed) return;
-        target.HasteRemainingMs = Math.Max(target.HasteRemainingMs, hasteMs);
-        string extraSuffix = " →[" + target.Template.Name + "]";
+        if (chargeMs <= 0 || targetCount <= 0) return;
+        var indices = GetTargetIndices(Side, SideIndex, targetCount, targetCondition ?? Condition.SameSide);
+        if (indices.Count == 0) return;
+        var targetNames = new List<string>();
+        foreach (int i in indices)
+            targetNames.Add(ChargeItemAt(SideIndex, i, chargeMs));
+        string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
+        LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "充能", chargeMs, TimeMs, isCrit: false, extraSuffix);
+    }
+
+    /// <summary>为指定侧指定下标的物品充能 chargeMs；若满则加入施放队列。返回该物品名称。</summary>
+    private string ChargeItemAt(int sideIndex, int itemIndex, int chargeMs)
+    {
+        var target = Side.Items[itemIndex];
+        int cooldownMs = target.GetCooldownMs();
+        if (cooldownMs <= 0) return target.Template.Name;
+        int newElapsed = Math.Min(cooldownMs, target.CooldownElapsedMs + chargeMs);
+        target.CooldownElapsedMs = newElapsed;
+        if (target.CooldownElapsedMs >= cooldownMs && ChargeInducedCastQueue != null)
+        {
+            if (target.GetAmmoCap() <= 0 || target.AmmoRemaining > 0)
+                ChargeInducedCastQueue.Add((sideIndex, itemIndex));
+            target.CooldownElapsedMs = 0;
+        }
+        return target.Template.Name;
+    }
+
+    public void ApplyHaste(int hasteMs, int targetCount, Condition? targetCondition = null)
+    {
+        if (hasteMs <= 0 || targetCount <= 0) return;
+        var indices = GetTargetIndices(Side, SideIndex, targetCount, targetCondition ?? Condition.SameSide);
+        if (indices.Count == 0) return;
+        var targetNames = new List<string>();
+        foreach (int i in indices)
+        {
+            var target = Side.Items[i];
+            target.HasteRemainingMs = Math.Max(target.HasteRemainingMs, hasteMs);
+            targetNames.Add(target.Template.Name);
+        }
+        string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
         LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "加速", hasteMs, TimeMs, isCrit: false, extraSuffix);
     }
 

@@ -79,32 +79,32 @@ public static class Effect
         ApplyCritMultiplier = false,
         Apply = ctx =>
         {
-            int value = ctx.GetResolvedValue(nameof(ItemTemplate.Charge), applyCritMultiplier: false);
+            int value = ctx.GetResolvedValue(nameof(ItemTemplate.Charge));
             ctx.ChargeCasterItem(value, out _);
         },
     };
 
-    /// <summary>冻结：根据 FreezeTargetCount 与 Freeze（毫秒）选取敌人物品施加冻结。</summary>
+    /// <summary>冻结：根据 FreezeTargetCount 与 Freeze（毫秒）选取有冷却的敌人物品施加冻结（默认 Condition.DifferentSide），触发次数按实际目标数。</summary>
     public static readonly EffectDefinition Freeze = new()
     {
         ApplyCritMultiplier = false,
         Apply = ctx =>
         {
-            int freezeMs = ctx.GetResolvedValue(nameof(ItemTemplate.Freeze), applyCritMultiplier: false);
-            int count = ctx.GetCasterItemInt(nameof(ItemTemplate.FreezeTargetCount), 1);
-            ctx.ApplyFreeze(freezeMs, count);
+            int freezeMs = ctx.GetResolvedValue(nameof(ItemTemplate.Freeze));
+            int count = ctx.GetResolvedValue(nameof(ItemTemplate.FreezeTargetCount), defaultValue: 1);
+            ctx.ApplyFreeze(freezeMs, count, null);
         },
     };
 
-    /// <summary>减速：根据 SlowTargetCount 与 Slow（毫秒）选取敌人物品施加减速。</summary>
+    /// <summary>减速：根据 SlowTargetCount 与 Slow（毫秒）选取有冷却的敌人物品施加减速（默认 Condition.DifferentSide）。</summary>
     public static readonly EffectDefinition Slow = new()
     {
         ApplyCritMultiplier = false,
         Apply = ctx =>
         {
-            int slowMs = ctx.GetResolvedValue(nameof(ItemTemplate.Slow), applyCritMultiplier: false);
-            int count = ctx.GetCasterItemInt(nameof(ItemTemplate.SlowTargetCount), 1);
-            ctx.ApplySlow(slowMs, count);
+            int slowMs = ctx.GetResolvedValue(nameof(ItemTemplate.Slow));
+            int count = ctx.GetResolvedValue(nameof(ItemTemplate.SlowTargetCount), defaultValue: 1);
+            ctx.ApplySlow(slowMs, count, null);
         },
     };
 
@@ -116,14 +116,15 @@ public static class Effect
         Apply = ctx => ctx.AddWeaponDamageBonusToCasterSide(ctx.Value),
     };
 
-    /// <summary>加速：对施放者右侧物品（ItemIndex+1）施加加速，时长来自模板 Haste（毫秒）或 HasteSeconds（秒）。</summary>
-    public static readonly EffectDefinition Accelerate = new()
+    /// <summary>加速：根据 HasteTargetCount 与 Haste（毫秒）选取己方有冷却且满足能力 TargetCondition 的物品施加加速；未设 TargetCondition 时默认 SameSide。</summary>
+    public static readonly EffectDefinition Haste = new()
     {
         ApplyCritMultiplier = false,
         Apply = ctx =>
         {
-            int hasteMs = ctx.GetResolvedValue(nameof(ItemTemplate.Haste), applyCritMultiplier: false);
-            ctx.ApplyHaste(hasteMs, ctx.ItemIndex + 1);
+            int hasteMs = ctx.GetResolvedValue(nameof(ItemTemplate.Haste));
+            int count = ctx.GetResolvedValue(nameof(ItemTemplate.HasteTargetCount), defaultValue: 1);
+            ctx.ApplyHaste(hasteMs, count, ctx.TargetCondition);
         },
     };
 
