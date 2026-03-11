@@ -16,14 +16,13 @@ internal sealed class BattleAuraContext(BattleSide side, int targetItemIndex, Ba
             foreach (var aura in source.Template.Auras)
             {
                 if (aura.AttributeName != attributeName) continue;
+                var targetItem = side.Items[targetItemIndex];
                 var auraCtx = new ConditionContext
                 {
-                    CandidateSide = 0,
-                    SourceSide = 0,
-                    CandidateItem = targetItemIndex,
-                    SourceItem = i,
-                    CandidateTemplate = side.Items[targetItemIndex].Template,
-                    SourceInFlight = source.InFlight,
+                    MySide = side,
+                    EnemySide = opp ?? side,
+                    Item = targetItem,
+                    Source = source,
                 };
                 if (aura.Condition != null && !aura.Condition.Evaluate(auraCtx)) continue;
                 if (!string.IsNullOrEmpty(aura.FixedValueFormula))

@@ -378,7 +378,7 @@ public static class CommonSmall
                 Ability.Haste(),
                 new()
                 {
-                    TriggerName = Trigger.OnCrit,
+                    TriggerName = Trigger.Crit,
                     Priority = AbilityPriority.Low,
                     Effects = [Effect.StartFlying],
                 },
@@ -569,14 +569,15 @@ public static class CommonSmall
                 },
                 new()
                 {
-                    TriggerName = Trigger.OnDestroy,
+                    TriggerName = Trigger.Destroy,
                     Condition = Condition.SameAsSource,
                     Effects = [Effect.Damage],
                 },
                 new()
                 {
-                    TriggerName = Trigger.OnDestroy,
-                    Condition = Condition.And(Condition.SameAsSource, Condition.DestroyedTargetIsLargeOrInFlight),
+                    TriggerName = Trigger.Destroy,
+                    Condition = Condition.SameAsSource,
+                    InvokeTargetCondition = Condition.LargeOrInFlight,
                     Effects = [Effect.Damage],
                 },
             ],

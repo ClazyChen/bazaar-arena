@@ -1,5 +1,17 @@
 # 变更记录
 
+## ConditionContext 重构与触发器统一
+
+- **ConditionContext**：收敛为四字段 `MySide`、`EnemySide`、`Item`、`Source?`；移除 CandidateSide/Item、SourceSide/Item、UsedTemplate、CandidateTemplate、SourceInFlight、DestroyedItem* 等场景字段。Condition 全部基于 Item/Source 的 SideIndex/ItemIndex/Template/InFlight 重写；新增 `Condition.LargeOrInFlight`，移除 `DestroyedTargetIsLargeOrInFlight`。
+- **BattleSide / BattleItemState**：新增 `SideIndex`、`ItemIndex`（Run 初始化时写入），用于同侧/相邻等推导。
+- **触发器语义统一**：Freeze/Slow/Crit/Destroy 均为「任意物品施加/造成 xx 时触发」，默认 Condition 为 SameSide；可重写实现对方触发。
+- **触发器命名**：`OnDestroy` → `Trigger.Destroy`，`OnCrit` → `Trigger.Crit`，与 UseItem/Freeze/Slow 风格一致。
+- **Destroy**：与 Slow 同构，Condition 判定施加者、InvokeTargetCondition 判定被摧毁物品；牵引光束能力 3 改为 `InvokeTargetCondition = Condition.LargeOrInFlight`。
+- **TriggerInvokeContext**：移除 DestroyedItemTemplate、DestroyedItemInFlight。
+- **文档与规则**：implementation-notes 新增「ConditionContext 重构与触发器统一」；battle-simulator-ability-queue、item-design、changelog 同步更新。
+
+---
+
 ## AbilityDefinition 条件统一化与 UseOtherItem 移除
 
 - **三种条件**：`Condition` = 引起触发的物品（source）需满足；`InvokeTargetCondition` = 触发器所指向物品需满足（如 Slow 时被减速物品，默认 null）；`TargetCondition` = 效果选目标时目标需满足。克隆与 `EnsureTriggerCondition` 仅做 condition ?? default（UseItem→SameAsSource，其他→SameSide）。
@@ -40,10 +52,10 @@
 
 ---
 
-## 飞行机制、OnCrit、统一光环读取与三件新物品
+## 飞行机制、Crit、统一光环读取与三件新物品
 
 - **飞行（In Flight）**：`BattleItemState.InFlight` 运行时状态；`Effect.StartFlying` 设置并记日志「开始飞行」，若已在飞行则不重复结算（幂等）。`Condition.InFlight`、`ConditionContext.SourceInFlight` 供光环使用。Tooltip/日志「飞行」与护盾同色。
-- **造成暴击时**：`Trigger.OnCrit`；`ExecuteOneEffect` 结束后若 `isCrit` 则 `InvokeTrigger(Trigger.OnCrit, ...)`；`EnsureTriggerCondition` 默认 SameSide。
+- **造成暴击时**：`Trigger.Crit`；`ExecuteOneEffect` 结束后若 `isCrit` 则 `InvokeTrigger(Trigger.Crit, ...)`；`EnsureTriggerCondition` 默认 SameSide。
 - **战斗内属性统一带光环**：`BattleSide.GetItemInt(itemIndex, key, default)` 统一入口；BattleSimulator、EffectApplyContextImpl、BattleAuraContext 中战斗内读属性改为通过 GetItemInt 或带 context 的 GetInt。光环内 FixedValueKey/PercentValueKey 与公式求值（含 `Formula.SourceDamage`）均带 `BattleAuraContext(side, sourceIndex)`。
 - **Formula.SourceDamage**：光环固定加成 = 来源物品 Damage（含光环），用于如巨龙崽崽 Burn = 自身 Damage；`AuraFormulaEvaluator.Evaluate` 增加 `sourceIndex` 参数。
 - **Tag.Dragon**、**按 tier 冷却**：物品可设 `CooldownMs = [9000, 8000, 7000]`；新增 `Tag.Dragon = "巨龙"`。

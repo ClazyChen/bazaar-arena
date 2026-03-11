@@ -107,14 +107,14 @@ public class ItemDatabase : IItemTemplateResolver
         return clone;
     }
 
-    /// <summary>condition ?? default：UseItem → SameAsSource，其他触发器（Freeze/Slow/OnCrit/OnDestroy/BattleStart）→ SameSide。</summary>
+    /// <summary>condition ?? default：UseItem → SameAsSource，其他触发器（Freeze/Slow/Crit/Destroy/BattleStart）→ SameSide。</summary>
     private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
     {
         if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
-        if (triggerName == Trigger.OnCrit) return condition ?? Condition.SameSide;
-        if (triggerName == Trigger.OnDestroy) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.Crit) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.Destroy) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.BattleStart) return condition ?? Condition.SameSide;
         return condition;
     }

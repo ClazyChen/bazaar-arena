@@ -30,6 +30,19 @@ public class BattleSimulator
         if (side0 == null || side1 == null)
             throw new ArgumentException("卡组中包含未知物品，无法构建战斗状态。");
 
+        side0.SideIndex = 0;
+        side1.SideIndex = 1;
+        for (int i = 0; i < side0.Items.Count; i++)
+        {
+            side0.Items[i].SideIndex = 0;
+            side0.Items[i].ItemIndex = i;
+        }
+        for (int i = 0; i < side1.Items.Count; i++)
+        {
+            side1.Items[i].SideIndex = 1;
+            side1.Items[i].ItemIndex = i;
+        }
+
         int timeMs = 0;
         List<(int SideIndex, int ItemIndex)> castQueue = [];
         List<AbilityQueueEntry> currentAbilityQueue = [];
@@ -248,14 +261,14 @@ public class BattleSimulator
         return side;
     }
 
-    /// <summary>condition ?? default：UseItem → SameAsSource，其他触发器（Freeze/Slow/OnCrit/OnDestroy/BattleStart）→ SameSide。</summary>
+    /// <summary>condition ?? default：UseItem → SameAsSource，其他触发器（Freeze/Slow/Crit/Destroy/BattleStart）→ SameSide。</summary>
     private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
     {
         if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
-        if (triggerName == Trigger.OnCrit) return condition ?? Condition.SameSide;
-        if (triggerName == Trigger.OnDestroy) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.Crit) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.Destroy) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.BattleStart) return condition ?? Condition.SameSide;
         return condition;
     }
@@ -345,8 +358,18 @@ public class BattleSimulator
         int pendingCount = (triggerName == Trigger.UseItem || triggerName == Trigger.Freeze || triggerName == Trigger.Slow) && context?.Multicast is int m ? m : 1;
         int lastTriggerMsForBattleStart = -TriggerIntervalMs;
 
+        BattleItemState? sourceItem = null;
+        if (sourceSideIdx >= 0 && sourceItemIdx >= 0)
+        {
+            var sourceSide = sourceSideIdx == 0 ? side0 : side1;
+            if (sourceItemIdx < sourceSide.Items.Count)
+                sourceItem = sourceSide.Items[sourceItemIdx];
+        }
+
         foreach (var (sideIdx, side) in new[] { (0, side0), (1, side1) })
         {
+            BattleSide mySide = side;
+            BattleSide enemySide = sideIdx == 0 ? side1 : side0;
             for (int itemIdx = 0; itemIdx < side.Items.Count; itemIdx++)
             {
                 var item = side.Items[itemIdx];
@@ -357,27 +380,23 @@ public class BattleSimulator
                     if (ab.TriggerName != triggerName) continue;
                     var triggerCtx = new ConditionContext
                     {
-                        CandidateSide = sideIdx,
-                        CandidateItem = itemIdx,
-                        SourceSide = sourceSideIdx,
-                        SourceItem = sourceItemIdx,
-                        UsedTemplate = context?.UsedTemplate,
-                        CandidateTemplate = item.Template,
-                        DestroyedItemTemplate = triggerName == Trigger.OnDestroy ? context?.DestroyedItemTemplate : null,
-                        DestroyedItemInFlight = triggerName == Trigger.OnDestroy && (context?.DestroyedItemInFlight ?? false),
+                        MySide = mySide,
+                        EnemySide = enemySide,
+                        Item = item,
+                        Source = sourceItem,
                     };
                     if (ab.Condition != null && !ab.Condition.Evaluate(triggerCtx)) continue;
                     if (ab.InvokeTargetCondition != null && context?.InvokeTargetSideIndex is int invSide && context.InvokeTargetItemIndex is int invItem)
                     {
                         var invSideObj = invSide == 0 ? side0 : side1;
                         if (invItem < 0 || invItem >= invSideObj.Items.Count) continue;
+                        var invItemState = invSideObj.Items[invItem];
                         var invokeTargetCtx = new ConditionContext
                         {
-                            CandidateSide = invSide,
-                            CandidateItem = invItem,
-                            SourceSide = sourceSideIdx,
-                            SourceItem = sourceItemIdx,
-                            CandidateTemplate = invSideObj.Items[invItem].Template,
+                            MySide = invSideObj,
+                            EnemySide = invSide == 0 ? side1 : side0,
+                            Item = invItemState,
+                            Source = sourceItem,
                         };
                         if (!ab.InvokeTargetCondition.Evaluate(invokeTargetCtx)) continue;
                     }
@@ -433,14 +452,13 @@ public class BattleSimulator
                 },
                 OnDestroyApplied = (destroyedItemIdx) =>
                 {
-                    var destroyed = side.Items[destroyedItemIdx];
-                    InvokeTrigger(Trigger.OnDestroy, sideIndex, itemIndex, new TriggerInvokeContext { DestroyedItemTemplate = destroyed.Template, DestroyedItemInFlight = destroyed.InFlight }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                    InvokeTrigger(Trigger.Destroy, sideIndex, itemIndex, new TriggerInvokeContext { InvokeTargetSideIndex = sideIndex, InvokeTargetItemIndex = destroyedItemIdx }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
                     side.Items[destroyedItemIdx].Destroyed = true;
                 },
             };
             eff.Apply(ctx);
         }
         if (isCrit)
-            InvokeTrigger(Trigger.OnCrit, sideIndex, itemIndex, null, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+            InvokeTrigger(Trigger.Crit, sideIndex, itemIndex, null, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
     }
 }

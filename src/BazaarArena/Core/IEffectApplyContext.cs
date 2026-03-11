@@ -75,6 +75,6 @@ public interface IEffectApplyContext
     /// <summary>设置施放者物品的飞行状态（开始/结束飞行）。</summary>
     void SetCasterInFlight(bool inFlight);
 
-    /// <summary>摧毁己方施放者右侧下一件未摧毁物品；由实现方先调用 OnDestroy 触发器，再将目标标记为 Destroyed。</summary>
+    /// <summary>摧毁己方施放者右侧下一件未摧毁物品；由实现方先调用 Destroy 触发器，再将目标标记为 Destroyed。</summary>
     void DestroyNextItemToRightOfCaster();
 }

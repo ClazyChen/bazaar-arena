@@ -20,7 +20,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public Action<IReadOnlyList<(int sideIndex, int itemIndex)>>? OnFreezeApplied { get; init; }
     /// <summary>己方施加减速后由模拟器注入，用于触发「触发减速」能力入队（传入本次减速目标 (sideIndex, itemIndex) 列表）。</summary>
     public Action<IReadOnlyList<(int sideIndex, int itemIndex)>>? OnSlowApplied { get; init; }
-    /// <summary>摧毁施放者右侧下一件物品时由模拟器注入；回调内先 InvokeTrigger(OnDestroy)，再标记 Destroyed。</summary>
+    /// <summary>摧毁施放者右侧下一件物品时由模拟器注入；回调内先 InvokeTrigger(Destroy)，再标记 Destroyed。</summary>
     public Action<int>? OnDestroyApplied { get; init; }
 
     public bool HasLifeSteal => Side.GetItemInt(ItemIndex, nameof(ItemTemplate.LifeSteal), 0) != 0;
@@ -77,17 +77,17 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     private List<int> GetTargetIndices(BattleSide fromSide, int fromSideIndex, int targetCount, Condition condition)
     {
         var pool = new List<int>();
+        BattleSide enemySide = fromSide == Side ? Opp : Side;
         for (int i = 0; i < fromSide.Items.Count; i++)
         {
             var it = fromSide.Items[i];
             if (it.Destroyed || fromSide.GetItemInt(i, "CooldownMs", 0) <= 0) continue;
             var ctx = new ConditionContext
             {
-                CandidateSide = fromSideIndex,
-                CandidateItem = i,
-                SourceSide = SideIndex,
-                SourceItem = ItemIndex,
-                CandidateTemplate = it.Template,
+                MySide = fromSide,
+                EnemySide = enemySide,
+                Item = it,
+                Source = Item,
             };
             if (!condition.Evaluate(ctx)) continue;
             pool.Add(i);
@@ -106,17 +106,17 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     private List<int> GetRepairTargetIndices(BattleSide fromSide, int fromSideIndex, int targetCount, Condition condition)
     {
         var pool = new List<int>();
+        BattleSide enemySide = fromSide == Side ? Opp : Side;
         for (int i = 0; i < fromSide.Items.Count; i++)
         {
             var it = fromSide.Items[i];
             if (!it.Destroyed) continue;
             var ctx = new ConditionContext
             {
-                CandidateSide = fromSideIndex,
-                CandidateItem = i,
-                SourceSide = SideIndex,
-                SourceItem = ItemIndex,
-                CandidateTemplate = it.Template,
+                MySide = fromSide,
+                EnemySide = enemySide,
+                Item = it,
+                Source = Item,
             };
             if (!condition.Evaluate(ctx)) continue;
             pool.Add(i);
@@ -242,11 +242,10 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             if (wi.Destroyed) continue;
             var ctx = new ConditionContext
             {
-                CandidateSide = SideIndex,
-                CandidateItem = i,
-                SourceSide = SideIndex,
-                SourceItem = ItemIndex,
-                CandidateTemplate = wi.Template,
+                MySide = Side,
+                EnemySide = Opp,
+                Item = wi,
+                Source = Item,
             };
             if (!targetCondition.Evaluate(ctx)) continue;
             if (attributeName == nameof(ItemTemplate.Damage))
@@ -271,7 +270,6 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public void ReduceAttributeToOpponentSide(string attributeName, int value, Condition? targetCondition)
     {
         if (value <= 0 || targetCondition == null) return;
-        int oppSideIndex = 1 - SideIndex;
         var targetNames = new List<string>();
         for (int i = 0; i < Opp.Items.Count; i++)
         {
@@ -279,11 +277,10 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             if (wi.Destroyed) continue;
             var ctx = new ConditionContext
             {
-                CandidateSide = oppSideIndex,
-                CandidateItem = i,
-                SourceSide = SideIndex,
-                SourceItem = ItemIndex,
-                CandidateTemplate = wi.Template,
+                MySide = Opp,
+                EnemySide = Side,
+                Item = wi,
+                Source = Item,
             };
             if (!targetCondition.Evaluate(ctx)) continue;
             if (attributeName == nameof(ItemTemplate.Shield))

@@ -27,10 +27,10 @@ alwaysApply: false
 
 ## 触发器调用方式与 PendingCount
 
-- 所有触发器均通过**统一**的 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用：遍历双方所有物品，构建 `ConditionContext` 后调用 `condition.Evaluate(ctx)` 判断是否触发；若能力有 `InvokeTargetCondition` 且 context 提供 InvokeTarget（Slow/Freeze 每目标一次），则再以「触发器目标」为 Candidate 求值，不通过则不入队。**只有 Immediate 优先级入 currentAbilityQueue，其余入 nextAbilityQueue**（与步骤 7 施放触发的规则一致）。
+- 所有触发器均通过**统一**的 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用：遍历双方所有物品，构建 `ConditionContext`（仅四字段：MySide、EnemySide、Item=能力持有者、Source=触发来源）后调用 `condition.Evaluate(ctx)` 判断是否触发；详见 `docs/implementation-notes.md`「ConditionContext 重构与触发器统一」。若能力有 `InvokeTargetCondition` 且 context 提供 InvokeTarget（Slow/Freeze/Destroy 每目标一次），则再以「触发器目标」为 Item、触发来源为 Source 构建上下文求值，不通过则不入队。**只有 Immediate 优先级入 currentAbilityQueue，其余入 nextAbilityQueue**（与步骤 7 施放触发的规则一致）。
 - **战斗开始**：步骤 1 只调用 `InvokeTrigger(Trigger.BattleStart, -1, -1, null, ...)` 入队，不直接执行；执行在步骤 8（或下一帧步骤 8）进行。
-- **UseItem / OnCrit / OnDestroy**：生成/克隆能力时 `EnsureTriggerCondition` 补 Condition：`UseItem` 且 Condition 为 null → `Condition.SameAsSource`；其余触发器（Freeze/Slow/OnCrit/OnDestroy/BattleStart）默认 `Condition.SameSide`。**OnDestroy**（摧毁物品时）来源=造成本次摧毁的物品，context 传入 `DestroyedItemTemplate`、`DestroyedItemInFlight`，在**标记 Destroyed 之前**调用 `InvokeTrigger`。来源=暴击施放者时，在 `ExecuteOneEffect` 全部效果执行完后若 `isCrit` 则调用 `InvokeTrigger(Trigger.OnCrit, ...)`。
-- **条件语义**：`Condition` = 引起触发的物品（source）需满足；`InvokeTargetCondition` = 触发器所指向的物品（如 Slow 时被减速的物品）需满足；`TargetCondition` = 效果选目标时目标需满足（充能/加速/减速/冻结/修复等）。
+- **UseItem / Freeze / Slow / Crit / Destroy**：生成/克隆能力时 `EnsureTriggerCondition` 补 Condition：`UseItem` 且 Condition 为 null → `Condition.SameAsSource`；其余触发器（Freeze/Slow/Crit/Destroy/BattleStart）默认 `Condition.SameSide`。**Freeze/Slow** 为任意物品施加时触发（默认 SameSide 表现为己方；可重写 Condition 实现对方施加时触发）。**Crit** 为任意物品造成暴击时触发（默认 SameSide 表现为己方暴击时触发；可重写 Condition 实现对方暴击时触发）；`ExecuteOneEffect` 全部效果执行完后若 `isCrit` 则调用 `InvokeTrigger(Trigger.Crit, sideIndex, itemIndex, null, ...)`。**Destroy**（施加摧毁时）与 Slow 同构：Condition 判定施加者，InvokeTargetCondition 判定被摧毁物品，context 仅传 `InvokeTargetSideIndex`/`InvokeTargetItemIndex`，在**标记 Destroyed 之前**调用 `InvokeTrigger(Trigger.Destroy, ...)`。
+- **条件语义**：`Condition` = 引起触发的物品（source）需满足；`InvokeTargetCondition` = 触发器所指向的物品（如 Slow 时被减速的物品、Destroy 时被摧毁的物品）需满足；`TargetCondition` = 效果选目标时目标需满足（充能/加速/减速/冻结/修复等）。
 - **PendingCount 合并顺序（AddOrMergeAbility）**：
   1. 先在 **currentAbilityQueue** 中查找同 (SideIndex, ItemIndex, AbilityIndex)，找到则只做 `PendingCount += pendingCount`，不新建。
   2. 再在 **nextAbilityQueue** 中查找同上键，找到则只做 `PendingCount += pendingCount`，不新建。

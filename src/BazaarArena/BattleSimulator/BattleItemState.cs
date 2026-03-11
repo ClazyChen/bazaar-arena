@@ -5,6 +5,11 @@ namespace BazaarArena.BattleSimulator;
 /// <summary>战斗中单件物品的运行时状态。</summary>
 public class BattleItemState
 {
+    /// <summary>本物品在本次战斗中的阵营下标（0 或 1），由 Run 初始化时设置。</summary>
+    public int SideIndex { get; set; }
+    /// <summary>本物品在己方物品列表中的下标，由 Run 初始化时设置。</summary>
+    public int ItemIndex { get; set; }
+
     public ItemTemplate Template { get; set; }
     public ItemTier Tier { get; set; }
 

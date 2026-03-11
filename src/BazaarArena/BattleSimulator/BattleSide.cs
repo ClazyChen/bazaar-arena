@@ -5,6 +5,9 @@ namespace BazaarArena.BattleSimulator;
 /// <summary>单方玩家战斗状态：生命、护盾、灼烧、剧毒、生命再生与物品列表。</summary>
 public class BattleSide
 {
+    /// <summary>本侧在本次战斗中的阵营下标（0 或 1），由 Run 初始化时设置。</summary>
+    public int SideIndex { get; set; }
+
     public int MaxHp { get; set; }
     public int Hp { get; set; }
     public int Shield { get; set; }
