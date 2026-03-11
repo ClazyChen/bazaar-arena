@@ -1,5 +1,15 @@
 # 变更记录
 
+## 物品定义简化：DefaultSize/DefaultMinTier、Ability 工厂、Priority 默认、ToMilliseconds
+
+- **物品注册**：MinTier、Size 不再在每个物品工厂中定义；**ItemDatabase** 提供 **DefaultSize**、**DefaultMinTier**，**Register** 时写入模板。**RegisterAll** 中按批次设置（如 `db.DefaultSize = ItemSize.Small`，再 `db.DefaultMinTier = Bronze` 注册铜、再 Silver 注册银）；CommonSmall 注册顺序为先铜后银。
+- **能力优先级**：**AbilityDefinition.Priority** 默认 **Medium**，仅非默认时在能力定义中显式写 Priority。
+- **Ability 工厂（Core/Ability.cs）**：新增 **DamageOnUseItem**、**ShieldOnUseItem**、**HealOnUseItem**、**BurnOnUseItem**、**PoisonOnUseItem**（可选 priority）；**HasteOnUseItem**、**SlowOnUseItem**、**FreezeOnUseItem**（可选 priority、targetCondition 代替默认、additionalTargetCondition 在默认上追加）。物品定义中单效果 UseItem 改为使用上述工厂，多效果或特殊 Condition 仍用 `new AbilityDefinition { ... }`。
+- **SecondsOrByTier**：**ToFreezeMs/ToSlowMs/ToHasteMs** 合并为 **ToMilliseconds()**，FreezeSeconds/SlowSeconds/HasteSeconds 的 setter 统一调用。
+- **文档与规则**：implementation-notes 新增「物品定义简化：DefaultSize/DefaultMinTier、Ability 工厂与 RegisterAll」；project-conventions.mdc 补充物品注册与 Ability 工厂约定；item-design.mdc 更新 MinTier/Size、触发器与能力、新增物品流程及 ToMilliseconds；冰锥一节中 SecondsOrByTier 描述改为 ToMilliseconds。
+
+---
+
 ## 牵引光束、摧毁触发器、摧毁/修复日志与规则文档
 
 - **牵引光束（Tractor Beam）**：6s 小 银 武器；使用物品时摧毁己方右侧下一件未摧毁物品（`Effect.DestroyNextItemToRightOfCaster`），造成 150»300»600 伤害；若被毁物品为大型或飞行再造成等量伤害。三能力：UseItem High → 摧毁；OnDestroy Medium SameAsSource → 伤害；OnDestroy Medium SameAsSource + DestroyedTargetIsLargeOrInFlight → 再伤害。

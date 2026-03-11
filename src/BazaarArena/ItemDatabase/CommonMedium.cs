@@ -12,8 +12,6 @@ public static class CommonMedium
         {
             Name = "尖刺圆盾",
             Desc = "造成 {Damage} 伤害；获得 {Shield} 护盾",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Medium,
             Tags = [Tag.Weapon],
             Cooldown = 9.0,
             Damage = [10, 20, 40, 80],
@@ -23,7 +21,6 @@ public static class CommonMedium
                 new()
                 {
                     TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
                     Effects = [Effect.Damage, Effect.Shield],
                 },
             ],
@@ -37,8 +34,6 @@ public static class CommonMedium
         {
             Name = "临时钝器",
             Desc = "造成 {Damage} 伤害；减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Medium,
             Tags = [Tag.Weapon],
             Cooldown = 8.0,
             Damage = [20, 40, 80, 160],
@@ -49,7 +44,6 @@ public static class CommonMedium
                 new()
                 {
                     TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
                     Effects = [Effect.Damage, Effect.Slow],
                 },
             ],
@@ -63,8 +57,6 @@ public static class CommonMedium
         {
             Name = "暗影斗篷",
             Desc = "使用此物品右侧的物品时，使之加速 {HasteSeconds} 秒；若为武器则伤害提高 {Custom_0}（限本场战斗）",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Medium,
             Tags = [Tag.Apparel],
             HasteSeconds = new[] { 1.0, 2.0, 3.0, 4.0 },
             HasteTargetCount = 1,
@@ -90,8 +82,6 @@ public static class CommonMedium
         {
             Name = "冰冻钝器",
             Desc = "造成 {Damage} 伤害；冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒；触发冻结时，己方武器伤害提高 {Custom_0}（限本场战斗）",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Medium,
             Tags = [Tag.Weapon],
             Cooldown = 9.0,
             Damage = [20, 40, 60, 80],
@@ -103,7 +93,6 @@ public static class CommonMedium
                 new()
                 {
                     TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
                     Effects = [Effect.Damage, Effect.Freeze],
                 },
                 new()
@@ -123,19 +112,12 @@ public static class CommonMedium
         {
             Name = "发条刀",
             Desc = "造成 {Damage} 伤害",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Medium,
             Tags = [Tag.Weapon],
             Cooldown = 4.0,
             Damage = [20, 40, 80, 160],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
-                    Effects = [Effect.Damage],
-                },
+                Ability.DamageOnUseItem(),
             ],
         };
     }
@@ -147,19 +129,12 @@ public static class CommonMedium
         {
             Name = "大理石鳞甲",
             Desc = "获得 {Shield} 护盾",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Medium,
             Tags = [Tag.Apparel],
             Cooldown = 9.0,
             Shield = [20, 60, 120, 200],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
-                    Effects = [Effect.Shield],
-                },
+                Ability.ShieldOnUseItem(),
             ],
         };
     }
@@ -171,19 +146,12 @@ public static class CommonMedium
         {
             Name = "废品场大棒",
             Desc = "造成 {Damage} 伤害",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Medium,
             Tags = [Tag.Weapon],
             Cooldown = 11.0,
             Damage = [30, 60, 120, 240],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
-                    Effects = [Effect.Damage],
-                },
+                Ability.DamageOnUseItem(),
             ],
         };
     }
@@ -195,21 +163,13 @@ public static class CommonMedium
         {
             Name = "火箭靴",
             Desc = "加速相邻物品 {HasteSeconds} 秒",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Medium,
             Tags = [Tag.Tool, Tag.Apparel],
             Cooldown = 5.0,
             HasteSeconds = new[] { 1.0, 2.0, 3.0, 4.0 },
             HasteTargetCount = 2,
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.High,
-                    TargetCondition = Condition.AdjacentToSource,
-                    Effects = [Effect.Haste],
-                },
+                Ability.HasteOnUseItem(AbilityPriority.High, targetCondition: Condition.AdjacentToSource),
             ],
         };
     }
@@ -221,19 +181,12 @@ public static class CommonMedium
         {
             Name = "火蜥幼兽",
             Desc = "造成 {Burn} 灼烧",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Medium,
             Tags = [Tag.Friend],
             Cooldown = 8.0,
             Burn = [4, 6, 8, 10],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
-                    Effects = [Effect.Burn],
-                },
+                Ability.BurnOnUseItem(),
             ],
         };
     }
@@ -245,20 +198,13 @@ public static class CommonMedium
         {
             Name = "简易路障",
             Desc = "减速 1 件物品 {SlowSeconds} 秒",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Medium,
             Tags = [],
             Cooldown = 7.0,
             SlowSeconds = new[] { 1.0, 2.0, 3.0, 4.0 },
             SlowTargetCount = 1,
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
-                    Effects = [Effect.Slow],
-                },
+                Ability.SlowOnUseItem(),
             ],
         };
     }
@@ -270,8 +216,6 @@ public static class CommonMedium
         {
             Name = "外骨骼",
             Desc = "相邻武器 {+Custom_0} 伤害",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Medium,
             Tags = [Tag.Apparel],
             Custom_0 = [5, 10, 20, 40],
             Auras =
@@ -293,8 +237,6 @@ public static class CommonMedium
         {
             Name = "废品场维修机器人",
             Desc = "修复 {RepairTargetCount} 件物品；治疗 {Heal} 生命值",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Medium,
             Tags = [Tag.Friend, Tag.Tech],
             Cooldown = 5.0,
             RepairTargetCount = 1,
@@ -307,12 +249,7 @@ public static class CommonMedium
                     Priority = AbilityPriority.Lowest,
                     Effects = [Effect.Repair],
                 },
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
-                    Effects = [Effect.Heal],
-                },
+                Ability.HealOnUseItem(),
             ],
         };
     }
@@ -320,6 +257,8 @@ public static class CommonMedium
     /// <summary>注册所有公共中物品到数据库。</summary>
     public static void RegisterAll(ItemDatabase db)
     {
+        db.DefaultSize = ItemSize.Medium;
+        db.DefaultMinTier = ItemTier.Bronze;
         db.Register(SpikedBuckler());
         db.Register(ImprovisedBludgeon());
         db.Register(ShadowedCloak());

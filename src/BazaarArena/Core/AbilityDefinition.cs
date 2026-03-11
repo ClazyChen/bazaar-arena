@@ -9,7 +9,8 @@ public class AbilityDefinition
     /// <summary>触发器名字，如「使用物品」。</summary>
     public string TriggerName { get; set; } = "";
 
-    public AbilityPriority Priority { get; set; }
+    /// <summary>能力优先级；默认 Medium，仅非默认时需在定义中显式指定。</summary>
+    public AbilityPriority Priority { get; set; } = AbilityPriority.Medium;
 
     /// <summary>触发条件（如 UseOtherItem 时仅当被使用物品带某标签）。可选，null 表示不限制。</summary>
     public Condition? Condition { get; set; }

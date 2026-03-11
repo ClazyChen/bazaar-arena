@@ -16,9 +16,8 @@ public readonly struct SecondsOrByTier
     public static implicit operator SecondsOrByTier(double single) => new([single]);
     public static implicit operator SecondsOrByTier(double[] byTier) => new(byTier);
 
-    internal List<int> ToFreezeMs() => _values?.Select(s => (int)(s * 1000)).ToList() ?? [];
-    internal List<int> ToSlowMs() => _values?.Select(s => (int)(s * 1000)).ToList() ?? [];
-    internal List<int> ToHasteMs() => _values?.Select(s => (int)(s * 1000)).ToList() ?? [];
+    /// <summary>将秒转换为毫秒列表（统一语义，供 Freeze/Slow/Haste 等时间属性写入模板）。</summary>
+    internal List<int> ToMilliseconds() => _values?.Select(s => (int)(s * 1000)).ToList() ?? [];
 
     public static implicit operator double(SecondsOrByTier s) => s._values?.Length > 0 ? s._values[0] : 0;
 }
@@ -194,7 +193,7 @@ public class ItemTemplate
     public IntOrByTier Freeze { get => GetIntOrByTier(KeyFreeze); set => SetIntOrByTier(KeyFreeze, value.ToList()); }
 
     /// <summary>冻结时长（秒）。可赋单值或按等级 [3.0, 4.0, 5.0, 6.0]，内部转换为毫秒存储。物品定义中时间一律用秒。</summary>
-    public SecondsOrByTier FreezeSeconds { get => SecondsOrByTier.FromFirstTierMs(GetInt(KeyFreeze, 0)); set => SetIntOrByTier(KeyFreeze, value.ToFreezeMs()); }
+    public SecondsOrByTier FreezeSeconds { get => SecondsOrByTier.FromFirstTierMs(GetInt(KeyFreeze, 0)); set => SetIntOrByTier(KeyFreeze, value.ToMilliseconds()); }
 
     /// <summary>冻结目标数量（可单值或按等级）；随机选取敌人物品时选取的次数（每次独立，可能重复）。</summary>
     public IntOrByTier FreezeTargetCount { get => GetInt(KeyFreezeTargetCount, 1); set => SetIntOrByTier(KeyFreezeTargetCount, value.ToList()); }
@@ -203,7 +202,7 @@ public class ItemTemplate
     public IntOrByTier Slow { get => GetIntOrByTier(KeySlow); set => SetIntOrByTier(KeySlow, value.ToList()); }
 
     /// <summary>减速时长（秒）。可赋单值或按等级，内部转换为毫秒存储。物品定义中时间一律用秒。</summary>
-    public SecondsOrByTier SlowSeconds { get => SecondsOrByTier.FromFirstTierMs(GetInt(KeySlow, 0)); set => SetIntOrByTier(KeySlow, value.ToSlowMs()); }
+    public SecondsOrByTier SlowSeconds { get => SecondsOrByTier.FromFirstTierMs(GetInt(KeySlow, 0)); set => SetIntOrByTier(KeySlow, value.ToMilliseconds()); }
 
     /// <summary>减速目标数量（可单值或按等级）；随机选取敌人物品时选取的次数（每次独立，可能重复）。</summary>
     public IntOrByTier SlowTargetCount { get => GetInt(KeySlowTargetCount, 1); set => SetIntOrByTier(KeySlowTargetCount, value.ToList()); }
@@ -212,7 +211,7 @@ public class ItemTemplate
     public IntOrByTier Haste { get => GetIntOrByTier(KeyHaste); set => SetIntOrByTier(KeyHaste, value.ToList()); }
 
     /// <summary>加速时长（秒）。可赋单值或按等级，内部转换为毫秒存储。物品定义中时间一律用秒。</summary>
-    public SecondsOrByTier HasteSeconds { get => SecondsOrByTier.FromFirstTierMs(GetInt(KeyHaste, 0)); set => SetIntOrByTier(KeyHaste, value.ToHasteMs()); }
+    public SecondsOrByTier HasteSeconds { get => SecondsOrByTier.FromFirstTierMs(GetInt(KeyHaste, 0)); set => SetIntOrByTier(KeyHaste, value.ToMilliseconds()); }
 
     /// <summary>加速目标数量（可单值或按等级）；与 TargetCondition 配合，从己方有冷却物品中选取。</summary>
     public IntOrByTier HasteTargetCount { get => GetInt(KeyHasteTargetCount, 1); set => SetIntOrByTier(KeyHasteTargetCount, value.ToList()); }

@@ -12,19 +12,12 @@ public static class CommonLarge
         {
             Name = "临时避难所",
             Desc = "获得 {Shield} 护盾",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Large,
             Tags = [Tag.Property],
             Cooldown = 7.0,
             Shield = [10, 20, 40, 80],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
-                    Effects = [Effect.Shield],
-                },
+                Ability.ShieldOnUseItem(),
             ],
         };
     }
@@ -36,20 +29,13 @@ public static class CommonLarge
         {
             Name = "哈库维发射器",
             Desc = "造成 {Damage} 伤害；弹药：{AmmoCap}",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Large,
             Tags = [Tag.Weapon],
             Cooldown = 3.0,
             Damage = [100, 200, 300, 400],
             AmmoCap = 1,
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
-                    Effects = [Effect.Damage],
-                },
+                Ability.DamageOnUseItem(),
             ],
         };
     }
@@ -61,19 +47,12 @@ public static class CommonLarge
         {
             Name = "观光缆车",
             Desc = "获得 {Shield} 护盾",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Large,
             Tags = [Tag.Vehicle],
             Cooldown = 5.0,
             Shield = [20, 40, 80, 160],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
-                    Effects = [Effect.Shield],
-                },
+                Ability.ShieldOnUseItem(),
             ],
         };
     }
@@ -85,19 +64,12 @@ public static class CommonLarge
         {
             Name = "温泉",
             Desc = "治疗 {Heal} 生命值",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Large,
             Tags = [Tag.Property],
             Cooldown = 6.0,
             Heal = [25, 50, 100, 200],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
-                    Effects = [Effect.Heal],
-                },
+                Ability.HealOnUseItem(),
             ],
         };
     }
@@ -109,8 +81,6 @@ public static class CommonLarge
         {
             Name = "废品场长枪",
             Desc = "每拥有一件小型物品（含储存箱等效）造成 {Custom_0} 伤害",
-            MinTier = ItemTier.Bronze,
-            Size = ItemSize.Large,
             Tags = [Tag.Weapon],
             Cooldown = 11.0,
             Damage = 0,
@@ -121,12 +91,7 @@ public static class CommonLarge
             },
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Medium,
-                    Effects = [Effect.Damage],
-                },
+                Ability.DamageOnUseItem(),
             ],
             Auras =
             [
@@ -143,6 +108,8 @@ public static class CommonLarge
     /// <summary>注册所有公共大型物品到数据库。</summary>
     public static void RegisterAll(ItemDatabase db)
     {
+        db.DefaultSize = ItemSize.Large;
+        db.DefaultMinTier = ItemTier.Bronze;
         db.Register(TemporaryShelter());
         db.Register(HarkuvianLauncher());
         db.Register(TouristChariot());

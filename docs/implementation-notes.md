@@ -170,6 +170,36 @@
 
 ---
 
+## 物品定义简化：DefaultSize/DefaultMinTier、Ability 工厂与 RegisterAll
+
+本节记录物品定义与注册方式的简化经验，便于新增物品时统一风格。
+
+### 尺寸与最低档位由 RegisterAll 按批次设置
+
+- **不在每个物品中写 MinTier/Size**：物品工厂方法（如 `Fang()`）只设置 Name、Desc、Tags、数值、Abilities 等，**不**设置 `MinTier`、`Size`。
+- **ItemDatabase**：提供 **`DefaultSize`**、**`DefaultMinTier`**；**`Register(ItemTemplate template)`** 在存入前执行 `template.Size = DefaultSize`、`template.MinTier = DefaultMinTier`。
+- **RegisterAll 写法**：先设 `db.DefaultSize = ItemSize.Small`（或 Medium/Large），再按档位设 `db.DefaultMinTier` 并连续 `db.Register(...)`。例如 CommonSmall 先 `DefaultMinTier = Bronze` 注册所有铜物品，再 `DefaultMinTier = Silver` 注册所有银物品；CommonMedium/CommonLarge 仅铜则设一次 Bronze 后注册全部。
+
+### 能力优先级默认 Medium
+
+- **AbilityDefinition.Priority** 默认值为 **`AbilityPriority.Medium`**。仅当能力优先级非 Medium 时在定义中显式写 `Priority = AbilityPriority.High` 等。
+
+### Ability 工厂方法（Core/Ability.cs）
+
+- **单效果 UseItem**：优先用 **`Ability.DamageOnUseItem(priority?)`**、**`ShieldOnUseItem(priority?)`**、**`HealOnUseItem(priority?)`**、**`BurnOnUseItem(priority?)`**、**`PoisonOnUseItem(priority?)`** 替代手写 `new() { TriggerName = Trigger.UseItem, Effects = [Effect.XXX] }`。可选参数 `priority` 覆盖默认 Medium。
+- **加速/减速/冻结**：**`Ability.HasteOnUseItem(priority?, targetCondition?, additionalTargetCondition?)`**（目标默认 SameSide）、**`SlowOnUseItem(...)`**、**`FreezeOnUseItem(...)`**（目标默认 DifferentSide）。`targetCondition` 非空时**代替**默认目标条件；`additionalTargetCondition` 非空且未传 targetCondition 时在默认条件上 **And** 追加，例如 `HasteOnUseItem(AbilityPriority.High, targetCondition: Condition.AdjacentToSource)`。
+- **多效果或特殊 Condition**：仍用 `new AbilityDefinition { ... }`，不强行用工厂。
+
+### 时间属性：秒转毫秒统一为 ToMilliseconds
+
+- **SecondsOrByTier** 仅保留 **`ToMilliseconds()`**（原 `ToFreezeMs`、`ToSlowMs`、`ToHasteMs` 已合并为同一语义）。FreezeSeconds、SlowSeconds、HasteSeconds 的 setter 均调用 `value.ToMilliseconds()` 写入模板内部毫秒列表。
+
+### 小结
+
+新增公共物品时：在对应 Common* 的工厂方法中不写 MinTier/Size；在 RegisterAll 中按尺寸与档位设 DefaultSize/DefaultMinTier 后注册。能力优先用 `Ability.*OnUseItem`，仅非默认优先级或非默认目标条件时传参；时间在定义中用秒，内部通过 ToMilliseconds 转毫秒。详见 **.cursor/rules/item-design.mdc**。
+
+---
+
 ## EffectKind 集中映射与策略表（已废弃）
 
 本节所述 EffectKind、EffectKindKeys、GetEffectApplier、CustomEffectHandlers 已在此前重构中移除，改为**委托驱动的 Condition 与 Effect**。当前约定见「Condition 与 Effect 委托化重构」一节。
@@ -196,7 +226,7 @@
 ### 冻结（Freeze）与冰锥物品
 
 - **属性设计**：与充能（Charge）一致，**内部存毫秒**，物品定义用**秒**。`ItemTemplate` 提供 `Freeze`（`IntOrByTier` 毫秒）、`FreezeSeconds`（`SecondsOrByTier`：可赋单值或 `new[] { 3.0, 4.0, 5.0, 6.0 }`，内部转毫秒）、`FreezeTargetCount`（冻结目标数量，可单值或按等级）。
-- **SecondsOrByTier**：`Core/ItemTemplate.cs` 中新增结构体，支持从 `double` / `double[]` 隐式转换，提供 `ToFreezeMs()` 与 `FromFirstTierMs(ms)`，供定义时写 `FreezeSeconds = new[] { 3.0, 4.0, 5.0, 6.0 }`，符合「物品定义中时间一律用秒」的约定（见 **.cursor/rules/project-conventions.mdc**）。
+- **SecondsOrByTier**：`Core/ItemTemplate.cs` 中结构体，支持从 `double` / `double[]` 隐式转换；秒转毫秒统一用 **`ToMilliseconds()`**（原 ToFreezeMs/ToSlowMs/ToHasteMs 已合并），`FromFirstTierMs(ms)` 用于 getter。定义时写 `FreezeSeconds = new[] { 3.0, 4.0, 5.0, 6.0 }`，符合「物品定义中时间一律用秒」的约定（见 **.cursor/rules/project-conventions.mdc**）。
 - **预定义效果**：`Effect.Freeze` 使用模板的 `Freeze`（毫秒）与 `FreezeTargetCount`。目标选择见下节「充能、加速、减速、冻结统一目标选择」；冻结不可暴击；触发「触发冻结」时按**实际目标数**入队（PendingCount）。
 - **BattleItemState**：已有 `FreezeRemainingMs`；`ProcessCooldown` 中 `FreezeRemainingMs > 0` 时不推进冷却；每帧在某一步中减少 `FreezeRemainingMs`（见下）。
 
