@@ -251,7 +251,7 @@ public static class CommonSmall
                 {
                     TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.High,
-                    Effects = [Effect.ReduceAttribute(nameof(ItemTemplate.Shield), targetCondition: Condition.IsShieldItem)],
+                    Effects = [Effect.ReduceAttribute(nameof(ItemTemplate.Shield), targetCondition: Condition.WithTag(Tag.Shield))],
                 },
             ],
         };
@@ -325,7 +325,7 @@ public static class CommonSmall
                 new()
                 {
                     TriggerName = Trigger.UseItem,
-                    Condition = Condition.And(Condition.And(Condition.And(Condition.DifferentFromSource, Condition.SameSide), Condition.AdjacentToSource), Condition.WithTag(Tag.Weapon)),
+                    Condition = Condition.DifferentFromSource & Condition.SameSide & Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon),
                     Effects = [Effect.Slow],
                 },
             ],
@@ -354,7 +354,7 @@ public static class CommonSmall
                 new()
                 {
                     TriggerName = Trigger.UseItem,
-                    Condition = Condition.And(Condition.And(Condition.DifferentFromSource, Condition.SameSide), Condition.WithTag(Tag.Weapon)),
+                    Condition = Condition.DifferentFromSource & Condition.SameSide & Condition.WithTag(Tag.Weapon),
                     Effects = [Effect.ChargeSelf],
                 },
             ],
@@ -388,7 +388,8 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.Multicast),
-                    Condition = Condition.And(Condition.SameAsSource, Condition.InFlight),
+                    Condition = Condition.SameAsSource,
+                    SourceCondition = Condition.InFlight,
                     FixedValueKey = nameof(ItemTemplate.Custom_0),
                 },
             ],
@@ -445,7 +446,7 @@ public static class CommonSmall
                 new()
                 {
                     TriggerName = Trigger.UseItem,
-                    Condition = Condition.And(Condition.And(Condition.DifferentFromSource, Condition.SameSide), Condition.WithTag(Tag.Tool)),
+                    Condition = Condition.DifferentFromSource & Condition.SameSide & Condition.WithTag(Tag.Tool),
                     Effects = [Effect.ChargeSelf],
                 },
             ],
@@ -577,7 +578,7 @@ public static class CommonSmall
                 {
                     TriggerName = Trigger.Destroy,
                     Condition = Condition.SameAsSource,
-                    InvokeTargetCondition = Condition.LargeOrInFlight,
+                    InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight,
                     Effects = [Effect.Damage],
                 },
             ],

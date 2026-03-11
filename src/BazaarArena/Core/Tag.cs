@@ -22,6 +22,13 @@ public static class Tag
     /// <summary>玩具。</summary>
     public const string Toy = "玩具";
 
+    /// <summary>小型（由注册时按 Size 自动添加）。</summary>
+    public const string Small = "小型";
+    /// <summary>中型（由注册时按 Size 自动添加）。</summary>
+    public const string Medium = "中型";
+    /// <summary>大型（由注册时按 Size 自动添加）。</summary>
+    public const string Large = "大型";
+
     // 效果类型标签：用于判断护盾/伤害/灼烧等物品，供 Condition 与可暴击判定使用
     /// <summary>护盾。</summary>
     public const string Shield = "护盾";

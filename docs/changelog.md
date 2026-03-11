@@ -1,5 +1,15 @@
 # 变更记录
 
+## Condition 收敛与 SourceCondition 统一
+
+- **ConditionContext 语义**：Source=能力持有者（恒非空），Item=被评估对象（Condition 时=引起触发的物品，InvokeTargetCondition 时=指向的物品，TargetCondition 时=候选目标；可为 null）。调用处构建上下文时统一按此赋值。
+- **WithTag / InFlight 收敛**：仅保留「被评估对象（Item）」语义；移除 ItemWithTag、SourceWithTag、SourceInFlight。能力/光环「本物品带 tag/在飞行」用 **SourceCondition**，评估时 Item=Source。
+- **SourceCondition**：**AbilityDefinition.SourceCondition** 与 **AuraDefinition.SourceCondition**；评估时 Item=Source=能力持有者/光环提供者，复用 WithTag(tag)、InFlight 等。宇宙护符「此物品飞行时 +1 多重释放」改为 Condition=SameAsSource、SourceCondition=InFlight。
+- **尺寸 Tag**：Tag.Small/Medium/Large 由 Register 按 template.Size 自动添加；「大型或飞行」等用 `WithTag(Tag.Large) | InFlight`。
+- **文档与规则**：implementation-notes 补充「Condition 收敛与 SourceCondition」；project-conventions、item-design、battle-simulator-ability-queue 同步条件语义与写法。
+
+---
+
 ## ConditionContext 重构与触发器统一
 
 - **ConditionContext**：收敛为四字段 `MySide`、`EnemySide`、`Item`、`Source?`；移除 CandidateSide/Item、SourceSide/Item、UsedTemplate、CandidateTemplate、SourceInFlight、DestroyedItem* 等场景字段。Condition 全部基于 Item/Source 的 SideIndex/ItemIndex/Template/InFlight 重写；新增 `Condition.LargeOrInFlight`，移除 `DestroyedTargetIsLargeOrInFlight`。
@@ -54,7 +64,7 @@
 
 ## 飞行机制、Crit、统一光环读取与三件新物品
 
-- **飞行（In Flight）**：`BattleItemState.InFlight` 运行时状态；`Effect.StartFlying` 设置并记日志「开始飞行」，若已在飞行则不重复结算（幂等）。`Condition.InFlight`、`ConditionContext.SourceInFlight` 供光环使用。Tooltip/日志「飞行」与护盾同色。
+- **飞行（In Flight）**：`BattleItemState.InFlight` 运行时状态；`Effect.StartFlying` 设置并记日志「开始飞行」，若已在飞行则不重复结算（幂等）。光环「提供者在飞行」用 AuraDefinition.SourceCondition = Condition.InFlight。Tooltip/日志「飞行」与护盾同色。
 - **造成暴击时**：`Trigger.Crit`；`ExecuteOneEffect` 结束后若 `isCrit` 则 `InvokeTrigger(Trigger.Crit, ...)`；`EnsureTriggerCondition` 默认 SameSide。
 - **战斗内属性统一带光环**：`BattleSide.GetItemInt(itemIndex, key, default)` 统一入口；BattleSimulator、EffectApplyContextImpl、BattleAuraContext 中战斗内读属性改为通过 GetItemInt 或带 context 的 GetInt。光环内 FixedValueKey/PercentValueKey 与公式求值（含 `Formula.SourceDamage`）均带 `BattleAuraContext(side, sourceIndex)`。
 - **Formula.SourceDamage**：光环固定加成 = 来源物品 Damage（含光环），用于如巨龙崽崽 Burn = 自身 Damage；`AuraFormulaEvaluator.Evaluate` 增加 `sourceIndex` 参数。

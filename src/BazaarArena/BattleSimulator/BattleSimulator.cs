@@ -382,10 +382,21 @@ public class BattleSimulator
                     {
                         MySide = mySide,
                         EnemySide = enemySide,
-                        Item = item,
-                        Source = sourceItem,
+                        Item = sourceItem,
+                        Source = item,
                     };
                     if (ab.Condition != null && !ab.Condition.Evaluate(triggerCtx)) continue;
+                    if (ab.SourceCondition != null)
+                    {
+                        var sourceOnlyCtx = new ConditionContext
+                        {
+                            MySide = mySide,
+                            EnemySide = enemySide,
+                            Item = item,
+                            Source = item,
+                        };
+                        if (!ab.SourceCondition.Evaluate(sourceOnlyCtx)) continue;
+                    }
                     if (ab.InvokeTargetCondition != null && context?.InvokeTargetSideIndex is int invSide && context.InvokeTargetItemIndex is int invItem)
                     {
                         var invSideObj = invSide == 0 ? side0 : side1;
@@ -393,10 +404,10 @@ public class BattleSimulator
                         var invItemState = invSideObj.Items[invItem];
                         var invokeTargetCtx = new ConditionContext
                         {
-                            MySide = invSideObj,
-                            EnemySide = invSide == 0 ? side1 : side0,
+                            MySide = mySide,
+                            EnemySide = enemySide,
                             Item = invItemState,
-                            Source = sourceItem,
+                            Source = item,
                         };
                         if (!ab.InvokeTargetCondition.Evaluate(invokeTargetCtx)) continue;
                     }

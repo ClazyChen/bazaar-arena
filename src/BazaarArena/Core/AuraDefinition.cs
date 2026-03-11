@@ -9,6 +9,9 @@ public class AuraDefinition
     /// <summary>光环条件：仅当条件满足时对该目标生效。使用 Condition.SameAsSource、Condition.AdjacentToSource 或 Condition.WithTag(tag)。</summary>
     public Condition? Condition { get; set; }
 
+    /// <summary>光环提供者需满足的条件；评估时 Item=Source=提供者，故可用 WithTag(tag)、InFlight 等表达「本物品在飞行」等。</summary>
+    public Condition? SourceCondition { get; set; }
+
     /// <summary>提供固定加成的模板字段名（如 "Custom_0"）；无则 null。</summary>
     public string? FixedValueKey { get; set; }
 

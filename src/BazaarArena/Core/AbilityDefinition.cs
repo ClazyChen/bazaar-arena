@@ -12,13 +12,16 @@ public class AbilityDefinition
     /// <summary>能力优先级；默认 Medium，仅非默认时需在定义中显式指定。</summary>
     public AbilityPriority Priority { get; set; } = AbilityPriority.Medium;
 
-    /// <summary>引起触发器的物品（source，如「被使用的物品」）需满足的条件。可选，null 时由触发器决定默认（UseItem → SameAsSource，其他 → SameSide）。</summary>
+    /// <summary>引起触发的物品（ConditionContext.Item，如「被使用的物品」）需满足的条件。可选，null 时由触发器决定默认（UseItem → SameAsSource，其他 → SameSide）。评估时 Source=能力持有者、Item=引起触发的物品。</summary>
     public Condition? Condition { get; set; }
 
-    /// <summary>触发器所指向的物品需满足的条件（如 Slow 时被减速的物品、Freeze 时被冻结的物品）。默认 null 表示不限制。</summary>
+    /// <summary>能力持有者需满足的条件；评估时 Item=Source=能力持有者，故可用 WithTag(tag)、InFlight 等表达「本物品带某 tag / 在飞行」等。</summary>
+    public Condition? SourceCondition { get; set; }
+
+    /// <summary>触发器所指向的物品（ConditionContext.Item）需满足的条件（如 Slow 时被减速的物品）。默认 null 表示不限制。评估时 Source=能力持有者、Item=指向的物品。</summary>
     public Condition? InvokeTargetCondition { get; set; }
 
-    /// <summary>多目标效果（冻结/减速/充能/加速）的目标选择条件；如不设则由效果默认（DifferentSide 或 SameSide）。</summary>
+    /// <summary>多目标效果（冻结/减速/充能/加速）的目标选择条件；评估时 Source=能力持有者、Item=候选目标。如不设则由效果默认（DifferentSide 或 SameSide）。</summary>
     public Condition? TargetCondition { get; set; }
 
     /// <summary>该能力触发的效果列表（伤害、灼烧等）。</summary>

@@ -116,7 +116,7 @@ public static class Effect
         Apply = ctx => ctx.AddAttributeToCasterSide(attributeName, ctx.Value, targetCondition ?? Condition.SameAsSource),
     };
 
-    /// <summary>对敌方满足 targetCondition 的物品减少指定属性（限本场战斗，不低于 0）。amountKey 默认 Custom_0，targetCondition 默认 SameAsSource（与 AddAttribute 一致；实际使用时通常传入如 IsShieldItem）。</summary>
+    /// <summary>对敌方满足 targetCondition 的物品减少指定属性（限本场战斗，不低于 0）。amountKey 默认 Custom_0，targetCondition 默认 SameAsSource（与 AddAttribute 一致；实际使用时通常传入如 WithTag(Tag.Shield)）。</summary>
     public static EffectDefinition ReduceAttribute(string attributeName, string? amountKey = null, Condition? targetCondition = null) => new()
     {
         ValueKey = amountKey ?? nameof(ItemTemplate.Custom_0),

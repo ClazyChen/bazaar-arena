@@ -66,7 +66,7 @@ public interface IEffectApplyContext
     /// <summary>对己方满足 targetCondition 的物品增加指定属性（限本场战斗）。attributeName 为模板属性名（如 Damage、Poison），value 为增加量；目标由 targetCondition 筛选（Source=施放者）。</summary>
     void AddAttributeToCasterSide(string attributeName, int value, Condition? targetCondition);
 
-    /// <summary>对敌方满足 targetCondition 的物品减少指定属性（限本场战斗，不低于 0）。attributeName 为模板属性名（如 Shield），value 为减少量；目标由 targetCondition 筛选（Source=施放者），可用 Condition.IsShieldItem（依据 Tag.Shield）等。</summary>
+    /// <summary>对敌方满足 targetCondition 的物品减少指定属性（限本场战斗，不低于 0）。attributeName 为模板属性名（如 Shield），value 为减少量；目标由 targetCondition 筛选（Source=施放者），可用 Condition.WithTag(Tag.Shield) 等。</summary>
     void ReduceAttributeToOpponentSide(string attributeName, int value, Condition? targetCondition);
 
     /// <summary>记录效果日志。showCrit 为 true 时显示「（暴击）」；仅对实际参与暴击的效果传 true（如伤害/灼烧/治疗等），冻结/减速等不可暴击效果传 false。</summary>

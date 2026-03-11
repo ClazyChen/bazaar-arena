@@ -2,20 +2,20 @@ using BazaarArena.BattleSimulator;
 
 namespace BazaarArena.Core;
 
-/// <summary>条件评估上下文：己方/敌方阵营与被评估物品、可选参考物品（同一方/相邻等由 Item/Source 的 SideIndex/ItemIndex 推导）。</summary>
+/// <summary>条件评估上下文：己方/敌方阵营、能力持有者（Source）与当前被评估对象（Item）。Condition 时 Item=引起触发的物品，InvokeTargetCondition 时 Item=触发器指向的物品，TargetCondition 时 Item=候选目标；Source 恒为能力所属物品且非空，Item 可能为空（如 BattleStart 无触发者）。</summary>
 public readonly struct ConditionContext
 {
-    /// <summary>被评估物品所在侧。</summary>
+    /// <summary>能力持有者所在侧（用于推导己方/敌方）。</summary>
     public BattleSide MySide { get; init; }
     /// <summary>对方侧。</summary>
     public BattleSide EnemySide { get; init; }
-    /// <summary>当前被评估的物品（即「这一个物品」是否满足条件）。</summary>
-    public BattleItemState Item { get; init; }
-    /// <summary>可选参考物品，用于 SameAsSource、AdjacentToSource、RightOfSource、InFlight 等。</summary>
-    public BattleItemState? Source { get; init; }
+    /// <summary>当前被评估对象：Condition 时为引起触发的物品，InvokeTargetCondition 时为触发器指向的物品，TargetCondition 时为候选目标；可为 null（如 BattleStart）。</summary>
+    public BattleItemState? Item { get; init; }
+    /// <summary>能力所属物品（参考物品），恒非空。</summary>
+    public BattleItemState Source { get; init; }
 }
 
-/// <summary>通用条件：由委托表示谓词，用于光环或能力触发。支持 And 组合（如「己方其他物品」= DifferentFromSource && SameSide）。</summary>
+/// <summary>通用条件：由委托表示谓词，用于光环或能力触发。支持 &amp; / | 组合（如「己方其他物品」= DifferentFromSource &amp; SameSide）。</summary>
 public class Condition
 {
     private readonly Func<ConditionContext, bool>? _evaluate;
@@ -29,49 +29,50 @@ public class Condition
     /// <summary>克隆（复制委托引用），供模板克隆时使用。</summary>
     public static Condition? Clone(Condition? c) => c == null ? null : new Condition(c._evaluate);
 
-    /// <summary>目标与来源相同（光环：自身；触发器：仅来源物品触发）。</summary>
+    /// <summary>被评估对象与能力持有者相同（Item == Source）；Item 为 null 时为 false。</summary>
     public static Condition SameAsSource { get; } = new(ctx =>
-        ctx.Source != null && ctx.Item.SideIndex == ctx.Source.SideIndex && ctx.Item.ItemIndex == ctx.Source.ItemIndex);
+        ctx.Item != null && ctx.Item.SideIndex == ctx.Source.SideIndex && ctx.Item.ItemIndex == ctx.Source.ItemIndex);
 
-    /// <summary>目标与来源不同（触发器：除来源外的物品；不限定己方/敌方）。</summary>
+    /// <summary>被评估对象与能力持有者不同，或 Item 为 null。</summary>
     public static Condition DifferentFromSource { get; } = new(ctx =>
-        ctx.Source == null || ctx.Item.SideIndex != ctx.Source.SideIndex || ctx.Item.ItemIndex != ctx.Source.ItemIndex);
+        ctx.Item == null || ctx.Item.SideIndex != ctx.Source.SideIndex || ctx.Item.ItemIndex != ctx.Source.ItemIndex);
 
-    /// <summary>候选与来源同侧（己方）。</summary>
+    /// <summary>被评估对象与能力持有者同侧；Item 为 null 时视为同侧（如 BattleStart 默认通过）。</summary>
     public static Condition SameSide { get; } = new(ctx =>
-        ctx.Source != null && ctx.Item.SideIndex == ctx.Source.SideIndex);
+        ctx.Item == null || ctx.Item.SideIndex == ctx.Source.SideIndex);
 
-    /// <summary>候选与来源异侧（敌方）。</summary>
+    /// <summary>被评估对象与能力持有者异侧；Item 为 null 时为 false。</summary>
     public static Condition DifferentSide { get; } = new(ctx =>
-        ctx.Source != null && ctx.Item.SideIndex != ctx.Source.SideIndex);
+        ctx.Item != null && ctx.Item.SideIndex != ctx.Source.SideIndex);
 
-    /// <summary>目标与来源相邻（同侧且 |Item.ItemIndex - Source.ItemIndex| == 1）。</summary>
+    /// <summary>被评估对象与能力持有者相邻（同侧且 |Item.ItemIndex - Source.ItemIndex| == 1）；Item 为 null 时为 false。</summary>
     public static Condition AdjacentToSource { get; } = new(ctx =>
-        ctx.Source != null && ctx.Item.SideIndex == ctx.Source.SideIndex && Math.Abs(ctx.Item.ItemIndex - ctx.Source.ItemIndex) == 1);
+        ctx.Item != null && ctx.Item.SideIndex == ctx.Source.SideIndex && Math.Abs(ctx.Item.ItemIndex - ctx.Source.ItemIndex) == 1);
 
-    /// <summary>候选在来源同侧且紧贴来源右侧（Item.ItemIndex == Source.ItemIndex + 1）。用于目标选择如「施放者右侧物品」。</summary>
+    /// <summary>被评估对象在能力持有者右侧（Item.ItemIndex == Source.ItemIndex + 1）；用于目标选择或「被使用物品在能力持有者右侧」。</summary>
     public static Condition RightOfSource { get; } = new(ctx =>
-        ctx.Source != null && ctx.Item.SideIndex == ctx.Source.SideIndex && ctx.Item.ItemIndex == ctx.Source.ItemIndex + 1);
+        ctx.Item != null && ctx.Item.SideIndex == ctx.Source.SideIndex && ctx.Item.ItemIndex == ctx.Source.ItemIndex + 1);
 
-    /// <summary>有参条件：被评估物品或参考物品带指定标签。由调用方将「被使用物品」等设为 Item 或 Source。</summary>
+    /// <summary>被评估对象在能力持有者左侧（Item.ItemIndex == Source.ItemIndex - 1）；Item 为 null 时为 false。</summary>
+    public static Condition LeftOfSource { get; } = new(ctx =>
+        ctx.Item != null && ctx.Item.SideIndex == ctx.Source.SideIndex && ctx.Item.ItemIndex == ctx.Source.ItemIndex - 1);
+
+    /// <summary>被评估对象带指定标签（仅看 Item）；Item 为 null 时为 false。能力持有者带某 tag 时在 AbilityDefinition 上用 SourceCondition = WithTag(tag)，评估时 Item=Source。</summary>
     public static Condition WithTag(string tag) => new(ctx =>
-        (ctx.Item.Template.Tags?.Contains(tag) ?? false) || (ctx.Source?.Template.Tags?.Contains(tag) ?? false));
+        ctx.Item != null && (ctx.Item.Template.Tags?.Contains(tag) ?? false));
 
-    /// <summary>被评估物品为护盾物品（依据模板 Tag.Shield，如 ReduceAttribute 遍历敌方时用 Item 判断）。</summary>
-    public static Condition IsShieldItem { get; } = new(ctx =>
-        ctx.Item.Template.Tags?.Contains(Tag.Shield) ?? false);
-
-    /// <summary>使用物品时：被使用的物品在能力持有者（Item）的右侧，即同侧且 Source.ItemIndex == Item.ItemIndex + 1（Source=被使用物品、Item=能力持有者）。</summary>
-    public static Condition UsedItemRightOfSource { get; } = new(ctx =>
-        ctx.Source != null && ctx.Item.SideIndex == ctx.Source.SideIndex && ctx.Source.ItemIndex == ctx.Item.ItemIndex + 1);
-
-    /// <summary>两个条件的与，用于组合语义（如「己方其他物品」= And(DifferentFromSource, SameSide)）。</summary>
+    /// <summary>两个条件的与（也可用 a &amp;&amp; b）。</summary>
     public static Condition And(Condition a, Condition b) => new(ctx => a.Evaluate(ctx) && b.Evaluate(ctx));
 
-    /// <summary>光环时：提供光环的物品处于飞行状态（Source.InFlight）。</summary>
-    public static Condition InFlight { get; } = new(ctx => ctx.Source != null && ctx.Source.InFlight);
+    /// <summary>两个条件的或（也可用 a || b）。</summary>
+    public static Condition Or(Condition a, Condition b) => new(ctx => a.Evaluate(ctx) || b.Evaluate(ctx));
 
-    /// <summary>被评估物品为大型或处于飞行状态；用于 Destroy 的 InvokeTargetCondition（被摧毁目标是否大型或飞行）。</summary>
-    public static Condition LargeOrInFlight { get; } = new(ctx =>
-        ctx.Item.Template.Size == ItemSize.Large || ctx.Item.InFlight);
+    /// <summary>重载 &amp;，用于组合条件（如「己方其他物品」= DifferentFromSource &amp; SameSide）。</summary>
+    public static Condition operator &(Condition a, Condition b) => And(a, b);
+
+    /// <summary>重载 |，用于组合条件（如「大型或飞行」= Condition.WithTag(Tag.Large) | Condition.InFlight）。</summary>
+    public static Condition operator |(Condition a, Condition b) => Or(a, b);
+
+    /// <summary>被评估对象（Item）处于飞行状态；Item 为 null 时为 false。</summary>
+    public static Condition InFlight { get; } = new(ctx => ctx.Item != null && ctx.Item.InFlight);
 }

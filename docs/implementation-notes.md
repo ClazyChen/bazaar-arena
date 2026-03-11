@@ -40,7 +40,7 @@
    ExecuteOneEffect 执行效果时可能触发新能力（如后续扩展的触发器）。这些新能力入队规则：**仅优先级为 Immediate 的加入 currentAbilityQueue**（本帧继续被步骤 8 处理），**其余一律加入 nextAbilityQueue**。因此 ExecuteOneEffect 需要接收 current/next 两个队列参数，供未来触发器调用使用。
 
 4. **触发器调用方式与 PendingCount 合并**  
-   - 所有触发器通过**统一**的 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用，遍历双方所有物品，构建 `ConditionContext`（MySide、EnemySide、Item=能力持有者、Source=触发来源）后调用 `condition.Evaluate(ctx)` 判断是否触发；若能力有 `InvokeTargetCondition` 且 context 提供 InvokeTarget（Slow/Freeze/Destroy 每目标一次），则再以「触发器目标」为 Item、触发来源为 Source 构建上下文求值。战斗开始也经此入队，不直接执行。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。  
+   - 所有触发器通过**统一**的 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用，遍历双方所有物品，构建 `ConditionContext`（MySide、EnemySide、Source=能力持有者、Item=引起触发的物品）后调用 `condition.Evaluate(ctx)` 判断是否触发；若能力有 `InvokeTargetCondition` 且 context 提供 InvokeTarget，则再以 Source=能力持有者、Item=触发器所指向的物品构建上下文求值。战斗开始也经此入队，不直接执行。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。  
    - **PendingCount 为通用机制**：新能力入队时，**先查 currentAbilityQueue** 是否存在同 (SideIndex, ItemIndex, AbilityIndex)，有则只加 PendingCount；**再查 nextAbilityQueue**，有则只加 PendingCount；**都没有**才新建条目，且新建时仅 Immediate 入 current，其余入 next。
 
 5. **总结**  
@@ -52,13 +52,13 @@
 
 ### 三种条件的语义
 
-- **condition**：引起触发器的物品（source，如「被使用的物品」）需满足的条件。在 `InvokeTrigger` 中用于筛选「谁的能力被触发」（Item = 能力持有者，Source = 触发来源）。默认：UseItem → SameAsSource，其他触发器（Freeze/Slow/Crit/Destroy/BattleStart）→ SameSide。
+- **condition**：引起触发的物品（ConditionContext.Item，如「被使用的物品」）需满足的条件。评估时 Source=能力持有者、Item=引起触发的物品。默认：UseItem → SameAsSource，其他触发器（Freeze/Slow/Crit/Destroy/BattleStart）→ SameSide。
 - **InvokeTargetCondition**：触发器所指向的物品需满足的条件（如 Slow 时「被减速的物品」、Freeze 时「被冻结的物品」）。在 `InvokeTrigger` 中，当 context 提供 InvokeTarget（Slow/Freeze 按每个目标调用一次）时，以该目标为 Candidate 求值，不通过则不入队。默认 null 表示不限制。
 - **TargetCondition**：能力效果选目标时，目标需满足的条件（充能/加速/减速/冻结/修复等）。效果执行阶段使用，逻辑不变。
 
 ### 移除 Trigger.UseOtherItem
 
-「使用其他物品时触发」等价于「使用物品」且 condition 限制为「己方、且非来源物品」：`Condition.And(Condition.DifferentFromSource, Condition.SameSide)`，再与显式条件（如 WithTag(Tag.Tool)、UsedItemRightOfSource）取与。因此删除 `Trigger.UseOtherItem`，步骤 7 仅调用一次 `InvokeTrigger(Trigger.UseItem, ...)`；原 UseOtherItem 能力改为 `Trigger.UseItem` + 上述 condition。物品迁移示例：神经毒素、断裂镣铐、姜饼人、暗影斗篷。
+「使用其他物品时触发」等价于「使用物品」且 condition 限制为「己方、且非来源物品」：`Condition.And(Condition.DifferentFromSource, Condition.SameSide)`，再与显式条件（如 WithTag(Tag.Tool)、LeftOfSource）取与。因此删除 `Trigger.UseOtherItem`，步骤 7 仅调用一次 `InvokeTrigger(Trigger.UseItem, ...)`；原 UseOtherItem 能力改为 `Trigger.UseItem` + 上述 condition。物品迁移示例：神经毒素、断裂镣铐、姜饼人、暗影斗篷。
 
 ### Ability 工厂参数
 
@@ -114,9 +114,9 @@
 ### AddAttribute / ReduceAttribute 与统一属性增减
 
 - **统一入口**：「给己方某类物品加属性」「给敌方某类物品减属性」不再写自定义 `EffectDefinition` 或专用 API（如已删除的 WeaponDamageBonus、ReduceOpponentShieldItemsShield），统一用 **Effect.AddAttribute** / **Effect.ReduceAttribute**。
-- **AddAttribute(attributeName, amountKey?, targetCondition?)**：对己方满足 `targetCondition` 的物品增加指定属性（限本场战斗）。默认 `amountKey = nameof(ItemTemplate.Custom_0)`，`targetCondition = Condition.SameAsSource`（自身）。目标由 `IEffectApplyContext.AddAttributeToCasterSide` 遍历己方物品、用 `ConditionContext`（MySide、EnemySide、Item=当前物品、Source=施放者）求值；支持属性目前为 Damage、Poison，日志为「伤害提高」「剧毒提高」。
-- **ReduceAttribute(attributeName, amountKey?, targetCondition?)**：对敌方满足 `targetCondition` 的物品减少指定属性（不低于 0）。默认同上；实际使用时通常传入 `targetCondition: Condition.IsShieldItem` 等。遍历敌方时由实现构建 `ConditionContext`（Item=当前敌方物品、Source=施放者），**Condition.IsShieldItem** 依据 `Item.Template.Tags` 判断；支持属性目前为 Shield，日志为「护盾降低」。
-- **简化写法**：仅需「自身 + Custom_0」时可省略后两参，如 `Effect.AddAttribute(nameof(ItemTemplate.Poison))`（失落神祇）；需指定目标时用命名参数，如 `Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.WithTag(Tag.Weapon))`（举重手套、冰冻钝器）、`Effect.ReduceAttribute(nameof(ItemTemplate.Shield), targetCondition: Condition.IsShieldItem)`（裂盾刀）。
+- **AddAttribute(attributeName, amountKey?, targetCondition?)**：对己方满足 `targetCondition` 的物品增加指定属性（限本场战斗）。默认 `amountKey = nameof(ItemTemplate.Custom_0)`，`targetCondition = Condition.SameAsSource`（自身）。目标由 `IEffectApplyContext.AddAttributeToCasterSide` 遍历己方物品、用 `ConditionContext`（Source=施放者、Item=候选目标）求值；支持属性目前为 Damage、Poison，日志为「伤害提高」「剧毒提高」。
+- **ReduceAttribute(attributeName, amountKey?, targetCondition?)**：对敌方满足 `targetCondition` 的物品减少指定属性（不低于 0）。默认同上；实际使用时通常传入 `targetCondition: Condition.WithTag(Tag.Shield)` 等。遍历敌方时由实现构建 `ConditionContext`（Source=施放者、Item=当前敌方物品），**Condition.WithTag(Tag.Shield)** 依据 `Item.Template.Tags` 判断；支持属性目前为 Shield，日志为「护盾降低」。
+- **简化写法**：仅需「自身 + Custom_0」时可省略后两参，如 `Effect.AddAttribute(nameof(ItemTemplate.Poison))`（失落神祇）；需指定目标时用命名参数，如 `Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.WithTag(Tag.Weapon))`（举重手套、冰冻钝器）、`Effect.ReduceAttribute(nameof(ItemTemplate.Shield), targetCondition: Condition.WithTag(Tag.Shield))`（裂盾刀）。
 
 ---
 
@@ -159,13 +159,13 @@
 
 - **运行时状态**：`BattleItemState.InFlight`，战斗开始为 false；由「开始飞行」「结束飞行」类效果修改。
 - **效果**：`Effect.StartFlying` 调用 `ctx.SetCasterInFlight(true)` 并 `ctx.LogEffect("开始飞行", 0, showCrit: false)`。若 `ctx.IsCasterInFlight` 已为 true 则**不**设置、不记日志（幂等）。
-- **光环条件**：`Condition.InFlight` 依赖 `ConditionContext.Source`（Source = 光环提供者，取 `Source.InFlight`）；`BattleAuraContext` 构建上下文时 Item=被加成目标、Source=当前遍历的光环提供者，用于如「此物品飞行时 +1 多重释放」。
+- **光环条件**：`Condition.InFlight` 表示被评估对象（Item）在飞行。光环「提供者在飞行」用 **AuraDefinition.SourceCondition = Condition.InFlight**，评估时 Item=Source=提供者；如「此物品飞行时 +1 多重释放」为 Condition=SameAsSource、SourceCondition=InFlight。
 - **日志与 UI**：`EffectLogFormat.FormatEffectValue("开始飞行", value)` 返回空串，避免显示 0；`EffectKeywordFormatting` 中「飞行」与护盾同色。
 
 ### 造成暴击时（Trigger.Crit）
 
 - **语义**：与 Freeze/Slow 统一——**任意物品造成暴击时触发**；默认 `Condition.SameSide` 表现为己方暴击时触发，可重写 Condition（如 `DifferentSide`）实现对方暴击时触发。
-- **触发时机**：`ExecuteOneEffect` 内所有效果执行完毕后，若 `isCrit == true` 则调用 `InvokeTrigger(Trigger.Crit, sideIndex, itemIndex, null, ...)`，来源=暴击施放者；条件评估与其余触发器一致（Item=能力持有者，Source=暴击施放者）。
+- **触发时机**：`ExecuteOneEffect` 内所有效果执行完毕后，若 `isCrit == true` 则调用 `InvokeTrigger(Trigger.Crit, sideIndex, itemIndex, null, ...)`，来源=暴击施放者；条件评估与其余触发器一致（Source=能力持有者，Item=暴击施放者）。
 - **条件**：`EnsureTriggerCondition(Trigger.Crit)` 默认 `Condition.SameSide`。
 
 ### 战斗内属性统一带光环（BattleSide.GetItemInt）
@@ -290,8 +290,8 @@
 
 - **Trigger.Destroy**：`Core/Trigger.cs` 中 `Destroy = "摧毁物品时"`。语义：**任意物品施加摧毁时触发**，实现同 Slow：Condition 判定施加摧毁的物品，InvokeTargetCondition 判定被摧毁的物品；`EnsureTriggerCondition` 默认 `Condition.SameSide`，能力上常用 `SameAsSource` 表示「仅施加摧毁的物品自身」触发。
 - **执行顺序**：「施加摧毁」必须在**将目标标记为 Destroyed 之前**调用 `InvokeTrigger`，以便被毁物品自身能力仍可触发。实现：`Effect.DestroyNextItemToRightOfCaster` 找到右侧下一件未摧毁物品后，调用 `OnDestroyApplied(destroyedItemIdx)`；回调内先 `InvokeTrigger(Trigger.Destroy, destroyerSideIdx, destroyerItemIdx, new TriggerInvokeContext { InvokeTargetSideIndex = destroyedSideIdx, InvokeTargetItemIndex = destroyedItemIdx })`，再 `Side.Items[destroyedItemIdx].Destroyed = true`。
-- **ConditionContext**：无需扩展；与 Slow 相同，Condition 评估时 Item=能力持有者、Source=施加摧毁者；InvokeTargetCondition 评估时 Item=被摧毁物品、Source=施加摧毁者。被摧毁目标为大型或飞行时用 **`InvokeTargetCondition = Condition.LargeOrInFlight`**（依据 `Item.Template.Size`、`Item.InFlight`）。
-- **Effect.DestroyNextItemToRightOfCaster**：从 `ItemIndex + 1` 起向右扫描，取第一个 `!Side.Items[i].Destroyed` 的 i；若无则 return。找到后记日志「摧毁」+ extraSuffix（→[物品名]），再调用 `OnDestroyApplied(i)`（或未注入时直接设 `Destroyed = true`）。牵引光束：能力 1 UseItem High → 该效果；能力 2/3 Destroy Medium，SameAsSource 造成伤害，能力 3 额外 `InvokeTargetCondition = Condition.LargeOrInFlight` 再造成伤害。
+- **ConditionContext**：无需扩展；与 Slow 相同，评估时恒有 Source=能力持有者；Condition 时 Item=施加摧毁者，InvokeTargetCondition 时 Item=被摧毁物品。被摧毁目标为大型或飞行时用 **`InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight`**（尺寸 Tag 由注册时按 Size 自动添加；InFlight 表示被评估物品在飞行）。
+- **Effect.DestroyNextItemToRightOfCaster**：从 `ItemIndex + 1` 起向右扫描，取第一个 `!Side.Items[i].Destroyed` 的 i；若无则 return。找到后记日志「摧毁」+ extraSuffix（→[物品名]），再调用 `OnDestroyApplied(i)`（或未注入时直接设 `Destroyed = true`）。牵引光束：能力 1 UseItem High → 该效果；能力 2/3 Destroy Medium，SameAsSource 造成伤害，能力 3 额外 `InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight` 再造成伤害。
 - **日志与颜色**：`EffectLogFormat.FormatEffectValue("摧毁"|"修复", value)` 返回空串，日志只显示效果名与 extraSuffix；`EffectKeywordFormatting` 中「摧毁」rgb(255,50,120)，「修复」rgb(143,252,188)。见 **.cursor/rules/data-and-logging.mdc**。
 
 ---
@@ -314,15 +314,15 @@
 ### 设计原则与四字段
 
 - **语义**：Condition 表示「战斗时**一个物品**需满足的条件」，计算时可能涉及其他物品；上下文只提供己方/敌方状态与被评估（及参考）物品，**不**为具体场景（如 OnDestroy、UsedTemplate）增加字段。
-- **ConditionContext 仅四字段**：`MySide`、`EnemySide`、`Item`（被评估物品）、`Source?`（可选参考物品）。同一方/相邻/右侧等均由 `Item.SideIndex`、`Item.ItemIndex` 与 `Source` 的对应属性推导。
+- **ConditionContext 仅四字段**：`MySide`、`EnemySide`、`Item?`（被评估对象：Condition 时=引起触发的物品，InvokeTargetCondition 时=触发器指向的物品，TargetCondition 时=候选目标；可为 null）、`Source`（能力所属物品，恒非空）。同一方/相邻/右侧等由 Item 与 Source 的 SideIndex/ItemIndex 推导。
 - **索引**：`BattleSide.SideIndex`、`BattleItemState.SideIndex`/`ItemIndex` 在 `BattleSimulator.Run` 中、`BuildSide` 之后统一写入，供 Condition 与调用方使用。
-- **扩展性**：新需求通过「调用方传入不同的 Item/Source」或新增 Condition 静态工厂（如 `LargeOrInFlight`）满足，避免在 Context 上堆场景专用字段。
+- **扩展性**：新需求通过「调用方传入不同的 Item/Source」或组合 Condition（如 `WithTag(Tag.Large) | InFlight`）满足，避免在 Context 上堆场景专用字段。
 
 ### 触发器统一语义与命名
 
-- **统一语义**：Freeze、Slow、Crit、Destroy 均为「**任意物品**施加/造成 xx 时触发」；默认 `Condition.SameSide` 表现为己方，重写 Condition（如 `DifferentSide`）可实现对方触发。与 UseItem（仅己方施放）、BattleStart 一致由 `InvokeTrigger` 统一处理，Condition 评估时 Item=能力持有者、Source=触发来源。
+- **统一语义**：Freeze、Slow、Crit、Destroy 均为「**任意物品**施加/造成 xx 时触发」；默认 `Condition.SameSide` 表现为己方，重写 Condition（如 `DifferentSide`）可实现对方触发。与 UseItem（仅己方施放）、BattleStart 一致由 `InvokeTrigger` 统一处理，Condition 评估时 Source=能力持有者、Item=引起触发的物品。
 - **命名统一**：触发器常量与 UseItem/Freeze/Slow 保持一致风格：`Trigger.Crit`、`Trigger.Destroy`（不再使用 OnCrit、OnDestroy），便于后续扩展新触发器时命名一致。
-- **Destroy 与 Slow 同构**：施加摧毁时用 Condition 判定施加者、InvokeTargetCondition 判定被摧毁物品，context 仅传 `InvokeTargetSideIndex`/`InvokeTargetItemIndex`，无需 DestroyedItemTemplate 等专用字段；被毁目标为大型或飞行用 `InvokeTargetCondition = Condition.LargeOrInFlight`。
+- **Destroy 与 Slow 同构**：施加摧毁时用 Condition 判定施加者、InvokeTargetCondition 判定被摧毁物品，context 仅传 `InvokeTargetSideIndex`/`InvokeTargetItemIndex`，无需 DestroyedItemTemplate 等专用字段；被毁目标为大型或飞行用 `InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight`。
 
 ---
 
@@ -333,14 +333,15 @@
 ### Condition：委托 + ConditionContext，支持 And 组合
 
 - **移除**：`ConditionKind` 枚举与 `Tag` 字段；原基于 switch 的 `TriggerConditionEvaluator` / `AuraConditionEvaluator`。
-- **Core/Condition.cs**：`Condition` 类仅持有一个 `Func<ConditionContext, bool>?` 委托；`ConditionContext` 为只读结构体，仅含 `MySide`、`EnemySide`、`Item`（被评估物品）、`Source?`（可选参考物品）；同一方/相邻等由 Item/Source 的 SideIndex/ItemIndex 推导。评估时调用 `condition.Evaluate(ctx)`。
-- **静态工厂**：`SameAsSource`、`DifferentFromSource`、`SameSide`、`AdjacentToSource`、`WithTag(tag)`、`And(a, b)`、`InFlight`、`LargeOrInFlight`（被评估物品为大型或飞行，用于 Destroy 的 InvokeTargetCondition）。`WithTag` 的 tag 由闭包捕获；`And` 组合两个条件，用于「己方其他物品」等语义。
+- **Core/Condition.cs**：`Condition` 类仅持有一个 `Func<ConditionContext, bool>?` 委托；`ConditionContext` 为只读结构体，仅含 `MySide`、`EnemySide`、`Item?`（被评估对象，可为 null）、`Source`（能力所属物品，非空）；同一方/相邻等由 Item 与 Source 的 SideIndex/ItemIndex 推导。评估时调用 `condition.Evaluate(ctx)`。
+- **静态工厂**：`SameAsSource`、`DifferentFromSource`、`SameSide`、`AdjacentToSource`、`RightOfSource`、`LeftOfSource`、`WithTag(tag)`（被评估对象带 tag）、`InFlight`（被评估对象在飞行）；可用 `&` / `|` 组合。能力持有者需满足某条件时在 **AbilityDefinition.SourceCondition** 中填写，评估时 Item=Source=能力持有者，故用 `WithTag(tag)`、`InFlight` 即可表达「本物品带 tag/在飞行」。尺寸 Tag（`Tag.Small`/`Medium`/`Large`）由注册时按 `template.Size` 自动添加。
+- **Condition 收敛与 SourceCondition**：Condition 只描述「被评估对象（Item）是否满足」，不区分场景；`WithTag(tag)`、`InFlight` 均仅看 Item，避免 ItemWithTag/SourceWithTag、SourceInFlight 等重复定义。「能力持有者/光环提供者需满足」统一用 **SourceCondition**：**AbilityDefinition.SourceCondition** 与 **AuraDefinition.SourceCondition** 在评估时构造上下文 Item=Source=能力持有者/提供者，复用同一套 Condition（如 `WithTag(Tag.Weapon)`、`InFlight`）。克隆模板时须同时克隆 Condition 与 SourceCondition。
 - **克隆**：`Condition.Clone(c)` 在 Core 中提供，复制委托引用，供 BuildSide / ItemDatabase 克隆能力时使用。
 
 ### UseOtherItem 默认与显式 Condition：始终叠加己方
 
 - **问题**：若 UseOtherItem 仅在有显式 Condition（如姜饼人 `WithTag(Tag.Tool)`）时直接返回该 Condition，则不会限制「己方」，对方使用工具也会触发己方能力。
-- **正确做法**：UseOtherItem **始终**先叠加「己方其他物品」基础条件 `baseSameSideOther = And(DifferentFromSource, SameSide)`。若原 Condition 为 null，则 `return baseSameSideOther`；若非 null，则 `return And(baseSameSideOther, condition)`。这样「使用工具时充能」等显式条件与「仅己方」同时满足。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。
+- **正确做法**：UseOtherItem **始终**先叠加「己方其他物品」基础条件 `baseSameSideOther = DifferentFromSource & SameSide`。若原 Condition 为 null，则 `return baseSameSideOther`；若非 null，则 `return baseSameSideOther & condition`。这样「使用工具时充能」等显式条件与「仅己方」同时满足。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。
 
 ### Effect：脱离 EffectKind，委托驱动 + IEffectApplyContext
 
@@ -380,7 +381,7 @@
 
 - **Tag 常量**：`Core/Tag.cs` 提供 `Tag.Shield`、`Tag.Damage`、`Tag.Burn`、`Tag.Poison`、`Tag.Heal`、`Tag.Regen`，用于判断物品是否为护盾/伤害/灼烧等类型及是否可暴击。
 - **注册时自动补充**：`ItemDatabase.Register` 在写入模板前调用 `EnsureTypeTags`：① 若模板任一档位下某属性（Damage、Burn、Poison、Heal、Shield、Regen）> 0，则向模板的 `Tags` 加入对应类型 Tag；② 若模板有光环且条件为 **SameAsSource**（作用目标为自身），则按光环的 **AttributeName** 若为上述六类属性之一也补充对应 Tag（如 Damage 为 0 但由光环提供伤害的废品场长枪仍会得到 Tag.Damage）。无需在物品定义里手写。
-- **判断时使用 Tag**：模拟器判断「是否可暴击」用 `ItemHasAnyCrittableField(item)`，内部看 `item.Template.Tags` 是否含上述六类 Tag 之一；裂盾等效果用 `Condition.IsShieldItem`，内部看 `ctx.Item.Template.Tags.Contains(Tag.Shield)`。类型由 Tag 决定，不受战斗内数值修改（如裂盾减 Shield）影响。
+- **判断时使用 Tag**：模拟器判断「是否可暴击」用 `ItemHasAnyCrittableField(item)`，内部看 `item.Template.Tags` 是否含上述六类 Tag 之一；裂盾等效果用 `Condition.WithTag(Tag.Shield)`，内部看 `ctx.Item.Template.Tags.Contains(Tag.Shield)`。类型由 Tag 决定，不受战斗内数值修改（如裂盾减 Shield）影响。
 
 ### 经验总结
 
@@ -431,11 +432,11 @@
 
 本节记录「暗影斗篷」等「使用此物品右侧物品时」触发、以及加速（Haste）效果的实现经验。
 
-### Condition.UsedItemRightOfSource 与 RightOfSource
+### Condition.LeftOfSource 与 RightOfSource
 
-- **UsedItemRightOfSource**（触发条件）：UseOtherItem 时，仅当**被使用的物品**在**能力持有者**的**右侧**时触发（同侧且 `UsedItemIndex == SourceItemIndex + 1`）。`InvokeTrigger` 约定：`Source*` = 被使用物品，`Candidate*` = 能力持有者；故 `Condition.UsedItemRightOfSource` 为 `CandidateSide == SourceSide && SourceItem == CandidateItem + 1`。
-- **RightOfSource**（目标选择条件）：候选在来源同侧且紧贴右侧（`CandidateItem == SourceItem + 1`），用于多目标效果的目标筛选，如「对施放者右侧物品加速」。
-- **用途**：暗影斗篷等 `TriggerName = Trigger.UseOtherItem`、`Condition = Condition.UsedItemRightOfSource`，能力内用 `Effect.Haste` 并设 `TargetCondition = Condition.RightOfSource`、`HasteTargetCount = 1`，对右侧有冷却物品施加加速。
+- **RightOfSource**（Item 在 Source 右侧，即 `Item.ItemIndex == Source.ItemIndex + 1`）。UseItem 触发时 Source=能力持有者、Item=被使用物品，故「被使用物品在能力持有者右侧」= SameSide & RightOfSource；目标选择时「施放者右侧物品」亦用 RightOfSource（Source=施放者、Item=候选）。
+- **LeftOfSource**（Item 在 Source 左侧），用于目标选择等。
+- **用途**：暗影斗篷等 `TriggerName = Trigger.UseItem`、`Condition = DifferentFromSource & SameSide & RightOfSource`，能力内用 `Effect.Haste` 并设 `TargetCondition = Condition.RightOfSource`、`HasteTargetCount = 1`，对右侧有冷却物品施加加速。
 
 ### 加速（Haste）与 Effect.Haste
 

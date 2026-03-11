@@ -25,6 +25,17 @@ internal sealed class BattleAuraContext(BattleSide side, int targetItemIndex, Ba
                     Source = source,
                 };
                 if (aura.Condition != null && !aura.Condition.Evaluate(auraCtx)) continue;
+                if (aura.SourceCondition != null)
+                {
+                    var sourceOnlyCtx = new ConditionContext
+                    {
+                        MySide = side,
+                        EnemySide = opp ?? side,
+                        Item = source,
+                        Source = source,
+                    };
+                    if (!aura.SourceCondition.Evaluate(sourceOnlyCtx)) continue;
+                }
                 if (!string.IsNullOrEmpty(aura.FixedValueFormula))
                     fixedSum += AuraFormulaEvaluator.Evaluate(aura.FixedValueFormula, source, i, side, opp);
                 else if (!string.IsNullOrEmpty(aura.FixedValueKey))

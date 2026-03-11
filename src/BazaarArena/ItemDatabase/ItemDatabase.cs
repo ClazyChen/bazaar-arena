@@ -32,6 +32,10 @@ public class ItemDatabase : IItemTemplateResolver
     /// <summary>根据模板数值属性为任一档位 &gt; 0 时自动加入对应类型 Tag；若属性为 0 但存在作用目标为自身（SameAsSource）的光环且光环 AttributeName 为类型属性，也补充对应 Tag。供 Condition 与可暴击判定使用。</summary>
     private static void EnsureTypeTags(ItemTemplate template)
     {
+        if (template.Size == ItemSize.Small) TryAddTag(template, Tag.Small);
+        else if (template.Size == ItemSize.Medium) TryAddTag(template, Tag.Medium);
+        else if (template.Size == ItemSize.Large) TryAddTag(template, Tag.Large);
+
         if (HasAnyTierPositive(template, nameof(ItemTemplate.Damage))) TryAddTag(template, Tag.Damage);
         if (HasAnyTierPositive(template, nameof(ItemTemplate.Burn))) TryAddTag(template, Tag.Burn);
         if (HasAnyTierPositive(template, nameof(ItemTemplate.Poison))) TryAddTag(template, Tag.Poison);
@@ -96,11 +100,12 @@ public class ItemDatabase : IItemTemplateResolver
                 TriggerName = a.TriggerName,
                 Priority = a.Priority,
                 Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
+                SourceCondition = Condition.Clone(a.SourceCondition),
                 InvokeTargetCondition = Condition.Clone(a.InvokeTargetCondition),
                 TargetCondition = Condition.Clone(a.TargetCondition),
                 Effects = a.Effects.Select(e => new EffectDefinition { Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, ApplyCritMultiplier = e.ApplyCritMultiplier, Apply = e.Apply }).ToList(),
             })],
-            Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey, FixedValueFormula = a.FixedValueFormula }).ToList(),
+            Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey, FixedValueFormula = a.FixedValueFormula }).ToList(),
             OverridableAttributes = t.OverridableAttributes != null ? new Dictionary<string, IntOrByTier>(t.OverridableAttributes) : null,
         };
         clone.SetIntsByTier(t.GetIntsByTierSnapshot());

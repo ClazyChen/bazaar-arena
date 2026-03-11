@@ -61,9 +61,9 @@ public static class CommonMedium
                 {
                     TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.Low,
-                    Condition = Condition.And(Condition.And(Condition.DifferentFromSource, Condition.SameSide), Condition.UsedItemRightOfSource),
+                    Condition = Condition.DifferentFromSource & Condition.SameSide & Condition.RightOfSource,
                     TargetCondition = Condition.RightOfSource,
-                    Effects = [Effect.Haste, Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.And(Condition.RightOfSource, Condition.WithTag(Tag.Weapon)))],
+                    Effects = [Effect.Haste, Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.RightOfSource & Condition.WithTag(Tag.Weapon))],
                 },
             ],
         };
@@ -214,7 +214,7 @@ public static class CommonMedium
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.Damage),
-                    Condition = Condition.And(Condition.AdjacentToSource, Condition.WithTag(Tag.Weapon)),
+                    Condition = Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon),
                     FixedValueKey = nameof(ItemTemplate.Custom_0),
                 },
             ],

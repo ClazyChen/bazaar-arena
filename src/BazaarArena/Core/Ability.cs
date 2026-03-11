@@ -7,7 +7,7 @@ public static class Ability
     {
         var defaultCond = trigger == Trigger.UseItem ? Condition.SameAsSource : Condition.SameSide;
         var final = condition ?? defaultCond;
-        return additionalCondition != null ? Condition.And(final, additionalCondition) : final;
+        return additionalCondition != null ? (final & additionalCondition) : final;
     }
 
     /// <summary>造成伤害（Effect.Damage）。默认触发器 UseItem；可选 trigger、priority、condition、additionalCondition、invokeTargetCondition。</summary>
@@ -68,7 +68,7 @@ public static class Ability
         InvokeTargetCondition = invokeTargetCondition,
         Effects = [Effect.Haste],
         Priority = priority ?? AbilityPriority.Medium,
-        TargetCondition = targetCondition ?? (additionalTargetCondition != null ? Condition.And(Condition.SameSide, additionalTargetCondition) : Condition.SameSide),
+        TargetCondition = targetCondition ?? (additionalTargetCondition != null ? (Condition.SameSide & additionalTargetCondition) : Condition.SameSide),
     };
 
     /// <summary>减速（Effect.Slow）。默认触发器 UseItem；目标默认敌方(DifferentSide)。可选 trigger、priority、condition、additionalCondition、invokeTargetCondition；targetCondition 代替默认，additionalTargetCondition 在 DifferentSide 基础上追加。</summary>
@@ -79,7 +79,7 @@ public static class Ability
         InvokeTargetCondition = invokeTargetCondition,
         Effects = [Effect.Slow],
         Priority = priority ?? AbilityPriority.Medium,
-        TargetCondition = targetCondition ?? (additionalTargetCondition != null ? Condition.And(Condition.DifferentSide, additionalTargetCondition) : Condition.DifferentSide),
+        TargetCondition = targetCondition ?? (additionalTargetCondition != null ? (Condition.DifferentSide & additionalTargetCondition) : Condition.DifferentSide),
     };
 
     /// <summary>冻结（Effect.Freeze）。默认触发器 UseItem；目标默认敌方(DifferentSide)。可选 trigger、priority、condition、additionalCondition、invokeTargetCondition；targetCondition 代替默认，additionalTargetCondition 在 DifferentSide 基础上追加。</summary>
@@ -90,6 +90,6 @@ public static class Ability
         InvokeTargetCondition = invokeTargetCondition,
         Effects = [Effect.Freeze],
         Priority = priority ?? AbilityPriority.Medium,
-        TargetCondition = targetCondition ?? (additionalTargetCondition != null ? Condition.And(Condition.DifferentSide, additionalTargetCondition) : Condition.DifferentSide),
+        TargetCondition = targetCondition ?? (additionalTargetCondition != null ? (Condition.DifferentSide & additionalTargetCondition) : Condition.DifferentSide),
     };
 }
