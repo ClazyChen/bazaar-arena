@@ -40,8 +40,8 @@
    ExecuteOneEffect 执行效果时可能触发新能力（如后续扩展的触发器）。这些新能力入队规则：**仅优先级为 Immediate 的加入 currentAbilityQueue**（本帧继续被步骤 8 处理），**其余一律加入 nextAbilityQueue**。因此 ExecuteOneEffect 需要接收 current/next 两个队列参数，供未来触发器调用使用。
 
 4. **触发器调用方式与 PendingCount 合并**  
-   - 所有触发器通过**统一**的 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用，遍历双方所有物品，构建 `ConditionContext`（MySide、EnemySide、Source=能力持有者、Item=引起触发的物品）后调用 `condition.Evaluate(ctx)` 判断是否触发；若能力有 `InvokeTargetCondition` 且 context 提供 InvokeTarget，则再以 Source=能力持有者、Item=触发器所指向的物品构建上下文求值。战斗开始也经此入队，不直接执行。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。  
-   - **PendingCount 为通用机制**：新能力入队时，**先查 currentAbilityQueue** 是否存在同 (SideIndex, ItemIndex, AbilityIndex)，有则只加 PendingCount；**再查 nextAbilityQueue**，有则只加 PendingCount；**都没有**才新建条目，且新建时仅 Immediate 入 current，其余入 next。
+   - 所有触发器通过**统一**的 `InvokeTrigger(triggerName, causeItem?, context, ...)` 调用（causeItem 为引起触发的物品引用，BattleStart 传 null），遍历双方所有物品，构建 `ConditionContext`（Source=能力持有者、Item=causeItem）后调用 `condition.Evaluate(ctx)`；若能力有 `InvokeTargetCondition` 且 context 提供 `InvokeTargetItem`，则再以该目标为 Item 求值。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。  
+   - **PendingCount 为通用机制**：新能力入队时，**先查 currentAbilityQueue** 是否存在同 (Owner, AbilityIndex)（引用相等），有则只加 PendingCount；**再查 nextAbilityQueue** 同上；**都没有**才新建条目（AbilityQueueEntry 持有多元组 Owner=BattleItemState、AbilityIndex、PendingCount、LastTriggerMs），且新建时仅 Immediate 入 current，其余入 next。
 
 5. **总结**  
    修改能力队列逻辑时务必对照：cast/使用物品 → 只入 next；步骤 8 只消费 current；next → current 仅步骤 11；新触发能力先合并 PendingCount（current 再 next），再按优先级决定入 current 或 next。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。
@@ -66,7 +66,7 @@
 
 ### Slow/Freeze 与 InvokeTargetCondition
 
-`OnFreezeApplied` / `OnSlowApplied` 改为传递目标列表 `(sideIndex, itemIndex)[]`；模拟器对每个被冻结/被减速目标调用一次 `InvokeTrigger`，context 带 `InvokeTargetSideIndex`、`InvokeTargetItemIndex`、`Multicast = 1`，`AddOrMergeAbility` 仍按 (SideIndex, ItemIndex, AbilityIndex) 合并 PendingCount。若能力有 `InvokeTargetCondition`，则以该目标为 Candidate 求值，不通过则不入队。
+`OnFreezeApplied` / `OnSlowApplied` 仍传递目标列表 `(sideIndex, itemIndex)[]`（EffectApplyContextImpl 内部构造），模拟器对每个目标解析为 `BattleItemState` 后调用一次 `InvokeTrigger`，context 带 `InvokeTargetItem`、`Multicast = 1`；`AddOrMergeAbility` 按 (Owner, AbilityIndex) 合并 PendingCount。若能力有 `InvokeTargetCondition`，则以 `InvokeTargetItem` 为 Item 求值，不通过则不入队。
 
 ### 小结
 
@@ -108,7 +108,7 @@
 
 ### 效果数值与 Apply 委托（当前约定）
 
-- **EffectDefinition**：保留 `ValueKey`、`ValueResolver`、`ResolveValue`；增加 `ApplyCritMultiplier`（默认 true）、`Apply`（`Action<IEffectApplyContext>?`）。只读效果（Damage/Burn 等）在 **Core/Effect.cs** 的 Apply 委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), applyCritMultiplier)` 取值；指定了 `ValueKey` 的效果（如 AddAttribute、ReduceAttribute）由模拟器解析后填入 `ctx.Value`。
+- **EffectDefinition**：保留 `ValueKey`、`ResolveValue`；增加 `ApplyCritMultiplier`（默认 true）、`Apply`（`Action<IEffectApplyContext>?`）。只读效果（Damage/Burn 等）在 **Core/Effect.cs** 的 Apply 委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), applyCritMultiplier)` 取值；指定了 `ValueKey` 的效果（如 AddAttribute、ReduceAttribute）由模拟器解析后填入 `ctx.Value`。自定义公式算数值已整合到光环公式，不再使用 EffectValueResolver。
 - **自定义/扩展效果**：在 `Core/Effect.cs` 中新增静态 `EffectDefinition` 并设置 `Apply` 委托即可；无需单独 Handler 字典。详见 **.cursor/rules/item-design.mdc**。
 
 ### AddAttribute / ReduceAttribute 与统一属性增减
@@ -126,13 +126,13 @@
 
 - **仅战斗内**：光环在「读取属性」时生效；局外/UI（ItemDescHelper、MainWindow）直接调用 `ItemTemplate.GetInt(key, tier)`，不传上下文，不参与光环。
 - **集成到 GetInt**：`ItemTemplate.GetInt(key, tier, defaultValue, IAuraContext? context)`：当 `context != null` 时，先取基础值再按公式叠加光环：`最终值 = (基础 + Σ 固定) × (1 + Σ 百分比/100)`，多光环的固定与百分比均为加算；被摧毁的物品不提供光环。
-- **IAuraContext**：在 Core 中定义，仅提供 `GetAuraModifiers(attributeName, out fixedSum, out percentSum)`。BattleSimulator 实现为 `BattleAuraContext(side, targetItemIndex)`，在 `GetAuraModifiers` 内遍历己方未摧毁物品的 `Template.Auras`，按条件谓词与属性名累加。
+- **IAuraContext**：在 Core 中定义，仅提供 `GetAuraModifiers(attributeName, out fixedSum, out percentSum)`。BattleSimulator 实现为 `BattleAuraContext(side, targetItem, opp?)`（targetItem 为 `BattleItemState`），在 `GetAuraModifiers` 内遍历己方未摧毁物品的 `Template.Auras`，按条件谓词与属性名累加。
 
 ### 光环数据与条件
 
 - **AuraDefinition**（Core）：`AttributeName`、`Condition`（`AuraConditionKind`）、`FixedValueKey`、`PercentValueKey`。条件首期支持 `AdjacentToSource`（`|sourceIndex - targetItemIndex| == 1`）；BuildSide 与 ItemDatabase 克隆模板时对 Auras 做深拷贝（逐个 `new AuraDefinition`）。
-- **战斗内读属性**：需要光环时传入 context，例如暴击率：`item.Template.GetInt("CritRatePercent", item.Tier, 0, auraContext)`；模拟器在能力队列处理处按当前 (side, itemIndex) 创建 `BattleAuraContext` 并传入。
-- **效果数值必须带光环上下文**：`IEffectApplyContext.GetResolvedValue` 用于效果委托内取 Damage、Shield 等。若实现内只调 `Item.Template.GetInt(key, tier, default)` 而不传 `IAuraContext`，则「基础 0 + 光环加成」类物品（如废品场长枪）施放时伤害仍为 0。**正确做法**：`EffectApplyContextImpl.GetResolvedValue` 内创建 `new BattleAuraContext(Side, ItemIndex)` 并调用 `GetInt(key, tier, default, auraContext)`，使施放时读取的数值已含光环。
+- **战斗内读属性**：需要光环时传入 context，例如暴击率：`item.Template.GetInt("CritRatePercent", item.Tier, 0, auraContext)`；模拟器在能力队列处理处按当前 `entry.Owner`（BattleItemState）创建 `BattleAuraContext(side, entry.Owner, opp)` 并传入。
+- **效果数值必须带光环上下文**：`IEffectApplyContext.GetResolvedValue` 用于效果委托内取 Damage、Shield 等。若实现内只调 `Item.Template.GetInt(key, tier, default)` 而不传 `IAuraContext`，则「基础 0 + 光环加成」类物品（如废品场长枪）施放时伤害仍为 0。**正确做法**：`EffectApplyContextImpl.GetResolvedValue` 内创建 `new BattleAuraContext(Side, Item)` 并调用 `GetInt(key, tier, default, auraContext)`（Item 即 CasterItem），使施放时读取的数值已含光环。
 
 ### 光环公式（Formula + AuraFormulaEvaluator）
 
@@ -165,20 +165,20 @@
 ### 造成暴击时（Trigger.Crit）
 
 - **语义**：与 Freeze/Slow 统一——**任意物品造成暴击时触发**；默认 `Condition.SameSide` 表现为己方暴击时触发，可重写 Condition（如 `DifferentSide`）实现对方暴击时触发。
-- **触发时机**：`ExecuteOneEffect` 内所有效果执行完毕后，若 `isCrit == true` 则调用 `InvokeTrigger(Trigger.Crit, sideIndex, itemIndex, null, ...)`，来源=暴击施放者；条件评估与其余触发器一致（Source=能力持有者，Item=暴击施放者）。
+- **触发时机**：`ExecuteOneEffect` 内所有效果执行完毕后，若 `isCrit == true` 则调用 `InvokeTrigger(Trigger.Crit, item, null, ...)`（item 即施放者 BattleItemState）；条件评估与其余触发器一致（Source=能力持有者，Item=暴击施放者）。
 - **条件**：`EnsureTriggerCondition(Trigger.Crit)` 默认 `Condition.SameSide`。
 
 ### 战斗内属性统一带光环（BattleSide.GetItemInt）
 
 - **原则**：游戏运行时读取任意物品字段都应包含光环上下文，避免「依赖变量的光环」漏算（如 Burn += Damage 时读 Damage 也需光环）。
-- **统一入口**：`BattleSide.GetItemInt(itemIndex, key, defaultValue)` 内部用 `new BattleAuraContext(this, itemIndex)` 调用 `Items[itemIndex].Template.GetInt(key, tier, default, context)`。
-- **调用点**：BattleSimulator 步骤 7（AmmoCap、Multicast）、ProcessCooldown（CooldownMs、AmmoCap）；EffectApplyContextImpl 内 ChargeCasterItem、GetTargetIndices、ChargeItemAt、HasLifeSteal 等，凡有 (side, itemIndex) 的读属性均改为 `side.GetItemInt(...)`。
-- **光环内部**：`BattleAuraContext.GetAuraModifiers` 中 FixedValueKey/PercentValueKey 的读取改为带 `new BattleAuraContext(side, i)`；公式求值传入 `sourceIndex`，`AuraFormulaEvaluator.Evaluate` 依赖来源属性时（如 `Formula.SourceDamage`）用 `BattleAuraContext(side, sourceIndex)` 读值。
+- **统一入口**：`BattleSide.GetItemInt(itemIndex, key, defaultValue)` 内部用 `new BattleAuraContext(this, Items[itemIndex])` 调用 `Items[itemIndex].Template.GetInt(key, tier, default, context)`。
+- **调用点**：BattleSimulator 步骤 7（AmmoCap、Multicast）、ProcessCooldown（CooldownMs、AmmoCap）；EffectApplyContextImpl 内 ChargeCasterItem、GetTargetIndices、ChargeItemAt、HasLifeSteal 等，凡有 (side, item) 的读属性均用 `side.GetItemInt(item.ItemIndex, ...)` 或等效。
+- **光环内部**：`BattleAuraContext.GetAuraModifiers` 中 FixedValueKey/PercentValueKey 的读取带 `new BattleAuraContext(side, source)`；`AuraFormulaEvaluator.Evaluate(formulaName, source, side, opp)` 依赖来源属性时（如 `Formula.SourceDamage`）用 `BattleAuraContext(side, source)` 读值。
 
 ### Formula.SourceDamage 与依赖变量的光环
 
 - **用途**：如「Burn = 0 + 自身 Damage（含光环）」：Aura 的 `AttributeName = Burn`、`FixedValueFormula = Formula.SourceDamage`，SameAsSource。
-- **实现**：`AuraFormulaEvaluator.Evaluate` 增加参数 `sourceIndex`；case `Formula.SourceDamage` 返回 `source.Template.GetInt("Damage", source.Tier, 0, new BattleAuraContext(side, sourceIndex))`，保证读 Damage 时带光环且不形成 Burn↔Burn 循环。
+- **实现**：`AuraFormulaEvaluator.Evaluate(formulaName, source, side, opp)`；case `Formula.SourceDamage` 返回 `source.Template.GetInt("Damage", source.Tier, 0, new BattleAuraContext(side, source))`，保证读 Damage 时带光环且不形成 Burn↔Burn 循环。
 
 ---
 
@@ -278,7 +278,7 @@
 
 - **统一逻辑**：四类效果均采用「目标数 + 时间」两属性。目标池 = **仅含冷却时间 > 0 且未销毁的物品**，再按能力的 `TargetCondition`（可选）过滤；**不放回**随机选取至多 `TargetCount` 个；若满足条件的物品数不足则全部选中。触发类（如「触发冻结」）按**实际选中的目标数**入队（PendingCount）。
 - **默认 Condition**：减速、冻结默认 `Condition.DifferentSide`（敌方）；充能、加速默认 `Condition.SameSide`（己方）。物品/能力可通过 `AbilityDefinition.TargetCondition` 覆盖（如暗影斗篷用 `RightOfSource` 指定「施放者右侧物品」）。
-- **实现**：`EffectApplyContextImpl.GetTargetIndices(fromSide, fromSideIndex, targetCount, condition)` 构建候选池并 Fisher-Yates 不放回选取；`ApplyFreeze`/`ApplySlow`/`ApplyCharge`/`ApplyHaste` 均调用该逻辑。`IEffectApplyContext.TargetCondition` 由模拟器从当前能力的 `TargetCondition` 注入；`Effect.Haste` 读 `HasteTargetCount`（默认 1）并传 `ctx.TargetCondition` 给 `ApplyHaste`。
+- **实现**：`EffectApplyContextImpl.GetTargetIndices(fromSide, targetCount, condition)` 构建候选池并 Fisher-Yates 不放回选取；`ApplyFreeze`/`ApplySlow`/`ApplyCharge`/`ApplyHaste` 均调用该逻辑。`IEffectApplyContext.TargetCondition` 由模拟器从当前能力的 `TargetCondition` 注入；`Effect.Haste` 读 `HasteTargetCount`（默认 1）并传 `ctx.TargetCondition` 给 `ApplyHaste`。
 
 ### 小结
 
@@ -289,9 +289,9 @@
 ## 摧毁（Destroy）与「施加摧毁时」触发器
 
 - **Trigger.Destroy**：`Core/Trigger.cs` 中 `Destroy = "摧毁物品时"`。语义：**任意物品施加摧毁时触发**，实现同 Slow：Condition 判定施加摧毁的物品，InvokeTargetCondition 判定被摧毁的物品；`EnsureTriggerCondition` 默认 `Condition.SameSide`，能力上常用 `SameAsSource` 表示「仅施加摧毁的物品自身」触发。
-- **执行顺序**：「施加摧毁」必须在**将目标标记为 Destroyed 之前**调用 `InvokeTrigger`，以便被毁物品自身能力仍可触发。实现：`Effect.DestroyNextItemToRightOfCaster` 找到右侧下一件未摧毁物品后，调用 `OnDestroyApplied(destroyedItemIdx)`；回调内先 `InvokeTrigger(Trigger.Destroy, destroyerSideIdx, destroyerItemIdx, new TriggerInvokeContext { InvokeTargetSideIndex = destroyedSideIdx, InvokeTargetItemIndex = destroyedItemIdx })`，再 `Side.Items[destroyedItemIdx].Destroyed = true`。
+- **执行顺序**：「施加摧毁」必须在**将目标标记为 Destroyed 之前**调用 `InvokeTrigger`，以便被毁物品自身能力仍可触发。实现：`Effect.DestroyNextItemToRightOfCaster` 找到右侧下一件未摧毁物品 `target` 后，调用 `OnDestroyApplied(i)`；回调内先 `InvokeTrigger(Trigger.Destroy, item, new TriggerInvokeContext { InvokeTargetItem = target })`，再 `target.Destroyed = true`（item 为施放者 ctx.CasterItem）。
 - **ConditionContext**：无需扩展；与 Slow 相同，评估时恒有 Source=能力持有者；Condition 时 Item=施加摧毁者，InvokeTargetCondition 时 Item=被摧毁物品。被摧毁目标为大型或飞行时用 **`InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight`**（尺寸 Tag 由注册时按 Size 自动添加；InFlight 表示被评估物品在飞行）。
-- **Effect.DestroyNextItemToRightOfCaster**：从 `ItemIndex + 1` 起向右扫描，取第一个 `!Side.Items[i].Destroyed` 的 i；若无则 return。找到后记日志「摧毁」+ extraSuffix（→[物品名]），再调用 `OnDestroyApplied(i)`（或未注入时直接设 `Destroyed = true`）。牵引光束：能力 1 UseItem High → 该效果；能力 2/3 Destroy Medium，SameAsSource 造成伤害，能力 3 额外 `InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight` 再造成伤害。
+- **Effect.DestroyNextItemToRightOfCaster**：从 `Item.ItemIndex + 1` 起向右扫描，取第一个 `!Side.Items[i].Destroyed` 的 i；若无则 return。找到后记日志「摧毁」+ extraSuffix（→[物品名]），再调用 `OnDestroyApplied(i)`（或未注入时直接设 `target.Destroyed = true`）。牵引光束：能力 1 UseItem High → 该效果；能力 2/3 Destroy Medium，SameAsSource 造成伤害，能力 3 额外 `InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight` 再造成伤害。
 - **日志与颜色**：`EffectLogFormat.FormatEffectValue("摧毁"|"修复", value)` 返回空串，日志只显示效果名与 extraSuffix；`EffectKeywordFormatting` 中「摧毁」rgb(255,50,120)，「修复」rgb(143,252,188)。见 **.cursor/rules/data-and-logging.mdc**。
 
 ---
@@ -300,7 +300,7 @@
 
 - **语义**：修复将**已摧毁**的己方物品恢复为未摧毁，并重置其 `CooldownElapsedMs = 0`，使该物品重新进入冷却循环。无时长参数。
 - **目标选择**：与充能/加速不同，目标池为**已摧毁**（`it.Destroyed == true`）且满足能力 `TargetCondition` 的物品，**不**要求有冷却时间；默认 `TargetCondition` 为 SameSide。不放回随机选取至多 `RepairTargetCount` 个。
-- **实现**：`EffectApplyContextImpl` 内单独实现 `GetRepairTargetIndices(fromSide, fromSideIndex, targetCount, condition)`，池子过滤条件为 `Destroyed`，不检查 `GetCooldownMs()`。`ApplyRepair` 对选中目标执行 `Destroyed = false`、`CooldownElapsedMs = 0`，并记日志「修复」+ 实际目标数 + `→[物品名]`。
+- **实现**：`EffectApplyContextImpl` 内单独实现 `GetRepairTargetIndices(fromSide, targetCount, condition)`，池子过滤条件为 `Destroyed`，不检查 `GetCooldownMs()`。`ApplyRepair` 对选中目标执行 `Destroyed = false`、`CooldownElapsedMs = 0`，并记日志「修复」+ 实际目标数 + `→[物品名]`。
 - **模板与效果**：`ItemTemplate.RepairTargetCount`（可单值或按等级，默认 1）；`Effect.Repair` 读该值并调用 `ctx.ApplyRepair(count, ctx.TargetCondition)`。占位符 `{RepairTargetCount}` 由 ItemDescHelper 解析。
 - **标签**：新增 `Tag.Tech = "科技"`（`Core/Tag.cs`），用于如废品场维修机器人等科技类物品。
 - **日志着色**：`EffectKeywordFormatting` 中「修复」使用 rgb(143,252,188)。
@@ -322,7 +322,7 @@
 
 - **统一语义**：Freeze、Slow、Crit、Destroy 均为「**任意物品**施加/造成 xx 时触发」；默认 `Condition.SameSide` 表现为己方，重写 Condition（如 `DifferentSide`）可实现对方触发。与 UseItem（仅己方施放）、BattleStart 一致由 `InvokeTrigger` 统一处理，Condition 评估时 Source=能力持有者、Item=引起触发的物品。
 - **命名统一**：触发器常量与 UseItem/Freeze/Slow 保持一致风格：`Trigger.Crit`、`Trigger.Destroy`（不再使用 OnCrit、OnDestroy），便于后续扩展新触发器时命名一致。
-- **Destroy 与 Slow 同构**：施加摧毁时用 Condition 判定施加者、InvokeTargetCondition 判定被摧毁物品，context 仅传 `InvokeTargetSideIndex`/`InvokeTargetItemIndex`，无需 DestroyedItemTemplate 等专用字段；被毁目标为大型或飞行用 `InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight`。
+- **Destroy 与 Slow 同构**：施加摧毁时用 Condition 判定施加者、InvokeTargetCondition 判定被摧毁物品，context 传 `InvokeTargetItem`（BattleItemState 引用），无需 DestroyedItemTemplate 等专用字段；被毁目标为大型或飞行用 `InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight`。
 
 ---
 
@@ -371,7 +371,7 @@
 
 - 步骤 8 在**处理能力队列前**，对 `toProcessAbilities`（current 的拷贝）按**能力优先级**排序。
 - 排序主键：`AbilityPriority` 枚举值升序（Immediate → Highest → High → Medium → Low → Lowest），数字小的先执行。
-- 同优先级时按 (SideIndex, ItemIndex, AbilityIndex) 作为次键，保证顺序稳定、可复现。
+- 同优先级时按 (Owner.SideIndex, Owner.ItemIndex, AbilityIndex) 作为次键，保证顺序稳定、可复现（AbilityQueueEntry.Owner 为 BattleItemState）。
 
 这样同一帧内触发的多条能力会严格按「高优先级先于低优先级」执行，与设计意图一致。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。
 
@@ -403,7 +403,7 @@
 | **BattleSideDamage.cs** | 静态方法 `ApplyDamageToSide(BattleSide, int, bool)`，护盾吸收与伤害结算，供模拟器与效果上下文共用。 |
 | **EffectApplyContextImpl.cs** | `IEffectApplyContext` 实现，承载效果应用逻辑（伤害/治疗/护盾/冻结/减速/裂盾等）。 |
 | **BattleAuraContext.cs** | `IAuraContext` 实现，战斗内光环属性累加。 |
-| **TriggerInvokeContext.cs** | 触发器调用上下文（Multicast、UsedTemplate、InvokeTargetSideIndex、InvokeTargetItemIndex）。 |
+| **TriggerInvokeContext.cs** | 触发器调用上下文（Multicast、UsedTemplate、InvokeTargetItem）。 |
 
 以上类型均为 `internal`，仅本程序集使用。主逻辑与帧循环保留在 **BattleSimulator.cs**，便于阅读与遵守 **.cursor/rules/battle-simulator-ability-queue.mdc**。
 
@@ -414,7 +414,7 @@
 ### 问题：吸血伤害未统计
 
 - **现象**：毒刺等带 `LifeSteal` 的物品造成伤害时，`Effect.Damage` 为区分展示会以 **「吸血」** 调用 `LogEffect`（`ctx.LogEffect(ctx.HasLifeSteal ? "吸血" : "伤害", value, ...)`），而 **StatsCollectingSink** 的 `OnEffect` 仅对 `effectKind == "伤害"` 累加 `a.Damage` 与 `AddSide(damage: value)`，导致吸血那一下的数值未进入伤害报表。
-- **修复**：在 **StatsCollectingSink** 的 switch 中，将 **「吸血」** 与 **「伤害」** 同等处理：`case "伤害": case "吸血":` 均执行 `a.Damage += value` 与 `AddSide(sideIndex, damage: value)`。吸血与伤害为同一数值，仅展示不同，统计时均计入伤害。
+- **修复**：在 **StatsCollectingSink** 的 switch 中，将 **「吸血」** 与 **「伤害」** 同等处理：`case "伤害": case "吸血":` 均执行 `a.Damage += value` 与 `AddSide(caster.SideIndex, damage: value)`。吸血与伤害为同一数值，仅展示不同，统计时均计入伤害。OnEffect 签名为 `(BattleItemState caster, ...)`。
 
 ### 定向效果日志格式统一
 
@@ -448,7 +448,7 @@
 ### 单目标武器伤害提高
 
 - **AddWeaponDamageBonusToCasterSideItem(value, targetItemIndexOnCasterSide)**：仅对己方指定下标物品生效；若该物品带 `Tag.Weapon` 则 `Damage.Add(value)` 并 `LogEffect("伤害提高", value, " →[目标名]")`，非武器则不操作、不记日志。
-- **Effect.WeaponDamageBonusToRightItem(ValueKey)**：从 ValueKey 取值，对 `ctx.ItemIndex + 1` 调用上述方法，用于暗影斗篷「若右侧为武器则伤害提高」。
+- **Effect.WeaponDamageBonusToRightItem(ValueKey)**：从 ValueKey 取值，对 `ctx.CasterItem.ItemIndex + 1` 调用上述方法，用于暗影斗篷「若右侧为武器则伤害提高」。
 
 ---
 

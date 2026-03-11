@@ -22,37 +22,37 @@ public class TextBoxBattleLogSink : IBattleLogSink
 
     private static string TimeSec(int timeMs) => (timeMs / 1000.0).ToString("F2") + "s";
 
-    public void OnCast(int sideIndex, int itemIndex, string itemName, int timeMs, int? ammoRemainingAfter = null)
+    public void OnCast(BattleItemState caster, string itemName, int timeMs, int? ammoRemainingAfter = null)
     {
         if (!ammoRemainingAfter.HasValue) return; // 无弹药时不单独输出施放行
-        _appendLine($"[{TimeSec(timeMs)}] 玩家{sideIndex + 1} 施放 [{itemName}] 剩余弹药 {ammoRemainingAfter.Value}");
+        _appendLine($"[{TimeSec(timeMs)}] 玩家{caster.SideIndex + 1} 施放 [{itemName}] 剩余弹药 {ammoRemainingAfter.Value}");
     }
 
-    public void OnEffect(int sideIndex, int itemIndex, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)
+    public void OnEffect(BattleItemState caster, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)
     {
         if (_level != BattleLogLevel.Detailed) return;
         string critSuffix = isCrit ? " （暴击）" : "";
         string valueStr = EffectLogFormat.FormatEffectValue(effectKind, value);
         string valuePart = string.IsNullOrEmpty(valueStr) ? "" : " " + valueStr;
-        _appendLine($"[{TimeSec(timeMs)}] 玩家{sideIndex + 1} [{itemName}] {effectKind}{valuePart}{extraSuffix}{critSuffix}");
+        _appendLine($"[{TimeSec(timeMs)}] 玩家{caster.SideIndex + 1} [{itemName}] {effectKind}{valuePart}{extraSuffix}{critSuffix}");
     }
 
-    public void OnBurnTick(int sideIndex, int burnDamage, int remainingBurn, int timeMs)
+    public void OnBurnTick(BattleSide victim, int burnDamage, int remainingBurn, int timeMs)
     {
         if (_level != BattleLogLevel.Detailed) return;
-        _appendLine($"[{TimeSec(timeMs)}] 灼烧结算 玩家{sideIndex + 1} 受到{burnDamage} 剩余灼烧{remainingBurn}");
+        _appendLine($"[{TimeSec(timeMs)}] 灼烧结算 玩家{victim.SideIndex + 1} 受到{burnDamage} 剩余灼烧{remainingBurn}");
     }
 
-    public void OnPoisonTick(int sideIndex, int poisonDamage, int timeMs)
+    public void OnPoisonTick(BattleSide victim, int poisonDamage, int timeMs)
     {
         if (_level != BattleLogLevel.Detailed) return;
-        _appendLine($"[{TimeSec(timeMs)}] 剧毒结算 玩家{sideIndex + 1} 受到{poisonDamage}");
+        _appendLine($"[{TimeSec(timeMs)}] 剧毒结算 玩家{victim.SideIndex + 1} 受到{poisonDamage}");
     }
 
-    public void OnRegenTick(int sideIndex, int heal, int timeMs)
+    public void OnRegenTick(BattleSide side, int heal, int timeMs)
     {
         if (_level != BattleLogLevel.Detailed) return;
-        _appendLine($"[{TimeSec(timeMs)}] 生命再生 玩家{sideIndex + 1} 回复{heal}");
+        _appendLine($"[{TimeSec(timeMs)}] 生命再生 玩家{side.SideIndex + 1} 回复{heal}");
     }
 
     public void OnSandstormTick(int damage, int timeMs)

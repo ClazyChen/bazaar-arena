@@ -12,14 +12,14 @@ public class Deck
     /// <summary>玩家字段重写：如初始生命上限、护盾、生命再生等。默认收入 7，金钱 15。</summary>
     public Dictionary<string, int>? PlayerOverrides { get; set; }
 
-    /// <summary>根据玩家等级返回槽位上限：1–2 级 4 槽，3 级 6 槽，4 级 8 槽，5+ 级 10 槽。</summary>
+    /// <summary>根据玩家等级返回槽位上限：1 级 4 槽，2 级 6 槽，3 级 8 槽，4+ 级 10 槽。</summary>
     public static int MaxSlotsForLevel(int level)
     {
         return level switch
         {
-            1 or 2 => 4,
-            3 => 6,
-            4 => 8,
+            1 => 4,
+            2 => 6,
+            3 => 8,
             _ => 10,
         };
     }

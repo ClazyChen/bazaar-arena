@@ -2,8 +2,8 @@ using BazaarArena.Core;
 
 namespace BazaarArena.BattleSimulator;
 
-/// <summary>战斗内光环上下文：持有己方与目标物品下标，在 GetAuraModifiers 中遍历己方未摧毁物品的光环并累加。可选传入敌方阵营供公式（如 OpponentPoison）使用。</summary>
-internal sealed class BattleAuraContext(BattleSide side, int targetItemIndex, BattleSide? opp = null) : IAuraContext
+/// <summary>战斗内光环上下文：持有己方与目标物品，在 GetAuraModifiers 中遍历己方未摧毁物品的光环并累加。可选传入敌方阵营供公式（如 OpponentPoison）使用。</summary>
+internal sealed class BattleAuraContext(BattleSide side, BattleItemState targetItem, BattleSide? opp = null) : IAuraContext
 {
     public void GetAuraModifiers(string attributeName, out int fixedSum, out int percentSum)
     {
@@ -16,7 +16,6 @@ internal sealed class BattleAuraContext(BattleSide side, int targetItemIndex, Ba
             foreach (var aura in source.Template.Auras)
             {
                 if (aura.AttributeName != attributeName) continue;
-                var targetItem = side.Items[targetItemIndex];
                 var auraCtx = new ConditionContext
                 {
                     MySide = side,
@@ -37,11 +36,11 @@ internal sealed class BattleAuraContext(BattleSide side, int targetItemIndex, Ba
                     if (!aura.SourceCondition.Evaluate(sourceOnlyCtx)) continue;
                 }
                 if (!string.IsNullOrEmpty(aura.FixedValueFormula))
-                    fixedSum += AuraFormulaEvaluator.Evaluate(aura.FixedValueFormula, source, i, side, opp);
+                    fixedSum += AuraFormulaEvaluator.Evaluate(aura.FixedValueFormula, source, side, opp);
                 else if (!string.IsNullOrEmpty(aura.FixedValueKey))
-                    fixedSum += source.Template.GetInt(aura.FixedValueKey, source.Tier, 0, new BattleAuraContext(side, i));
+                    fixedSum += source.Template.GetInt(aura.FixedValueKey, source.Tier, 0, new BattleAuraContext(side, source));
                 if (!string.IsNullOrEmpty(aura.PercentValueKey))
-                    percentSum += source.Template.GetInt(aura.PercentValueKey, source.Tier, 0, new BattleAuraContext(side, i));
+                    percentSum += source.Template.GetInt(aura.PercentValueKey, source.Tier, 0, new BattleAuraContext(side, source));
             }
         }
     }

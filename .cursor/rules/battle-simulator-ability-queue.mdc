@@ -27,24 +27,24 @@ alwaysApply: false
 
 ## 触发器调用方式与 PendingCount
 
-- 所有触发器均通过**统一**的 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用：遍历双方所有物品，构建 `ConditionContext`（MySide、EnemySide、Source=能力持有者、Item=引起触发的物品，Item 可为 null 如 BattleStart）后调用 `condition.Evaluate(ctx)` 判断是否触发；详见 `docs/implementation-notes.md`「ConditionContext 重构与触发器统一」。若能力有 `InvokeTargetCondition` 且 context 提供 InvokeTarget（Slow/Freeze/Destroy 每目标一次），则再以 Source=能力持有者、Item=触发器所指向的物品构建上下文求值，不通过则不入队。**只有 Immediate 优先级入 currentAbilityQueue，其余入 nextAbilityQueue**（与步骤 7 施放触发的规则一致）。
-- **战斗开始**：步骤 1 只调用 `InvokeTrigger(Trigger.BattleStart, -1, -1, null, ...)` 入队，不直接执行；执行在步骤 8（或下一帧步骤 8）进行。
-- **UseItem / Freeze / Slow / Crit / Destroy**：生成/克隆能力时 `EnsureTriggerCondition` 补 Condition：`UseItem` 且 Condition 为 null → `Condition.SameAsSource`；其余触发器（Freeze/Slow/Crit/Destroy/BattleStart）默认 `Condition.SameSide`。**Freeze/Slow** 为任意物品施加时触发（默认 SameSide 表现为己方；可重写 Condition 实现对方施加时触发）。**Crit** 为任意物品造成暴击时触发（默认 SameSide 表现为己方暴击时触发；可重写 Condition 实现对方暴击时触发）；`ExecuteOneEffect` 全部效果执行完后若 `isCrit` 则调用 `InvokeTrigger(Trigger.Crit, sideIndex, itemIndex, null, ...)`。**Destroy**（施加摧毁时）与 Slow 同构：Condition 判定施加者，InvokeTargetCondition 判定被摧毁物品，context 仅传 `InvokeTargetSideIndex`/`InvokeTargetItemIndex`，在**标记 Destroyed 之前**调用 `InvokeTrigger(Trigger.Destroy, ...)`。
+- 所有触发器均通过**统一**的 `InvokeTrigger(triggerName, causeItem, context, ...)` 调用（causeItem 为引起触发的物品引用，BattleStart 传 null）：遍历双方所有物品，构建 `ConditionContext`（MySide、EnemySide、Source=能力持有者、Item=causeItem，Item 可为 null 如 BattleStart）后调用 `condition.Evaluate(ctx)` 判断是否触发；详见 `docs/implementation-notes.md`「ConditionContext 重构与触发器统一」。若能力有 `InvokeTargetCondition` 且 context 提供 `InvokeTargetItem`（Slow/Freeze/Destroy 每目标一次），则再以 Source=能力持有者、Item=该目标物品构建上下文求值，不通过则不入队。**只有 Immediate 优先级入 currentAbilityQueue，其余入 nextAbilityQueue**（与步骤 7 施放触发的规则一致）。
+- **战斗开始**：步骤 1 只调用 `InvokeTrigger(Trigger.BattleStart, null, null, ...)` 入队，不直接执行；执行在步骤 8（或下一帧步骤 8）进行。
+- **UseItem / Freeze / Slow / Crit / Destroy**：生成/克隆能力时 `EnsureTriggerCondition` 补 Condition：`UseItem` 且 Condition 为 null → `Condition.SameAsSource`；其余触发器（Freeze/Slow/Crit/Destroy/BattleStart）默认 `Condition.SameSide`。**Freeze/Slow** 为任意物品施加时触发（默认 SameSide 表现为己方；可重写 Condition 实现对方施加时触发）。**Crit** 为任意物品造成暴击时触发（默认 SameSide 表现为己方暴击时触发）；`ExecuteOneEffect` 全部效果执行完后若 `isCrit` 则调用 `InvokeTrigger(Trigger.Crit, item, null, ...)`。**Destroy**（施加摧毁时）与 Slow 同构：Condition 判定施加者，InvokeTargetCondition 判定被摧毁物品，context 传 `InvokeTargetItem`（被摧毁物品引用），在**标记 Destroyed 之前**调用 `InvokeTrigger(Trigger.Destroy, ...)`。
 - **条件语义**：评估时 **Source=能力持有者**、**Item=被评估对象**（Condition 时=引起触发的物品，InvokeTargetCondition 时=触发器指向的物品，TargetCondition 时=候选目标）。`Condition` = 引起触发的物品（Item）需满足；`InvokeTargetCondition` = 触发器所指向的物品（Item）需满足；`TargetCondition` = 候选目标（Item）需满足。
 - **PendingCount 合并顺序（AddOrMergeAbility）**：
-  1. 先在 **currentAbilityQueue** 中查找同 (SideIndex, ItemIndex, AbilityIndex)，找到则只做 `PendingCount += pendingCount`，不新建。
-  2. 再在 **nextAbilityQueue** 中查找同上键，找到则只做 `PendingCount += pendingCount`，不新建。
-  3. 都没有则新建条目：**Immediate → currentAbilityQueue**，**非 Immediate → nextAbilityQueue**。
+  1. 先在 **currentAbilityQueue** 中查找同 (Owner, AbilityIndex)（引用相等），找到则只做 `PendingCount += pendingCount`，不新建。
+  2. 再在 **nextAbilityQueue** 中查找同上，找到则只做 `PendingCount += pendingCount`，不新建。
+  3. 都没有则新建条目：**Immediate → currentAbilityQueue**，**非 Immediate → nextAbilityQueue**。`AbilityQueueEntry` 持有多元组 (Owner=能力持有者 BattleItemState, AbilityIndex, PendingCount, LastTriggerMs)。
 
 ## 步骤 8 执行顺序：按能力优先级
 
-- 步骤 8 在遍历处理 `currentAbilityQueue` 前，**先按能力优先级排序**：主键为 `AbilityPriority` 枚举值升序（Immediate → Highest → High → Medium → Low → Lowest），同优先级按 (SideIndex, ItemIndex, AbilityIndex) 稳定排序。
+- 步骤 8 在遍历处理 `currentAbilityQueue` 前，**先按能力优先级排序**：主键为 `AbilityPriority` 枚举值升序（Immediate → Highest → High → Medium → Low → Lowest），同优先级按 (Owner.SideIndex, Owner.ItemIndex, AbilityIndex) 稳定排序。
 - 这样同一帧内触发的多条能力会按「高优先级先于低优先级」执行（例如裂盾刀裂盾 High 先于姜饼人护盾 Low）。
 
 ## 效果数值与光环
 
 - 执行效果时，`IEffectApplyContext.GetResolvedValue` 用于取 Damage、Shield 等。实现（如 `EffectApplyContextImpl`）**必须**传入 `IAuraContext` 调用 `Item.Template.GetInt(key, tier, default, auraContext)`，否则「基础 0 + 光环加成」类物品施放时数值仍为 0。见 `docs/implementation-notes.md` 中「光环（Aura）与属性读取」→「效果数值必须带光环上下文」。
-- **战斗内读属性统一带光环**：凡有 `(side, itemIndex)` 的战斗内读（Multicast、CooldownMs、AmmoCap 等）应使用 **`BattleSide.GetItemInt(itemIndex, key, defaultValue)`**，内部用 `BattleAuraContext(this, itemIndex)` 调用 `Template.GetInt(..., context)`，保证依赖变量的光环（如「飞行时 +1 多重释放」）正确生效。
+- **战斗内读属性统一带光环**：凡有 (side, item) 的战斗内读（Multicast、CooldownMs、AmmoCap 等）应使用 **`BattleSide.GetItemInt(item.ItemIndex, key, defaultValue)`**，内部用 `BattleAuraContext(this, item)` 调用 `Template.GetInt(..., context)`，保证依赖变量的光环（如「飞行时 +1 多重释放」）正确生效。施放队列 castQueue 为 `List<BattleItemState>`。
 
 ## 设计文档对照
 

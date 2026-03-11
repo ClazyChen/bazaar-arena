@@ -27,38 +27,38 @@ public class FileBattleLogSink : IBattleLogSink, IDisposable
 
     public void OnHpSnapshot(int timeMs, int side0Hp, int side1Hp) { }
 
-    public void OnCast(int sideIndex, int itemIndex, string itemName, int timeMs, int? ammoRemainingAfter = null)
+    public void OnCast(BattleItemState caster, string itemName, int timeMs, int? ammoRemainingAfter = null)
     {
         if (_level != BattleLogLevel.Detailed) return;
         string suffix = ammoRemainingAfter.HasValue ? $" 剩余弹药 {ammoRemainingAfter.Value}" : "";
-        _writer.WriteLine($"  玩家{sideIndex + 1} 施放 [{itemName}] @ {timeMs}ms{suffix}");
+        _writer.WriteLine($"  玩家{caster.SideIndex + 1} 施放 [{itemName}] @ {timeMs}ms{suffix}");
     }
 
-    public void OnEffect(int sideIndex, int itemIndex, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)
+    public void OnEffect(BattleItemState caster, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)
     {
         if (_level != BattleLogLevel.Detailed) return;
         string critSuffix = isCrit ? " （暴击）" : "";
         string valueStr = EffectLogFormat.FormatEffectValue(effectKind, value);
         string valuePart = string.IsNullOrEmpty(valueStr) ? "" : " " + valueStr;
-        _writer.WriteLine($"  玩家{sideIndex + 1} [{itemName}] {effectKind}{valuePart}{extraSuffix}{critSuffix} @ {timeMs}ms");
+        _writer.WriteLine($"  玩家{caster.SideIndex + 1} [{itemName}] {effectKind}{valuePart}{extraSuffix}{critSuffix} @ {timeMs}ms");
     }
 
-    public void OnBurnTick(int sideIndex, int burnDamage, int remainingBurn, int timeMs)
+    public void OnBurnTick(BattleSide victim, int burnDamage, int remainingBurn, int timeMs)
     {
         if (_level != BattleLogLevel.Detailed) return;
-        _writer.WriteLine($"  灼烧结算 玩家{sideIndex + 1} 受到{burnDamage} 剩余灼烧{remainingBurn} @ {timeMs}ms");
+        _writer.WriteLine($"  灼烧结算 玩家{victim.SideIndex + 1} 受到{burnDamage} 剩余灼烧{remainingBurn} @ {timeMs}ms");
     }
 
-    public void OnPoisonTick(int sideIndex, int poisonDamage, int timeMs)
+    public void OnPoisonTick(BattleSide victim, int poisonDamage, int timeMs)
     {
         if (_level != BattleLogLevel.Detailed) return;
-        _writer.WriteLine($"  剧毒结算 玩家{sideIndex + 1} 受到{poisonDamage} @ {timeMs}ms");
+        _writer.WriteLine($"  剧毒结算 玩家{victim.SideIndex + 1} 受到{poisonDamage} @ {timeMs}ms");
     }
 
-    public void OnRegenTick(int sideIndex, int heal, int timeMs)
+    public void OnRegenTick(BattleSide side, int heal, int timeMs)
     {
         if (_level != BattleLogLevel.Detailed) return;
-        _writer.WriteLine($"  生命再生 玩家{sideIndex + 1} 回复{heal} @ {timeMs}ms");
+        _writer.WriteLine($"  生命再生 玩家{side.SideIndex + 1} 回复{heal} @ {timeMs}ms");
     }
 
     public void OnSandstormTick(int damage, int timeMs)

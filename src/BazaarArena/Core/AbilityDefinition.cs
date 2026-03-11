@@ -1,8 +1,5 @@
 namespace BazaarArena.Core;
 
-/// <summary>效果数值结算委托：根据物品模板与等级返回效果数值（如伤害、灼烧量等）。</summary>
-public delegate int EffectValueResolver(ItemTemplate template, ItemTier tier);
-
 /// <summary>能力定义：触发器名、优先级与效果列表。触发间隔 5 帧（250ms）由模拟器维护。</summary>
 public class AbilityDefinition
 {
@@ -28,26 +25,23 @@ public class AbilityDefinition
     public List<EffectDefinition> Effects { get; set; } = [];
 }
 
-/// <summary>单条效果定义：数值结算（ValueKey/ValueResolver）与应用委托 Apply。暴击是否乘到数值上由模拟器根据物品六字段与 ApplyCritMultiplier 决定。</summary>
+/// <summary>单条效果定义：数值结算（ValueKey）与应用委托 Apply。暴击是否乘到数值上由模拟器根据物品六字段与 ApplyCritMultiplier 决定。</summary>
 public class EffectDefinition
 {
-    /// <summary>固定数值；当无 ValueResolver/ValueKey 且模板对应字段为 0 时使用。</summary>
+    /// <summary>固定数值；当 ValueKey 对应模板字段为 0 时使用。</summary>
     public int Value { get; set; }
-    /// <summary>结算委托：返回本效果数值；设置后优先使用此委托。</summary>
-    public EffectValueResolver? ValueResolver { get; set; }
-    /// <summary>模板字段名，如 "Damage"、"Custom_0"；当未设置 ValueResolver 时，用 template.GetInt(ValueKey, tier) 结算数值。</summary>
+    /// <summary>模板字段名，如 "Damage"、"Custom_0"；用 template.GetInt(ValueKey, tier) 结算数值，未设时用 defaultKey。</summary>
     public string? ValueKey { get; set; }
     /// <summary>是否对基础数值乘暴击倍率；Charge/Freeze/Slow 等为 false。</summary>
     public bool ApplyCritMultiplier { get; set; } = true;
     /// <summary>效果应用委托；由 Core/Effect 预定义或自定义效果设置。</summary>
     public Action<IEffectApplyContext>? Apply { get; set; }
 
-    /// <summary>按优先级解析数值：ValueResolver → ValueKey → defaultKey；结果为 0 时用 Value。</summary>
+    /// <summary>解析数值：ValueKey 或 defaultKey 对应 template.GetInt；结果为 0 时用 Value。</summary>
     public int ResolveValue(ItemTemplate template, ItemTier tier, string defaultKey)
     {
         string key = !string.IsNullOrEmpty(ValueKey) ? ValueKey : defaultKey;
-        int v = ValueResolver != null ? ValueResolver(template, tier)
-            : template.GetInt(key, tier);
+        int v = template.GetInt(key, tier);
         return v != 0 ? v : Value;
     }
 }

@@ -1,3 +1,5 @@
+using BazaarArena.BattleSimulator;
+
 namespace BazaarArena.Core;
 
 /// <summary>效果应用上下文接口：由模拟器实现，供 EffectDefinition.Apply 委托调用。不依赖具体战斗类型。</summary>
@@ -15,8 +17,8 @@ public interface IEffectApplyContext
     /// <summary>本轮能力是否掷出暴击；可暴击效果在 LogEffect 时传 showCrit: IsCrit，不可暴击效果传 false。</summary>
     bool IsCrit { get; }
 
-    /// <summary>施放者物品在己方一侧的下标（用于如「右侧物品」即 ItemIndex+1）。</summary>
-    int ItemIndex { get; }
+    /// <summary>施放者物品（能力持有者）；槽位等可用 CasterItem.ItemIndex / CasterItem.SideIndex。</summary>
+    BattleItemState CasterItem { get; }
 
     /// <summary>从施放者物品模板按 key 取值（缺省时用 defaultValue），若 applyCritMultiplier 则乘暴击倍率。用于数值与目标数等，key 建议用 nameof(ItemTemplate.XXX)。</summary>
     int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0);

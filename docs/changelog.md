@@ -1,5 +1,24 @@
 # 变更记录
 
+## BattleItemState 引用化重构（sim）
+
+- **目标**：函数与数据结构在标识「哪个物品」时统一使用 `BattleItemState` 引用，不再传递或存储 `(sideIndex, itemIndex)` 组合；`SideIndex`/`ItemIndex` 仍保留在 `BattleItemState` 上供 Condition、排序与输出使用。
+- **数据结构**：`AbilityQueueEntry` 改为 `Owner`（BattleItemState）+ `AbilityIndex`，合并与排序用 `Owner` 引用及 `Owner.SideIndex`/`ItemIndex`；`TriggerInvokeContext` 改为 `InvokeTargetItem`（BattleItemState?）；castQueue / ChargeInducedCastQueue 类型为 `List<BattleItemState>`。
+- **BattleSimulator**：`InvokeTrigger(triggerName, causeItem?, context, ...)`，`AddOrMergeAbility(owner, ...)`，`ExecuteOneEffect(item, ...)`；ProcessCooldown 签名为 `(side, timeMs, castQueue)`；SettleBurn/Poison/Regen 去掉 victimSideIndex，日志接口改为接收 `BattleSide`。
+- **效果与光环**：`IEffectApplyContext` 移除 `ItemIndex`、新增 `CasterItem`（BattleItemState）；`EffectApplyContextImpl` 用 `Item`、`ChargeInducedCastQueue` 为 `List<BattleItemState>?`；`BattleAuraContext(side, targetItem, opp)`，`AuraFormulaEvaluator.Evaluate(formulaName, source, side, opp)`。
+- **日志**：`IBattleLogSink` 的 OnCast/OnEffect 改为接收 `BattleItemState caster`，OnBurnTick/OnPoisonTick/OnRegenTick 改为接收 `BattleSide`；`StatsCollectingSink` 使用 `Dictionary<BattleItemState, ItemAccumEntry>`，输出时按 `(item.SideIndex, item.ItemIndex)` 排序。
+- **文档与规则**：implementation-notes、battle-simulator-ability-queue、item-design 同步为「以 BattleItemState 引用入队/传参」的表述。
+
+---
+
+## 移除 EffectValueResolver
+
+- **原因**：自定义公式算数值已整合到光环公式（AuraDefinition 的 FixedValueFormula/PercentValueKey 等），效果数值统一由 ValueKey + 模板/光环取值得到。
+- **代码**：删除 `EffectValueResolver` 委托类型与 `EffectDefinition.ValueResolver` 属性；`ResolveValue` 仅用 ValueKey/defaultKey + `template.GetInt` + Value。ItemDatabase/BattleSimulator 克隆能力时不再复制 ValueResolver。
+- **文档与规则**：implementation-notes、item-design、development-experience 同步移除对 ValueResolver 的表述。
+
+---
+
 ## Condition 收敛与 SourceCondition 统一
 
 - **ConditionContext 语义**：Source=能力持有者（恒非空），Item=被评估对象（Condition 时=引起触发的物品，InvokeTargetCondition 时=指向的物品，TargetCondition 时=候选目标；可为 null）。调用处构建上下文时统一按此赋值。

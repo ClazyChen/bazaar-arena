@@ -103,7 +103,7 @@ public class ItemDatabase : IItemTemplateResolver
                 SourceCondition = Condition.Clone(a.SourceCondition),
                 InvokeTargetCondition = Condition.Clone(a.InvokeTargetCondition),
                 TargetCondition = Condition.Clone(a.TargetCondition),
-                Effects = a.Effects.Select(e => new EffectDefinition { Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, ApplyCritMultiplier = e.ApplyCritMultiplier, Apply = e.Apply }).ToList(),
+                Effects = a.Effects.Select(e => new EffectDefinition { Value = e.Value, ValueKey = e.ValueKey, ApplyCritMultiplier = e.ApplyCritMultiplier, Apply = e.Apply }).ToList(),
             })],
             Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey, FixedValueFormula = a.FixedValueFormula }).ToList(),
             OverridableAttributes = t.OverridableAttributes != null ? new Dictionary<string, IntOrByTier>(t.OverridableAttributes) : null,

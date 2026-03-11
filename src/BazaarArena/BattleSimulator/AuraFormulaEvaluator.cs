@@ -5,18 +5,18 @@ namespace BazaarArena.BattleSimulator;
 /// <summary>光环固定加成公式求值：根据 <see cref="AuraDefinition.FixedValueFormula"/> 计算固定加成的数值，避免公式逻辑堆在 <see cref="BattleAuraContext"/>。</summary>
 internal static class AuraFormulaEvaluator
 {
-    /// <summary>根据公式名、施放源物品、来源下标、己方阵营与可选敌方阵营计算固定加成值；未知公式返回 0。sourceIndex 用于依赖来源属性的公式（如 SourceDamage）。</summary>
-    public static int Evaluate(string? formulaName, BattleItemState source, int sourceIndex, BattleSide side, BattleSide? opp = null)
+    /// <summary>根据公式名、施放源物品、己方阵营与可选敌方阵营计算固定加成值；未知公式返回 0。</summary>
+    public static int Evaluate(string? formulaName, BattleItemState source, BattleSide side, BattleSide? opp = null)
     {
         if (string.IsNullOrEmpty(formulaName)) return 0;
         return formulaName switch
         {
             Formula.SmallCountStash => EvaluateSmallCountStash(source, side),
             Formula.OpponentPoison => opp?.Poison ?? 0,
-            Formula.SourceDamage => source.Template.GetInt("Damage", source.Tier, 0, new BattleAuraContext(side, sourceIndex)),
+            Formula.SourceDamage => source.Template.GetInt("Damage", source.Tier, 0, new BattleAuraContext(side, source)),
             Formula.CompanionCountTimesCustom0 => EvaluateCompanionCountTimesCustom0(source, side),
-            Formula.Minus1sPerAdjacentCompanion => EvaluateMinus1sPerAdjacentCompanion(sourceIndex, side),
-            Formula.OnlyCompanionCritBonus => EvaluateOnlyCompanionCritBonus(source, sourceIndex, side),
+            Formula.Minus1sPerAdjacentCompanion => EvaluateMinus1sPerAdjacentCompanion(source.ItemIndex, side),
+            Formula.OnlyCompanionCritBonus => EvaluateOnlyCompanionCritBonus(source, side),
             _ => 0,
         };
     }
@@ -59,7 +59,7 @@ internal static class AuraFormulaEvaluator
         return -1000 * count;
     }
 
-    private static int EvaluateOnlyCompanionCritBonus(BattleItemState source, int sourceIndex, BattleSide side)
+    private static int EvaluateOnlyCompanionCritBonus(BattleItemState source, BattleSide side)
     {
         int companionCount = 0;
         int onlyCompanionIndex = -1;
@@ -72,7 +72,7 @@ internal static class AuraFormulaEvaluator
                 onlyCompanionIndex = j;
             }
         }
-        if (companionCount == 1 && onlyCompanionIndex == sourceIndex)
+        if (companionCount == 1 && onlyCompanionIndex == source.ItemIndex)
             return source.Template.GetInt("Custom_0", source.Tier, 0);
         return 0;
     }

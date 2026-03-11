@@ -6,7 +6,7 @@ public class StatsCollectingSink : IBattleLogSink
     /// <summary>强度曲线采样间隔（毫秒），默认 500。</summary>
     public int CurveIntervalMs { get; set; } = 500;
 
-    private readonly Dictionary<(int Side, int ItemIndex), ItemAccumEntry> _itemAccum = [];
+    private readonly Dictionary<BattleItemState, ItemAccumEntry> _itemAccum = [];
     private int _side0Damage;
     private int _side0Burn;
     private int _side0Poison;
@@ -77,29 +77,28 @@ public class StatsCollectingSink : IBattleLogSink
         }
     }
 
-    public void OnCast(int sideIndex, int itemIndex, string itemName, int timeMs, int? ammoRemainingAfter = null)
+    public void OnCast(BattleItemState caster, string itemName, int timeMs, int? ammoRemainingAfter = null)
     {
-        var key = (sideIndex, itemIndex);
-        if (!_itemAccum.TryGetValue(key, out var entry))
+        if (!_itemAccum.TryGetValue(caster, out var entry))
         {
             entry = new ItemAccumEntry { ItemName = itemName };
-            _itemAccum[key] = entry;
+            _itemAccum[caster] = entry;
         }
         entry.ItemName = itemName;
         entry.Accum.CastCount++;
         TryRecordCurve(timeMs);
     }
 
-    public void OnEffect(int sideIndex, int itemIndex, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)
+    public void OnEffect(BattleItemState caster, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)
     {
-        var key = (sideIndex, itemIndex);
-        if (!_itemAccum.TryGetValue(key, out var entry))
+        if (!_itemAccum.TryGetValue(caster, out var entry))
         {
             entry = new ItemAccumEntry { ItemName = itemName };
-            _itemAccum[key] = entry;
+            _itemAccum[caster] = entry;
         }
         entry.ItemName = itemName;
         ref var a = ref entry.Accum;
+        int sideIndex = caster.SideIndex;
 
         switch (effectKind)
         {
@@ -197,9 +196,9 @@ public class StatsCollectingSink : IBattleLogSink
         _lastCurveTimeMs = t;
     }
 
-    public void OnBurnTick(int sideIndex, int burnDamage, int remainingBurn, int timeMs) => TryRecordCurve(timeMs);
-    public void OnPoisonTick(int sideIndex, int poisonDamage, int timeMs) => TryRecordCurve(timeMs);
-    public void OnRegenTick(int sideIndex, int heal, int timeMs) => TryRecordCurve(timeMs);
+    public void OnBurnTick(BattleSide victim, int burnDamage, int remainingBurn, int timeMs) => TryRecordCurve(timeMs);
+    public void OnPoisonTick(BattleSide victim, int poisonDamage, int timeMs) => TryRecordCurve(timeMs);
+    public void OnRegenTick(BattleSide side, int heal, int timeMs) => TryRecordCurve(timeMs);
     public void OnSandstormTick(int damage, int timeMs) { }
 
     public void OnResult(int winnerSideIndex, int timeMs, bool isDraw)
@@ -212,10 +211,10 @@ public class StatsCollectingSink : IBattleLogSink
     /// <summary>获取本次 Run 的统计；应在 Run 结束后调用。</summary>
     public BattleRunStats GetStats()
     {
-        var itemStats = _itemAccum.OrderBy(kv => kv.Key.Side).ThenBy(kv => kv.Key.ItemIndex)
+        var itemStats = _itemAccum.OrderBy(kv => kv.Key.SideIndex).ThenBy(kv => kv.Key.ItemIndex)
             .Select(kv => new ItemStatRow
             {
-                SideIndex = kv.Key.Side,
+                SideIndex = kv.Key.SideIndex,
                 ItemName = kv.Value.ItemName,
                 CastCount = kv.Value.Accum.CastCount,
                 Damage = kv.Value.Accum.Damage,
