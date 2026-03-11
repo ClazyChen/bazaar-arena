@@ -98,7 +98,6 @@ public static class CommonLarge
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.Damage),
-                    Condition = Condition.SameAsSource,
                     FixedValueFormula = Formula.SmallCountStash,
                 },
             ],

@@ -289,7 +289,7 @@ public static class CommonSmall
             Abilities =
             [
                 Ability.Poison(),
-                Ability.AddAttribute(nameof(ItemTemplate.Poison), additionalTargetCondition: Condition.AdjacentToSource, priority: AbilityPriority.Low, condition: Condition.AdjacentToSource, trigger: Trigger.Slow),
+                Ability.AddAttribute(nameof(ItemTemplate.Poison), targetCondition: Condition.SameAsSource, priority: AbilityPriority.Low, condition: Condition.AdjacentToSource, trigger: Trigger.Slow),
             ],
         };
     }

@@ -62,20 +62,20 @@ public static class Effect
         ctx.ChargeCasterItem(value, out _);
     };
 
-    /// <summary>冻结：根据 FreezeTargetCount 与 Freeze（毫秒）选取有冷却的敌人物品施加冻结（默认 Condition.DifferentSide），触发次数按实际目标数。</summary>
+    /// <summary>冻结：根据 FreezeTargetCount 与 Freeze（毫秒）选取满足能力 TargetCondition 的敌人物品施加冻结（默认未摧毁且有冷却）；触发次数按实际目标数。</summary>
     public static readonly Action<IEffectApplyContext> FreezeApply = ctx =>
     {
         int freezeMs = ctx.GetResolvedValue(nameof(ItemTemplate.Freeze));
         int count = ctx.GetResolvedValue(nameof(ItemTemplate.FreezeTargetCount), defaultValue: 1);
-        ctx.ApplyFreeze(freezeMs, count, null);
+        ctx.ApplyFreeze(freezeMs, count, ctx.TargetCondition);
     };
 
-    /// <summary>减速：根据 SlowTargetCount 与 Slow（毫秒）选取有冷却的敌人物品施加减速（默认 Condition.DifferentSide）。</summary>
+    /// <summary>减速：根据 SlowTargetCount 与 Slow（毫秒）选取满足能力 TargetCondition 的敌人物品施加减速（默认未摧毁且有冷却）。</summary>
     public static readonly Action<IEffectApplyContext> SlowApply = ctx =>
     {
         int slowMs = ctx.GetResolvedValue(nameof(ItemTemplate.Slow));
         int count = ctx.GetResolvedValue(nameof(ItemTemplate.SlowTargetCount), defaultValue: 1);
-        ctx.ApplySlow(slowMs, count, null);
+        ctx.ApplySlow(slowMs, count, ctx.TargetCondition);
     };
 
     /// <summary>对己方满足能力 TargetCondition 的物品增加指定属性（限本场战斗）。attributeName 为要增加的属性名（如 Damage、Poison）；目标条件由能力 TargetCondition 注入，默认 SameSide。</summary>
@@ -94,7 +94,7 @@ public static class Effect
         ctx.ApplyHaste(hasteMs, count, ctx.TargetCondition);
     };
 
-    /// <summary>修复：根据 RepairTargetCount 与能力 TargetCondition 选取己方已摧毁物品进行修复（未摧毁、冷却重置）；默认 SameSide。</summary>
+    /// <summary>修复：根据 RepairTargetCount 与能力 TargetCondition 选取己方已摧毁物品进行修复（实现内会与 Condition.Destroyed 组合）；默认 SameSide。</summary>
     public static readonly Action<IEffectApplyContext> RepairApply = ctx =>
     {
         int count = ctx.GetResolvedValue(nameof(ItemTemplate.RepairTargetCount), defaultValue: 1);

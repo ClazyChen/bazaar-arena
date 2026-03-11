@@ -1,5 +1,12 @@
 # 变更记录
 
+## 失落神祇修复与 Condition/TargetCondition 文档规则
+
+- **失落神祇（Forgotten God）**：「相邻物品触发减速时，此物品获得剧毒」原误用 `additionalTargetCondition: Condition.AdjacentToSource`，导致剧毒加给相邻物品；改为 **targetCondition: Condition.SameAsSource**（仅能力持有者享受加成），**condition: Condition.AdjacentToSource**（被减速物品与能力持有者相邻时触发）不变。
+- **文档与规则**：**docs/implementation-notes.md** 新增「触发条件与效果目标勿混淆」：Condition = 何时触发，TargetCondition = 效果施加给谁；「此物品获得 X」须用 targetCondition: SameAsSource。**.cursor/rules/project-conventions.mdc** 补充 AddAttribute/ReduceAttribute 时触发与目标区分；**.cursor/rules/item-design.mdc** 在 AddAttribute/ReduceAttribute 小节注明「此物品获得」类写法。
+
+---
+
 ## 能力与 Effect 合并、AddAttribute/ReduceAttribute 目标条件与文档规则
 
 - **能力与 Effect 合并**：`AbilityDefinition` 直接承载单条效果的 `Value`、`ValueKey`、`ApplyCritMultiplier`、`Apply`、`ResolveValue`；移除 `EffectDefinition` 类与 `Effects` 列表。**Core/Effect.cs** 仅保留静态 *Apply 委托（如 `DamageApply`、`AddAttributeApply(attributeName)`）；执行处对单能力调用一次 `ability.Apply(ctx)`。原「一个能力两个效果」的唯一样例（暗影斗篷 Haste+AddAttribute）拆成两条能力。

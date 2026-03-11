@@ -6,8 +6,8 @@ public class AuraDefinition
     /// <summary>作用的属性名，如 "CritRatePercent"。</summary>
     public string AttributeName { get; set; } = "";
 
-    /// <summary>光环条件：仅当条件满足时对该目标生效。使用 Condition.SameAsSource、Condition.AdjacentToSource 或 Condition.WithTag(tag)。</summary>
-    public Condition? Condition { get; set; }
+    /// <summary>光环条件：仅当条件满足时对该目标生效。默认 SameAsSource；可使用 AdjacentToSource、WithTag(tag) 等。</summary>
+    public Condition? Condition { get; set; } = Condition.SameAsSource;
 
     /// <summary>光环提供者需满足的条件；评估时 Item=Source=提供者，故可用 WithTag(tag)、InFlight 等表达「本物品在飞行」等。</summary>
     public Condition? SourceCondition { get; set; }

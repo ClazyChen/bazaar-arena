@@ -50,19 +50,19 @@ public interface IEffectApplyContext
     /// <summary>为施放者物品充能（毫秒）；fullAndShouldCast 表示是否已满且应加入施放队列。</summary>
     void ChargeCasterItem(int chargeMs, out bool fullAndShouldCast);
 
-    /// <summary>对目标施加冻结 freezeMs 毫秒。目标池：有冷却时间的物品且满足 targetCondition（默认 DifferentSide）；不放回随机选取至多 targetCount 个；触发次数按实际目标数。</summary>
+    /// <summary>对目标施加冻结 freezeMs 毫秒。目标由 targetCondition 决定（null 时默认敌方、未摧毁且有冷却）；不放回随机选取至多 targetCount 个；触发次数按实际目标数。</summary>
     void ApplyFreeze(int freezeMs, int targetCount, Condition? targetCondition = null);
 
-    /// <summary>对目标施加减速 slowMs 毫秒。目标池：有冷却时间且满足 targetCondition（默认 DifferentSide）；不放回随机选取至多 targetCount 个。</summary>
+    /// <summary>对目标施加减速 slowMs 毫秒。目标由 targetCondition 决定（null 时默认敌方、未摧毁且有冷却）；不放回随机选取至多 targetCount 个。</summary>
     void ApplySlow(int slowMs, int targetCount, Condition? targetCondition = null);
 
-    /// <summary>对目标施加充能 chargeMs 毫秒。目标池：己方有冷却时间且满足 targetCondition（默认 SameSide）；不放回随机选取至多 targetCount 个。</summary>
+    /// <summary>对目标施加充能 chargeMs 毫秒。目标由 targetCondition 决定（null 时默认己方、未摧毁且有冷却）；不放回随机选取至多 targetCount 个。</summary>
     void ApplyCharge(int chargeMs, int targetCount, Condition? targetCondition = null);
 
-    /// <summary>对目标施加加速 hasteMs 毫秒。目标池：己方有冷却时间且满足 targetCondition（默认 SameSide）；不放回随机选取至多 targetCount 个。</summary>
+    /// <summary>对目标施加加速 hasteMs 毫秒。目标由 targetCondition 决定（null 时默认己方、未摧毁且有冷却）；不放回随机选取至多 targetCount 个。</summary>
     void ApplyHaste(int hasteMs, int targetCount, Condition? targetCondition = null);
 
-    /// <summary>修复已摧毁物品：目标池为己方已摧毁且满足 targetCondition（默认 SameSide）；不放回随机选取至多 targetCount 个，将其设为未摧毁并重置冷却已过时间。</summary>
+    /// <summary>修复已摧毁物品：目标由 targetCondition 与已摧毁组合（null 时默认己方）；不放回随机选取至多 targetCount 个，将其设为未摧毁并重置冷却已过时间。</summary>
     void ApplyRepair(int targetCount, Condition? targetCondition = null);
 
     /// <summary>对己方满足 targetCondition 的物品增加指定属性（限本场战斗）。attributeName 为模板属性名（如 Damage、Poison），value 为增加量；目标由 targetCondition 筛选（Source=施放者）。</summary>

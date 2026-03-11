@@ -75,4 +75,13 @@ public class Condition
 
     /// <summary>被评估对象（Item）处于飞行状态；Item 为 null 时为 false。</summary>
     public static Condition InFlight { get; } = new(ctx => ctx.Item != null && ctx.Item.InFlight);
+
+    /// <summary>被评估对象未摧毁；Item 为 null 时为 false。用于目标选取（充能/冻结/减速/加速等）。</summary>
+    public static Condition NotDestroyed { get; } = new(ctx => ctx.Item != null && !ctx.Item.Destroyed);
+
+    /// <summary>被评估对象已摧毁；Item 为 null 时为 false。用于修复目标选取。</summary>
+    public static Condition Destroyed { get; } = new(ctx => ctx.Item != null && ctx.Item.Destroyed);
+
+    /// <summary>被评估对象有冷却时间（CooldownMs &gt; 0）；Item 为 null 时为 false。用于目标选取（充能/冻结/减速/加速等）。</summary>
+    public static Condition HasCooldown { get; } = new(ctx => ctx.Item != null && ctx.MySide.GetItemInt(ctx.Item.ItemIndex, "CooldownMs", 0) > 0);
 }

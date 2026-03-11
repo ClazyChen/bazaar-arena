@@ -130,6 +130,12 @@
 - **Ability.ReduceAttribute(...)**：同上，默认目标为 **DifferentSide**，`additionalTargetCondition` 在 DifferentSide 上追加。
 - **简化写法**：仅需「己方全体」或「敌方全体」可不传 target 参数；需收窄目标时用 `additionalTargetCondition: Condition.WithTag(Tag.Weapon)` 等，与 Haste/Slow 的 additionalTargetCondition 用法一致。
 
+### 「触发条件」与「效果目标」勿混淆（AddAttribute/ReduceAttribute）
+
+- **语义区分**：**Condition** = 何时触发（引起触发的物品 Item 需满足）；**TargetCondition** = 效果施加给谁（候选目标 Item 需满足）。
+- **易错**：文案为「某条件下**此物品**获得 X」时（如「相邻物品触发减速时，此物品获得剧毒」），**Condition** 应描述「谁触发了该能力」（如被减速的物品与能力持有者相邻 → `condition: Condition.AdjacentToSource`），**TargetCondition** 应为 **SameAsSource**（只有能力持有者自己享受加属性），不能把「相邻」写在 `additionalTargetCondition` 上，否则会变成「己方且与 Source 相邻的物品」获得加成（即相邻物品而非本物品）。
+- **正确写法**：`Ability.AddAttribute(..., targetCondition: Condition.SameAsSource, condition: Condition.AdjacentToSource, trigger: Trigger.Slow)`。反例（已修正）：失落神祇曾误用 `additionalTargetCondition: Condition.AdjacentToSource`，导致剧毒加给了相邻物品。
+
 ---
 
 ## 光环（Aura）与属性读取

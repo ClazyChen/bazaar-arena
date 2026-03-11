@@ -70,7 +70,9 @@ public static class Ability
         Priority = priority ?? AbilityPriority.Medium,
     };
 
-    /// <summary>加速（Effect.HasteApply）。默认触发器 UseItem；目标默认己方(SameSide)。可选 trigger、priority、condition、additionalCondition、invokeTargetCondition；targetCondition 代替默认，additionalTargetCondition 在 SameSide 基础上追加。</summary>
+    private static Condition WithCooldownTarget(Condition baseCondition) => baseCondition & Condition.NotDestroyed & Condition.HasCooldown;
+
+    /// <summary>加速（Effect.HasteApply）。默认触发器 UseItem；目标默认己方(SameSide)、未摧毁且有冷却；targetCondition 代替默认，additionalTargetCondition 在 SameSide 基础上追加。</summary>
     public static AbilityDefinition Haste(string trigger = Trigger.UseItem, AbilityPriority? priority = null, Condition? condition = null, Condition? additionalCondition = null, Condition? invokeTargetCondition = null, Condition? targetCondition = null, Condition? additionalTargetCondition = null) => new()
     {
         TriggerName = trigger,
@@ -79,10 +81,10 @@ public static class Ability
         ApplyCritMultiplier = false,
         Apply = Effect.HasteApply,
         Priority = priority ?? AbilityPriority.Medium,
-        TargetCondition = targetCondition ?? (additionalTargetCondition != null ? (Condition.SameSide & additionalTargetCondition) : Condition.SameSide),
+        TargetCondition = WithCooldownTarget(targetCondition ?? (additionalTargetCondition != null ? (Condition.SameSide & additionalTargetCondition) : Condition.SameSide)),
     };
 
-    /// <summary>减速（Effect.SlowApply）。默认触发器 UseItem；目标默认敌方(DifferentSide)。可选 trigger、priority、condition、additionalCondition、invokeTargetCondition；targetCondition 代替默认，additionalTargetCondition 在 DifferentSide 基础上追加。</summary>
+    /// <summary>减速（Effect.SlowApply）。默认触发器 UseItem；目标默认敌方(DifferentSide)、未摧毁且有冷却；targetCondition 代替默认，additionalTargetCondition 在 DifferentSide 基础上追加。</summary>
     public static AbilityDefinition Slow(string trigger = Trigger.UseItem, AbilityPriority? priority = null, Condition? condition = null, Condition? additionalCondition = null, Condition? invokeTargetCondition = null, Condition? targetCondition = null, Condition? additionalTargetCondition = null) => new()
     {
         TriggerName = trigger,
@@ -91,10 +93,10 @@ public static class Ability
         ApplyCritMultiplier = false,
         Apply = Effect.SlowApply,
         Priority = priority ?? AbilityPriority.Medium,
-        TargetCondition = targetCondition ?? (additionalTargetCondition != null ? (Condition.DifferentSide & additionalTargetCondition) : Condition.DifferentSide),
+        TargetCondition = WithCooldownTarget(targetCondition ?? (additionalTargetCondition != null ? (Condition.DifferentSide & additionalTargetCondition) : Condition.DifferentSide)),
     };
 
-    /// <summary>冻结（Effect.FreezeApply）。默认触发器 UseItem；目标默认敌方(DifferentSide)。可选 trigger、priority、condition、additionalCondition、invokeTargetCondition；targetCondition 代替默认，additionalTargetCondition 在 DifferentSide 基础上追加。</summary>
+    /// <summary>冻结（Effect.FreezeApply）。默认触发器 UseItem；目标默认敌方(DifferentSide)、未摧毁且有冷却；targetCondition 代替默认，additionalTargetCondition 在 DifferentSide 基础上追加。</summary>
     public static AbilityDefinition Freeze(string trigger = Trigger.UseItem, AbilityPriority? priority = null, Condition? condition = null, Condition? additionalCondition = null, Condition? invokeTargetCondition = null, Condition? targetCondition = null, Condition? additionalTargetCondition = null) => new()
     {
         TriggerName = trigger,
@@ -103,7 +105,7 @@ public static class Ability
         ApplyCritMultiplier = false,
         Apply = Effect.FreezeApply,
         Priority = priority ?? AbilityPriority.Medium,
-        TargetCondition = targetCondition ?? (additionalTargetCondition != null ? (Condition.DifferentSide & additionalTargetCondition) : Condition.DifferentSide),
+        TargetCondition = WithCooldownTarget(targetCondition ?? (additionalTargetCondition != null ? (Condition.DifferentSide & additionalTargetCondition) : Condition.DifferentSide)),
     };
 
     /// <summary>对己方满足目标条件的物品增加指定属性（限本场战斗）。attributeName 如 Damage、Poison；amountKey 默认 Custom_0。目标默认己方(SameSide)；targetCondition 完全代替默认，additionalTargetCondition 在 SameSide 基础上追加。可选 trigger、priority、condition 等。</summary>
