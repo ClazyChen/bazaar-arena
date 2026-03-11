@@ -18,11 +18,8 @@ public static class CommonMedium
             Shield = [10, 20, 40, 80],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Effects = [Effect.Damage, Effect.Shield],
-                },
+                Ability.Damage(),
+                Ability.Shield(),
             ],
         };
     }
@@ -41,11 +38,8 @@ public static class CommonMedium
             SlowSeconds = new[] { 3.0, 4.0, 5.0, 6.0 },
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Effects = [Effect.Damage, Effect.Slow],
-                },
+                Ability.Damage(),
+                Ability.Slow(),
             ],
         };
     }
@@ -65,9 +59,9 @@ public static class CommonMedium
             [
                 new()
                 {
-                    TriggerName = Trigger.UseOtherItem,
+                    TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.Low,
-                    Condition = Condition.UsedItemRightOfSource,
+                    Condition = Condition.And(Condition.And(Condition.DifferentFromSource, Condition.SameSide), Condition.UsedItemRightOfSource),
                     TargetCondition = Condition.RightOfSource,
                     Effects = [Effect.Haste, Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.And(Condition.RightOfSource, Condition.WithTag(Tag.Weapon)))],
                 },
@@ -90,11 +84,8 @@ public static class CommonMedium
             Custom_0 = [5, 10, 15, 20],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Effects = [Effect.Damage, Effect.Freeze],
-                },
+                Ability.Damage(),
+                Ability.Freeze(),
                 new()
                 {
                     TriggerName = Trigger.Freeze,
@@ -117,7 +108,7 @@ public static class CommonMedium
             Damage = [20, 40, 80, 160],
             Abilities =
             [
-                Ability.DamageOnUseItem(),
+                Ability.Damage(),
             ],
         };
     }
@@ -134,7 +125,7 @@ public static class CommonMedium
             Shield = [20, 60, 120, 200],
             Abilities =
             [
-                Ability.ShieldOnUseItem(),
+                Ability.Shield(),
             ],
         };
     }
@@ -151,7 +142,7 @@ public static class CommonMedium
             Damage = [30, 60, 120, 240],
             Abilities =
             [
-                Ability.DamageOnUseItem(),
+                Ability.Damage(),
             ],
         };
     }
@@ -169,7 +160,7 @@ public static class CommonMedium
             HasteTargetCount = 2,
             Abilities =
             [
-                Ability.HasteOnUseItem(AbilityPriority.High, targetCondition: Condition.AdjacentToSource),
+                Ability.Haste(priority: AbilityPriority.High, targetCondition: Condition.AdjacentToSource),
             ],
         };
     }
@@ -186,7 +177,7 @@ public static class CommonMedium
             Burn = [4, 6, 8, 10],
             Abilities =
             [
-                Ability.BurnOnUseItem(),
+                Ability.Burn(),
             ],
         };
     }
@@ -204,7 +195,7 @@ public static class CommonMedium
             SlowTargetCount = 1,
             Abilities =
             [
-                Ability.SlowOnUseItem(),
+                Ability.Slow(),
             ],
         };
     }
@@ -249,7 +240,7 @@ public static class CommonMedium
                     Priority = AbilityPriority.Lowest,
                     Effects = [Effect.Repair],
                 },
-                Ability.HealOnUseItem(),
+                Ability.Heal(),
             ],
         };
     }

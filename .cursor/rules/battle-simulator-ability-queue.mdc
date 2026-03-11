@@ -16,7 +16,7 @@ alwaysApply: false
 
 ## 施放队列（castQueue）触发的能力
 
-- 步骤 7 中，由 castQueue 触发的「使用物品」「使用其他物品」等能力，**必须加入 nextAbilityQueue**，不能加入 currentAbilityQueue。
+- 步骤 7 中，由 castQueue 触发的「使用物品」能力，**必须加入 nextAbilityQueue**，不能加入 currentAbilityQueue。仅调用一次 `InvokeTrigger(Trigger.UseItem, ...)`；「其他物品使用则触发」通过能力 Condition = `And(DifferentFromSource, SameSide)[ + 额外条件 ]` 表达。
 - 这样这些能力会在下一帧经步骤 11 进入 current，再在下一帧的步骤 8 被处理，即「本帧施放、下一帧生效」。
 
 ## 步骤 8 执行过程中引发的新能力
@@ -27,9 +27,10 @@ alwaysApply: false
 
 ## 触发器调用方式与 PendingCount
 
-- 所有触发器均通过**统一**的 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用：遍历双方所有物品，构建 `ConditionContext` 后调用 `condition.Evaluate(ctx)` 判断是否触发，再入队。**只有 Immediate 优先级入 currentAbilityQueue，其余入 nextAbilityQueue**（与步骤 7 施放触发的规则一致）。
+- 所有触发器均通过**统一**的 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用：遍历双方所有物品，构建 `ConditionContext` 后调用 `condition.Evaluate(ctx)` 判断是否触发；若能力有 `InvokeTargetCondition` 且 context 提供 InvokeTarget（Slow/Freeze 每目标一次），则再以「触发器目标」为 Candidate 求值，不通过则不入队。**只有 Immediate 优先级入 currentAbilityQueue，其余入 nextAbilityQueue**（与步骤 7 施放触发的规则一致）。
 - **战斗开始**：步骤 1 只调用 `InvokeTrigger(Trigger.BattleStart, -1, -1, null, ...)` 入队，不直接执行；执行在步骤 8（或下一帧步骤 8）进行。
-- **UseItem / UseOtherItem / OnCrit / OnDestroy**：生成/克隆能力时 `EnsureTriggerCondition` 补 Condition：`UseItem` 且 Condition 为 null → `Condition.SameAsSource`；**UseOtherItem 始终叠加「己方其他物品」**：基础为 `And(DifferentFromSource, SameSide)`，若能力有显式 Condition（如 `WithTag(Tag.Tool)`）则返回 `And(baseSameSideOther, condition)`；**OnCrit**（造成暴击时）默认 `Condition.SameSide`；**OnDestroy**（摧毁物品时）默认 `Condition.SameSide`，来源=造成本次摧毁的物品，context 传入 `DestroyedItemTemplate`、`DestroyedItemInFlight`，在**标记 Destroyed 之前**调用 `InvokeTrigger`。来源=暴击施放者时，在 `ExecuteOneEffect` 全部效果执行完后若 `isCrit` 则调用 `InvokeTrigger(Trigger.OnCrit, ...)`。
+- **UseItem / OnCrit / OnDestroy**：生成/克隆能力时 `EnsureTriggerCondition` 补 Condition：`UseItem` 且 Condition 为 null → `Condition.SameAsSource`；其余触发器（Freeze/Slow/OnCrit/OnDestroy/BattleStart）默认 `Condition.SameSide`。**OnDestroy**（摧毁物品时）来源=造成本次摧毁的物品，context 传入 `DestroyedItemTemplate`、`DestroyedItemInFlight`，在**标记 Destroyed 之前**调用 `InvokeTrigger`。来源=暴击施放者时，在 `ExecuteOneEffect` 全部效果执行完后若 `isCrit` 则调用 `InvokeTrigger(Trigger.OnCrit, ...)`。
+- **条件语义**：`Condition` = 引起触发的物品（source）需满足；`InvokeTargetCondition` = 触发器所指向的物品（如 Slow 时被减速的物品）需满足；`TargetCondition` = 效果选目标时目标需满足（充能/加速/减速/冻结/修复等）。
 - **PendingCount 合并顺序（AddOrMergeAbility）**：
   1. 先在 **currentAbilityQueue** 中查找同 (SideIndex, ItemIndex, AbilityIndex)，找到则只做 `PendingCount += pendingCount`，不新建。
   2. 再在 **nextAbilityQueue** 中查找同上键，找到则只做 `PendingCount += pendingCount`，不新建。

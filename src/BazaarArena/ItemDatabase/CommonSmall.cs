@@ -19,7 +19,7 @@ public static class CommonSmall
             Damage = [5, 10, 15, 20],
             Abilities =
             [
-                Ability.DamageOnUseItem(),
+                Ability.Damage(),
             ],
         };
     }
@@ -35,11 +35,7 @@ public static class CommonSmall
             Burn = [6, 9, 12, 15],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.BattleStart,
-                    Effects = [Effect.Burn],
-                },
+                Ability.Burn(Trigger.BattleStart),
             ],
         };
     }
@@ -56,7 +52,7 @@ public static class CommonSmall
             Poison = [1, 2, 3, 4],
             Abilities =
             [
-                Ability.PoisonOnUseItem(),
+                Ability.Poison(),
             ],
         };
     }
@@ -95,7 +91,7 @@ public static class CommonSmall
             Damage = [15, 30, 60, 120],
             Abilities =
             [
-                Ability.DamageOnUseItem(),
+                Ability.Damage(),
             ],
         };
     }
@@ -112,7 +108,7 @@ public static class CommonSmall
             Damage = [5, 15, 30, 50],
             Abilities =
             [
-                Ability.DamageOnUseItem(),
+                Ability.Damage(),
             ],
         };
     }
@@ -129,7 +125,7 @@ public static class CommonSmall
             Damage = [5, 10, 20, 40],
             Abilities =
             [
-                Ability.DamageOnUseItem(),
+                Ability.Damage(),
             ],
         };
     }
@@ -168,7 +164,7 @@ public static class CommonSmall
             Custom_0 = 100,
             Abilities =
             [
-                Ability.DamageOnUseItem(),
+                Ability.Damage(),
             ],
             Auras =
             [
@@ -194,7 +190,7 @@ public static class CommonSmall
             Heal = [10, 20, 40, 80],
             Abilities =
             [
-                Ability.HealOnUseItem(),
+                Ability.Heal(),
             ],
         };
     }
@@ -211,11 +207,7 @@ public static class CommonSmall
             FreezeTargetCount = 1,
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.BattleStart,
-                    Effects = [Effect.Freeze],
-                },
+                Ability.Freeze(Trigger.BattleStart),
             ],
         };
     }
@@ -235,11 +227,8 @@ public static class CommonSmall
             SlowTargetCount = [1, 2, 3, 4],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Effects = [Effect.Damage, Effect.Slow],
-                },
+                Ability.Damage(),
+                Ability.Slow(),
             ],
         };
     }
@@ -257,7 +246,7 @@ public static class CommonSmall
             Custom_0 = [5, 10, 15, 20],
             Abilities =
             [
-                Ability.DamageOnUseItem(),
+                Ability.Damage(),
                 new()
                 {
                     TriggerName = Trigger.UseItem,
@@ -281,11 +270,8 @@ public static class CommonSmall
             Heal = 0,
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Effects = [Effect.Poison, Effect.Heal],
-                },
+                Ability.Poison(),
+                Ability.Heal(),
             ],
             Auras =
             [
@@ -312,7 +298,7 @@ public static class CommonSmall
             Custom_0 = [4, 8, 12],
             Abilities =
             [
-                Ability.PoisonOnUseItem(),
+                Ability.Poison(),
                 new()
                 {
                     TriggerName = Trigger.Slow,
@@ -338,8 +324,8 @@ public static class CommonSmall
             [
                 new()
                 {
-                    TriggerName = Trigger.UseOtherItem,
-                    Condition = Condition.And(Condition.AdjacentToSource, Condition.WithTag(Tag.Weapon)),
+                    TriggerName = Trigger.UseItem,
+                    Condition = Condition.And(Condition.And(Condition.And(Condition.DifferentFromSource, Condition.SameSide), Condition.AdjacentToSource), Condition.WithTag(Tag.Weapon)),
                     Effects = [Effect.Slow],
                 },
             ],
@@ -367,8 +353,8 @@ public static class CommonSmall
                 },
                 new()
                 {
-                    TriggerName = Trigger.UseOtherItem,
-                    Condition = Condition.WithTag(Tag.Weapon),
+                    TriggerName = Trigger.UseItem,
+                    Condition = Condition.And(Condition.And(Condition.DifferentFromSource, Condition.SameSide), Condition.WithTag(Tag.Weapon)),
                     Effects = [Effect.ChargeSelf],
                 },
             ],
@@ -389,7 +375,7 @@ public static class CommonSmall
             Custom_0 = 1,
             Abilities =
             [
-                Ability.HasteOnUseItem(),
+                Ability.Haste(),
                 new()
                 {
                     TriggerName = Trigger.OnCrit,
@@ -422,10 +408,12 @@ public static class CommonSmall
             Burn = 0,
             Abilities =
             [
+                Ability.Damage(),
+                Ability.Burn(),
                 new()
                 {
                     TriggerName = Trigger.UseItem,
-                    Effects = [Effect.Damage, Effect.Burn, Effect.StartFlying],
+                    Effects = [Effect.StartFlying],
                 },
             ],
             Auras =
@@ -453,11 +441,11 @@ public static class CommonSmall
             ChargeSeconds = 1.0,
             Abilities =
             [
-                Ability.ShieldOnUseItem(AbilityPriority.Low),
+                Ability.Shield(priority: AbilityPriority.Low),
                 new()
                 {
-                    TriggerName = Trigger.UseOtherItem,
-                    Condition = Condition.WithTag(Tag.Tool),
+                    TriggerName = Trigger.UseItem,
+                    Condition = Condition.And(Condition.And(Condition.DifferentFromSource, Condition.SameSide), Condition.WithTag(Tag.Tool)),
                     Effects = [Effect.ChargeSelf],
                 },
             ],
@@ -476,7 +464,7 @@ public static class CommonSmall
             Custom_0 = [15, 20, 25],
             Abilities =
             [
-                Ability.DamageOnUseItem(),
+                Ability.Damage(),
             ],
             Auras =
             [
@@ -508,7 +496,7 @@ public static class CommonSmall
             Damage = [5, 10, 20],
             Abilities =
             [
-                Ability.DamageOnUseItem(),
+                Ability.Damage(),
             ],
         };
     }
@@ -547,7 +535,7 @@ public static class CommonSmall
             Custom_0 = [50, 75, 100],
             Abilities =
             [
-                Ability.DamageOnUseItem(),
+                Ability.Damage(),
             ],
             Auras =
             [

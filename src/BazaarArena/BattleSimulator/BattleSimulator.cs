@@ -113,8 +113,7 @@ public class BattleSimulator
                         item.AmmoRemaining--;
                     logSink.OnCast(sideIdx, itemIdx, item.Template.Name, timeMs, ammoCap > 0 ? item.AmmoRemaining : null);
                     int multicast = side.GetItemInt(itemIdx, nameof(ItemTemplate.Multicast), 1);
-                    InvokeTrigger(Trigger.UseItem, sideIdx, itemIdx, new TriggerInvokeContext { Multicast = multicast }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
-                    InvokeTrigger(Trigger.UseOtherItem, sideIdx, itemIdx, new TriggerInvokeContext { UsedTemplate = item.Template }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                    InvokeTrigger(Trigger.UseItem, sideIdx, itemIdx, new TriggerInvokeContext { Multicast = multicast, UsedTemplate = item.Template }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
                 }
 
                 // 8. 处理能力队列（只处理 currentAbilityQueue）；按优先级从高到低执行（Immediate/Highest/High 先于 Medium/Low/Lowest），同优先级按入队顺序
@@ -232,6 +231,7 @@ public class BattleSimulator
                     TriggerName = a.TriggerName,
                     Priority = a.Priority,
                     Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
+                    InvokeTargetCondition = Condition.Clone(a.InvokeTargetCondition),
                     TargetCondition = Condition.Clone(a.TargetCondition),
                     Effects = a.Effects.Select(e => new EffectDefinition { Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, ApplyCritMultiplier = e.ApplyCritMultiplier, Apply = e.Apply }).ToList(),
                 }).ToList(),
@@ -248,19 +248,15 @@ public class BattleSimulator
         return side;
     }
 
-    /// <summary>UseItem → SameAsSource；UseOtherItem 始终叠加己方其他物品（And(DifferentFromSource, SameSide)），再与显式 Condition（如 WithTag）取与；Freeze → SameSide（己方触发冻结时）。</summary>
+    /// <summary>condition ?? default：UseItem → SameAsSource，其他触发器（Freeze/Slow/OnCrit/OnDestroy/BattleStart）→ SameSide。</summary>
     private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
     {
         if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
-        if (triggerName == Trigger.UseOtherItem)
-        {
-            Condition baseSameSideOther = Condition.And(Condition.DifferentFromSource, Condition.SameSide);
-            return condition != null ? Condition.And(baseSameSideOther, condition) : baseSameSideOther;
-        }
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.OnCrit) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.OnDestroy) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.BattleStart) return condition ?? Condition.SameSide;
         return condition;
     }
 
@@ -371,6 +367,20 @@ public class BattleSimulator
                         DestroyedItemInFlight = triggerName == Trigger.OnDestroy && (context?.DestroyedItemInFlight ?? false),
                     };
                     if (ab.Condition != null && !ab.Condition.Evaluate(triggerCtx)) continue;
+                    if (ab.InvokeTargetCondition != null && context?.InvokeTargetSideIndex is int invSide && context.InvokeTargetItemIndex is int invItem)
+                    {
+                        var invSideObj = invSide == 0 ? side0 : side1;
+                        if (invItem < 0 || invItem >= invSideObj.Items.Count) continue;
+                        var invokeTargetCtx = new ConditionContext
+                        {
+                            CandidateSide = invSide,
+                            CandidateItem = invItem,
+                            SourceSide = sourceSideIdx,
+                            SourceItem = sourceItemIdx,
+                            CandidateTemplate = invSideObj.Items[invItem].Template,
+                        };
+                        if (!ab.InvokeTargetCondition.Evaluate(invokeTargetCtx)) continue;
+                    }
                     int lastMs = triggerName == Trigger.BattleStart ? lastTriggerMsForBattleStart : item.LastTriggerMsByAbility[a];
                     AddOrMergeAbility(sideIdx, itemIdx, a, ab, pendingCount, lastMs, current, next);
                 }
@@ -411,8 +421,16 @@ public class BattleSimulator
                 ItemIndex = itemIndex,
                 ChargeInducedCastQueue = chargeInducedCastQueue,
                 TargetCondition = ability.TargetCondition,
-                OnFreezeApplied = (count) => InvokeTrigger(Trigger.Freeze, sideIndex, itemIndex, new TriggerInvokeContext { Multicast = count }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue),
-                OnSlowApplied = (count) => InvokeTrigger(Trigger.Slow, sideIndex, itemIndex, new TriggerInvokeContext { Multicast = count }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue),
+                OnFreezeApplied = (targets) =>
+                {
+                    foreach (var (ts, ti) in targets)
+                        InvokeTrigger(Trigger.Freeze, sideIndex, itemIndex, new TriggerInvokeContext { InvokeTargetSideIndex = ts, InvokeTargetItemIndex = ti, Multicast = 1 }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                },
+                OnSlowApplied = (targets) =>
+                {
+                    foreach (var (ts, ti) in targets)
+                        InvokeTrigger(Trigger.Slow, sideIndex, itemIndex, new TriggerInvokeContext { InvokeTargetSideIndex = ts, InvokeTargetItemIndex = ti, Multicast = 1 }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                },
                 OnDestroyApplied = (destroyedItemIdx) =>
                 {
                     var destroyed = side.Items[destroyedItemIdx];

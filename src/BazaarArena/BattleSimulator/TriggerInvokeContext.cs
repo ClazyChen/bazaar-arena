@@ -11,4 +11,8 @@ internal sealed class TriggerInvokeContext
     public ItemTemplate? DestroyedItemTemplate { get; init; }
     /// <summary>OnDestroy 时：被摧毁物品是否处于飞行状态。</summary>
     public bool DestroyedItemInFlight { get; init; }
+    /// <summary>触发器所指向的目标物品所在阵营下标（如 Slow/Freeze 时被减速/被冻结的物品）。用于 InvokeTargetCondition 筛选。</summary>
+    public int? InvokeTargetSideIndex { get; init; }
+    /// <summary>触发器所指向的目标物品在阵营内的下标。</summary>
+    public int? InvokeTargetItemIndex { get; init; }
 }

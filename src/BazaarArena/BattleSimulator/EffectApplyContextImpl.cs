@@ -16,10 +16,10 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public int SideIndex { get; init; }
     public int ItemIndex { get; init; }
     public List<(int, int)>? ChargeInducedCastQueue { get; init; }
-    /// <summary>己方施加冻结后由模拟器注入，用于触发「触发冻结」能力入队（传入本次冻结目标数）。</summary>
-    public Action<int>? OnFreezeApplied { get; init; }
-    /// <summary>己方施加减速后由模拟器注入，用于触发「触发减速」能力入队（传入本次减速目标数）。</summary>
-    public Action<int>? OnSlowApplied { get; init; }
+    /// <summary>己方施加冻结后由模拟器注入，用于触发「触发冻结」能力入队（传入本次冻结目标 (sideIndex, itemIndex) 列表）。</summary>
+    public Action<IReadOnlyList<(int sideIndex, int itemIndex)>>? OnFreezeApplied { get; init; }
+    /// <summary>己方施加减速后由模拟器注入，用于触发「触发减速」能力入队（传入本次减速目标 (sideIndex, itemIndex) 列表）。</summary>
+    public Action<IReadOnlyList<(int sideIndex, int itemIndex)>>? OnSlowApplied { get; init; }
     /// <summary>摧毁施放者右侧下一件物品时由模拟器注入；回调内先 InvokeTrigger(OnDestroy)，再标记 Destroyed。</summary>
     public Action<int>? OnDestroyApplied { get; init; }
 
@@ -146,7 +146,8 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }
         string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
         LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "冻结", freezeMs, TimeMs, isCrit: false, extraSuffix);
-        OnFreezeApplied?.Invoke(indices.Count);
+        var freezeTargets = indices.Select(i => (oppSideIndex, i)).ToList();
+        OnFreezeApplied?.Invoke(freezeTargets);
     }
 
     public void ApplySlow(int slowMs, int targetCount, Condition? targetCondition = null)
@@ -164,7 +165,8 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }
         string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
         LogSink.OnEffect(SideIndex, ItemIndex, Item.Template.Name, "减速", slowMs, TimeMs, isCrit: false, extraSuffix);
-        OnSlowApplied?.Invoke(indices.Count);
+        var slowTargets = indices.Select(i => (oppSideIndex, i)).ToList();
+        OnSlowApplied?.Invoke(slowTargets);
     }
 
     public void ApplyCharge(int chargeMs, int targetCount, Condition? targetCondition = null)

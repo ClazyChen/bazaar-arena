@@ -7,7 +7,7 @@ public readonly struct ConditionContext
     public int CandidateItem { get; init; }
     public int SourceSide { get; init; }
     public int SourceItem { get; init; }
-    /// <summary>触发时「被使用的物品」模板（如 UseOtherItem）；光环评估时为 null。</summary>
+    /// <summary>触发时「被使用的物品」模板（UseItem 时由模拟器填入）；光环评估时为 null。</summary>
     public ItemTemplate? UsedTemplate { get; init; }
     /// <summary>候选/目标物品模板（光环评估时用；触发时也可填）。用于 WithTag、IsShieldItem 等。</summary>
     public ItemTemplate? CandidateTemplate { get; init; }
@@ -65,7 +65,7 @@ public class Condition
     public static Condition IsShieldItem { get; } = new(ctx =>
         ctx.CandidateTemplate?.Tags?.Contains(Tag.Shield) ?? false);
 
-    /// <summary>UseOtherItem 时：被使用的物品在来源（能力持有者）的右侧，即同侧且 UsedItemIndex == SourceItemIndex + 1。InvokeTrigger 中 Source=被使用物品、Candidate=能力持有者，故为 SameSide 且 SourceItem == CandidateItem + 1。</summary>
+    /// <summary>使用物品时：被使用的物品在能力持有者（Candidate）的右侧，即同侧且 SourceItem == CandidateItem + 1（Source=被使用物品、Candidate=能力持有者）。</summary>
     public static Condition UsedItemRightOfSource { get; } = new(ctx =>
         ctx.CandidateSide == ctx.SourceSide && ctx.SourceItem == ctx.CandidateItem + 1);
 

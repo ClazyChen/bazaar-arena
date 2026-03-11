@@ -12,8 +12,11 @@ public class AbilityDefinition
     /// <summary>能力优先级；默认 Medium，仅非默认时需在定义中显式指定。</summary>
     public AbilityPriority Priority { get; set; } = AbilityPriority.Medium;
 
-    /// <summary>触发条件（如 UseOtherItem 时仅当被使用物品带某标签）。可选，null 表示不限制。</summary>
+    /// <summary>引起触发器的物品（source，如「被使用的物品」）需满足的条件。可选，null 时由触发器决定默认（UseItem → SameAsSource，其他 → SameSide）。</summary>
     public Condition? Condition { get; set; }
+
+    /// <summary>触发器所指向的物品需满足的条件（如 Slow 时被减速的物品、Freeze 时被冻结的物品）。默认 null 表示不限制。</summary>
+    public Condition? InvokeTargetCondition { get; set; }
 
     /// <summary>多目标效果（冻结/减速/充能/加速）的目标选择条件；如不设则由效果默认（DifferentSide 或 SameSide）。</summary>
     public Condition? TargetCondition { get; set; }

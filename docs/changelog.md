@@ -1,5 +1,16 @@
 # 变更记录
 
+## AbilityDefinition 条件统一化与 UseOtherItem 移除
+
+- **三种条件**：`Condition` = 引起触发的物品（source）需满足；`InvokeTargetCondition` = 触发器所指向物品需满足（如 Slow 时被减速物品，默认 null）；`TargetCondition` = 效果选目标时目标需满足。克隆与 `EnsureTriggerCondition` 仅做 condition ?? default（UseItem→SameAsSource，其他→SameSide）。
+- **移除 Trigger.UseOtherItem**：步骤 7 仅调用一次 `InvokeTrigger(Trigger.UseItem, ...)`；「其他物品使用则触发」改为 `Trigger.UseItem` + `Condition = And(DifferentFromSource, SameSide)[ + 额外条件 ]`。神经毒素、断裂镣铐、姜饼人、暗影斗篷四处物品已迁移。
+- **TriggerInvokeContext**：新增 `InvokeTargetSideIndex`、`InvokeTargetItemIndex`；Slow/Freeze 按每个目标调用一次 InvokeTrigger，支持 InvokeTargetCondition 筛选。
+- **EffectApplyContextImpl**：`OnFreezeApplied`/`OnSlowApplied` 改为传递目标列表 `(sideIndex, itemIndex)[]`。
+- **Ability 工厂**：Damage、Shield、Heal、Burn、Poison、Haste、Slow、Freeze 支持可选 **condition**、**additionalCondition**（仅作参数，工厂内与默认合并后写入 Condition）、**invokeTargetCondition**；默认 trigger=UseItem。
+- **文档与规则**：implementation-notes 新增「AbilityDefinition 条件统一化与 UseOtherItem 移除」；project-conventions、item-design、battle-simulator-ability-queue 更新 Ability 工厂名与条件语义。
+
+---
+
 ## 护盾/伤害等用 Tag 判断、移除 ItemTypeSnapshot
 
 - **类型 Tag**：`Core/Tag.cs` 新增 `Tag.Shield`、`Tag.Damage`、`Tag.Burn`、`Tag.Poison`、`Tag.Heal`、`Tag.Regen`，用于判断护盾/伤害/灼烧等物品及是否可暴击。

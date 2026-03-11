@@ -31,7 +31,7 @@
 ### 常见错误与教训（本轮修正）
 
 1. **castQueue 触发的「使用物品」能力必须下一帧处理**  
-   步骤 7 中，施放队列产生的能力（UseItem、UseOtherItem）必须加入 **nextAbilityQueue**，不能加入 currentAbilityQueue。若误入 current，本帧步骤 8 就会处理，变成「本帧施放、本帧生效」，违反「上一帧留下的能力在本帧结算」的约定。
+   步骤 7 中，施放队列产生的能力仅通过一次 `InvokeTrigger(Trigger.UseItem, ...)` 加入 **nextAbilityQueue**，不能加入 currentAbilityQueue。「其他物品使用则触发」类能力用 `Trigger.UseItem` + `Condition = And(DifferentFromSource, SameSide)[ + 额外条件 ]` 表达。若误入 current，本帧步骤 8 就会处理，变成「本帧施放、本帧生效」，违反「上一帧留下的能力在本帧结算」的约定。
 
 2. **步骤 8 只处理 currentAbilityQueue**  
    步骤 8 遍历、消耗的必须是 **currentAbilityQueue**（拷贝后清空 current，再逐条处理）；未到 250ms 或 PendingCount 未用完的写回 **nextAbilityQueue**。**只有步骤 11** 才能把 nextAbilityQueue 移入 currentAbilityQueue；在步骤 8 开头或循环前做「next → current」都是错误的。
@@ -40,11 +40,37 @@
    ExecuteOneEffect 执行效果时可能触发新能力（如后续扩展的触发器）。这些新能力入队规则：**仅优先级为 Immediate 的加入 currentAbilityQueue**（本帧继续被步骤 8 处理），**其余一律加入 nextAbilityQueue**。因此 ExecuteOneEffect 需要接收 current/next 两个队列参数，供未来触发器调用使用。
 
 4. **触发器调用方式与 PendingCount 合并**  
-   - 所有触发器通过**统一**的 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用，遍历双方所有物品，用 `TriggerConditionEvaluator` 根据 Condition（SameAsSource / DifferentFromSource / WithTag）判断是否触发；战斗开始也经此入队，不直接执行。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。  
+   - 所有触发器通过**统一**的 `InvokeTrigger(triggerName, sourceSide, sourceItem, context, ...)` 调用，遍历双方所有物品，用 `condition.Evaluate(ConditionContext)` 判断是否触发；若能力有 `InvokeTargetCondition` 且 context 提供 InvokeTarget（Slow/Freeze 每目标一次），则再以「触发器目标」为 Candidate 求值。战斗开始也经此入队，不直接执行。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。  
    - **PendingCount 为通用机制**：新能力入队时，**先查 currentAbilityQueue** 是否存在同 (SideIndex, ItemIndex, AbilityIndex)，有则只加 PendingCount；**再查 nextAbilityQueue**，有则只加 PendingCount；**都没有**才新建条目，且新建时仅 Immediate 入 current，其余入 next。
 
 5. **总结**  
    修改能力队列逻辑时务必对照：cast/使用物品 → 只入 next；步骤 8 只消费 current；next → current 仅步骤 11；新触发能力先合并 PendingCount（current 再 next），再按优先级决定入 current 或 next。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。
+
+---
+
+## AbilityDefinition 条件统一化与 UseOtherItem 移除
+
+### 三种条件的语义
+
+- **condition**：引起触发器的物品（source，如「被使用的物品」）需满足的条件。在 `InvokeTrigger` 中用于筛选「谁的能力被触发」（Candidate = 能力持有者，Source = 触发来源）。默认：UseItem → SameAsSource，其他触发器（Freeze/Slow/OnCrit/OnDestroy/BattleStart）→ SameSide。
+- **InvokeTargetCondition**：触发器所指向的物品需满足的条件（如 Slow 时「被减速的物品」、Freeze 时「被冻结的物品」）。在 `InvokeTrigger` 中，当 context 提供 InvokeTarget（Slow/Freeze 按每个目标调用一次）时，以该目标为 Candidate 求值，不通过则不入队。默认 null 表示不限制。
+- **TargetCondition**：能力效果选目标时，目标需满足的条件（充能/加速/减速/冻结/修复等）。效果执行阶段使用，逻辑不变。
+
+### 移除 Trigger.UseOtherItem
+
+「使用其他物品时触发」等价于「使用物品」且 condition 限制为「己方、且非来源物品」：`Condition.And(Condition.DifferentFromSource, Condition.SameSide)`，再与显式条件（如 WithTag(Tag.Tool)、UsedItemRightOfSource）取与。因此删除 `Trigger.UseOtherItem`，步骤 7 仅调用一次 `InvokeTrigger(Trigger.UseItem, ...)`；原 UseOtherItem 能力改为 `Trigger.UseItem` + 上述 condition。物品迁移示例：神经毒素、断裂镣铐、姜饼人、暗影斗篷。
+
+### Ability 工厂参数
+
+**Core/Ability.cs** 的工厂（Damage、Shield、Heal、Burn、Poison、Haste、Slow、Freeze）支持可选参数：**condition**（覆盖触发器默认）、**additionalCondition**（仅作参数，在工厂内与默认 condition 做 And 后写入 `AbilityDefinition.Condition`，不单独存到定义）、**invokeTargetCondition**（写入 `InvokeTargetCondition`）。默认 condition 按 trigger：UseItem → SameAsSource，其他 → SameSide。克隆时 `EnsureTriggerCondition(triggerName, ability.Condition)` 仅做「condition ?? default」。
+
+### Slow/Freeze 与 InvokeTargetCondition
+
+`OnFreezeApplied` / `OnSlowApplied` 改为传递目标列表 `(sideIndex, itemIndex)[]`；模拟器对每个被冻结/被减速目标调用一次 `InvokeTrigger`，context 带 `InvokeTargetSideIndex`、`InvokeTargetItemIndex`、`Multicast = 1`，`AddOrMergeAbility` 仍按 (SideIndex, ItemIndex, AbilityIndex) 合并 PendingCount。若能力有 `InvokeTargetCondition`，则以该目标为 Candidate 求值，不通过则不入队。
+
+### 小结
+
+修改能力或触发器逻辑时：condition 管「谁触发」，InvokeTargetCondition 管「触发器目标是否满足」（仅 Slow/Freeze 等有目标时），TargetCondition 管「效果选谁」。不再使用 UseOtherItem；「其他物品使用则触发」一律用 UseItem + condition。
 
 ---
 

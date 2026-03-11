@@ -17,7 +17,7 @@ public static class CommonLarge
             Shield = [10, 20, 40, 80],
             Abilities =
             [
-                Ability.ShieldOnUseItem(),
+                Ability.Shield(),
             ],
         };
     }
@@ -35,7 +35,7 @@ public static class CommonLarge
             AmmoCap = 1,
             Abilities =
             [
-                Ability.DamageOnUseItem(),
+                Ability.Damage(),
             ],
         };
     }
@@ -52,7 +52,7 @@ public static class CommonLarge
             Shield = [20, 40, 80, 160],
             Abilities =
             [
-                Ability.ShieldOnUseItem(),
+                Ability.Shield(),
             ],
         };
     }
@@ -69,7 +69,7 @@ public static class CommonLarge
             Heal = [25, 50, 100, 200],
             Abilities =
             [
-                Ability.HealOnUseItem(),
+                Ability.Heal(),
             ],
         };
     }
@@ -91,7 +91,7 @@ public static class CommonLarge
             },
             Abilities =
             [
-                Ability.DamageOnUseItem(),
+                Ability.Damage(),
             ],
             Auras =
             [

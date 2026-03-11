@@ -17,7 +17,7 @@ alwaysApply: true
 
 - **物品定义中的时间**：表示时间时，在物品定义代码中一律使用**秒**作为单位以保证可读性（如 `FreezeSeconds = new[] { 3.0, 4.0, 5.0, 6.0 }`、`Cooldown = 5.0`、`ChargeSeconds = 1.0`）；内部存储可为毫秒，由模板属性做转换（`SecondsOrByTier.ToMilliseconds()`）。
 
-- **物品注册与尺寸/档位**：物品模板中**不**在工厂方法里写 `MinTier`、`Size`；在 **RegisterAll** 中通过 `db.DefaultSize`、`db.DefaultMinTier` 按批次设置，`ItemDatabase.Register` 会将当前默认值写入模板并调用 **EnsureTypeTags**（按属性与 SameAsSource 光环补充护盾/伤害等类型 Tag）后再存入。能力优先使用 **Ability.***OnUseItem** 工厂（如 `Ability.DamageOnUseItem()`、`Ability.HasteOnUseItem(AbilityPriority.High, targetCondition: Condition.AdjacentToSource)`），仅非默认优先级或目标条件时显式传参；**AbilityDefinition.Priority** 默认 Medium。
+- **物品注册与尺寸/档位**：物品模板中**不**在工厂方法里写 `MinTier`、`Size`；在 **RegisterAll** 中通过 `db.DefaultSize`、`db.DefaultMinTier` 按批次设置，`ItemDatabase.Register` 会将当前默认值写入模板并调用 **EnsureTypeTags**（按属性与 SameAsSource 光环补充护盾/伤害等类型 Tag）后再存入。能力优先使用 **Ability.*** 工厂（如 `Ability.Damage()`、`Ability.Haste(priority: AbilityPriority.High, targetCondition: Condition.AdjacentToSource)`）；默认 trigger 为 UseItem，可选 condition、additionalCondition（工厂内与默认合并为 Condition）、invokeTargetCondition；仅非默认优先级或目标条件时显式传参；**AbilityDefinition.Priority** 默认 Medium。
 
 - **对战模拟器能力队列**：修改 `BattleSimulator` 中能力队列、施放队列或触发器逻辑时，必须遵守 **.cursor/rules/battle-simulator-ability-queue.mdc**（仅步骤 11 做 next→current、cast 触发的能力入 next、步骤 8 只处理 current、新能力按优先级入 current/next、PendingCount 先 current 再 next）。
 

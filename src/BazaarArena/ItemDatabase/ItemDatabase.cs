@@ -96,6 +96,7 @@ public class ItemDatabase : IItemTemplateResolver
                 TriggerName = a.TriggerName,
                 Priority = a.Priority,
                 Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
+                InvokeTargetCondition = Condition.Clone(a.InvokeTargetCondition),
                 TargetCondition = Condition.Clone(a.TargetCondition),
                 Effects = a.Effects.Select(e => new EffectDefinition { Value = e.Value, ValueResolver = e.ValueResolver, ValueKey = e.ValueKey, ApplyCritMultiplier = e.ApplyCritMultiplier, Apply = e.Apply }).ToList(),
             })],
@@ -106,18 +107,15 @@ public class ItemDatabase : IItemTemplateResolver
         return clone;
     }
 
-    /// <summary>UseItem → SameAsSource；UseOtherItem 始终叠加己方其他物品（And(DifferentFromSource, SameSide)），再与显式 Condition（如 WithTag）取与；Freeze → SameSide（己方触发冻结时）。</summary>
+    /// <summary>condition ?? default：UseItem → SameAsSource，其他触发器（Freeze/Slow/OnCrit/OnDestroy/BattleStart）→ SameSide。</summary>
     private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
     {
         if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
-        if (triggerName == Trigger.UseOtherItem)
-        {
-            Condition baseSameSideOther = Condition.And(Condition.DifferentFromSource, Condition.SameSide);
-            return condition != null ? Condition.And(baseSameSideOther, condition) : baseSameSideOther;
-        }
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.OnCrit) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.OnDestroy) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.BattleStart) return condition ?? Condition.SameSide;
         return condition;
     }
 }
