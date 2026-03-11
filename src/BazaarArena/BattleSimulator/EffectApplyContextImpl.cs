@@ -282,7 +282,6 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
                 SourceSide = SideIndex,
                 SourceItem = ItemIndex,
                 CandidateTemplate = wi.Template,
-                CandidateTypeSnapshot = wi.TypeSnapshot,
             };
             if (!targetCondition.Evaluate(ctx)) continue;
             if (attributeName == nameof(ItemTemplate.Shield))

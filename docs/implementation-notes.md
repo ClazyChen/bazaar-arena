@@ -89,8 +89,7 @@
 
 - **统一入口**：「给己方某类物品加属性」「给敌方某类物品减属性」不再写自定义 `EffectDefinition` 或专用 API（如已删除的 WeaponDamageBonus、ReduceOpponentShieldItemsShield），统一用 **Effect.AddAttribute** / **Effect.ReduceAttribute**。
 - **AddAttribute(attributeName, amountKey?, targetCondition?)**：对己方满足 `targetCondition` 的物品增加指定属性（限本场战斗）。默认 `amountKey = nameof(ItemTemplate.Custom_0)`，`targetCondition = Condition.SameAsSource`（自身）。目标由 `IEffectApplyContext.AddAttributeToCasterSide` 遍历己方物品、用 `ConditionContext`（Source=施放者，Candidate=当前物品）求值；支持属性目前为 Damage、Poison，日志为「伤害提高」「剧毒提高」。
-- **ReduceAttribute(attributeName, amountKey?, targetCondition?)**：对敌方满足 `targetCondition` 的物品减少指定属性（不低于 0）。默认同上；实际使用时通常传入 `targetCondition: Condition.IsShieldItem` 等。遍历敌方时填入 `ConditionContext.CandidateTypeSnapshot`，供 **Condition.IsShieldItem** 使用；支持属性目前为 Shield，日志为「护盾降低」。
-- **ConditionContext.CandidateTypeSnapshot**：可选，在 ReduceAttribute 遍历敌方物品时由实现填入，用于 IsShieldItem 等依赖「导入时类型快照」的条件。
+- **ReduceAttribute(attributeName, amountKey?, targetCondition?)**：对敌方满足 `targetCondition` 的物品减少指定属性（不低于 0）。默认同上；实际使用时通常传入 `targetCondition: Condition.IsShieldItem` 等。遍历敌方时由实现填入 `ConditionContext.CandidateTemplate`，**Condition.IsShieldItem** 依据候选模板的 `Tag.Shield` 判断；支持属性目前为 Shield，日志为「护盾降低」。
 - **简化写法**：仅需「自身 + Custom_0」时可省略后两参，如 `Effect.AddAttribute(nameof(ItemTemplate.Poison))`（失落神祇）；需指定目标时用命名参数，如 `Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.WithTag(Tag.Weapon))`（举重手套、冰冻钝器）、`Effect.ReduceAttribute(nameof(ItemTemplate.Shield), targetCondition: Condition.IsShieldItem)`（裂盾刀）。
 
 ---
@@ -331,19 +330,16 @@
 
 ---
 
-## 物品类型快照（ItemTypeSnapshot）
+## 物品类型 Tag（护盾/伤害/灼烧等）
 
-### 背景
+- **Tag 常量**：`Core/Tag.cs` 提供 `Tag.Shield`、`Tag.Damage`、`Tag.Burn`、`Tag.Poison`、`Tag.Heal`、`Tag.Regen`，用于判断物品是否为护盾/伤害/灼烧等类型及是否可暴击。
+- **注册时自动补充**：`ItemDatabase.Register` 在写入模板前调用 `EnsureTypeTags`：① 若模板任一档位下某属性（Damage、Burn、Poison、Heal、Shield、Regen）> 0，则向模板的 `Tags` 加入对应类型 Tag；② 若模板有光环且条件为 **SameAsSource**（作用目标为自身），则按光环的 **AttributeName** 若为上述六类属性之一也补充对应 Tag（如 Damage 为 0 但由光环提供伤害的废品场长枪仍会得到 Tag.Damage）。无需在物品定义里手写。
+- **判断时使用 Tag**：模拟器判断「是否可暴击」用 `ItemHasAnyCrittableField(item)`，内部看 `item.Template.Tags` 是否含上述六类 Tag 之一；裂盾等效果用 `Condition.IsShieldItem`，内部看 `CandidateTemplate.Tags.Contains(Tag.Shield)`。类型由 Tag 决定，不受战斗内数值修改（如裂盾减 Shield）影响。
 
-战斗内会修改物品模板数值（如裂盾刀减少对方护盾物品的 Shield）。若用**当前**模板数值判断「是否为护盾物品」「是否可暴击」，则护盾被减到 0 后会被误判为非护盾/不可暴击。
+### 经验总结
 
-### 做法
-
-- **Core/ItemTypeSnapshot.cs**：只读结构体，含 `IsDamageItem`、`IsBurnItem`、`IsPoisonItem`、`IsHealItem`、`IsShieldItem`、`IsRegenItem` 及 `HasAnyCrittableField`。
-- **导入时生成**：`BuildSide` 在应用 `entry.Overrides` 后、加入 `side.Items` 前，对每个物品调用 `ItemTypeSnapshot.FromTemplate(clone, entry.Tier)` 并赋给 `BattleItemState.TypeSnapshot`。
-- **判断时使用快照**：模拟器判断「是否可暴击」改为 `ItemHasAnyCrittableField(item)`，内部用 `item.TypeSnapshot.HasAnyCrittableField`；裂盾等效果在遍历「对方护盾物品」时用 `oppItem.TypeSnapshot.IsShieldItem`，不再读当前 `Template.Shield`。
-
-这样护盾/伤害/灼烧等类型与可暴击性在整场战斗中以导入时快照为准，不受战斗内数值修改影响。
+- **为何用 Tag 不用快照**：战斗内会修改模板数值（如裂盾减 Shield），若用当前数值判断「是否护盾/可暴击」会误判；用注册时写入的 Tag 则类型稳定。
+- **为何要按光环补 Tag**：部分物品模板上某属性为 0，实际数值完全由光环提供（如废品场长枪 Damage=0、光环 SameAsSource + AttributeName=Damage）；仅看属性会漏打 Tag，导致可暴击等逻辑错误。只对 **Condition == SameAsSource** 的光环按 **AttributeName** 补 Tag，避免把「给相邻武器加伤」等光环误当作自身类型。
 
 ---
 

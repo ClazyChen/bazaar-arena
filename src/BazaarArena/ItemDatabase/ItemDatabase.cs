@@ -20,12 +20,59 @@ public class ItemDatabase : IItemTemplateResolver
     public IReadOnlyList<string> GetAllNames() =>
         _templates.Keys.OrderBy(x => x, StringComparer.Ordinal).ToList();
 
-    /// <summary>注册物品模板；会将当前 DefaultSize、DefaultMinTier 写入模板后存入。</summary>
+    /// <summary>注册物品模板；会将当前 DefaultSize、DefaultMinTier 写入模板后存入，并根据属性自动补充类型 Tag（护盾/伤害/灼烧等）。</summary>
     public void Register(ItemTemplate template)
     {
         template.Size = DefaultSize;
         template.MinTier = DefaultMinTier;
+        EnsureTypeTags(template);
         _templates[template.Name] = template;
+    }
+
+    /// <summary>根据模板数值属性为任一档位 &gt; 0 时自动加入对应类型 Tag；若属性为 0 但存在作用目标为自身（SameAsSource）的光环且光环 AttributeName 为类型属性，也补充对应 Tag。供 Condition 与可暴击判定使用。</summary>
+    private static void EnsureTypeTags(ItemTemplate template)
+    {
+        if (HasAnyTierPositive(template, nameof(ItemTemplate.Damage))) TryAddTag(template, Tag.Damage);
+        if (HasAnyTierPositive(template, nameof(ItemTemplate.Burn))) TryAddTag(template, Tag.Burn);
+        if (HasAnyTierPositive(template, nameof(ItemTemplate.Poison))) TryAddTag(template, Tag.Poison);
+        if (HasAnyTierPositive(template, nameof(ItemTemplate.Heal))) TryAddTag(template, Tag.Heal);
+        if (HasAnyTierPositive(template, nameof(ItemTemplate.Shield))) TryAddTag(template, Tag.Shield);
+        if (HasAnyTierPositive(template, "Regen")) TryAddTag(template, Tag.Regen);
+
+        foreach (var aura in template.Auras ?? [])
+        {
+            if (aura.Condition != Condition.SameAsSource) continue;
+            var tag = AttributeNameToTypeTag(aura.AttributeName);
+            if (tag != null) TryAddTag(template, tag);
+        }
+    }
+
+    /// <summary>将光环 AttributeName 映射为类型 Tag；非类型属性返回 null。</summary>
+    private static string? AttributeNameToTypeTag(string attributeName)
+    {
+        return attributeName switch
+        {
+            nameof(ItemTemplate.Damage) => Tag.Damage,
+            nameof(ItemTemplate.Burn) => Tag.Burn,
+            nameof(ItemTemplate.Poison) => Tag.Poison,
+            nameof(ItemTemplate.Heal) => Tag.Heal,
+            nameof(ItemTemplate.Shield) => Tag.Shield,
+            "Regen" => Tag.Regen,
+            _ => null,
+        };
+    }
+
+    private static bool HasAnyTierPositive(ItemTemplate t, string key)
+    {
+        foreach (ItemTier tier in Enum.GetValues<ItemTier>())
+            if (t.GetInt(key, tier, 0) > 0) return true;
+        return false;
+    }
+
+    private static void TryAddTag(ItemTemplate template, string tag)
+    {
+        if (template.Tags == null) template.Tags = [];
+        if (!template.Tags.Contains(tag)) template.Tags.Add(tag);
     }
 
     /// <summary>根据名称创建模板副本（用于对战中的实例，可叠加局外重写）。</summary>

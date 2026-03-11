@@ -21,4 +21,18 @@ public static class Tag
     public const string Drone = "无人机";
     /// <summary>玩具。</summary>
     public const string Toy = "玩具";
+
+    // 效果类型标签：用于判断护盾/伤害/灼烧等物品，供 Condition 与可暴击判定使用
+    /// <summary>护盾。</summary>
+    public const string Shield = "护盾";
+    /// <summary>伤害。</summary>
+    public const string Damage = "伤害";
+    /// <summary>灼烧。</summary>
+    public const string Burn = "灼烧";
+    /// <summary>剧毒。</summary>
+    public const string Poison = "剧毒";
+    /// <summary>治疗。</summary>
+    public const string Heal = "治疗";
+    /// <summary>生命再生。</summary>
+    public const string Regen = "再生";
 }

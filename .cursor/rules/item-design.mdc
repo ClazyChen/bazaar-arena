@@ -37,7 +37,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 - **扩展效果**：在 `Core/Effect.cs` 新增静态 `EffectDefinition` 并设置 `Apply` 与可选 `ApplyCritMultiplier`、`ValueKey` 即可，无需单独 Handler 文件。定向效果（护盾降低、伤害提高）日志格式为「效果名 数值 →[目标]」；优先用 AddAttribute/ReduceAttribute 表达，无法表达时再在物品定义内 `new EffectDefinition { ... }`。
 - **飞行（In Flight）**：`BattleItemState.InFlight` 为运行时状态，战斗开始为 false。「开始飞行」用 **`Effect.StartFlying`**（设置 `InFlight = true` 并记日志「开始飞行」）；若施放者**已在飞行**则不重复结算、不记日志（幂等）。Tooltip 与日志中「飞行」着色与护盾同色（`EffectKeywordFormatting`）。
 - **摧毁**：**`Effect.DestroyNextItemToRightOfCaster`** 摧毁己方施放者**右侧下一件未摧毁**物品（从 ItemIndex+1 起向右扫描）；由实现方先调用 OnDestroy 触发器、再标记 `Destroyed = true`。牵引光束等可在此基础上用 `Trigger.OnDestroy` + `Condition.SameAsSource` 造成伤害，用 `Condition.DestroyedTargetIsLargeOrInFlight` 判定被毁目标为大型或飞行时再造成伤害。日志中「摧毁」「修复」不显示数值（仅显示效果名与 extraSuffix，如「摧毁 →[物品名]」）；「摧毁」颜色 rgb(255,50,120)，见 **data-and-logging.mdc**。
-- **物品类型快照**：判断「是否为护盾/伤害/灼烧物品」「是否可暴击」时使用 `BattleItemState.TypeSnapshot`（导入时由 `ItemTypeSnapshot.FromTemplate` 生成），避免战斗内数值被修改（如裂盾减 Shield）后误判。见 `docs/implementation-notes.md` 中「物品类型快照」。
+- **物品类型 Tag**：判断「是否为护盾/伤害/灼烧物品」「是否可暴击」时使用模板的 `Tags`（`Tag.Shield`、`Tag.Damage` 等）。注册时由 `ItemDatabase.Register` 的 `EnsureTypeTags` 自动补充：① 模板任一档位下六类属性（Damage/Burn/Poison/Heal/Shield/Regen）> 0 则打对应 Tag；② 光环条件为 **SameAsSource** 且 **AttributeName** 为上述六类之一也打对应 Tag（如仅由光环提供伤害的物品）。无需在物品定义中手写。见 `docs/implementation-notes.md` 中「物品类型 Tag」。
 
 ## 战斗内修改与 IntOrByTier
 

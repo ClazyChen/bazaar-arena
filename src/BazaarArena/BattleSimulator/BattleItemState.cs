@@ -8,9 +8,6 @@ public class BattleItemState
     public ItemTemplate Template { get; set; }
     public ItemTier Tier { get; set; }
 
-    /// <summary>物品导入时的类型快照；判断护盾/伤害/可暴击等时使用，避免战斗内数值被修改后误判。</summary>
-    public ItemTypeSnapshot TypeSnapshot { get; set; }
-
     /// <summary>已过的冷却时间（毫秒）。</summary>
     public int CooldownElapsedMs { get; set; }
 

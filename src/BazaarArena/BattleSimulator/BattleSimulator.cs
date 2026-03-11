@@ -198,9 +198,14 @@ public class BattleSimulator
         }
     }
 
-    /// <summary>物品是否具备可暴击的六类数值之一；使用导入时的类型快照，避免战斗内数值被修改后误判。</summary>
-    private static bool ItemHasAnyCrittableField(BattleItemState item) =>
-        item.TypeSnapshot.HasAnyCrittableField;
+    /// <summary>物品是否具备可暴击的六类数值之一；依据模板的 Tag（护盾/伤害/灼烧/剧毒/治疗/再生）。</summary>
+    private static bool ItemHasAnyCrittableField(BattleItemState item)
+    {
+        var tags = item.Template.Tags;
+        if (tags == null) return false;
+        return tags.Contains(Tag.Damage) || tags.Contains(Tag.Burn) || tags.Contains(Tag.Poison)
+            || tags.Contains(Tag.Heal) || tags.Contains(Tag.Shield) || tags.Contains(Tag.Regen);
+    }
 
     private static BattleSide? BuildSide(Deck deck, IItemTemplateResolver resolver)
     {
@@ -238,11 +243,7 @@ public class BattleSimulator
                 foreach (var kv in entry.Overrides)
                     clone.SetInt(kv.Key, kv.Value);
             }
-            var state = new BattleItemState(clone, entry.Tier)
-            {
-                TypeSnapshot = ItemTypeSnapshot.FromTemplate(clone, entry.Tier),
-            };
-            side.Items.Add(state);
+            side.Items.Add(new BattleItemState(clone, entry.Tier));
         }
         return side;
     }

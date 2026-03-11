@@ -9,12 +9,10 @@ public readonly struct ConditionContext
     public int SourceItem { get; init; }
     /// <summary>触发时「被使用的物品」模板（如 UseOtherItem）；光环评估时为 null。</summary>
     public ItemTemplate? UsedTemplate { get; init; }
-    /// <summary>候选/目标物品模板（光环评估时用；触发时也可填）。用于 WithTag 等。</summary>
+    /// <summary>候选/目标物品模板（光环评估时用；触发时也可填）。用于 WithTag、IsShieldItem 等。</summary>
     public ItemTemplate? CandidateTemplate { get; init; }
     /// <summary>光环评估时：提供光环的物品是否处于飞行状态。用于 Condition.InFlight。</summary>
     public bool SourceInFlight { get; init; }
-    /// <summary>候选物品的类型快照（如 ReduceAttribute 遍历敌方时填入）。用于 IsShieldItem 等条件。</summary>
-    public ItemTypeSnapshot? CandidateTypeSnapshot { get; init; }
     /// <summary>OnDestroy 触发时：被摧毁物品的模板（用于如「被毁目标为大型」判定）。</summary>
     public ItemTemplate? DestroyedItemTemplate { get; init; }
     /// <summary>OnDestroy 触发时：被摧毁物品是否处于飞行状态。</summary>
@@ -63,9 +61,9 @@ public class Condition
     public static Condition WithTag(string tag) => new(ctx =>
         (ctx.UsedTemplate?.Tags?.Contains(tag) ?? false) || (ctx.CandidateTemplate?.Tags?.Contains(tag) ?? false));
 
-    /// <summary>候选物品为护盾物品（需在上下文中填入 CandidateTypeSnapshot，如 ReduceAttribute 遍历敌方时）。</summary>
+    /// <summary>候选物品为护盾物品（依据模板 Tag.Shield，如 ReduceAttribute 遍历敌方时用 CandidateTemplate 判断）。</summary>
     public static Condition IsShieldItem { get; } = new(ctx =>
-        ctx.CandidateTypeSnapshot?.IsShieldItem ?? false);
+        ctx.CandidateTemplate?.Tags?.Contains(Tag.Shield) ?? false);
 
     /// <summary>UseOtherItem 时：被使用的物品在来源（能力持有者）的右侧，即同侧且 UsedItemIndex == SourceItemIndex + 1。InvokeTrigger 中 Source=被使用物品、Candidate=能力持有者，故为 SameSide 且 SourceItem == CandidateItem + 1。</summary>
     public static Condition UsedItemRightOfSource { get; } = new(ctx =>

@@ -1,5 +1,15 @@
 # 变更记录
 
+## 护盾/伤害等用 Tag 判断、移除 ItemTypeSnapshot
+
+- **类型 Tag**：`Core/Tag.cs` 新增 `Tag.Shield`、`Tag.Damage`、`Tag.Burn`、`Tag.Poison`、`Tag.Heal`、`Tag.Regen`，用于判断护盾/伤害/灼烧等物品及是否可暴击。
+- **注册时自动补充**：`ItemDatabase.Register` 内根据模板属性（任一档位 > 0）自动向 `Tags` 加入对应类型 Tag；若属性为 0 但存在 **Condition 为 SameAsSource** 的光环且 **AttributeName** 为六类之一，也补充对应 Tag（如废品场长枪 Damage=0 由光环提供仍得 Tag.Damage）。无需在物品定义中手写。
+- **Condition 与可暴击**：`Condition.IsShieldItem` 改为依据 `CandidateTemplate.Tags.Contains(Tag.Shield)`；可暴击判定改为 `ItemHasAnyCrittableField` 检查模板是否含上述六类 Tag 之一；移除 `ConditionContext.CandidateTypeSnapshot`。
+- **删除**：移除 `Core/ItemTypeSnapshot.cs`、`BattleItemState.TypeSnapshot` 及 BuildSide 中 TypeSnapshot 赋值；`EffectApplyContextImpl.ReduceAttributeToOpponentSide` 不再设置 `CandidateTypeSnapshot`。
+- **文档与规则**：implementation-notes「物品类型快照」改为「物品类型 Tag」并增加经验总结（为何用 Tag、为何按光环补 Tag）；item-design.mdc、project-conventions.mdc、changelog 相应更新。
+
+---
+
 ## 物品定义简化：DefaultSize/DefaultMinTier、Ability 工厂、Priority 默认、ToMilliseconds
 
 - **物品注册**：MinTier、Size 不再在每个物品工厂中定义；**ItemDatabase** 提供 **DefaultSize**、**DefaultMinTier**，**Register** 时写入模板。**RegisterAll** 中按批次设置（如 `db.DefaultSize = ItemSize.Small`，再 `db.DefaultMinTier = Bronze` 注册铜、再 Silver 注册银）；CommonSmall 注册顺序为先铜后银。
@@ -43,7 +53,7 @@
 
 - **Effect.AddAttribute / ReduceAttribute**：己方加属性、敌方减属性统一用 `Effect.AddAttribute(attributeName, amountKey?, targetCondition?)` 与 `Effect.ReduceAttribute(...)`；默认 `amountKey = Custom_0`、`targetCondition = SameAsSource`，简化「自身 + Custom_0」类效果（如失落神祇 `Effect.AddAttribute(nameof(ItemTemplate.Poison))`）。
 - **过时 API 移除**：删除 `WeaponDamageBonus`、`WeaponDamageBonusToRightItem` 及 `AddWeaponDamageBonusToCasterSide`、`AddWeaponDamageBonusToCasterSideItem`、`AddPoisonToCasterSideItem`、`ReduceOpponentShieldItemsShield`；举重手套、暗影斗篷、冰冻钝器、失落神祇、裂盾刀均改用 AddAttribute/ReduceAttribute。
-- **ReduceAttribute 与 Condition**：`ConditionContext.CandidateTypeSnapshot` 可选，在 ReduceAttribute 遍历敌方时填入；`Condition.IsShieldItem` 供裂盾刀等「敌方护盾物品」筛选使用。
+- **ReduceAttribute 与 Condition**：`ConditionContext.CandidateTypeSnapshot` 可选，在 ReduceAttribute 遍历敌方时填入；`Condition.IsShieldItem` 供裂盾刀等「敌方护盾物品」筛选使用。（后已改为用 Tag 判断，见下。）
 - **文档与规则**：implementation-notes 新增「AddAttribute / ReduceAttribute 与统一属性增减」；item-design.mdc 更新效果约定（ValueKey、AddAttribute/ReduceAttribute 优先、Tag.Relic）、新增物品流程中效果列表。
 
 ---
