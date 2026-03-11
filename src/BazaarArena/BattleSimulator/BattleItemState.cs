@@ -31,13 +31,8 @@ public class BattleItemState
     {
         Template = template;
         Tier = tier;
-        AmmoRemaining = template.GetInt("AmmoCap", tier);
+        AmmoRemaining = template.GetInt(nameof(ItemTemplate.AmmoCap), tier);
         for (int i = 0; i < template.Abilities.Count; i++)
             LastTriggerMsByAbility.Add(-1000);
     }
-
-    public int GetCooldownMs() => Template.GetInt("CooldownMs", Tier);
-    public int GetCritRatePercent() => Template.GetInt(nameof(ItemTemplate.CritRatePercent), Tier);
-    public int GetMulticast() => Template.GetInt("Multicast", Tier, 1);
-    public int GetAmmoCap() => Template.GetInt("AmmoCap", Tier);
 }

@@ -2,7 +2,7 @@ using BazaarArena.BattleSimulator;
 
 namespace BazaarArena.Core;
 
-/// <summary>效果应用上下文接口：由模拟器实现，供 EffectDefinition.Apply 委托调用。不依赖具体战斗类型。</summary>
+/// <summary>效果应用上下文接口：由模拟器实现，供 AbilityDefinition.Apply 委托调用。不依赖具体战斗类型。</summary>
 public interface IEffectApplyContext
 {
     /// <summary>当前效果数值（已乘暴击倍率，若适用）；仅当效果指定了 ValueKey（如 AddAttribute）时由模拟器填入，否则委托应使用 GetResolvedValue 按 key 取值。</summary>

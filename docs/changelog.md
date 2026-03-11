@@ -1,5 +1,13 @@
 # 变更记录
 
+## 能力与 Effect 合并、AddAttribute/ReduceAttribute 目标条件与文档规则
+
+- **能力与 Effect 合并**：`AbilityDefinition` 直接承载单条效果的 `Value`、`ValueKey`、`ApplyCritMultiplier`、`Apply`、`ResolveValue`；移除 `EffectDefinition` 类与 `Effects` 列表。**Core/Effect.cs** 仅保留静态 *Apply 委托（如 `DamageApply`、`AddAttributeApply(attributeName)`）；执行处对单能力调用一次 `ability.Apply(ctx)`。原「一个能力两个效果」的唯一样例（暗影斗篷 Haste+AddAttribute）拆成两条能力。
+- **AddAttribute/ReduceAttribute 目标条件**：与 Haste/Slow 一致，目标条件写在能力 **TargetCondition** 上，由模拟器注入 `ctx.TargetCondition`；Apply 委托内用 `ctx.TargetCondition ?? SameSide`（AddAttribute）或 `?? DifferentSide`（ReduceAttribute）。**Ability.AddAttribute/ReduceAttribute** 增加 **additionalTargetCondition** 参数：在默认己方/敌方上追加；**targetCondition** 仍可完全代替默认。物品定义中原 `targetCondition: Condition.WithTag(...)` 改为 `additionalTargetCondition: Condition.WithTag(...)`。
+- **文档与规则**：**docs/implementation-notes.md** 新增「能力与 Effect 合并重构」、更新「AddAttribute / ReduceAttribute 与统一属性增减」「Effect：脱离 EffectKind」「Ability 工厂方法」；**.cursor/rules/project-conventions.mdc** 更新能力工厂与 additionalTargetCondition 约定；**.cursor/rules/item-design.mdc** 更新能力结构（无 Effects）、Ability 工厂（AddAttribute/ReduceAttribute、additionalTargetCondition）、效果应用与扩展写法。
+
+---
+
 ## BattleItemState 引用化重构（sim）
 
 - **目标**：函数与数据结构在标识「哪个物品」时统一使用 `BattleItemState` 引用，不再传递或存储 `(sideIndex, itemIndex)` 组合；`SideIndex`/`ItemIndex` 仍保留在 `BattleItemState` 上供 Condition、排序与输出使用。

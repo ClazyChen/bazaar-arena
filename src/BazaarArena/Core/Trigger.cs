@@ -10,7 +10,7 @@ public static class Trigger
     /// <summary>任意物品施加减速时触发（默认 Condition 为 SameSide，可重写为实现对方施加时触发）；每减速一个目标计一次，由 PendingCount 控制 250ms 间隔。</summary>
     public const string Slow = "触发减速";
     /// <summary>任意物品造成暴击时触发（默认 Condition 为 SameSide，可重写为实现对方暴击时触发）；来源=暴击施放者。</summary>
-    public const string Crit = "造成暴击时";
+    public const string Crit = "造成暴击";
     /// <summary>任意物品施加摧毁时触发，实现同 Slow：Condition 判定施加者，InvokeTargetCondition 判定被摧毁物品；须在将目标标记为 Destroyed 之前调用。</summary>
-    public const string Destroy = "摧毁物品时";
+    public const string Destroy = "摧毁物品";
 }

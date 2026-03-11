@@ -98,6 +98,17 @@
 
 ---
 
+## 能力与 Effect 合并重构
+
+- **目标**：一个能力 = 一条效果语义；原 `AbilityDefinition.Effects`（`List<EffectDefinition>`）与 `EffectDefinition` 合并进 `AbilityDefinition`。
+- **AbilityDefinition**：直接承载 `Value`、`ValueKey`、`ApplyCritMultiplier`、`Apply`（`Action<IEffectApplyContext>?`）、`ResolveValue(template, tier, defaultKey)`；**不再有** `Effects` 列表；**已删除** `EffectDefinition` 类。
+- **Core/Effect.cs**：仅保留静态 **Apply 委托**（如 `DamageApply`、`ShieldApply`、`AddAttributeApply(attributeName)`、`ReduceAttributeApply(attributeName)`）供能力引用；预定义效果在委托内用 `ctx.GetResolvedValue(...)` 或 `ctx.Value`、`ctx.TargetCondition` 取值，目标条件由能力 `TargetCondition` 经模拟器注入 `ctx.TargetCondition`。
+- **执行**：`BattleSimulator.ExecuteOneEffect` 对**单个能力**解析一次 value、构建一次 context、调用一次 `ability.Apply(ctx)`；暴击判定用 `ability.Apply != null && ability.ApplyCritMultiplier`。
+- **克隆**：ItemDatabase / BattleSimulator 克隆能力时复制 `Value`、`ValueKey`、`ApplyCritMultiplier`、`Apply`，无 Effects。
+- **多效果能力**：若需「一个触发下先 A 再 B」（如原 Haste + AddAttribute），拆成**两条能力**放入同一物品的 `Abilities` 列表，同优先级时按 AbilityIndex 顺序执行。
+
+---
+
 ## 物品与效果扩展（战斗内修改、自定义效果）
 
 ### IntOrByTier.Add(delta) 与战斗内模板
@@ -108,15 +119,16 @@
 
 ### 效果数值与 Apply 委托（当前约定）
 
-- **EffectDefinition**：保留 `ValueKey`、`ResolveValue`；增加 `ApplyCritMultiplier`（默认 true）、`Apply`（`Action<IEffectApplyContext>?`）。只读效果（Damage/Burn 等）在 **Core/Effect.cs** 的 Apply 委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), applyCritMultiplier)` 取值；指定了 `ValueKey` 的效果（如 AddAttribute、ReduceAttribute）由模拟器解析后填入 `ctx.Value`。自定义公式算数值已整合到光环公式，不再使用 EffectValueResolver。
-- **自定义/扩展效果**：在 `Core/Effect.cs` 中新增静态 `EffectDefinition` 并设置 `Apply` 委托即可；无需单独 Handler 字典。详见 **.cursor/rules/item-design.mdc**。
+- **AbilityDefinition**：持有一条效果的 `Value`、`ValueKey`、`ApplyCritMultiplier`、`Apply`（`Action<IEffectApplyContext>?`）、`ResolveValue`。只读效果（Damage/Burn 等）在 **Core/Effect.cs** 的 *Apply 委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX), applyCritMultiplier)` 取值；指定了 `ValueKey` 的能力（如 AddAttribute、ReduceAttribute）由模拟器解析后填入 `ctx.Value`。目标条件由能力的 `TargetCondition` 注入 `ctx.TargetCondition`。
+- **自定义/扩展效果**：在 `Core/Effect.cs` 中新增静态 *Apply 委托（或工厂方法返回委托），在物品定义或 **Ability** 工厂中设置 `AbilityDefinition.Apply` 即可；详见 **.cursor/rules/item-design.mdc**。
 
 ### AddAttribute / ReduceAttribute 与统一属性增减
 
-- **统一入口**：「给己方某类物品加属性」「给敌方某类物品减属性」不再写自定义 `EffectDefinition` 或专用 API（如已删除的 WeaponDamageBonus、ReduceOpponentShieldItemsShield），统一用 **Effect.AddAttribute** / **Effect.ReduceAttribute**。
-- **AddAttribute(attributeName, amountKey?, targetCondition?)**：对己方满足 `targetCondition` 的物品增加指定属性（限本场战斗）。默认 `amountKey = nameof(ItemTemplate.Custom_0)`，`targetCondition = Condition.SameAsSource`（自身）。目标由 `IEffectApplyContext.AddAttributeToCasterSide` 遍历己方物品、用 `ConditionContext`（Source=施放者、Item=候选目标）求值；支持属性目前为 Damage、Poison，日志为「伤害提高」「剧毒提高」。
-- **ReduceAttribute(attributeName, amountKey?, targetCondition?)**：对敌方满足 `targetCondition` 的物品减少指定属性（不低于 0）。默认同上；实际使用时通常传入 `targetCondition: Condition.WithTag(Tag.Shield)` 等。遍历敌方时由实现构建 `ConditionContext`（Source=施放者、Item=当前敌方物品），**Condition.WithTag(Tag.Shield)** 依据 `Item.Template.Tags` 判断；支持属性目前为 Shield，日志为「护盾降低」。
-- **简化写法**：仅需「自身 + Custom_0」时可省略后两参，如 `Effect.AddAttribute(nameof(ItemTemplate.Poison))`（失落神祇）；需指定目标时用命名参数，如 `Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.WithTag(Tag.Weapon))`（举重手套、冰冻钝器）、`Effect.ReduceAttribute(nameof(ItemTemplate.Shield), targetCondition: Condition.WithTag(Tag.Shield))`（裂盾刀）。
+- **统一入口**：「给己方某类物品加属性」「给敌方某类物品减属性」用 **Ability.AddAttribute** / **Ability.ReduceAttribute**（内部使用 `Effect.AddAttributeApply` / `Effect.ReduceAttributeApply`）。
+- **目标条件与 Haste/Slow 一致**：目标条件写在能力的 **TargetCondition** 上，由模拟器注入 `ctx.TargetCondition`；Apply 委托内用 `ctx.TargetCondition ?? Condition.SameSide`（AddAttribute）或 `?? Condition.DifferentSide`（ReduceAttribute）。**默认**：AddAttribute 己方(SameSide)、ReduceAttribute 敌方(DifferentSide)。
+- **Ability.AddAttribute(attributeName, amountKey?, targetCondition?, additionalTargetCondition?, ...)**：`targetCondition` 非空时**完全代替**默认目标；`additionalTargetCondition` 非空且在未传 targetCondition 时在默认 **SameSide** 上追加，即 `TargetCondition = SameSide & additionalTargetCondition`。例如举重手套、裂盾刀用 `additionalTargetCondition: Condition.WithTag(Tag.Weapon)` / `Condition.WithTag(Tag.Shield)`。
+- **Ability.ReduceAttribute(...)**：同上，默认目标为 **DifferentSide**，`additionalTargetCondition` 在 DifferentSide 上追加。
+- **简化写法**：仅需「己方全体」或「敌方全体」可不传 target 参数；需收窄目标时用 `additionalTargetCondition: Condition.WithTag(Tag.Weapon)` 等，与 Haste/Slow 的 additionalTargetCondition 用法一致。
 
 ---
 
@@ -212,9 +224,10 @@
 
 ### Ability 工厂方法（Core/Ability.cs）
 
-- **单效果 UseItem**：优先用 **`Ability.DamageOnUseItem(priority?)`**、**`ShieldOnUseItem(priority?)`**、**`HealOnUseItem(priority?)`**、**`BurnOnUseItem(priority?)`**、**`PoisonOnUseItem(priority?)`** 替代手写 `new() { TriggerName = Trigger.UseItem, Effects = [Effect.XXX] }`。可选参数 `priority` 覆盖默认 Medium。
-- **加速/减速/冻结**：**`Ability.HasteOnUseItem(priority?, targetCondition?, additionalTargetCondition?)`**（目标默认 SameSide）、**`SlowOnUseItem(...)`**、**`FreezeOnUseItem(...)`**（目标默认 DifferentSide）。`targetCondition` 非空时**代替**默认目标条件；`additionalTargetCondition` 非空且未传 targetCondition 时在默认条件上 **And** 追加，例如 `HasteOnUseItem(AbilityPriority.High, targetCondition: Condition.AdjacentToSource)`。
-- **多效果或特殊 Condition**：仍用 `new AbilityDefinition { ... }`，不强行用工厂。
+- **单效果 UseItem**：优先用 **`Ability.Damage()`**、**`Shield()`**、**`Heal()`**、**`Burn()`**、**`Poison()`**（默认 trigger=UseItem，可选 priority、condition、additionalCondition、invokeTargetCondition）。
+- **加速/减速/冻结**：**`Ability.Haste()`**、**`Slow()`**、**`Freeze()`**（目标默认 SameSide/DifferentSide）；可选 **targetCondition** 完全代替默认、**additionalTargetCondition** 在默认上 And 追加。
+- **加属性/减属性**：**`Ability.AddAttribute()`**、**`Ability.ReduceAttribute()`**（目标默认己方 SameSide / 敌方 DifferentSide）；**additionalTargetCondition** 在默认上追加，**targetCondition** 完全代替默认。
+- **多效果或特殊**：拆成多条能力，或 `new AbilityDefinition { ..., Apply = Effect.XXXApply, ... }`。
 
 ### 时间属性：秒转毫秒统一为 ToMilliseconds
 
@@ -343,12 +356,12 @@
 - **问题**：若 UseOtherItem 仅在有显式 Condition（如姜饼人 `WithTag(Tag.Tool)`）时直接返回该 Condition，则不会限制「己方」，对方使用工具也会触发己方能力。
 - **正确做法**：UseOtherItem **始终**先叠加「己方其他物品」基础条件 `baseSameSideOther = DifferentFromSource & SameSide`。若原 Condition 为 null，则 `return baseSameSideOther`；若非 null，则 `return baseSameSideOther & condition`。这样「使用工具时充能」等显式条件与「仅己方」同时满足。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。
 
-### Effect：脱离 EffectKind，委托驱动 + IEffectApplyContext
+### Effect：脱离 EffectKind，委托驱动 + IEffectApplyContext（后已合并入能力）
 
-- **移除**：`EffectKind` 枚举、`EffectKindKeys`、`EffectKindExtensions`；`GetEffectApplier(EffectKind)` 与 `CustomEffectHandlers` 字典；`EffectDefinition.Kind`、`CustomEffectId`。
-- **Core**：`IEffectApplyContext` 定义 `Value`、`HasLifeSteal`、`IsCrit`、`GetResolvedValue(key, applyCritMultiplier = false, defaultValue = 0)`（已合并原 `GetCasterItemInt`）、`TargetCondition`（当前能力的目标选择条件，用于冻结/减速/充能/加速）以及各类 Apply/Log 方法；`EffectDefinition` 增加 `ApplyCritMultiplier`（默认 true）、`Apply`（`Action<IEffectApplyContext>?`）。预定义效果在 **Core/Effect.cs** 内为每条效果设置 `Apply` 委托；只读效果在委托内用 `ctx.GetResolvedValue(nameof(ItemTemplate.XXX))` 或带 `defaultValue` 取值，不依赖 ValueKey（仅 WeaponDamageBonus 保留 ValueKey 以指定数值来源）。
-- **暴击**：是否参与暴击由**物品**六字段（Damage/Burn/Poison/Heal/Shield/Regen 任一 > 0）与 **EffectDefinition.ApplyCritMultiplier** 共同决定；模拟器用 `TemplateHasAnyCrittableField` 判断，不再依赖 EffectKind。
-- **BattleSimulator**：实现 `EffectApplyContextImpl : IEffectApplyContext`，在 `ExecuteOneEffect` 中构建上下文（含 `CritMultiplier`），对每条效果若 `eff.Apply != null` 则 `eff.Apply(ctx)`；仅当 `eff.ValueKey != null` 时才解析并填入 `ctx.Value`（供 WeaponDamageBonus 等使用）。
+- **移除**：`EffectKind`、`GetEffectApplier`、`CustomEffectHandlers`；**EffectDefinition 类与 AbilityDefinition.Effects 列表**（已合并进 AbilityDefinition，见上文「能力与 Effect 合并重构」）。
+- **Core**：`IEffectApplyContext` 提供 Value、GetResolvedValue、TargetCondition、各类 Apply/Log；**AbilityDefinition** 直接持有一条效果的 `Value`、`ValueKey`、`ApplyCritMultiplier`、`Apply`。预定义在 **Core/Effect.cs** 内为 *Apply 委托，只读效果用 `ctx.GetResolvedValue(...)` 取值。
+- **暴击**：由物品六字段与 **ability.ApplyCritMultiplier** 决定；模拟器用 `ability.Apply != null && ability.ApplyCritMultiplier` 判断是否掷暴击。
+- **BattleSimulator**：`ExecuteOneEffect` 对**单个能力**若 `ability.Apply != null` 则解析 value、构建 ctx、调用 `ability.Apply(ctx)`；仅当 `ability.ValueKey != null` 时解析并填入 `ctx.Value`。
 
 ### 暴击日志：按效果区分是否显示「（暴击）」
 

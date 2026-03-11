@@ -63,8 +63,10 @@ public static class CommonMedium
                     Priority = AbilityPriority.Low,
                     Condition = Condition.DifferentFromSource & Condition.SameSide & Condition.RightOfSource,
                     TargetCondition = Condition.RightOfSource,
-                    Effects = [Effect.Haste, Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.RightOfSource & Condition.WithTag(Tag.Weapon))],
+                    ApplyCritMultiplier = false,
+                    Apply = Effect.HasteApply,
                 },
+                Ability.AddAttribute(nameof(ItemTemplate.Damage), additionalTargetCondition: Condition.RightOfSource & Condition.WithTag(Tag.Weapon), priority: AbilityPriority.Low, condition: Condition.DifferentFromSource & Condition.SameSide & Condition.RightOfSource),
             ],
         };
     }
@@ -86,12 +88,7 @@ public static class CommonMedium
             [
                 Ability.Damage(),
                 Ability.Freeze(),
-                new()
-                {
-                    TriggerName = Trigger.Freeze,
-                    Priority = AbilityPriority.Low,
-                    Effects = [Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.WithTag(Tag.Weapon))],
-                },
+                Ability.AddAttribute(nameof(ItemTemplate.Damage), additionalTargetCondition: Condition.WithTag(Tag.Weapon), trigger: Trigger.Freeze, priority: AbilityPriority.Low),
             ],
         };
     }
@@ -238,7 +235,8 @@ public static class CommonMedium
                 {
                     TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.Lowest,
-                    Effects = [Effect.Repair],
+                    ApplyCritMultiplier = false,
+                    Apply = Effect.RepairApply,
                 },
                 Ability.Heal(),
             ],

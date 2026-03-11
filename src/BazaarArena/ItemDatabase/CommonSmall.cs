@@ -30,7 +30,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "岩浆核心",
-            Desc = "每场战斗开始时，造成 {Burn} 灼烧",
+            Desc = "战斗开始时，造成 {Burn} 灼烧",
             Tags = [],
             Burn = [6, 9, 12, 15],
             Abilities =
@@ -69,12 +69,7 @@ public static class CommonSmall
             Custom_0 = [1, 2, 3, 4],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.High,
-                    Effects = [Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.WithTag(Tag.Weapon))],
-                },
+                Ability.AddAttribute(nameof(ItemTemplate.Damage), additionalTargetCondition: Condition.WithTag(Tag.Weapon), priority: AbilityPriority.High),
             ],
         };
     }
@@ -247,12 +242,7 @@ public static class CommonSmall
             Abilities =
             [
                 Ability.Damage(),
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.High,
-                    Effects = [Effect.ReduceAttribute(nameof(ItemTemplate.Shield), targetCondition: Condition.WithTag(Tag.Shield))],
-                },
+                Ability.ReduceAttribute(nameof(ItemTemplate.Shield), additionalTargetCondition: Condition.WithTag(Tag.Shield), priority: AbilityPriority.High),
             ],
         };
     }
@@ -299,13 +289,7 @@ public static class CommonSmall
             Abilities =
             [
                 Ability.Poison(),
-                new()
-                {
-                    TriggerName = Trigger.Slow,
-                    Priority = AbilityPriority.Low,
-                    Condition = Condition.AdjacentToSource,
-                    Effects = [Effect.AddAttribute(nameof(ItemTemplate.Poison))],
-                },
+                Ability.AddAttribute(nameof(ItemTemplate.Poison), additionalTargetCondition: Condition.AdjacentToSource, priority: AbilityPriority.Low, condition: Condition.AdjacentToSource, trigger: Trigger.Slow),
             ],
         };
     }
@@ -322,12 +306,7 @@ public static class CommonSmall
             SlowTargetCount = 1,
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Condition = Condition.DifferentFromSource & Condition.SameSide & Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon),
-                    Effects = [Effect.Slow],
-                },
+                Ability.Slow(condition: Condition.DifferentFromSource & Condition.SameSide & Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon)),
             ],
         };
     }
@@ -345,17 +324,13 @@ public static class CommonSmall
             ChargeSeconds = 2.0,
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.High,
-                    Effects = [Effect.AddAttribute(nameof(ItemTemplate.Damage), targetCondition: Condition.WithTag(Tag.Weapon))],
-                },
+                Ability.AddAttribute(nameof(ItemTemplate.Damage), additionalTargetCondition: Condition.WithTag(Tag.Weapon), priority: AbilityPriority.High),
                 new()
                 {
                     TriggerName = Trigger.UseItem,
                     Condition = Condition.DifferentFromSource & Condition.SameSide & Condition.WithTag(Tag.Weapon),
-                    Effects = [Effect.ChargeSelf],
+                    ApplyCritMultiplier = false,
+                    Apply = Effect.ChargeSelfApply,
                 },
             ],
         };
@@ -380,7 +355,8 @@ public static class CommonSmall
                 {
                     TriggerName = Trigger.Crit,
                     Priority = AbilityPriority.Low,
-                    Effects = [Effect.StartFlying],
+                    ApplyCritMultiplier = false,
+                    Apply = Effect.StartFlyingApply,
                 },
             ],
             Auras =
@@ -414,7 +390,8 @@ public static class CommonSmall
                 new()
                 {
                     TriggerName = Trigger.UseItem,
-                    Effects = [Effect.StartFlying],
+                    ApplyCritMultiplier = false,
+                    Apply = Effect.StartFlyingApply,
                 },
             ],
             Auras =
@@ -447,7 +424,8 @@ public static class CommonSmall
                 {
                     TriggerName = Trigger.UseItem,
                     Condition = Condition.DifferentFromSource & Condition.SameSide & Condition.WithTag(Tag.Tool),
-                    Effects = [Effect.ChargeSelf],
+                    ApplyCritMultiplier = false,
+                    Apply = Effect.ChargeSelfApply,
                 },
             ],
         };
@@ -513,12 +491,7 @@ public static class CommonSmall
             Damage = [8, 12, 16],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.Slow,
-                    Priority = AbilityPriority.Low,
-                    Effects = [Effect.Damage],
-                },
+                Ability.Damage(Trigger.Slow, priority: AbilityPriority.Low),
             ],
         };
     }
@@ -566,21 +539,11 @@ public static class CommonSmall
                 {
                     TriggerName = Trigger.UseItem,
                     Priority = AbilityPriority.High,
-                    Effects = [Effect.DestroyNextItemToRightOfCaster],
+                    ApplyCritMultiplier = false,
+                    Apply = Effect.DestroyNextItemToRightOfCasterApply,
                 },
-                new()
-                {
-                    TriggerName = Trigger.Destroy,
-                    Condition = Condition.SameAsSource,
-                    Effects = [Effect.Damage],
-                },
-                new()
-                {
-                    TriggerName = Trigger.Destroy,
-                    Condition = Condition.SameAsSource,
-                    InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight,
-                    Effects = [Effect.Damage],
-                },
+                Ability.Damage(Trigger.Destroy, condition: Condition.SameAsSource),
+                Ability.Damage(Trigger.Destroy, condition: Condition.SameAsSource, invokeTargetCondition: Condition.WithTag(Tag.Large) | Condition.InFlight),
             ],
         };
     }

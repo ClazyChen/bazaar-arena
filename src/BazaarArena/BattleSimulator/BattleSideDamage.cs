@@ -8,7 +8,8 @@ internal static class BattleSideDamage
     {
         if (isBurn)
         {
-            int shieldConsume = Math.Min(side.Shield, (damage + 1) / 2);
+            // damage 为 1 时，会被护盾完全吸收，无法造成伤害；但 damage 为 2 时，会消耗 1 点护盾造成 2 点伤害。
+            int shieldConsume = Math.Min(side.Shield, damage / 2);
             int shieldDamage = shieldConsume * 2;
             side.Shield -= shieldConsume;
             damage = Math.Max(0, damage - shieldDamage);

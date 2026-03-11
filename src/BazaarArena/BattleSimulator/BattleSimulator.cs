@@ -153,7 +153,7 @@ public class BattleSimulator
                     item.LastTriggerMsByAbility[entry.AbilityIndex] = timeMs;
                     entry.LastTriggerMs = timeMs;
                     var ability = item.Template.Abilities[entry.AbilityIndex];
-                    bool canCrit = ItemHasAnyCrittableField(item) && ability.Effects.Any(e => e.Apply != null && e.ApplyCritMultiplier);
+                    bool canCrit = ItemHasAnyCrittableField(item) && ability.Apply != null && ability.ApplyCritMultiplier;
                     bool isCrit = false;
                     int critDamagePercent = 200;
                     var auraContext = new BattleAuraContext(side, item, opp);
@@ -241,9 +241,13 @@ public class BattleSimulator
                     TriggerName = a.TriggerName,
                     Priority = a.Priority,
                     Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
+                    SourceCondition = Condition.Clone(a.SourceCondition),
                     InvokeTargetCondition = Condition.Clone(a.InvokeTargetCondition),
                     TargetCondition = Condition.Clone(a.TargetCondition),
-                    Effects = a.Effects.Select(e => new EffectDefinition { Value = e.Value, ValueKey = e.ValueKey, ApplyCritMultiplier = e.ApplyCritMultiplier, Apply = e.Apply }).ToList(),
+                    Value = a.Value,
+                    ValueKey = a.ValueKey,
+                    ApplyCritMultiplier = a.ApplyCritMultiplier,
+                    Apply = a.Apply,
                 }).ToList(),
                 Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey, FixedValueFormula = a.FixedValueFormula }).ToList(),
             };
@@ -408,56 +412,53 @@ public class BattleSimulator
         BattleSide side0, BattleSide side1, int timeMs, IBattleLogSink logSink, List<BattleItemState>? chargeInducedCastQueue,
         List<AbilityQueueEntry> currentAbilityQueue, List<AbilityQueueEntry> nextAbilityQueue)
     {
+        if (ability.Apply == null) return;
         var side = item.SideIndex == 0 ? side0 : side1;
         var opp = item.SideIndex == 0 ? side1 : side0;
         int critMultiplier = isCrit ? Math.Max(1, critDamagePercent / 100) : 1;
-        foreach (var eff in ability.Effects)
+        int value = 0;
+        if (ability.ValueKey != null)
         {
-            if (eff.Apply == null) continue;
-            int value = 0;
-            if (eff.ValueKey != null)
-            {
-                int baseValue = eff.ResolveValue(item.Template, item.Tier, eff.ValueKey);
-                bool applyCrit = ItemHasAnyCrittableField(item) && eff.ApplyCritMultiplier;
-                value = applyCrit ? baseValue * critMultiplier : baseValue;
-            }
-            var ctx = new EffectApplyContextImpl
-            {
-                Side = side,
-                Opp = opp,
-                Item = item,
-                Value = value,
-                CritMultiplier = critMultiplier,
-                IsCrit = isCrit,
-                TimeMs = timeMs,
-                LogSink = logSink,
-                ChargeInducedCastQueue = chargeInducedCastQueue,
-                TargetCondition = ability.TargetCondition,
-                OnFreezeApplied = (targets) =>
-                {
-                    foreach (var (ts, ti) in targets)
-                    {
-                        var target = (ts == 0 ? side0 : side1).Items[ti];
-                        InvokeTrigger(Trigger.Freeze, item, new TriggerInvokeContext { InvokeTargetItem = target, Multicast = 1 }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
-                    }
-                },
-                OnSlowApplied = (targets) =>
-                {
-                    foreach (var (ts, ti) in targets)
-                    {
-                        var target = (ts == 0 ? side0 : side1).Items[ti];
-                        InvokeTrigger(Trigger.Slow, item, new TriggerInvokeContext { InvokeTargetItem = target, Multicast = 1 }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
-                    }
-                },
-                OnDestroyApplied = (destroyedItemIdx) =>
-                {
-                    var target = side.Items[destroyedItemIdx];
-                    InvokeTrigger(Trigger.Destroy, item, new TriggerInvokeContext { InvokeTargetItem = target }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
-                    target.Destroyed = true;
-                },
-            };
-            eff.Apply(ctx);
+            int baseValue = ability.ResolveValue(item.Template, item.Tier, ability.ValueKey);
+            bool applyCrit = ItemHasAnyCrittableField(item) && ability.ApplyCritMultiplier;
+            value = applyCrit ? baseValue * critMultiplier : baseValue;
         }
+        var ctx = new EffectApplyContextImpl
+        {
+            Side = side,
+            Opp = opp,
+            Item = item,
+            Value = value,
+            CritMultiplier = critMultiplier,
+            IsCrit = isCrit,
+            TimeMs = timeMs,
+            LogSink = logSink,
+            ChargeInducedCastQueue = chargeInducedCastQueue,
+            TargetCondition = ability.TargetCondition,
+            OnFreezeApplied = (targets) =>
+            {
+                foreach (var (ts, ti) in targets)
+                {
+                    var target = (ts == 0 ? side0 : side1).Items[ti];
+                    InvokeTrigger(Trigger.Freeze, item, new TriggerInvokeContext { InvokeTargetItem = target, Multicast = 1 }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                }
+            },
+            OnSlowApplied = (targets) =>
+            {
+                foreach (var (ts, ti) in targets)
+                {
+                    var target = (ts == 0 ? side0 : side1).Items[ti];
+                    InvokeTrigger(Trigger.Slow, item, new TriggerInvokeContext { InvokeTargetItem = target, Multicast = 1 }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                }
+            },
+            OnDestroyApplied = (destroyedItemIdx) =>
+            {
+                var target = side.Items[destroyedItemIdx];
+                InvokeTrigger(Trigger.Destroy, item, new TriggerInvokeContext { InvokeTargetItem = target }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                target.Destroyed = true;
+            },
+        };
+        ability.Apply(ctx);
         if (isCrit)
             InvokeTrigger(Trigger.Crit, item, null, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
     }

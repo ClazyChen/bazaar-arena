@@ -1,6 +1,6 @@
 namespace BazaarArena.Core;
 
-/// <summary>能力定义：触发器名、优先级与效果列表。触发间隔 5 帧（250ms）由模拟器维护。</summary>
+/// <summary>能力定义：触发器名、优先级与效果应用（Apply）。触发间隔 5 帧（250ms）由模拟器维护。</summary>
 public class AbilityDefinition
 {
     /// <summary>触发器名字，如「使用物品」。</summary>
@@ -21,19 +21,15 @@ public class AbilityDefinition
     /// <summary>多目标效果（冻结/减速/充能/加速）的目标选择条件；评估时 Source=能力持有者、Item=候选目标。如不设则由效果默认（DifferentSide 或 SameSide）。</summary>
     public Condition? TargetCondition { get; set; }
 
-    /// <summary>该能力触发的效果列表（伤害、灼烧等）。</summary>
-    public List<EffectDefinition> Effects { get; set; } = [];
-}
-
-/// <summary>单条效果定义：数值结算（ValueKey）与应用委托 Apply。暴击是否乘到数值上由模拟器根据物品六字段与 ApplyCritMultiplier 决定。</summary>
-public class EffectDefinition
-{
     /// <summary>固定数值；当 ValueKey 对应模板字段为 0 时使用。</summary>
     public int Value { get; set; }
-    /// <summary>模板字段名，如 "Damage"、"Custom_0"；用 template.GetInt(ValueKey, tier) 结算数值，未设时用 defaultKey。</summary>
+
+    /// <summary>模板字段名，如 "Damage"、"Custom_0"；用 template.GetInt(ValueKey, tier) 结算数值，未设时由 Apply 委托内用 GetResolvedValue(key) 取值。</summary>
     public string? ValueKey { get; set; }
+
     /// <summary>是否对基础数值乘暴击倍率；Charge/Freeze/Slow 等为 false。</summary>
     public bool ApplyCritMultiplier { get; set; } = true;
+
     /// <summary>效果应用委托；由 Core/Effect 预定义或自定义效果设置。</summary>
     public Action<IEffectApplyContext>? Apply { get; set; }
 

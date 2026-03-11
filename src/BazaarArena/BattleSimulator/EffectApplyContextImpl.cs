@@ -2,7 +2,7 @@ using BazaarArena.Core;
 
 namespace BazaarArena.BattleSimulator;
 
-/// <summary>效果应用上下文：实现 IEffectApplyContext，供 EffectDefinition.Apply 委托使用。</summary>
+/// <summary>效果应用上下文：实现 IEffectApplyContext，供 AbilityDefinition.Apply 委托使用。</summary>
 internal sealed class EffectApplyContextImpl : IEffectApplyContext
 {
     public required BattleSide Side { get; init; }

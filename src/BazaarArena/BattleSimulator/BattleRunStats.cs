@@ -54,8 +54,6 @@ public class StrengthCurvePoint
     public int Heal { get; set; }
     /// <summary>该侧生命再生累计。</summary>
     public int Regen { get; set; }
-    /// <summary>总量（伤害+灼烧+剧毒+护盾+治疗+再生），用于纵轴。</summary>
-    public int Total => Damage + Burn + Poison + Shield + Heal + Regen;
     /// <summary>该时刻该侧当前生命值（纵轴为当前生命值时使用）。</summary>
     public int Hp { get; set; }
 }
