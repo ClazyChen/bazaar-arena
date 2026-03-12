@@ -18,7 +18,7 @@ public class AbilityDefinition
     /// <summary>触发器所指向的物品（ConditionContext.Item）需满足的条件（如 Slow 时被减速的物品）。默认 null 表示不限制。评估时 Source=能力持有者、Item=指向的物品。</summary>
     public Condition? InvokeTargetCondition { get; set; }
 
-    /// <summary>多目标效果（冻结/减速/充能/加速）的目标选择条件；评估时 Source=能力持有者、Item=候选目标。如不设则由效果默认（DifferentSide 或 SameSide）。</summary>
+    /// <summary>多目标效果（冻结/减速/充能/加速/摧毁）的目标选择条件；评估时 Source=能力持有者、Item=候选目标。如不设则由效果默认（DifferentSide 或 SameSide）。</summary>
     public Condition? TargetCondition { get; set; }
 
     /// <summary>固定数值；当 ValueKey 对应模板字段为 0 时使用。</summary>

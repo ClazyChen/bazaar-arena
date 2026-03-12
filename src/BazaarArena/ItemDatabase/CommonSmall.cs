@@ -35,7 +35,7 @@ public static class CommonSmall
             Burn = [6, 9, 12, 15],
             Abilities =
             [
-                Ability.Burn(Trigger.BattleStart),
+                Ability.Burn(trigger: Trigger.BattleStart),
             ],
         };
     }
@@ -69,7 +69,9 @@ public static class CommonSmall
             Custom_0 = [1, 2, 3, 4],
             Abilities =
             [
-                Ability.AddAttribute(nameof(ItemTemplate.Damage), additionalTargetCondition: Condition.WithTag(Tag.Weapon), priority: AbilityPriority.High),
+                Ability.AddAttribute(nameof(ItemTemplate.Damage),
+                    additionalTargetCondition: Condition.WithTag(Tag.Weapon),
+                    priority: AbilityPriority.High),
             ],
         };
     }
@@ -166,7 +168,6 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.CritDamagePercent),
-                    Condition = Condition.SameAsSource,
                     PercentValueKey = nameof(ItemTemplate.Custom_0),
                 },
             ],
@@ -198,11 +199,10 @@ public static class CommonSmall
             Name = "冰锥",
             Desc = "每场战斗开始时，冻结一件物品 {FreezeSeconds} 秒",
             Tags = [],
-            FreezeSeconds = new[] { 3.0, 4.0, 5.0, 6.0 },
-            FreezeTargetCount = 1,
+            Freeze = [3.0, 4.0, 5.0, 6.0],
             Abilities =
             [
-                Ability.Freeze(Trigger.BattleStart),
+                Ability.Freeze(trigger: Trigger.BattleStart),
             ],
         };
     }
@@ -218,7 +218,7 @@ public static class CommonSmall
             Cooldown = 7.0,
             Damage = [5, 10, 20, 40],
             LifeSteal = 1,
-            SlowSeconds = 1.0,
+            Slow = 1.0,
             SlowTargetCount = [1, 2, 3, 4],
             Abilities =
             [
@@ -242,7 +242,9 @@ public static class CommonSmall
             Abilities =
             [
                 Ability.Damage(),
-                Ability.ReduceAttribute(nameof(ItemTemplate.Shield), additionalTargetCondition: Condition.WithTag(Tag.Shield), priority: AbilityPriority.High),
+                Ability.ReduceAttribute(nameof(ItemTemplate.Shield),
+                    additionalTargetCondition: Condition.WithTag(Tag.Shield),
+                    priority: AbilityPriority.High),
             ],
         };
     }
@@ -268,7 +270,6 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.Heal),
-                    Condition = Condition.SameAsSource,
                     FixedValueFormula = Formula.OpponentPoison,
                 },
             ],
@@ -289,7 +290,11 @@ public static class CommonSmall
             Abilities =
             [
                 Ability.Poison(),
-                Ability.AddAttribute(nameof(ItemTemplate.Poison), targetCondition: Condition.SameAsSource, priority: AbilityPriority.Low, condition: Condition.AdjacentToSource, trigger: Trigger.Slow),
+                Ability.AddAttribute(nameof(ItemTemplate.Poison),
+                    targetCondition: Condition.SameAsSource,
+                    priority: AbilityPriority.Low,
+                    condition: Condition.AdjacentToSource,
+                    trigger: Trigger.Slow),
             ],
         };
     }
@@ -302,11 +307,10 @@ public static class CommonSmall
             Name = "神经毒素",
             Desc = "使用相邻武器时，减速 1 件物品 {SlowSeconds} 秒",
             Tags = [],
-            SlowSeconds = new[] { 1.0, 2.0, 3.0 },
-            SlowTargetCount = 1,
+            Slow = [1.0, 2.0, 3.0],
             Abilities =
             [
-                Ability.Slow(condition: Condition.DifferentFromSource & Condition.SameSide & Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon)),
+                Ability.Slow(additionalCondition: Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon)),
             ],
         };
     }
@@ -321,17 +325,14 @@ public static class CommonSmall
             Tags = [],
             Cooldown = 8.0,
             Custom_0 = [4, 8, 12],
-            ChargeSeconds = 2.0,
+            Charge = 2.0,
             Abilities =
             [
-                Ability.AddAttribute(nameof(ItemTemplate.Damage), additionalTargetCondition: Condition.WithTag(Tag.Weapon), priority: AbilityPriority.High),
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Condition = Condition.DifferentFromSource & Condition.SameSide & Condition.WithTag(Tag.Weapon),
-                    ApplyCritMultiplier = false,
-                    Apply = Effect.ChargeSelfApply,
-                },
+                Ability.AddAttribute(nameof(ItemTemplate.Damage),
+                    additionalTargetCondition: Condition.WithTag(Tag.Weapon),
+                    priority: AbilityPriority.High),
+                Ability.Charge(additionalCondition: Condition.WithTag(Tag.Weapon),
+                    targetCondition: Condition.SameAsSource),
             ],
         };
     }
@@ -345,26 +346,19 @@ public static class CommonSmall
             Desc = "加速一件物品 {HasteSeconds} 秒；造成暴击时，此物品开始飞行；此物品飞行时，+1 多重释放",
             Tags = [Tag.Relic],
             Cooldown = 5.0,
-            HasteSeconds = new[] { 1.0, 2.0, 3.0 },
-            HasteTargetCount = 1,
+            Haste = [1.0, 2.0, 3.0],
             Custom_0 = 1,
             Abilities =
             [
                 Ability.Haste(),
-                new()
-                {
-                    TriggerName = Trigger.Crit,
-                    Priority = AbilityPriority.Low,
-                    ApplyCritMultiplier = false,
-                    Apply = Effect.StartFlyingApply,
-                },
+                Ability.StartFlying(trigger: Trigger.Crit,
+                    priority: AbilityPriority.Low),
             ],
             Auras =
             [
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.Multicast),
-                    Condition = Condition.SameAsSource,
                     SourceCondition = Condition.InFlight,
                     FixedValueKey = nameof(ItemTemplate.Custom_0),
                 },
@@ -380,26 +374,20 @@ public static class CommonSmall
             Name = "巨龙崽崽",
             Desc = "造成 {Damage} 伤害；造成灼烧，等量于此物品伤害；此物品开始飞行",
             Tags = [Tag.Weapon, Tag.Friend, Tag.Dragon],
-            CooldownMs = [9000, 8000, 7000],
+            Cooldown = [9.0, 8.0, 7.0],
             Damage = 5,
             Burn = 0,
             Abilities =
             [
                 Ability.Damage(),
                 Ability.Burn(),
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    ApplyCritMultiplier = false,
-                    Apply = Effect.StartFlyingApply,
-                },
+                Ability.StartFlying(),
             ],
             Auras =
             [
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.Burn),
-                    Condition = Condition.SameAsSource,
                     FixedValueFormula = Formula.SourceDamage,
                 },
             ],
@@ -416,17 +404,12 @@ public static class CommonSmall
             Tags = [Tag.Food, Tag.Friend],
             Cooldown = 5.0,
             Shield = [10, 20, 30, 40],
-            ChargeSeconds = 1.0,
+            Charge = 1.0,
             Abilities =
             [
                 Ability.Shield(priority: AbilityPriority.Low),
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Condition = Condition.DifferentFromSource & Condition.SameSide & Condition.WithTag(Tag.Tool),
-                    ApplyCritMultiplier = false,
-                    Apply = Effect.ChargeSelfApply,
-                },
+                Ability.Charge(additionalCondition: Condition.WithTag(Tag.Tool), 
+                    targetCondition: Condition.SameAsSource),
             ],
         };
     }
@@ -450,13 +433,11 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.Damage),
-                    Condition = Condition.SameAsSource,
                     FixedValueFormula = Formula.CompanionCountTimesCustom0,
                 },
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.CooldownMs),
-                    Condition = Condition.SameAsSource,
                     FixedValueFormula = Formula.Minus1sPerAdjacentCompanion,
                 },
             ],
@@ -491,7 +472,8 @@ public static class CommonSmall
             Damage = [8, 12, 16],
             Abilities =
             [
-                Ability.Damage(Trigger.Slow, priority: AbilityPriority.Low),
+                Ability.Damage(trigger: Trigger.Slow, 
+                    priority: AbilityPriority.Low),
             ],
         };
     }
@@ -516,8 +498,8 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.CritRatePercent),
-                    Condition = Condition.SameAsSource,
-                    FixedValueFormula = Formula.OnlyCompanionCritBonus,
+                    SourceCondition = Condition.OnlyCompanion,
+                    FixedValueKey = nameof(ItemTemplate.Custom_0),
                 },
             ],
         };
@@ -535,15 +517,12 @@ public static class CommonSmall
             Damage = [150, 300, 600],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.High,
-                    ApplyCritMultiplier = false,
-                    Apply = Effect.DestroyNextItemToRightOfCasterApply,
-                },
-                Ability.Damage(Trigger.Destroy, condition: Condition.SameAsSource),
-                Ability.Damage(Trigger.Destroy, condition: Condition.SameAsSource, invokeTargetCondition: Condition.WithTag(Tag.Large) | Condition.InFlight),
+                Ability.Destroy(additionalTargetCondition: Condition.FirstNonDestroyedRightOfSource),
+                Ability.Damage(trigger: Trigger.Destroy, 
+                    condition: Condition.SameAsSource),
+                Ability.Damage(trigger: Trigger.Destroy,
+                    condition: Condition.SameAsSource,
+                    invokeTargetCondition: Condition.WithTag(Tag.Large) | Condition.InFlight),
             ],
         };
     }

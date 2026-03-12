@@ -1,5 +1,17 @@
 # 变更记录
 
+## 统一摧毁、条件与光环 SourceCondition、目标数量省略
+
+- **摧毁统一接口**：实现 **Ability.Destroy** + **Effect.DestroyApply**，目标仅要求未摧毁（不要求有冷却），替代特化 `DestroyNextItemToRightOfCasterApply`。牵引光束改用 `Ability.Destroy(additionalTargetCondition: Condition.FirstNonDestroyedRightOfSource)`。
+- **Condition.FirstNonDestroyedRightOfSource**：右侧第一个未摧毁物品（可能隔多格），用于「摧毁右侧下一件」。多目标选取一律随机，不增加按槽位顺序的接口；语义由条件限定候选池。
+- **Condition.OnlyCompanion**：被评估对象是己方唯一伙伴（带 Tag.Friend 且未摧毁仅一个），用于光环 **SourceCondition**（如友好玩偶「若此为唯一伙伴则暴击率加成」）。
+- **ChargeSelfApply 移除**：充能统一用 ChargeApply + targetCondition/SameAsSource 与默认 ChargeTargetCount=1。
+- **目标数量为 1 可省略**：物品定义中 ChargeTargetCount、HasteTargetCount、SlowTargetCount、FreezeTargetCount、RepairTargetCount 为 1 时不写，效果层 GetResolvedValue(..., defaultValue: 1)。
+- **光环 SourceCondition 优先**：友好玩偶改为 **SourceCondition = Condition.OnlyCompanion**、**FixedValueKey = Custom_0**，移除 Formula.OnlyCompanionCritBonus 与 AuraFormulaEvaluator 对应实现。能用 SourceCondition 表达的优先用 SourceCondition，不必新增 Formula。
+- **文档与规则**：implementation-notes 更新「摧毁」节（统一接口、FirstNonDestroyedRightOfSource）、「光环公式」节（SourceCondition 优先）；project-conventions 补充 Destroy、FirstNonDestroyedRightOfSource、OnlyCompanion、光环 SourceCondition 约定。
+
+---
+
 ## 失落神祇修复与 Condition/TargetCondition 文档规则
 
 - **失落神祇（Forgotten God）**：「相邻物品触发减速时，此物品获得剧毒」原误用 `additionalTargetCondition: Condition.AdjacentToSource`，导致剧毒加给相邻物品；改为 **targetCondition: Condition.SameAsSource**（仅能力持有者享受加成），**condition: Condition.AdjacentToSource**（被减速物品与能力持有者相邻时触发）不变。

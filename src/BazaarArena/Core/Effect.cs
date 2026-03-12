@@ -55,11 +55,12 @@ public static class Effect
         ctx.LogEffect("生命再生", value, showCrit: ctx.IsCrit);
     };
 
-    /// <summary>为此物品充能（毫秒）；不参与暴击。</summary>
-    public static readonly Action<IEffectApplyContext> ChargeSelfApply = ctx =>
+    /// <summary>充能：根据 ChargeTargetCount 与 Charge（毫秒）选取满足能力 TargetCondition 的己方物品施加充能（默认未摧毁且有冷却）；不参与暴击。</summary>
+    public static readonly Action<IEffectApplyContext> ChargeApply = ctx =>
     {
-        int value = ctx.GetResolvedValue(nameof(ItemTemplate.Charge));
-        ctx.ChargeCasterItem(value, out _);
+        int chargeMs = ctx.GetResolvedValue(nameof(ItemTemplate.Charge));
+        int count = ctx.GetResolvedValue(nameof(ItemTemplate.ChargeTargetCount), defaultValue: 1);
+        ctx.ApplyCharge(chargeMs, count, ctx.TargetCondition);
     };
 
     /// <summary>冻结：根据 FreezeTargetCount 与 Freeze（毫秒）选取满足能力 TargetCondition 的敌人物品施加冻结（默认未摧毁且有冷却）；触发次数按实际目标数。</summary>
@@ -109,7 +110,18 @@ public static class Effect
         ctx.LogEffect("开始飞行", 0, showCrit: false);
     };
 
-    /// <summary>摧毁己方施放者右侧下一件未摧毁物品（牵引光束等）；先触发「摧毁物品时」，再标记 Destroyed。</summary>
-    public static readonly Action<IEffectApplyContext> DestroyNextItemToRightOfCasterApply = ctx =>
-        ctx.DestroyNextItemToRightOfCaster();
+    /// <summary>施放者物品结束飞行（设置运行时飞行状态）；若已未在飞行则不重复结算、不记日志。</summary>
+    public static readonly Action<IEffectApplyContext> EndFlyingApply = ctx =>
+    {
+        if (!ctx.IsCasterInFlight) return;
+        ctx.SetCasterInFlight(false);
+        ctx.LogEffect("结束飞行", 0, showCrit: false);
+    };
+
+    /// <summary>摧毁：根据 DestroyTargetCount 与能力 TargetCondition 选取己方未摧毁物品施加摧毁（默认 1 个）；先触发「摧毁物品时」，再标记 Destroyed。目标不要求有冷却。</summary>
+    public static readonly Action<IEffectApplyContext> DestroyApply = ctx =>
+    {
+        int count = ctx.GetResolvedValue(nameof(ItemTemplate.DestroyTargetCount), defaultValue: 1);
+        ctx.ApplyDestroy(count, ctx.TargetCondition);
+    };
 }

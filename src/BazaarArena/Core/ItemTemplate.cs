@@ -4,14 +4,33 @@ using System.Runtime.CompilerServices;
 
 namespace BazaarArena.Core;
 
-/// <summary>秒数：单值或按等级。用于物品定义中时间类属性（如 FreezeSeconds），保证以秒为单位可读。</summary>
-public readonly struct SecondsOrByTier
+/// <summary>秒数：单值或按等级。用于物品定义中时间类属性（如 Cooldown、Charge、Freeze），保证以秒为单位可读；支持 Cooldown = [9.0, 8.0, 7.0] 集合表达式。</summary>
+[CollectionBuilder(typeof(SecondsOrByTier), "Create")]
+public readonly struct SecondsOrByTier : IEnumerable<double>
 {
     private readonly double[]? _values;
 
     private SecondsOrByTier(double[] values) => _values = values;
 
+    /// <summary>供集合表达式 [a, b, c] 使用的工厂方法。</summary>
+    public static SecondsOrByTier Create(ReadOnlySpan<double> values)
+    {
+        var arr = new double[values.Length];
+        for (int i = 0; i < values.Length; i++)
+            arr[i] = values[i];
+        return new SecondsOrByTier(arr);
+    }
+
     internal static SecondsOrByTier FromFirstTierMs(int ms) => new([ms / 1000.0]);
+
+    /// <summary>从毫秒列表转换为秒（按档位）；用于模板 getter。</summary>
+    internal static SecondsOrByTier FromMilliseconds(IReadOnlyList<int>? ms)
+    {
+        if (ms == null || ms.Count == 0) return default;
+        var arr = new double[ms.Count];
+        for (int i = 0; i < ms.Count; i++) arr[i] = ms[i] / 1000.0;
+        return new SecondsOrByTier(arr);
+    }
 
     public static implicit operator SecondsOrByTier(double single) => new([single]);
     public static implicit operator SecondsOrByTier(double[] byTier) => new(byTier);
@@ -20,6 +39,9 @@ public readonly struct SecondsOrByTier
     internal List<int> ToMilliseconds() => _values?.Select(s => (int)(s * 1000)).ToList() ?? [];
 
     public static implicit operator double(SecondsOrByTier s) => s._values?.Length > 0 ? s._values[0] : 0;
+
+    public IEnumerator<double> GetEnumerator() => (_values ?? []).AsEnumerable().GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 
 /// <summary>单值或按等级列表，用于对象初始器中支持 Damage = 40 与 Damage = [25, 35, 45, 55] 两种写法。</summary>
@@ -55,7 +77,7 @@ public readonly struct IntOrByTier : IEnumerable<int>
     {
         var list = ToList();
         if (list.Count == 0) return new IntOrByTier([delta, delta, delta, delta]);
-        return new IntOrByTier(list.Select(v => v + delta).ToList());
+        return [.. list.Select(v => v + delta).ToList()];
     }
 
     public List<int>.Enumerator GetEnumerator() => (_values ?? []).GetEnumerator();
@@ -87,6 +109,7 @@ public class ItemTemplate
     private const string KeyHeal = "Heal";
     private const string KeyShield = "Shield";
     private const string KeyCharge = "Charge";
+    private const string KeyChargeTargetCount = "ChargeTargetCount";
     private const string KeyFreeze = "Freeze";
     private const string KeyFreezeTargetCount = "FreezeTargetCount";
     private const string KeySlow = "Slow";
@@ -94,6 +117,7 @@ public class ItemTemplate
     private const string KeyHaste = "Haste";
     private const string KeyHasteTargetCount = "HasteTargetCount";
     private const string KeyRepairTargetCount = "RepairTargetCount";
+    private const string KeyDestroyTargetCount = "DestroyTargetCount";
     private const string KeyLifeSteal = "LifeSteal";
     private const string KeyCustom_0 = "Custom_0";
     private const string KeyStashParameter = "StashParameter";
@@ -150,11 +174,11 @@ public class ItemTemplate
         return (IntOrByTier)new List<int>(list);
     }
 
-    /// <summary>冷却时间（毫秒）。设计文档：最低只能减到 1 秒。</summary>
+    /// <summary>冷却时间（毫秒）。设计文档：最低只能减到 1 秒。内部存储用，定义时请用 Cooldown（秒）。</summary>
     public IntOrByTier CooldownMs { get => GetInt(KeyCooldownMs); set => SetIntOrByTier(KeyCooldownMs, value.ToList()); }
 
-    /// <summary>冷却时间（秒）。设置时转换为 CooldownMs（仅支持单值）；不指定时可省略。</summary>
-    public double Cooldown { get => GetInt(KeyCooldownMs) / 1000.0; set => SetInt(KeyCooldownMs, (int)(value * 1000)); }
+    /// <summary>冷却时间（秒，可单值或按等级）。Cooldown = 5.0 或 Cooldown = [9.0, 8.0, 7.0]；内部存为 CooldownMs。</summary>
+    public SecondsOrByTier Cooldown { get => SecondsOrByTier.FromMilliseconds(GetIntOrByTier(KeyCooldownMs).ToList()); set => SetIntOrByTier(KeyCooldownMs, value.ToMilliseconds()); }
 
     /// <summary>暴击率（百分比，0–100）。默认 0，不指定时可省略。</summary>
     public IntOrByTier CritRatePercent { get => GetInt(KeyCritRatePercent, 0); set => SetIntOrByTier(KeyCritRatePercent, value.ToList()); }
@@ -183,41 +207,35 @@ public class ItemTemplate
     /// <summary>护盾值（可单值或按等级）。</summary>
     public IntOrByTier Shield { get => GetInt(KeyShield, 0); set => SetIntOrByTier(KeyShield, value.ToList()); }
 
-    /// <summary>充能值（毫秒，可单值或按等级）；用于 ChargeSelf 效果为此物品增加已过冷却时间。</summary>
-    public IntOrByTier Charge { get => GetInt(KeyCharge, 0); set => SetIntOrByTier(KeyCharge, value.ToList()); }
+    /// <summary>充能时间（秒，可单值或按等级）。Charge = 2.0 或 Charge = [1.0, 2.0]；内部存为毫秒。</summary>
+    public SecondsOrByTier Charge { get => SecondsOrByTier.FromMilliseconds(GetIntOrByTier(KeyCharge).ToList()); set => SetIntOrByTier(KeyCharge, value.ToMilliseconds()); }
 
-    /// <summary>充能时间（秒）。设置时转换为 Charge 毫秒（仅支持单值）；定义物品时可用此属性以秒书写。</summary>
-    public double ChargeSeconds { get => GetInt(KeyCharge, 0) / 1000.0; set => SetInt(KeyCharge, (int)(value * 1000)); }
+    /// <summary>充能目标数量（可单值或按等级）；与 TargetCondition 配合，从己方有冷却物品中选取，默认 1。</summary>
+    public IntOrByTier ChargeTargetCount { get => GetInt(KeyChargeTargetCount, 1); set => SetIntOrByTier(KeyChargeTargetCount, value.ToList()); }
 
-    /// <summary>冻结时长（毫秒，可单值或按等级）；用于冻结效果。内部存储用，定义物品时请用 FreezeSeconds（秒）以保证可读性。</summary>
-    public IntOrByTier Freeze { get => GetIntOrByTier(KeyFreeze); set => SetIntOrByTier(KeyFreeze, value.ToList()); }
-
-    /// <summary>冻结时长（秒）。可赋单值或按等级 [3.0, 4.0, 5.0, 6.0]，内部转换为毫秒存储。物品定义中时间一律用秒。</summary>
-    public SecondsOrByTier FreezeSeconds { get => SecondsOrByTier.FromFirstTierMs(GetInt(KeyFreeze, 0)); set => SetIntOrByTier(KeyFreeze, value.ToMilliseconds()); }
+    /// <summary>冻结时长（秒，可单值或按等级）。Freeze = 3.0 或 Freeze = [3.0, 4.0, 5.0, 6.0]；内部存为毫秒。</summary>
+    public SecondsOrByTier Freeze { get => SecondsOrByTier.FromMilliseconds(GetIntOrByTier(KeyFreeze).ToList()); set => SetIntOrByTier(KeyFreeze, value.ToMilliseconds()); }
 
     /// <summary>冻结目标数量（可单值或按等级）；随机选取敌人物品时选取的次数（每次独立，可能重复）。</summary>
     public IntOrByTier FreezeTargetCount { get => GetInt(KeyFreezeTargetCount, 1); set => SetIntOrByTier(KeyFreezeTargetCount, value.ToList()); }
 
-    /// <summary>减速时长（毫秒，可单值或按等级）；用于减速效果。内部存储用，定义物品时请用 SlowSeconds（秒）。</summary>
-    public IntOrByTier Slow { get => GetIntOrByTier(KeySlow); set => SetIntOrByTier(KeySlow, value.ToList()); }
-
-    /// <summary>减速时长（秒）。可赋单值或按等级，内部转换为毫秒存储。物品定义中时间一律用秒。</summary>
-    public SecondsOrByTier SlowSeconds { get => SecondsOrByTier.FromFirstTierMs(GetInt(KeySlow, 0)); set => SetIntOrByTier(KeySlow, value.ToMilliseconds()); }
+    /// <summary>减速时长（秒，可单值或按等级）。Slow = 1.0 或 Slow = [1.0, 2.0, 3.0]；内部存为毫秒。</summary>
+    public SecondsOrByTier Slow { get => SecondsOrByTier.FromMilliseconds(GetIntOrByTier(KeySlow).ToList()); set => SetIntOrByTier(KeySlow, value.ToMilliseconds()); }
 
     /// <summary>减速目标数量（可单值或按等级）；随机选取敌人物品时选取的次数（每次独立，可能重复）。</summary>
     public IntOrByTier SlowTargetCount { get => GetInt(KeySlowTargetCount, 1); set => SetIntOrByTier(KeySlowTargetCount, value.ToList()); }
 
-    /// <summary>加速时长（毫秒，可单值或按等级）；用于加速效果。内部存储用，定义物品时请用 HasteSeconds（秒）。</summary>
-    public IntOrByTier Haste { get => GetIntOrByTier(KeyHaste); set => SetIntOrByTier(KeyHaste, value.ToList()); }
-
-    /// <summary>加速时长（秒）。可赋单值或按等级，内部转换为毫秒存储。物品定义中时间一律用秒。</summary>
-    public SecondsOrByTier HasteSeconds { get => SecondsOrByTier.FromFirstTierMs(GetInt(KeyHaste, 0)); set => SetIntOrByTier(KeyHaste, value.ToMilliseconds()); }
+    /// <summary>加速时长（秒，可单值或按等级）。Haste = 1.0 或 Haste = [1.0, 2.0, 3.0]；内部存为毫秒。</summary>
+    public SecondsOrByTier Haste { get => SecondsOrByTier.FromMilliseconds(GetIntOrByTier(KeyHaste).ToList()); set => SetIntOrByTier(KeyHaste, value.ToMilliseconds()); }
 
     /// <summary>加速目标数量（可单值或按等级）；与 TargetCondition 配合，从己方有冷却物品中选取。</summary>
     public IntOrByTier HasteTargetCount { get => GetInt(KeyHasteTargetCount, 1); set => SetIntOrByTier(KeyHasteTargetCount, value.ToList()); }
 
     /// <summary>修复目标数量（可单值或按等级）；与 TargetCondition 配合，从己方已摧毁物品中选取。</summary>
     public IntOrByTier RepairTargetCount { get => GetInt(KeyRepairTargetCount, 1); set => SetIntOrByTier(KeyRepairTargetCount, value.ToList()); }
+
+    /// <summary>摧毁目标数量（可单值或按等级）；与 TargetCondition 配合，从己方未摧毁物品中选取，默认 1。</summary>
+    public IntOrByTier DestroyTargetCount { get => GetInt(KeyDestroyTargetCount, 1); set => SetIntOrByTier(KeyDestroyTargetCount, value.ToList()); }
 
     /// <summary>吸血：1 表示造成伤害时按实际伤害量治疗己方，0 表示无。用于伤害效果。</summary>
     public IntOrByTier LifeSteal { get => GetInt(KeyLifeSteal, 0); set => SetIntOrByTier(KeyLifeSteal, value.ToList()); }

@@ -23,7 +23,7 @@ public interface IEffectApplyContext
     /// <summary>从施放者物品模板按 key 取值（缺省时用 defaultValue），若 applyCritMultiplier 则乘暴击倍率。用于数值与目标数等，key 建议用 nameof(ItemTemplate.XXX)。</summary>
     int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0);
 
-    /// <summary>当前能力的目标选择条件（用于冻结/减速/充能/加速等多目标效果）；由模拟器从 AbilityDefinition.TargetCondition 注入。</summary>
+    /// <summary>当前能力的目标选择条件（用于冻结/减速/充能/加速/摧毁等多目标效果）；由模拟器从 AbilityDefinition.TargetCondition 注入。</summary>
     Condition? TargetCondition { get; }
 
     /// <summary>对敌方造成伤害；isBurn 为灼烧结算。返回实际扣减的生命值（用于吸血等）。</summary>
@@ -77,6 +77,6 @@ public interface IEffectApplyContext
     /// <summary>设置施放者物品的飞行状态（开始/结束飞行）。</summary>
     void SetCasterInFlight(bool inFlight);
 
-    /// <summary>摧毁己方施放者右侧下一件未摧毁物品；由实现方先调用 Destroy 触发器，再将目标标记为 Destroyed。</summary>
-    void DestroyNextItemToRightOfCaster();
+    /// <summary>摧毁：对己方满足 targetCondition 的未摧毁物品选取至多 targetCount 个施加摧毁；先触发 Destroy 再标记 Destroyed。目标不要求有冷却。</summary>
+    void ApplyDestroy(int targetCount, Condition? targetCondition = null);
 }

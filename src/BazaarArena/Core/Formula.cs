@@ -13,6 +13,4 @@ public static class Formula
     public const string CompanionCountTimesCustom0 = "CompanionCountTimesCustom0";
     /// <summary>固定加成 = -(相邻且为伙伴的物品数) × 1000（毫秒），用于缩短冷却。</summary>
     public const string Minus1sPerAdjacentCompanion = "Minus1sPerAdjacentCompanion";
-    /// <summary>固定加成 = 若己方唯一伙伴即为来源则返回来源的 Custom_0，否则 0（用于如友好玩偶：唯一伙伴时暴击率加成）。</summary>
-    public const string OnlyCompanionCritBonus = "OnlyCompanionCritBonus";
 }

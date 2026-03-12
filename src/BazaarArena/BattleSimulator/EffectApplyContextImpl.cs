@@ -18,7 +18,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public Action<IReadOnlyList<(int sideIndex, int itemIndex)>>? OnFreezeApplied { get; init; }
     /// <summary>己方施加减速后由模拟器注入，用于触发「触发减速」能力入队（传入本次减速目标 (sideIndex, itemIndex) 列表）。</summary>
     public Action<IReadOnlyList<(int sideIndex, int itemIndex)>>? OnSlowApplied { get; init; }
-    /// <summary>摧毁施放者右侧下一件物品时由模拟器注入；回调内先 InvokeTrigger(Destroy)，再标记 Destroyed。</summary>
+    /// <summary>摧毁目标时由模拟器注入（每目标调用一次）；回调内先 InvokeTrigger(Destroy)，再标记 Destroyed。</summary>
     public Action<int>? OnDestroyApplied { get; init; }
 
     public BattleItemState CasterItem => Item;
@@ -72,7 +72,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }
     }
 
-    /// <summary>从 fromSide 中选取至多 targetCount 个满足 condition 的目标（Source=施放者）；不放回随机选取。condition 为 null 时返回空（由 Ability 注入 TargetCondition）。</summary>
+    /// <summary>从 fromSide 中选取至多 targetCount 个满足 condition 的目标（Source=施放者）；不放回随机选取。</summary>
     private List<int> GetTargetIndices(BattleSide fromSide, int targetCount, Condition? condition)
     {
         if (condition == null) return [];
@@ -240,18 +240,20 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
 
     public void SetCasterInFlight(bool inFlight) => Item.InFlight = inFlight;
 
-    public void DestroyNextItemToRightOfCaster()
+    public void ApplyDestroy(int targetCount, Condition? targetCondition = null)
     {
-        for (int i = Item.ItemIndex + 1; i < Side.Items.Count; i++)
+        if (targetCount <= 0) return;
+        var indices = GetTargetIndices(Side, targetCount, targetCondition);
+        if (indices.Count == 0) return;
+        var targetNames = indices.Select(i => Side.Items[i].Template.Name).ToList();
+        string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
+        LogEffect("摧毁", indices.Count, extraSuffix, showCrit: false);
+        foreach (int i in indices)
         {
-            if (Side.Items[i].Destroyed) continue;
-            var target = Side.Items[i];
-            LogEffect("摧毁", 0, " →[" + target.Template.Name + "]", showCrit: false);
             if (OnDestroyApplied != null)
                 OnDestroyApplied(i);
             else
-                target.Destroyed = true;
-            return;
+                Side.Items[i].Destroyed = true;
         }
     }
 }

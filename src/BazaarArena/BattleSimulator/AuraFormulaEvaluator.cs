@@ -16,7 +16,6 @@ internal static class AuraFormulaEvaluator
             Formula.SourceDamage => source.Template.GetInt("Damage", source.Tier, 0, new BattleAuraContext(side, source)),
             Formula.CompanionCountTimesCustom0 => EvaluateCompanionCountTimesCustom0(source, side),
             Formula.Minus1sPerAdjacentCompanion => EvaluateMinus1sPerAdjacentCompanion(source.ItemIndex, side),
-            Formula.OnlyCompanionCritBonus => EvaluateOnlyCompanionCritBonus(source, side),
             _ => 0,
         };
     }
@@ -59,21 +58,4 @@ internal static class AuraFormulaEvaluator
         return -1000 * count;
     }
 
-    private static int EvaluateOnlyCompanionCritBonus(BattleItemState source, BattleSide side)
-    {
-        int companionCount = 0;
-        int onlyCompanionIndex = -1;
-        for (int j = 0; j < side.Items.Count; j++)
-        {
-            var it = side.Items[j];
-            if (!it.Destroyed && it.Template.Tags?.Contains(Tag.Friend) == true)
-            {
-                companionCount++;
-                onlyCompanionIndex = j;
-            }
-        }
-        if (companionCount == 1 && onlyCompanionIndex == source.ItemIndex)
-            return source.Template.GetInt("Custom_0", source.Tier, 0);
-        return 0;
-    }
 }

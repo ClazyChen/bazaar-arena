@@ -35,7 +35,7 @@ public static class CommonMedium
             Cooldown = 8.0,
             Damage = [20, 40, 80, 160],
             SlowTargetCount = 2,
-            SlowSeconds = new[] { 3.0, 4.0, 5.0, 6.0 },
+            Slow = [3.0, 4.0, 5.0, 6.0],
             Abilities =
             [
                 Ability.Damage(),
@@ -52,8 +52,7 @@ public static class CommonMedium
             Name = "暗影斗篷",
             Desc = "使用此物品右侧的物品时，使之加速 {HasteSeconds} 秒；若为武器则伤害提高 {Custom_0}（限本场战斗）",
             Tags = [Tag.Apparel],
-            HasteSeconds = new[] { 1.0, 2.0, 3.0, 4.0 },
-            HasteTargetCount = 1,
+            Haste = [1.0, 2.0, 3.0, 4.0],
             Custom_0 = [3, 5, 7, 9],
             Abilities =
             [
@@ -66,7 +65,10 @@ public static class CommonMedium
                     ApplyCritMultiplier = false,
                     Apply = Effect.HasteApply,
                 },
-                Ability.AddAttribute(nameof(ItemTemplate.Damage), additionalTargetCondition: Condition.RightOfSource & Condition.WithTag(Tag.Weapon), priority: AbilityPriority.Low, condition: Condition.DifferentFromSource & Condition.SameSide & Condition.RightOfSource),
+                Ability.AddAttribute(nameof(ItemTemplate.Damage),
+                additionalTargetCondition: Condition.RightOfSource & Condition.WithTag(Tag.Weapon),
+                priority: AbilityPriority.Low,
+                condition: Condition.DifferentFromSource & Condition.SameSide & Condition.RightOfSource),
             ],
         };
     }
@@ -81,14 +83,17 @@ public static class CommonMedium
             Tags = [Tag.Weapon],
             Cooldown = 9.0,
             Damage = [20, 40, 60, 80],
-            FreezeSeconds = 1.0,
+            Freeze = 1.0,
             FreezeTargetCount = [1, 2, 3, 4],
             Custom_0 = [5, 10, 15, 20],
             Abilities =
             [
                 Ability.Damage(),
                 Ability.Freeze(),
-                Ability.AddAttribute(nameof(ItemTemplate.Damage), additionalTargetCondition: Condition.WithTag(Tag.Weapon), trigger: Trigger.Freeze, priority: AbilityPriority.Low),
+                Ability.AddAttribute(nameof(ItemTemplate.Damage),
+                additionalTargetCondition: Condition.WithTag(Tag.Weapon),
+                trigger: Trigger.Freeze,
+                priority: AbilityPriority.Low),
             ],
         };
     }
@@ -153,11 +158,12 @@ public static class CommonMedium
             Desc = "加速相邻物品 {HasteSeconds} 秒",
             Tags = [Tag.Tool, Tag.Apparel],
             Cooldown = 5.0,
-            HasteSeconds = new[] { 1.0, 2.0, 3.0, 4.0 },
+            Haste = [1.0, 2.0, 3.0, 4.0],
             HasteTargetCount = 2,
             Abilities =
             [
-                Ability.Haste(priority: AbilityPriority.High, targetCondition: Condition.AdjacentToSource),
+                Ability.Haste(priority: AbilityPriority.High,
+                additionalTargetCondition: Condition.AdjacentToSource),
             ],
         };
     }
@@ -188,8 +194,7 @@ public static class CommonMedium
             Desc = "减速 1 件物品 {SlowSeconds} 秒",
             Tags = [],
             Cooldown = 7.0,
-            SlowSeconds = new[] { 1.0, 2.0, 3.0, 4.0 },
-            SlowTargetCount = 1,
+            Slow = [1.0, 2.0, 3.0, 4.0],
             Abilities =
             [
                 Ability.Slow(),
@@ -227,7 +232,6 @@ public static class CommonMedium
             Desc = "修复 {RepairTargetCount} 件物品；治疗 {Heal} 生命值",
             Tags = [Tag.Friend, Tag.Tech],
             Cooldown = 5.0,
-            RepairTargetCount = 1,
             Heal = [30, 60, 120, 240],
             Abilities =
             [

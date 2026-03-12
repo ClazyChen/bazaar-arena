@@ -53,6 +53,18 @@ public class Condition
     public static Condition RightOfSource { get; } = new(ctx =>
         ctx.Item != null && ctx.Item.SideIndex == ctx.Source.SideIndex && ctx.Item.ItemIndex == ctx.Source.ItemIndex + 1);
 
+    /// <summary>被评估对象是能力持有者右侧第一个未摧毁的物品（同侧、ItemIndex &gt; Source.ItemIndex，且中间无未摧毁）；用于「摧毁右侧下一件」等。Item 为 null 时为 false。</summary>
+    public static Condition FirstNonDestroyedRightOfSource { get; } = new(ctx =>
+    {
+        if (ctx.Item == null || ctx.Item.SideIndex != ctx.Source.SideIndex || ctx.Item.Destroyed) return false;
+        if (ctx.Item.ItemIndex <= ctx.Source.ItemIndex) return false;
+        for (int i = ctx.Source.ItemIndex + 1; i < ctx.Item.ItemIndex; i++)
+        {
+            if (!ctx.MySide.Items[i].Destroyed) return false;
+        }
+        return true;
+    });
+
     /// <summary>被评估对象在能力持有者左侧（Item.ItemIndex == Source.ItemIndex - 1）；Item 为 null 时为 false。</summary>
     public static Condition LeftOfSource { get; } = new(ctx =>
         ctx.Item != null && ctx.Item.SideIndex == ctx.Source.SideIndex && ctx.Item.ItemIndex == ctx.Source.ItemIndex - 1);
@@ -84,4 +96,18 @@ public class Condition
 
     /// <summary>被评估对象有冷却时间（CooldownMs &gt; 0）；Item 为 null 时为 false。用于目标选取（充能/冻结/减速/加速等）。</summary>
     public static Condition HasCooldown { get; } = new(ctx => ctx.Item != null && ctx.MySide.GetItemInt(ctx.Item.ItemIndex, "CooldownMs", 0) > 0);
+
+    /// <summary>被评估对象（Item）是己方唯一伙伴：同侧未摧毁且带 Tag.Friend 的物品恰有一个且为该 Item。用于光环 SourceCondition（如「若此为唯一伙伴则暴击率加成」）。</summary>
+    public static Condition OnlyCompanion { get; } = new(ctx =>
+    {
+        if (ctx.Item == null || ctx.Item.Destroyed) return false;
+        if (ctx.Item.Template.Tags?.Contains(Tag.Friend) != true) return false;
+        int count = 0;
+        for (int j = 0; j < ctx.MySide.Items.Count; j++)
+        {
+            var it = ctx.MySide.Items[j];
+            if (!it.Destroyed && it.Template.Tags?.Contains(Tag.Friend) == true) count++;
+        }
+        return count == 1;
+    });
 }

@@ -152,11 +152,12 @@
 - **战斗内读属性**：需要光环时传入 context，例如暴击率：`item.Template.GetInt("CritRatePercent", item.Tier, 0, auraContext)`；模拟器在能力队列处理处按当前 `entry.Owner`（BattleItemState）创建 `BattleAuraContext(side, entry.Owner, opp)` 并传入。
 - **效果数值必须带光环上下文**：`IEffectApplyContext.GetResolvedValue` 用于效果委托内取 Damage、Shield 等。若实现内只调 `Item.Template.GetInt(key, tier, default)` 而不传 `IAuraContext`，则「基础 0 + 光环加成」类物品（如废品场长枪）施放时伤害仍为 0。**正确做法**：`EffectApplyContextImpl.GetResolvedValue` 内创建 `new BattleAuraContext(Side, Item)` 并调用 `GetInt(key, tier, default, auraContext)`（Item 即 CasterItem），使施放时读取的数值已含光环。
 
-### 光环公式（Formula + AuraFormulaEvaluator）
+### 光环公式（Formula + AuraFormulaEvaluator）与 SourceCondition 优先
 
+- **能用 SourceCondition 表达的优先用 SourceCondition**：若光环「仅当提供者满足某条件时生效」且数值来自模板字段（如 Custom_0），应使用 **AuraDefinition.SourceCondition** + **FixedValueKey**，不必新增 Formula。例如「若此为唯一伙伴则暴击率 +Custom_0%」用 **SourceCondition = Condition.OnlyCompanion**、**FixedValueKey = nameof(ItemTemplate.Custom_0)**；**Condition.OnlyCompanion** 表示被评估对象（Item=Source=光环提供者）是己方唯一带 Tag.Friend 且未摧毁的物品。
 - **避免魔法字符串**：`AuraDefinition.FixedValueFormula` 使用 `Core/Formula.cs` 中的常量，如 `Formula.SmallCountStash`，不在物品或 BattleAuraContext 内手写 `"SmallCountStash"`。
 - **公式逻辑不堆在 BattleAuraContext**：固定加成公式的实现放在 `BattleSimulator/AuraFormulaEvaluator.cs`。`BattleAuraContext.GetAuraModifiers` 当 `FixedValueFormula` 非空时调用 `AuraFormulaEvaluator.Evaluate(formulaName, source, side)`，不再在 BattleAuraContext 内写长 if-else。
-- **新增公式**：在 `Formula` 中加常量；在 `AuraFormulaEvaluator.Evaluate` 的 switch 中加 case，并实现对应私有方法（如 `EvaluateSmallCountStash`）。克隆 AuraDefinition 时需复制 `FixedValueFormula`（ItemDatabase、BattleSimulator 的 BuildSide 均已处理）。
+- **新增公式**：仅当数值需复杂计算（如己方小型物品数、敌方剧毒值）时在 `Formula` 中加常量并在 `AuraFormulaEvaluator` 实现；否则优先用 SourceCondition + FixedValueKey/PercentValueKey。克隆 AuraDefinition 时需复制 `FixedValueFormula`（ItemDatabase、BattleSimulator 的 BuildSide 均已处理）。
 
 ### 描述占位符：前缀/后缀
 
@@ -308,10 +309,12 @@
 ## 摧毁（Destroy）与「施加摧毁时」触发器
 
 - **Trigger.Destroy**：`Core/Trigger.cs` 中 `Destroy = "摧毁物品时"`。语义：**任意物品施加摧毁时触发**，实现同 Slow：Condition 判定施加摧毁的物品，InvokeTargetCondition 判定被摧毁的物品；`EnsureTriggerCondition` 默认 `Condition.SameSide`，能力上常用 `SameAsSource` 表示「仅施加摧毁的物品自身」触发。
-- **执行顺序**：「施加摧毁」必须在**将目标标记为 Destroyed 之前**调用 `InvokeTrigger`，以便被毁物品自身能力仍可触发。实现：`Effect.DestroyNextItemToRightOfCaster` 找到右侧下一件未摧毁物品 `target` 后，调用 `OnDestroyApplied(i)`；回调内先 `InvokeTrigger(Trigger.Destroy, item, new TriggerInvokeContext { InvokeTargetItem = target })`，再 `target.Destroyed = true`（item 为施放者 ctx.CasterItem）。
-- **ConditionContext**：无需扩展；与 Slow 相同，评估时恒有 Source=能力持有者；Condition 时 Item=施加摧毁者，InvokeTargetCondition 时 Item=被摧毁物品。被摧毁目标为大型或飞行时用 **`InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight`**（尺寸 Tag 由注册时按 Size 自动添加；InFlight 表示被评估物品在飞行）。
-- **Effect.DestroyNextItemToRightOfCaster**：从 `Item.ItemIndex + 1` 起向右扫描，取第一个 `!Side.Items[i].Destroyed` 的 i；若无则 return。找到后记日志「摧毁」+ extraSuffix（→[物品名]），再调用 `OnDestroyApplied(i)`（或未注入时直接设 `target.Destroyed = true`）。牵引光束：能力 1 UseItem High → 该效果；能力 2/3 Destroy Medium，SameAsSource 造成伤害，能力 3 额外 `InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight` 再造成伤害。
-- **日志与颜色**：`EffectLogFormat.FormatEffectValue("摧毁"|"修复", value)` 返回空串，日志只显示效果名与 extraSuffix；`EffectKeywordFormatting` 中「摧毁」rgb(255,50,120)，「修复」rgb(143,252,188)。见 **.cursor/rules/data-and-logging.mdc**。
+- **统一摧毁接口**：使用 **Ability.Destroy** + **Effect.DestroyApply**，接口与 Slow 类似；目标要求**未摧毁**（`Condition.NotDestroyed`），**不**要求有冷却。目标默认己方(SameSide)；`targetCondition` / `additionalTargetCondition` 与其余多目标能力一致。`ItemTemplate.DestroyTargetCount` 默认 1，可省略。多目标选取**一律随机**（不放回）；「右侧下一件」等语义用**条件**限定候选池，例如 **Condition.FirstNonDestroyedRightOfSource**（右侧第一个未摧毁物品，可能隔多格），池中至多一个，随机选 1 即得。
+- **Condition.FirstNonDestroyedRightOfSource**：被评估对象是能力持有者右侧第一个未摧毁的物品（同侧、ItemIndex > Source.ItemIndex，且中间槽位均已摧毁）。牵引光束用 `Ability.Destroy(additionalTargetCondition: Condition.FirstNonDestroyedRightOfSource)`，不再使用特化 Effect。
+- **执行顺序**：「施加摧毁」必须在**将目标标记为 Destroyed 之前**调用 `InvokeTrigger`。实现：`ApplyDestroy` 选目标后对每个目标调用 `OnDestroyApplied(i)`；回调内先 `InvokeTrigger(Trigger.Destroy, ...)`，再 `target.Destroyed = true`。
+- **ConditionContext**：与 Slow 相同。被摧毁目标为大型或飞行时用 **`InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight`**。
+- **已移除**：`Effect.DestroyNextItemToRightOfCasterApply`、`ChargeSelfApply`（充能统一用 ChargeApply + targetCondition/SameAsSource 与默认 ChargeTargetCount=1）。
+- **日志与颜色**：`EffectLogFormat.FormatEffectValue("摧毁"|"修复", value)` 返回空串；`EffectKeywordFormatting` 中「摧毁」rgb(255,50,120)，「修复」rgb(143,252,188)。见 **.cursor/rules/data-and-logging.mdc**。
 
 ---
 
