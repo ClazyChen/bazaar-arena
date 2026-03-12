@@ -150,7 +150,7 @@ public class BattleSimulator
                     var item = entry.Owner;
                     var side = item.SideIndex == 0 ? side0 : side1;
                     var opp = item.SideIndex == 0 ? side1 : side0;
-                    item.LastTriggerMsByAbility[entry.AbilityIndex] = timeMs;
+                    item.SetLastTriggerMs(entry.AbilityIndex, timeMs);
                     entry.LastTriggerMs = timeMs;
                     var ability = item.Template.Abilities[entry.AbilityIndex];
                     bool canCrit = ItemHasAnyCrittableField(item) && ability.Apply != null && ability.ApplyCritMultiplier;
@@ -400,7 +400,7 @@ public class BattleSimulator
                         };
                         if (!ab.InvokeTargetCondition.Evaluate(invokeTargetCtx)) continue;
                     }
-                    int lastMs = triggerName == Trigger.BattleStart ? battleStartLastTriggerMs : abilityOwner.LastTriggerMsByAbility[a];
+                    int lastMs = triggerName == Trigger.BattleStart ? battleStartLastTriggerMs : abilityOwner.GetLastTriggerMs(a);
                     AddOrMergeAbility(abilityOwner, a, ab, pendingCount, lastMs, current, next);
                 }
             }

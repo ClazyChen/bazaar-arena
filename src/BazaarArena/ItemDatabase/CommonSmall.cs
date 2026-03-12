@@ -1,3 +1,4 @@
+using BazaarArena.BattleSimulator;
 using BazaarArena.Core;
 
 namespace BazaarArena.ItemDatabase;
@@ -270,7 +271,7 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.Heal),
-                    FixedValueFormula = Formula.OpponentPoison,
+                    FixedValueFormula = Formula.Opp(BattleSide.KeyPoison),
                 },
             ],
         };
@@ -388,7 +389,7 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.Burn),
-                    FixedValueFormula = Formula.SourceDamage,
+                    FixedValueFormula = Formula.Source(nameof(ItemTemplate.Damage)),
                 },
             ],
         };
@@ -433,12 +434,12 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.Damage),
-                    FixedValueFormula = Formula.CompanionCountTimesCustom0,
+                    FixedValueFormula = Formula.Source(nameof(ItemTemplate.Custom_0)) * Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Friend)),
                 },
                 new AuraDefinition
                 {
                     AttributeName = nameof(ItemTemplate.CooldownMs),
-                    FixedValueFormula = Formula.Minus1sPerAdjacentCompanion,
+                    FixedValueFormula = -1000 * Formula.Count(Condition.AdjacentToSource & Condition.WithTag(Tag.Friend)),
                 },
             ],
         };

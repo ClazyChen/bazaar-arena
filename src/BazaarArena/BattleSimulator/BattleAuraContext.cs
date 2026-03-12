@@ -35,8 +35,8 @@ internal sealed class BattleAuraContext(BattleSide side, BattleItemState targetI
                     };
                     if (!aura.SourceCondition.Evaluate(sourceOnlyCtx)) continue;
                 }
-                if (!string.IsNullOrEmpty(aura.FixedValueFormula))
-                    fixedSum += AuraFormulaEvaluator.Evaluate(aura.FixedValueFormula, source, side, opp);
+                if (aura.FixedValueFormula != null)
+                    fixedSum += aura.FixedValueFormula.Evaluate(new FormulaContext(source, side, opp));
                 else if (!string.IsNullOrEmpty(aura.FixedValueKey))
                     fixedSum += source.Template.GetInt(aura.FixedValueKey, source.Tier, 0, new BattleAuraContext(side, source));
                 if (!string.IsNullOrEmpty(aura.PercentValueKey))

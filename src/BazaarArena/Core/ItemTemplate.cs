@@ -122,6 +122,20 @@ public class ItemTemplate
     private const string KeyCustom_0 = "Custom_0";
     private const string KeyStashParameter = "StashParameter";
 
+    /// <summary>战斗运行时变量键（由模拟器写入，与按等级属性无名称冲突）；可通过 GetInt/GetBool 一致解析。</summary>
+    public const string KeySideIndex = "SideIndex";
+    public const string KeyItemIndex = "ItemIndex";
+    public const string KeyTier = "Tier";
+    public const string KeyCooldownElapsedMs = "CooldownElapsedMs";
+    public const string KeyHasteRemainingMs = "HasteRemainingMs";
+    public const string KeySlowRemainingMs = "SlowRemainingMs";
+    public const string KeyFreezeRemainingMs = "FreezeRemainingMs";
+    public const string KeyInFlight = "InFlight";
+    public const string KeyDestroyed = "Destroyed";
+    public const string KeyAmmoRemaining = "AmmoRemaining";
+    /// <summary>每个能力上次触发时间（毫秒）的键前缀，完整键为 KeyLastTriggerMsPrefix + abilityIndex。</summary>
+    public const string KeyLastTriggerMsPrefix = "LastTriggerMs_";
+
     /// <summary>根据字段名读取 int 值（无 tier 时按第一档），不存在则返回 0。</summary>
     public int GetInt(string key) => GetInt(key, ItemTier.Bronze, 0);
 
@@ -154,8 +168,14 @@ public class ItemTemplate
         return (int)Math.Round((baseVal + fixedSum) * (1 + percentSum / 100.0));
     }
 
-    /// <summary>写入单值（用于 Overrides 等），存为长度为 1 的列表。</summary>
+    /// <summary>写入单值（用于 Overrides、运行时变量等），存为长度为 1 的列表。</summary>
     public void SetInt(string key, int value) => _intsByTier[key] = [value];
+
+    /// <summary>按 key 读取 bool（存为 0/1），不存在或为 0 则返回 false。</summary>
+    public bool GetBool(string key) => GetInt(key, 0) != 0;
+
+    /// <summary>按 key 写入 bool（true→1，false→0）。</summary>
+    public void SetBool(string key, bool value) => SetInt(key, value ? 1 : 0);
 
     private void SetIntOrByTier(string key, IEnumerable<int> values) =>
         _intsByTier[key] = values.ToList();

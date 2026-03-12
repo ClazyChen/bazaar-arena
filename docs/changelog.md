@@ -1,5 +1,14 @@
 # 变更记录
 
+## 运行时变量字典化、Formula 委托类型与光环公式统一
+
+- **运行时变量存字典**：BattleItemState 的 SideIndex、ItemIndex、Tier、CooldownElapsedMs、HasteRemainingMs、SlowRemainingMs、FreezeRemainingMs、InFlight、Destroyed、AmmoRemaining、LastTriggerMs 等全部存入 **ItemTemplate** 的 `_intsByTier`（单值存为长度 1 的列表）；bool 用 GetBool/SetBool（0/1）。BattleSide 的 MaxHp、Hp、Shield、Burn、Poison、Regen、SideIndex 存入 **BattleSide** 的字典，通过 GetInt(key)/SetInt(key) 按名访问。便于公式与扩展用统一接口解析。
+- **Formula 委托类型**：光环固定加成从「公式名字符串 + AuraFormulaEvaluator 分支」改为 **Formula** 类（持有一个 `Func<IFormulaContext, int>`）。提供 Formula.Source(key)、Formula.Side(key)、Formula.Opp(key)、Formula.Count(condition)、Formula.Constant(n) 与 +、-、*、一元负号、int*Formula 组合。求值由 **FormulaContext**（BattleSimulator）实现 IFormulaContext，BattleAuraContext 调用 formula.Evaluate(ctx)。删除 AuraFormulaEvaluator；现有五处公式改写为表达式（如 OpponentPoison → Formula.Opp(BattleSide.KeyPoison)，SmallCountStash → Formula.Source(Custom_0) * (Formula.Source(StashParameter) + Formula.Count(...))）。
+- **RatioUtil.PercentFloor(Formula, percent)**：增加接受 Formula 的重载，用于光环中「数值的 percent% 向下取整」。Formula 增加 Apply(transform) 与一元负号，纳米机器人等处可写 **-1000 * Formula.Count(...)** 替代 Formula.Constant(-1000) * ...。
+- **文档与规则**：implementation-notes 新增「运行时变量与字典」、更新「光环公式」与「依赖变量的光环」；project-conventions 更新光环 Formula 写法与运行时变量字典约定。
+
+---
+
 ## 统一摧毁、条件与光环 SourceCondition、目标数量省略
 
 - **摧毁统一接口**：实现 **Ability.Destroy** + **Effect.DestroyApply**，目标仅要求未摧毁（不要求有冷却），替代特化 `DestroyNextItemToRightOfCasterApply`。牵引光束改用 `Ability.Destroy(additionalTargetCondition: Condition.FirstNonDestroyedRightOfSource)`。

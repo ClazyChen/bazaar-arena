@@ -98,6 +98,29 @@
 
 ---
 
+## 运行时变量与字典（ItemTemplate / BattleSide）
+
+### 设计目标
+
+游戏过程中产生的变量（阵营下标、物品下标、等级、冷却已过时间等）统一存入字典，便于用 **名字** 一致解析（公式、日志、后续扩展）。
+
+### ItemTemplate 中的运行时变量
+
+- **键常量**（Core/ItemTemplate）：`KeySideIndex`、`KeyItemIndex`、`KeyTier`、`KeyCooldownElapsedMs`、`KeyHasteRemainingMs`、`KeySlowRemainingMs`、`KeyFreezeRemainingMs`、`KeyInFlight`、`KeyDestroyed`、`KeyAmmoRemaining`、`KeyLastTriggerMsPrefix`（能力上次触发时间为 `LastTriggerMs_0`、`LastTriggerMs_1`…）。与按等级属性（CooldownMs、Damage 等）无名称冲突。
+- **BattleItemState**：上述 int/bool 不再作为独立字段，全部通过 **Template.GetInt(key)** / **Template.SetInt(key, value)** 与 **GetBool/SetBool** 读写；对外仍保留同名属性（如 `item.SideIndex`、`item.Tier`）委托到 Template。能力上次触发时间用 **GetLastTriggerMs(abilityIndex)** / **SetLastTriggerMs(abilityIndex, timeMs)**。
+- **bool**：Template 用 0/1 存储，提供 **GetBool(key)**、**SetBool(key, value)**。
+
+### BattleSide 中的数值字段
+
+- **键常量**（BattleSimulator/BattleSide）：`KeySideIndex`、`KeyMaxHp`、`KeyHp`、`KeyShield`、`KeyBurn`、`KeyPoison`、`KeyRegen`。
+- **BattleSide** 持有一个 **Dictionary<string, int>**，属性 SideIndex、MaxHp、Hp、Shield、Burn、Poison、Regen 均委托到 **GetInt(key)** / **SetInt(key, value)**，便于公式（如 Formula.Side/Formula.Opp）与按名访问。
+
+### 小结
+
+战斗内读任意运行时变量均可通过 **template.GetInt(key)** 或 **side.GetInt(key)** 按名解析，无需为每种变量单独写分支。
+
+---
+
 ## 能力与 Effect 合并重构
 
 - **目标**：一个能力 = 一条效果语义；原 `AbilityDefinition.Effects`（`List<EffectDefinition>`）与 `EffectDefinition` 合并进 `AbilityDefinition`。
@@ -152,12 +175,12 @@
 - **战斗内读属性**：需要光环时传入 context，例如暴击率：`item.Template.GetInt("CritRatePercent", item.Tier, 0, auraContext)`；模拟器在能力队列处理处按当前 `entry.Owner`（BattleItemState）创建 `BattleAuraContext(side, entry.Owner, opp)` 并传入。
 - **效果数值必须带光环上下文**：`IEffectApplyContext.GetResolvedValue` 用于效果委托内取 Damage、Shield 等。若实现内只调 `Item.Template.GetInt(key, tier, default)` 而不传 `IAuraContext`，则「基础 0 + 光环加成」类物品（如废品场长枪）施放时伤害仍为 0。**正确做法**：`EffectApplyContextImpl.GetResolvedValue` 内创建 `new BattleAuraContext(Side, Item)` 并调用 `GetInt(key, tier, default, auraContext)`（Item 即 CasterItem），使施放时读取的数值已含光环。
 
-### 光环公式（Formula + AuraFormulaEvaluator）与 SourceCondition 优先
+### 光环公式（Formula 委托类型）与 SourceCondition 优先
 
-- **能用 SourceCondition 表达的优先用 SourceCondition**：若光环「仅当提供者满足某条件时生效」且数值来自模板字段（如 Custom_0），应使用 **AuraDefinition.SourceCondition** + **FixedValueKey**，不必新增 Formula。例如「若此为唯一伙伴则暴击率 +Custom_0%」用 **SourceCondition = Condition.OnlyCompanion**、**FixedValueKey = nameof(ItemTemplate.Custom_0)**；**Condition.OnlyCompanion** 表示被评估对象（Item=Source=光环提供者）是己方唯一带 Tag.Friend 且未摧毁的物品。
-- **避免魔法字符串**：`AuraDefinition.FixedValueFormula` 使用 `Core/Formula.cs` 中的常量，如 `Formula.SmallCountStash`，不在物品或 BattleAuraContext 内手写 `"SmallCountStash"`。
-- **公式逻辑不堆在 BattleAuraContext**：固定加成公式的实现放在 `BattleSimulator/AuraFormulaEvaluator.cs`。`BattleAuraContext.GetAuraModifiers` 当 `FixedValueFormula` 非空时调用 `AuraFormulaEvaluator.Evaluate(formulaName, source, side)`，不再在 BattleAuraContext 内写长 if-else。
-- **新增公式**：仅当数值需复杂计算（如己方小型物品数、敌方剧毒值）时在 `Formula` 中加常量并在 `AuraFormulaEvaluator` 实现；否则优先用 SourceCondition + FixedValueKey/PercentValueKey。克隆 AuraDefinition 时需复制 `FixedValueFormula`（ItemDatabase、BattleSimulator 的 BuildSide 均已处理）。
+- **能用 SourceCondition 表达的优先用 SourceCondition**：若光环「仅当提供者满足某条件时生效」且数值来自模板字段（如 Custom_0），应使用 **AuraDefinition.SourceCondition** + **FixedValueKey**，不必写 Formula 表达式。例如「若此为唯一伙伴则暴击率 +Custom_0%」用 **SourceCondition = Condition.OnlyCompanion**、**FixedValueKey = nameof(ItemTemplate.Custom_0)**。
+- **Formula 为委托类型**：`AuraDefinition.FixedValueFormula` 类型为 **Formula?**（非字符串）。Formula 持有一个 `Func<IFormulaContext, int>`，通过 **Formula.Source(key)**（当前物品字段）、**Formula.Side(key)** / **Formula.Opp(key)**（己方/敌方阵营字段）、**Formula.Count(condition)**（双方未摧毁且满足条件的物品数）、**Formula.Constant(n)** 与 **+ / - / *** 运算符组合成表达式。求值时 BattleSimulator 构造 **FormulaContext(source, side, opp)** 实现 IFormulaContext，调用 **formula.Evaluate(ctx)** 得到固定加成。新增 Aura 只需在物品定义处写表达式，无需改 evaluator。
+- **key 与运算符**：来源物品用 `nameof(ItemTemplate.XXX)`；阵营用 **BattleSide.KeyPoison** 等常量。支持 **一元负号**（如 `-Formula.Count(...)`）与 **int * Formula**（如 `-1000 * Formula.Count(...)`），避免冗长的 `Formula.Constant(-1000) * ...`。**RatioUtil.PercentFloor(Formula, percent)** 接受 Formula 重载，用于「数值的 percent% 向下取整」类光环。
+- **克隆**：ItemDatabase、BattleSimulator BuildSide 克隆 Aura 时复制 `FixedValueFormula`（Formula? 引用）即可。
 
 ### 描述占位符：前缀/后缀
 
@@ -194,10 +217,10 @@
 - **调用点**：BattleSimulator 步骤 7（AmmoCap、Multicast）、ProcessCooldown（CooldownMs、AmmoCap）；EffectApplyContextImpl 内 ChargeCasterItem、GetTargetIndices、ChargeItemAt、HasLifeSteal 等，凡有 (side, item) 的读属性均用 `side.GetItemInt(item.ItemIndex, ...)` 或等效。
 - **光环内部**：`BattleAuraContext.GetAuraModifiers` 中 FixedValueKey/PercentValueKey 的读取带 `new BattleAuraContext(side, source)`；`AuraFormulaEvaluator.Evaluate(formulaName, source, side, opp)` 依赖来源属性时（如 `Formula.SourceDamage`）用 `BattleAuraContext(side, source)` 读值。
 
-### Formula.SourceDamage 与依赖变量的光环
+### 依赖变量的光环（Formula.Source）
 
-- **用途**：如「Burn = 0 + 自身 Damage（含光环）」：Aura 的 `AttributeName = Burn`、`FixedValueFormula = Formula.SourceDamage`，SameAsSource。
-- **实现**：`AuraFormulaEvaluator.Evaluate(formulaName, source, side, opp)`；case `Formula.SourceDamage` 返回 `source.Template.GetInt("Damage", source.Tier, 0, new BattleAuraContext(side, source))`，保证读 Damage 时带光环且不形成 Burn↔Burn 循环。
+- **用途**：如「Burn = 0 + 自身 Damage（含光环）」：Aura 的 `AttributeName = Burn`、`FixedValueFormula = Formula.Source(nameof(ItemTemplate.Damage))`，SameAsSource。
+- **实现**：FormulaContext.GetSourceInt(key) 内部调用 `source.Template.GetInt(key, source.Tier, 0, new BattleAuraContext(side, source, opp))`，保证读 Damage 时带光环且不形成 Burn↔Burn 循环。
 
 ---
 

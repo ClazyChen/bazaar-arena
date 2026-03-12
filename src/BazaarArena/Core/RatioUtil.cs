@@ -10,4 +10,8 @@ public static class RatioUtil
         int result = value * percent / 100;
         return result < 1 ? 1 : result;
     }
+
+    /// <summary>对公式求值结果再按 percent% 向下取整，返回新公式（用于光环等）。</summary>
+    public static Formula PercentFloor(Formula valueFormula, int percent) =>
+        Formula.Apply(valueFormula, v => PercentFloor(v, percent));
 }
