@@ -60,9 +60,9 @@
 
 「使用其他物品时触发」等价于「使用物品」且 condition 限制为「己方、且非来源物品」：`Condition.And(Condition.DifferentFromSource, Condition.SameSide)`，再与显式条件（如 WithTag(Tag.Tool)、LeftOfSource）取与。因此删除 `Trigger.UseOtherItem`，步骤 7 仅调用一次 `InvokeTrigger(Trigger.UseItem, ...)`；原 UseOtherItem 能力改为 `Trigger.UseItem` + 上述 condition。物品迁移示例：神经毒素、断裂镣铐、姜饼人、暗影斗篷。
 
-### Ability 工厂参数
+### Ability 工厂参数（已由 Ability / Key / Override 重构替代）
 
-**Core/Ability.cs** 的工厂（Damage、Shield、Heal、Burn、Poison、Haste、Slow、Freeze）支持可选参数：**condition**（覆盖触发器默认）、**additionalCondition**（仅作参数，在工厂内与默认 condition 做 And 后写入 `AbilityDefinition.Condition`，不单独存到定义）、**invokeTargetCondition**（写入 `InvokeTargetCondition`）。默认 condition 按 trigger：UseItem → SameAsSource，其他 → SameSide。克隆时 `EnsureTriggerCondition(triggerName, ability.Condition)` 仅做「condition ?? default」。
+当前能力写法见下节「Ability / Key / Override 重构」；Condition/Trigger 语义不变，仅 API 改为无参属性 + Override。
 
 ### Slow/Freeze 与 InvokeTargetCondition
 
@@ -71,6 +71,25 @@
 ### 小结
 
 修改能力或触发器逻辑时：condition 管「谁触发」，InvokeTargetCondition 管「触发器目标是否满足」（仅 Slow/Freeze 等有目标时），TargetCondition 管「效果选谁」。不再使用 UseOtherItem；「其他物品使用则触发」一律用 UseItem + condition。
+
+---
+
+## Ability / Key / Override 重构
+
+### 目标
+
+- **Ability.xxx**：除 AddAttribute、ReduceAttribute 外均为**无参属性**（如 `Ability.Damage`、`Ability.Haste`），每次访问返回新的带默认值的 `AbilityDefinition`；定制统一通过 **Ability.xxx.Override(...)** 就地修改并返回 `this`。
+- **Key**：`Core/Key.cs` 提供 `Key.Damage`、`Key.Shield`、`Key.Heal`、`Key.Burn`、`Key.Poison`、`Key.Custom_0`，与 `ItemTemplate` 字段名一致，在能力与物品定义中替代 `nameof(ItemTemplate.xxx)`，便于一处维护并与 `GetInt(key)`/`GetResolvedValue(key)` 兼容。
+- **Override**：参数仅当非 null 时覆盖；Condition 与 TargetCondition 在 Override 内做「当前默认 + 传入 condition/additionalCondition、targetCondition/additionalTargetCondition」的合并；支持 SourceCondition 等全量可配置项。
+
+### 书写约定
+
+- **Override 格式**：`Override(` 后换行、缩进，每行一个参数；参数顺序为 trigger → (additional)condition → invokeTargetCondition → sourceCondition → (additional)targetCondition → priority；最后换行、回退缩进、`)`。详见 **.cursor/rules/ability-override-format.mdc**。
+- **AddAttribute / ReduceAttribute**：保留为方法，因需指定 attribute key，如 `Ability.AddAttribute(Key.Damage).Override(...)`、`Ability.ReduceAttribute(Key.Shield).Override(...)`。
+
+### 小结
+
+物品定义中能力列表写 `Ability.Damage`、`Ability.Shield` 等；需改 trigger、priority、condition、targetCondition 等时链式 `.Override(...)`，格式与顺序按规则文件统一。
 
 ---
 

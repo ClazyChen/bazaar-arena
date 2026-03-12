@@ -40,4 +40,44 @@ public class AbilityDefinition
         int v = template.GetInt(key, tier);
         return v != 0 ? v : Value;
     }
+
+    /// <summary>就地覆盖部分属性并返回 this，仅用于 Ability.xxx.Override(...) 链式调用。仅当参数非 null 时覆盖；Condition 与 TargetCondition 按「当前默认 + 传入参数」合并。</summary>
+    public AbilityDefinition Override(
+        string? trigger = null,
+        AbilityPriority? priority = null,
+        Condition? condition = null,
+        Condition? additionalCondition = null,
+        Condition? sourceCondition = null,
+        Condition? invokeTargetCondition = null,
+        Condition? targetCondition = null,
+        Condition? additionalTargetCondition = null,
+        string? valueKey = null,
+        int? value = null,
+        bool? applyCritMultiplier = null,
+        Action<IEffectApplyContext>? apply = null)
+    {
+        if (trigger != null) TriggerName = trigger;
+        if (priority != null) Priority = priority.Value;
+        if (sourceCondition != null) SourceCondition = sourceCondition;
+        if (invokeTargetCondition != null) InvokeTargetCondition = invokeTargetCondition;
+        if (valueKey != null) ValueKey = valueKey;
+        if (value != null) Value = value.Value;
+        if (applyCritMultiplier != null) ApplyCritMultiplier = applyCritMultiplier.Value;
+        if (apply != null) Apply = apply;
+
+        if (condition != null || additionalCondition != null)
+        {
+            var defaultCond = TriggerName == Trigger.UseItem ? Condition.SameAsSource : Condition.SameSide;
+            var baseCond = condition ?? Condition ?? defaultCond;
+            Condition = additionalCondition != null ? (baseCond & additionalCondition) : baseCond;
+        }
+        if (targetCondition != null || additionalTargetCondition != null)
+        {
+            var baseTarget = targetCondition ?? TargetCondition;
+            TargetCondition = baseTarget != null
+                ? (additionalTargetCondition != null ? (baseTarget & additionalTargetCondition) : baseTarget)
+                : additionalTargetCondition;
+        }
+        return this;
+    }
 }

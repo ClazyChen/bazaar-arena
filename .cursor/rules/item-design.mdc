@@ -22,7 +22,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 - **触发器命名**：常量与 UseItem/Freeze/Slow 保持一致风格，使用 `Trigger.Crit`、`Trigger.Destroy` 等（不带 On 前缀）；新增触发器时沿用同一命名习惯。ConditionContext 仅含 MySide/EnemySide/Item/Source?，由调用方传入不同 BattleItemState 表示「被评估物品」与「参考物品」。
 - **使用物品**：冷却转好后施放，能力进入队列，按 250ms 间隔与优先级结算；`TriggerName = Trigger.UseItem`。**Priority 默认 Medium**（`AbilityDefinition.Priority` 默认值）；仅非 Medium 时显式写 `Priority = AbilityPriority.High` 等。
-- **Ability 工厂**：单效果优先用 **Core/Ability.cs** 的工厂方法：**Damage()**、**Shield()**、**Heal()**、**Burn()**、**Poison()**（默认 trigger=UseItem，可选 priority、condition、additionalCondition、invokeTargetCondition）；**Haste()**、**Slow()**、**Freeze()**（同上，另可选 targetCondition、**additionalTargetCondition**，目标默认己方/敌方）；**AddAttribute()**、**ReduceAttribute()**（己方加属性/敌方减属性，可选 **targetCondition** 完全代替默认、**additionalTargetCondition** 在默认 SameSide/DifferentSide 上追加，与 Haste/Slow 一致）。默认 trigger 为 UseItem；condition、additionalCondition、invokeTargetCondition 语义同上。多效果需拆成多条能力或特殊 Condition 时用 `new AbilityDefinition { ..., Apply = Effect.XXXApply, ... }`。
+- **Ability 工厂**：单效果优先用 **Core/Ability.cs**：**Damage**、**Shield**、**Heal**、**Burn**、**Poison**、**Charge**、**Haste**、**Slow**、**Freeze**、**StartFlying**、**EndFlying**、**Destroy** 为**无参属性**，返回带默认值的 `AbilityDefinition`；**AddAttribute(attributeName, amountKey?)**、**ReduceAttribute(attributeName, amountKey?)** 为方法（需指定属性 key，如 `Key.Damage`）。定制时统一用 **Ability.xxx.Override(...)**，参数顺序与格式见 **.cursor/rules/ability-override-format.mdc**。数值 key 用 **Key.Damage**、**Key.Shield** 等（`Core/Key.cs`）。多效果或特殊 Condition 用 `new AbilityDefinition { ..., Apply = Effect.XXXApply, ... }`。
 - **使用物品时「其他物品使用则触发」**：用 `Trigger.UseItem` + `Condition = DifferentFromSource & SameSide [ & 额外条件 ]`（如 `Condition.WithTag(Tag.Tool)`、`Condition.RightOfSource`（被使用物品在能力持有者右侧；评估时 Source=能力持有者、Item=被使用物品））。不再使用 `Trigger.UseOtherItem`。见 **battle-simulator-ability-queue.mdc**。
 - **战斗开始**：第 0 帧触发一次；`TriggerName = Trigger.BattleStart`。模拟器通过统一 `InvokeTrigger` 入队，条件用 `Condition.Evaluate(ConditionContext)` 评估。
 - **造成暴击时**：任意物品造成暴击时触发；`TriggerName = Trigger.Crit`。实现与 Freeze/Slow 一致：Condition 判定暴击施放者，默认 `Condition.SameSide`（表现为己方暴击时触发），可重写为实现对方暴击时触发。
@@ -42,7 +42,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 ## 战斗内修改与 IntOrByTier
 
-- **IntOrByTier.Add(delta)**：每个 tier 的值都加 delta，返回新的 `IntOrByTier`；举重手套等「武器伤害 +N」用 **Ability.AddAttribute(nameof(ItemTemplate.Damage), additionalTargetCondition: Condition.WithTag(Tag.Weapon))**，内部对己方满足 TargetCondition 的物品执行 `Template.Damage = Template.Damage.Add(value)`。
+- **IntOrByTier.Add(delta)**：每个 tier 的值都加 delta，返回新的 `IntOrByTier`；举重手套等「武器伤害 +N」用 **Ability.AddAttribute(Key.Damage).Override(additionalTargetCondition: ..., priority: ...)**，内部对己方满足 TargetCondition 的物品执行 `Template.Damage = Template.Damage.Add(value)`。
 - **Damage 的 getter**：模板的 `Damage` 属性 get 返回完整按等级列表（`GetIntOrByTier(KeyDamage)`），以便支持 `.Add(delta)` 后 set 回；不要用仅返回单值的 getter 做此类修改。
 
 ## Tooltip 与 UI 表现
@@ -58,7 +58,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 ## 新增公共物品流程
 
-1. 按尺寸放入 `ItemDatabase/CommonSmall.cs`、`CommonMedium.cs` 或 **`CommonLarge.cs`**，写工厂方法，设置 Name、Desc、**Tags**、数值属性、**Abilities**（**不**设置 MinTier、Size）；若为纯光环或「基础 0 + 光环」可设 `Auras`，公式用 `FixedValueFormula = Formula.SmallCountStash` 等（见 `Core/Formula.cs`），不手写字符串。能力优先用 **Ability.Damage()**、**Ability.Shield()**、**Ability.Heal()**、**Ability.Burn()**、**Ability.Poison()**、**Ability.Haste(...)**、**Ability.Slow(...)**、**Ability.Freeze(...)**（默认 trigger=UseItem，可选 condition、additionalCondition、invokeTargetCondition、priority、targetCondition 等）。
+1. 按尺寸放入 `ItemDatabase/CommonSmall.cs`、`CommonMedium.cs` 或 **`CommonLarge.cs`**，写工厂方法，设置 Name、Desc、**Tags**、数值属性、**Abilities**（**不**设置 MinTier、Size）；若为纯光环或「基础 0 + 光环」可设 `Auras`，公式用 `FixedValueFormula = Formula.SmallCountStash` 等（见 `Core/Formula.cs`），不手写字符串。能力优先用 **Ability.Damage**、**Ability.Shield**、**Ability.Heal** 等无参属性，需定制时链式 **.Override(...)**（格式与参数顺序见 **ability-override-format.mdc**）；加/减属性用 **Ability.AddAttribute(Key.xxx)** / **Ability.ReduceAttribute(Key.xxx)**，再按需 .Override(...)。
 2. 效果通过 **Ability.*** 工厂或 `new AbilityDefinition { Apply = Effect.XXXApply, ... }` 设置；加/减属性用 **Ability.AddAttribute** / **Ability.ReduceAttribute**（默认己方/敌方，用 additionalTargetCondition 收窄）；无工厂时用 `Effect.HasteApply`、`Effect.RepairApply`、`Effect.StartFlyingApply`、`Effect.DestroyNextItemToRightOfCasterApply` 等；光环公式在 `AuraFormulaEvaluator` 中实现，新增公式时在 `Formula` 加常量、在 `AuraFormulaEvaluator.Evaluate` 加 case（依赖来源属性时传 `sourceIndex` 并用 `BattleAuraContext(side, sourceIndex)` 读值）。若物品有卡组可复写属性，设 `OverridableAttributes`（如 `{ nameof(ItemTemplate.StashParameter): [1,2,3,4] }`）。
 3. 在对应 **RegisterAll** 中先设 `db.DefaultSize`（Small/Medium/Large），再按档位设 `db.DefaultMinTier`（如先 Bronze 注册所有铜，再 Silver 注册所有银），然后 `db.Register(XXX())`；Program/App 中需调用 `CommonLarge.RegisterAll`（若新增 CommonLarge 物品）。
 4. 占位符由 `ItemDescHelper` 正则解析；时间用秒、内部 ToMilliseconds；`{AmmoCap}` 等自动支持。

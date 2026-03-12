@@ -1,0 +1,54 @@
+---
+description: Ability.xxx.Override(...) 的代码风格与参数顺序
+alwaysApply: false
+globs: "**/ItemDatabase/**","**/Core/Ability*.cs"
+---
+
+# Override 格式要求
+
+在物品定义或能力相关代码中书写 **Ability.xxx.Override(...)** 时，须遵守以下格式与参数顺序。
+
+## 格式
+
+- **Override(** 之后**换行并缩进**，每个指定参数**单独一行**。
+- 最后一个参数后**不**加逗号；然后**换行**、回到与 `Ability.xxx` 对齐的缩进、写 **)**。
+
+## 参数顺序
+
+按以下顺序书写（未指定的参数省略即可）：
+
+1. **trigger**
+2. **condition** / **additionalCondition**
+3. **invokeTargetCondition**
+4. **sourceCondition**
+5. **targetCondition** / **additionalTargetCondition**
+6. **priority**
+
+其余可选参数（如 valueKey、value、applyCritMultiplier、apply）如确需覆盖，放在 priority 之后即可。
+
+## 示例
+
+```csharp
+Ability.AddAttribute(Key.Damage).Override(
+    trigger: Trigger.Freeze,
+    additionalTargetCondition: Condition.WithTag(Tag.Weapon),
+    priority: AbilityPriority.Low
+),
+Ability.Charge.Override(
+    additionalCondition: Condition.WithTag(Tag.Tool),
+    targetCondition: Condition.SameAsSource
+),
+Ability.Damage.Override(
+    trigger: Trigger.Destroy,
+    condition: Condition.SameAsSource,
+    invokeTargetCondition: Condition.WithTag(Tag.Large) | Condition.InFlight
+),
+```
+
+单参数时也建议换行书写，保持风格一致：
+
+```csharp
+Ability.Burn.Override(
+    trigger: Trigger.BattleStart
+),
+```

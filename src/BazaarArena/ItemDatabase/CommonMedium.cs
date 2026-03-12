@@ -18,8 +18,8 @@ public static class CommonMedium
             Shield = [10, 20, 40, 80],
             Abilities =
             [
-                Ability.Damage(),
-                Ability.Shield(),
+                Ability.Damage,
+                Ability.Shield,
             ],
         };
     }
@@ -38,8 +38,8 @@ public static class CommonMedium
             Slow = [3.0, 4.0, 5.0, 6.0],
             Abilities =
             [
-                Ability.Damage(),
-                Ability.Slow(),
+                Ability.Damage,
+                Ability.Slow,
             ],
         };
     }
@@ -65,10 +65,11 @@ public static class CommonMedium
                     ApplyCritMultiplier = false,
                     Apply = Effect.HasteApply,
                 },
-                Ability.AddAttribute(nameof(ItemTemplate.Damage),
-                additionalTargetCondition: Condition.RightOfSource & Condition.WithTag(Tag.Weapon),
-                priority: AbilityPriority.Low,
-                condition: Condition.DifferentFromSource & Condition.SameSide & Condition.RightOfSource),
+                Ability.AddAttribute(Key.Damage).Override(
+                    condition: Condition.DifferentFromSource & Condition.SameSide & Condition.RightOfSource,
+                    additionalTargetCondition: Condition.RightOfSource & Condition.WithTag(Tag.Weapon),
+                    priority: AbilityPriority.Low
+                ),
             ],
         };
     }
@@ -88,12 +89,13 @@ public static class CommonMedium
             Custom_0 = [5, 10, 15, 20],
             Abilities =
             [
-                Ability.Damage(),
-                Ability.Freeze(),
-                Ability.AddAttribute(nameof(ItemTemplate.Damage),
-                additionalTargetCondition: Condition.WithTag(Tag.Weapon),
-                trigger: Trigger.Freeze,
-                priority: AbilityPriority.Low),
+                Ability.Damage,
+                Ability.Freeze,
+                Ability.AddAttribute(Key.Damage).Override(
+                    trigger: Trigger.Freeze,
+                    additionalTargetCondition: Condition.WithTag(Tag.Weapon),
+                    priority: AbilityPriority.Low
+                ),
             ],
         };
     }
@@ -110,7 +112,7 @@ public static class CommonMedium
             Damage = [20, 40, 80, 160],
             Abilities =
             [
-                Ability.Damage(),
+                Ability.Damage,
             ],
         };
     }
@@ -127,7 +129,7 @@ public static class CommonMedium
             Shield = [20, 60, 120, 200],
             Abilities =
             [
-                Ability.Shield(),
+                Ability.Shield,
             ],
         };
     }
@@ -144,7 +146,7 @@ public static class CommonMedium
             Damage = [30, 60, 120, 240],
             Abilities =
             [
-                Ability.Damage(),
+                Ability.Damage,
             ],
         };
     }
@@ -162,8 +164,10 @@ public static class CommonMedium
             HasteTargetCount = 2,
             Abilities =
             [
-                Ability.Haste(priority: AbilityPriority.High,
-                additionalTargetCondition: Condition.AdjacentToSource),
+                Ability.Haste.Override(
+                    additionalTargetCondition: Condition.AdjacentToSource,
+                    priority: AbilityPriority.High
+                ),
             ],
         };
     }
@@ -180,7 +184,7 @@ public static class CommonMedium
             Burn = [4, 6, 8, 10],
             Abilities =
             [
-                Ability.Burn(),
+                Ability.Burn,
             ],
         };
     }
@@ -197,7 +201,7 @@ public static class CommonMedium
             Slow = [1.0, 2.0, 3.0, 4.0],
             Abilities =
             [
-                Ability.Slow(),
+                Ability.Slow,
             ],
         };
     }
@@ -242,7 +246,7 @@ public static class CommonMedium
                     ApplyCritMultiplier = false,
                     Apply = Effect.RepairApply,
                 },
-                Ability.Heal(),
+                Ability.Heal,
             ],
         };
     }

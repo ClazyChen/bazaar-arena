@@ -20,7 +20,7 @@ public static class CommonSmall
             Damage = [5, 10, 15, 20],
             Abilities =
             [
-                Ability.Damage(),
+                Ability.Damage,
             ],
         };
     }
@@ -36,7 +36,9 @@ public static class CommonSmall
             Burn = [6, 9, 12, 15],
             Abilities =
             [
-                Ability.Burn(trigger: Trigger.BattleStart),
+                Ability.Burn.Override(
+                    trigger: Trigger.BattleStart
+                ),
             ],
         };
     }
@@ -53,7 +55,7 @@ public static class CommonSmall
             Poison = [1, 2, 3, 4],
             Abilities =
             [
-                Ability.Poison(),
+                Ability.Poison,
             ],
         };
     }
@@ -70,9 +72,10 @@ public static class CommonSmall
             Custom_0 = [1, 2, 3, 4],
             Abilities =
             [
-                Ability.AddAttribute(nameof(ItemTemplate.Damage),
+                Ability.AddAttribute(Key.Damage).Override(
                     additionalTargetCondition: Condition.WithTag(Tag.Weapon),
-                    priority: AbilityPriority.High),
+                    priority: AbilityPriority.High
+                ),
             ],
         };
     }
@@ -89,7 +92,7 @@ public static class CommonSmall
             Damage = [15, 30, 60, 120],
             Abilities =
             [
-                Ability.Damage(),
+                Ability.Damage,
             ],
         };
     }
@@ -106,7 +109,7 @@ public static class CommonSmall
             Damage = [5, 15, 30, 50],
             Abilities =
             [
-                Ability.Damage(),
+                Ability.Damage,
             ],
         };
     }
@@ -123,7 +126,7 @@ public static class CommonSmall
             Damage = [5, 10, 20, 40],
             Abilities =
             [
-                Ability.Damage(),
+                Ability.Damage,
             ],
         };
     }
@@ -162,7 +165,7 @@ public static class CommonSmall
             Custom_0 = 100,
             Abilities =
             [
-                Ability.Damage(),
+                Ability.Damage,
             ],
             Auras =
             [
@@ -187,7 +190,7 @@ public static class CommonSmall
             Heal = [10, 20, 40, 80],
             Abilities =
             [
-                Ability.Heal(),
+                Ability.Heal,
             ],
         };
     }
@@ -203,7 +206,9 @@ public static class CommonSmall
             Freeze = [3.0, 4.0, 5.0, 6.0],
             Abilities =
             [
-                Ability.Freeze(trigger: Trigger.BattleStart),
+                Ability.Freeze.Override(
+                    trigger: Trigger.BattleStart
+                ),
             ],
         };
     }
@@ -223,8 +228,8 @@ public static class CommonSmall
             SlowTargetCount = [1, 2, 3, 4],
             Abilities =
             [
-                Ability.Damage(),
-                Ability.Slow(),
+                Ability.Damage,
+                Ability.Slow,
             ],
         };
     }
@@ -242,10 +247,11 @@ public static class CommonSmall
             Custom_0 = [5, 10, 15, 20],
             Abilities =
             [
-                Ability.Damage(),
-                Ability.ReduceAttribute(nameof(ItemTemplate.Shield),
+                Ability.Damage,
+                Ability.ReduceAttribute(Key.Shield).Override(
                     additionalTargetCondition: Condition.WithTag(Tag.Shield),
-                    priority: AbilityPriority.High),
+                    priority: AbilityPriority.High
+                ),
             ],
         };
     }
@@ -263,8 +269,8 @@ public static class CommonSmall
             Heal = 0,
             Abilities =
             [
-                Ability.Poison(),
-                Ability.Heal(),
+                Ability.Poison,
+                Ability.Heal,
             ],
             Auras =
             [
@@ -290,12 +296,13 @@ public static class CommonSmall
             Custom_0 = [4, 8, 12],
             Abilities =
             [
-                Ability.Poison(),
-                Ability.AddAttribute(nameof(ItemTemplate.Poison),
-                    targetCondition: Condition.SameAsSource,
-                    priority: AbilityPriority.Low,
+                Ability.Poison,
+                Ability.AddAttribute(Key.Poison).Override(
+                    trigger: Trigger.Slow,
                     condition: Condition.AdjacentToSource,
-                    trigger: Trigger.Slow),
+                    targetCondition: Condition.SameAsSource,
+                    priority: AbilityPriority.Low
+                ),
             ],
         };
     }
@@ -311,7 +318,9 @@ public static class CommonSmall
             Slow = [1.0, 2.0, 3.0],
             Abilities =
             [
-                Ability.Slow(additionalCondition: Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon)),
+                Ability.Slow.Override(
+                    additionalCondition: Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon)
+                ),
             ],
         };
     }
@@ -329,11 +338,14 @@ public static class CommonSmall
             Charge = 2.0,
             Abilities =
             [
-                Ability.AddAttribute(nameof(ItemTemplate.Damage),
+                Ability.AddAttribute(Key.Damage).Override(
                     additionalTargetCondition: Condition.WithTag(Tag.Weapon),
-                    priority: AbilityPriority.High),
-                Ability.Charge(additionalCondition: Condition.WithTag(Tag.Weapon),
-                    targetCondition: Condition.SameAsSource),
+                    priority: AbilityPriority.High
+                ),
+                Ability.Charge.Override(
+                    additionalCondition: Condition.WithTag(Tag.Weapon),
+                    targetCondition: Condition.SameAsSource
+                ),
             ],
         };
     }
@@ -351,9 +363,11 @@ public static class CommonSmall
             Custom_0 = 1,
             Abilities =
             [
-                Ability.Haste(),
-                Ability.StartFlying(trigger: Trigger.Crit,
-                    priority: AbilityPriority.Low),
+                Ability.Haste,
+                Ability.StartFlying.Override(
+                    trigger: Trigger.Crit,
+                    priority: AbilityPriority.Low
+                ),
             ],
             Auras =
             [
@@ -380,9 +394,9 @@ public static class CommonSmall
             Burn = 0,
             Abilities =
             [
-                Ability.Damage(),
-                Ability.Burn(),
-                Ability.StartFlying(),
+                Ability.Damage,
+                Ability.Burn,
+                Ability.StartFlying,
             ],
             Auras =
             [
@@ -408,9 +422,13 @@ public static class CommonSmall
             Charge = 1.0,
             Abilities =
             [
-                Ability.Shield(priority: AbilityPriority.Low),
-                Ability.Charge(additionalCondition: Condition.WithTag(Tag.Tool), 
-                    targetCondition: Condition.SameAsSource),
+                Ability.Shield.Override(
+                    priority: AbilityPriority.Low
+                ),
+                Ability.Charge.Override(
+                    additionalCondition: Condition.WithTag(Tag.Tool),
+                    targetCondition: Condition.SameAsSource
+                ),
             ],
         };
     }
@@ -427,7 +445,7 @@ public static class CommonSmall
             Custom_0 = [15, 20, 25],
             Abilities =
             [
-                Ability.Damage(),
+                Ability.Damage,
             ],
             Auras =
             [
@@ -457,7 +475,7 @@ public static class CommonSmall
             Damage = [5, 10, 20],
             Abilities =
             [
-                Ability.Damage(),
+                Ability.Damage,
             ],
         };
     }
@@ -473,8 +491,10 @@ public static class CommonSmall
             Damage = [8, 12, 16],
             Abilities =
             [
-                Ability.Damage(trigger: Trigger.Slow, 
-                    priority: AbilityPriority.Low),
+                Ability.Damage.Override(
+                    trigger: Trigger.Slow,
+                    priority: AbilityPriority.Low
+                ),
             ],
         };
     }
@@ -492,7 +512,7 @@ public static class CommonSmall
             Custom_0 = [50, 75, 100],
             Abilities =
             [
-                Ability.Damage(),
+                Ability.Damage,
             ],
             Auras =
             [
@@ -518,12 +538,18 @@ public static class CommonSmall
             Damage = [150, 300, 600],
             Abilities =
             [
-                Ability.Destroy(additionalTargetCondition: Condition.FirstNonDestroyedRightOfSource),
-                Ability.Damage(trigger: Trigger.Destroy, 
-                    condition: Condition.SameAsSource),
-                Ability.Damage(trigger: Trigger.Destroy,
+                Ability.Destroy.Override(
+                    additionalTargetCondition: Condition.FirstNonDestroyedRightOfSource
+                ),
+                Ability.Damage.Override(
+                    trigger: Trigger.Destroy,
+                    condition: Condition.SameAsSource
+                ),
+                Ability.Damage.Override(
+                    trigger: Trigger.Destroy,
                     condition: Condition.SameAsSource,
-                    invokeTargetCondition: Condition.WithTag(Tag.Large) | Condition.InFlight),
+                    invokeTargetCondition: Condition.WithTag(Tag.Large) | Condition.InFlight
+                ),
             ],
         };
     }
