@@ -70,7 +70,7 @@ public class AbilityDefinition
 
         if (condition != null || additionalCondition != null)
         {
-            if (condition != null && TriggerName == Trigger.UseItem)
+            if (condition != null || TriggerName != Trigger.UseItem)
                 UseSelf = false;
             var defaultCond = TriggerName == Trigger.UseItem ? Condition.SameAsSource : Condition.SameSide;
             var baseCond = condition ?? Condition ?? defaultCond;

@@ -36,10 +36,10 @@ alwaysApply: false
   2. 再在 **nextAbilityQueue** 中查找同上，找到则只做 `PendingCount += pendingCount`，不新建。
   3. 都没有则新建条目：**Immediate → currentAbilityQueue**，**非 Immediate → nextAbilityQueue**。`AbilityQueueEntry` 持有多元组 (Owner=能力持有者 BattleItemState, AbilityIndex, PendingCount, LastTriggerMs)。
 
-## 步骤 8 执行顺序：按能力优先级
+## 步骤 8 执行顺序：仅按能力优先级
 
-- 步骤 8 在遍历处理 `currentAbilityQueue` 前，**先按能力优先级排序**：主键为 `AbilityPriority` 枚举值升序（Immediate → Highest → High → Medium → Low → Lowest），同优先级按 (Owner.SideIndex, Owner.ItemIndex, AbilityIndex) 稳定排序。
-- 这样同一帧内触发的多条能力会按「高优先级先于低优先级」执行（例如裂盾刀裂盾 High 先于姜饼人护盾 Low）。
+- 步骤 8 在遍历处理 `currentAbilityQueue` 前，**仅按能力优先级排序**：`AbilityPriority` 枚举值升序（Immediate → Highest → High → Medium → Low → Lowest）；**同优先级按入队顺序**，不再按 (SideIndex, ItemIndex, AbilityIndex) 等二次排序。
+- 这样同一帧内触发的多条能力会按「高优先级先于低优先级」执行，同优先级则按入队次序处理（例如裂盾刀裂盾 High 先于姜饼人护盾 Low）。
 
 ## 效果数值与光环
 

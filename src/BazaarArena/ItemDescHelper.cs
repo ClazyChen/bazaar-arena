@@ -50,7 +50,7 @@ public static class ItemDescHelper
         {
             int idx = index + offset;
             string actualKey = ResolveKey(key);
-            int value = template.GetInt(actualKey, tier);
+            int value = template.GetInt(actualKey, tier, ItemTemplate.GetDefaultValueForKey(actualKey));
             string valueStr = IsSecondsKey(actualKey) ? FormatCooldownSeconds(value) : value.ToString();
             string replaceStr = prefix + valueStr + suffix;
             result = result.Remove(idx, length).Insert(idx, replaceStr);
@@ -75,7 +75,8 @@ public static class ItemDescHelper
             string actualKey = ResolveKey(key);
             if (!snapshot.TryGetValue(actualKey, out var list) || list.Count == 0)
             {
-                string seg = prefix + (IsSecondsKey(actualKey) ? FormatCooldownSeconds(0) : "0") + suffix;
+                int defaultVal = ItemTemplate.GetDefaultValueForKey(actualKey);
+                string seg = prefix + (IsSecondsKey(actualKey) ? FormatCooldownSeconds(defaultVal) : defaultVal.ToString()) + suffix;
                 result = result.Remove(idx, length).Insert(idx, seg);
                 valueRanges.Add((idx, seg.Length, template.MinTier, singleValueBrush));
                 offset += seg.Length - length;

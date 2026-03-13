@@ -103,7 +103,7 @@ public class StatsCollectingSink : IBattleLogSink
         switch (effectKind)
         {
             case "伤害":
-            case "吸血": // 吸血与伤害为同一数值，仅展示不同，统计时均计入伤害
+            case "吸血": // 吸血视为造成伤害并回血，仅计入伤害、不计入治疗
                 a.Damage += value;
                 AddSide(sideIndex, damage: value);
                 break;

@@ -142,6 +142,20 @@ public class ItemTemplate
     /// <summary>本次判定若暴击时的暴击伤害百分比（复用时可避免重复读光环）。</summary>
     public const string KeyCritDamagePercentThisUse = "CritDamagePercentThisUse";
 
+    /// <summary>未定义时该 key 的显示/逻辑默认值（与各属性 getter 一致）；用于 Desc 占位符等。未知 key 返回 0。</summary>
+    public static int GetDefaultValueForKey(string key) => key switch
+    {
+        KeyCritDamagePercent => 200,
+        KeyMulticast => 1,
+        KeyChargeTargetCount => 1,
+        KeyFreezeTargetCount => 1,
+        KeySlowTargetCount => 1,
+        KeyHasteTargetCount => 1,
+        KeyRepairTargetCount => 1,
+        KeyDestroyTargetCount => 1,
+        _ => 0,
+    };
+
     /// <summary>根据字段名读取 int 值（无 tier 时按第一档），不存在则返回 0。</summary>
     public int GetInt(string key) => GetInt(key, ItemTier.Bronze, 0);
 

@@ -32,11 +32,13 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public void AddPoisonToOpp(int value) => Opp.Poison += value;
     public void AddShieldToCaster(int value) => Side.Shield += value;
 
+    /// <summary>实际加血 = min(请求量, 当前可接受量)；清除灼烧/剧毒按请求治疗量的 5%。</summary>
     public int HealCasterWithDebuffClear(int requestedHeal)
     {
-        int heal = Math.Min(requestedHeal, Side.MaxHp - Side.Hp);
+        int room = Math.Max(0, Side.MaxHp - Side.Hp);
+        int heal = Math.Min(requestedHeal, room);
         Side.Hp += heal;
-        int clear = RatioUtil.PercentFloor(heal, 5);
+        int clear = RatioUtil.PercentFloor(requestedHeal, 5);
         Side.Burn = Math.Max(0, Side.Burn - clear);
         Side.Poison = Math.Max(0, Side.Poison - clear);
         return heal;

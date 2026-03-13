@@ -1,3 +1,4 @@
+using System.Linq;
 using BazaarArena.Core;
 using BazaarArena.ItemDatabase;
 
@@ -128,18 +129,11 @@ public class BattleSimulator
                     InvokeTrigger(Trigger.UseItem, item, new TriggerInvokeContext { Multicast = multicast, UsedTemplate = item.Template }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
                 }
 
-                // 8. 处理能力队列（只处理 currentAbilityQueue）；按优先级从高到低执行（Immediate/Highest/High 先于 Medium/Low/Lowest），同优先级按入队顺序
-                var toProcessAbilities = new List<AbilityQueueEntry>(currentAbilityQueue);
+                // 8. 处理能力队列（只处理 currentAbilityQueue）；仅按优先级排序，同优先级保持入队顺序
+                var toProcessAbilities = currentAbilityQueue
+                    .OrderBy(e => (int)e.Owner.Template.Abilities[e.AbilityIndex].Priority)
+                    .ToList();
                 currentAbilityQueue.Clear();
-                toProcessAbilities.Sort((a, b) =>
-                {
-                    int priA = (int)a.Owner.Template.Abilities[a.AbilityIndex].Priority;
-                    int priB = (int)b.Owner.Template.Abilities[b.AbilityIndex].Priority;
-                    if (priA != priB) return priA.CompareTo(priB);
-                    if (a.Owner.SideIndex != b.Owner.SideIndex) return a.Owner.SideIndex.CompareTo(b.Owner.SideIndex);
-                    if (a.Owner.ItemIndex != b.Owner.ItemIndex) return a.Owner.ItemIndex.CompareTo(b.Owner.ItemIndex);
-                    return a.AbilityIndex.CompareTo(b.AbilityIndex);
-                });
                 foreach (var entry in toProcessAbilities)
                 {
                     if (timeMs - entry.LastTriggerMs < TriggerIntervalMs)

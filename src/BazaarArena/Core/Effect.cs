@@ -40,12 +40,12 @@ public static class Effect
         ctx.LogEffect("护盾", value, showCrit: ctx.IsCrit);
     };
 
-    /// <summary>治疗：数值来自模板的 Heal；治疗时清除 5% 灼烧/剧毒。</summary>
+    /// <summary>治疗：数值来自模板的 Heal；治疗时清除 5% 灼烧/剧毒。日志与统计使用预期（请求）治疗量；实际施加量受生命上限限制。</summary>
     public static readonly Action<IEffectApplyContext> HealApply = ctx =>
     {
-        int value = ctx.GetResolvedValue(Key.Heal, applyCritMultiplier: true);
-        int actual = ctx.HealCasterWithDebuffClear(value);
-        ctx.LogEffect("治疗", actual, showCrit: ctx.IsCrit);
+        int requested = ctx.GetResolvedValue(Key.Heal, applyCritMultiplier: true);
+        ctx.HealCasterWithDebuffClear(requested);
+        ctx.LogEffect("治疗", requested, showCrit: ctx.IsCrit);
     };
 
     /// <summary>生命再生：数值来自模板的 Regen。</summary>
