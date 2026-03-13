@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "decks": [
+    { "id": "sb_fang_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }, { "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_fang_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_lava_core_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "岩浆核心", "tier": 0 }] } },
+    { "id": "sb_lava_core_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_spider_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "驯化蜘蛛", "tier": 0 }] } },
+    { "id": "sb_spider_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_lifting_gloves_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "举重手套", "tier": 0 }, { "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_lifting_gloves_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_rune_axe_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "符文手斧", "tier": 0 }] } },
+    { "id": "sb_rune_axe_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_magnifying_glass_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "放大镜", "tier": 0 }] } },
+    { "id": "sb_magnifying_glass_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_old_sword_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "古董剑", "tier": 0 }] } },
+    { "id": "sb_old_sword_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_agility_boots_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "轻步靴", "tier": 0 }, { "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_agility_boots_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_claws_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "利爪", "tier": 0 }] } },
+    { "id": "sb_claws_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_bluenanas_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "蓝蕉", "tier": 0 }] } },
+    { "id": "sb_bluenanas_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_icicle_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "冰锥", "tier": 0 }] } },
+    { "id": "sb_icicle_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_stinger_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "毒刺", "tier": 0 }] } },
+    { "id": "sb_stinger_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "sb_sunderer_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "裂盾刀", "tier": 0 }] } },
+    { "id": "sb_sunderer_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "姜饼人", "tier": 0 }] } },
+    { "id": "sb_gingerbread_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "姜饼人", "tier": 0 }, { "itemName": "放大镜", "tier": 0 }] } },
+    { "id": "sb_gingerbread_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+  ]
+}
