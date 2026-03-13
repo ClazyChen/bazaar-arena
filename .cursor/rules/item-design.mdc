@@ -48,7 +48,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 ### 触发器
 
 - **命名**：`Trigger.UseItem`、`Trigger.BattleStart`、`Trigger.Crit`、`Trigger.Freeze`、`Trigger.Slow`、`Trigger.Destroy` 等（不带 On 前缀）。
-- **UseItem**：冷却转好后施放，能力入队，按 250ms 间隔与优先级结算。默认 **Condition = SameAsSource**（即「此物品被使用时」）。
+- **UseItem**：冷却转好后施放，能力入队，按 250ms 间隔与优先级结算。默认 **Condition = SameAsSource**（即「此物品被使用时」）。**UseSelf**：AbilityDefinition.UseSelf 表示「Trigger 为 UseItem 且未在 Override 中提供 condition」；仅 UseSelf 能力参与暴击判定（暴击按物品按帧统一，每物品每帧只判定一次）。
 - **「当其他某类物品被使用」**：必须用 **condition: Condition.SameSide & Condition.WithTag(Tag.xxx)**（如「使用工具时」用 `Condition.SameSide & Condition.WithTag(Tag.Tool)`），**不能**用 additionalCondition（否则会变成 SameAsSource & WithTag，即「此物品被使用且此物品是工具」）。示例：姜饼人、断裂镣铐。
 - **「当右侧/相邻物品被使用」**：用 **condition: Condition.DifferentFromSource & Condition.SameSide & Condition.RightOfSource**（或 AdjacentToSource 等），示例：暗影斗篷。
 - **BattleStart / Crit / Destroy**：默认 Condition 为 SameSide；需「仅自身」时写 **condition: Condition.SameAsSource**。

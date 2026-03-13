@@ -125,8 +125,8 @@
 
 ### ItemTemplate 中的运行时变量
 
-- **键常量**（Core/ItemTemplate）：`KeySideIndex`、`KeyItemIndex`、`KeyTier`、`KeyCooldownElapsedMs`、`KeyHasteRemainingMs`、`KeySlowRemainingMs`、`KeyFreezeRemainingMs`、`KeyInFlight`、`KeyDestroyed`、`KeyAmmoRemaining`、`KeyLastTriggerMsPrefix`（能力上次触发时间为 `LastTriggerMs_0`、`LastTriggerMs_1`…）。与按等级属性（CooldownMs、Damage 等）无名称冲突。
-- **BattleItemState**：上述 int/bool 不再作为独立字段，全部通过 **Template.GetInt(key)** / **Template.SetInt(key, value)** 与 **GetBool/SetBool** 读写；对外仍保留同名属性（如 `item.SideIndex`、`item.Tier`）委托到 Template。能力上次触发时间用 **GetLastTriggerMs(abilityIndex)** / **SetLastTriggerMs(abilityIndex, timeMs)**。
+- **键常量**（Core/ItemTemplate）：`KeySideIndex`、`KeyItemIndex`、`KeyTier`、`KeyCooldownElapsedMs`、`KeyHasteRemainingMs`、`KeySlowRemainingMs`、`KeyFreezeRemainingMs`、`KeyInFlight`、`KeyDestroyed`、`KeyAmmoRemaining`、`KeyLastTriggerMsPrefix`（能力上次触发时间为 `LastTriggerMs_0`、`LastTriggerMs_1`…）；暴击相关 **KeyCritTimeMs**、**KeyIsCritThisUse**、**KeyCritDamagePercentThisUse**（见下节「暴击机制」）。与按等级属性（CooldownMs、Damage 等）无名称冲突。
+- **BattleItemState**：上述 int/bool 不再作为独立字段，全部通过 **Template.GetInt(key)** / **Template.SetInt(key, value)** 与 **GetBool/SetBool** 读写；对外仍保留同名属性（如 `item.SideIndex`、`item.Tier`）委托到 Template。能力上次触发时间用 **GetLastTriggerMs(abilityIndex)** / **SetLastTriggerMs(abilityIndex, timeMs)**。暴击状态用 **CritTimeMs**、**IsCritThisUse**、**CritDamagePercentThisUse**。
 - **bool**：Template 用 0/1 存储，提供 **GetBool(key)**、**SetBool(key, value)**。
 
 ### BattleSide 中的数值字段
@@ -221,10 +221,12 @@
 - **光环条件**：`Condition.InFlight` / **Condition.NotInFlight** 表示被评估对象（Item）在/不在飞行。光环「提供者在飞行」用 **AuraDefinition.SourceCondition = Condition.InFlight**。
 - **日志与 UI**：「开始飞行」「结束飞行」日志与 **EffectKeywordFormatting** 中「飞行」与护盾同色。
 
-### 造成暴击时（Trigger.Crit）
+### 造成暴击时（Trigger.Crit）与暴击机制（按物品按帧统一）
 
-- **语义**：与 Freeze/Slow 统一——**任意物品造成暴击时触发**；默认 `Condition.SameSide` 表现为己方暴击时触发，可重写 Condition（如 `DifferentSide`）实现对方暴击时触发。
-- **触发时机**：`ExecuteOneEffect` 内所有效果执行完毕后，若 `isCrit == true` 则调用 `InvokeTrigger(Trigger.Crit, item, null, ...)`（item 即施放者 BattleItemState）；条件评估与其余触发器一致（Source=能力持有者，Item=暴击施放者）。
+- **暴击判定**：每个物品在**同一帧**内只做一次暴击判定。步骤 8 循环中，若某能力可暴击（`ItemHasAnyCrittableField`、`ApplyCritMultiplier`、**UseSelf**）且 `item.CritTimeMs != timeMs`，则掷骰并写入 `item.CritTimeMs`、`item.IsCritThisUse`、`item.CritDamagePercentThisUse`；若已等于 `timeMs` 则直接复用，不掷骰。
+- **UseSelf**：`AbilityDefinition.UseSelf` 默认为 true；表示 Trigger 为 UseItem 且**未在 Override 中提供 condition**（仅用 additionalCondition 时仍为 true）。Override 时若传入了 `condition` 则设为 false。**仅 UseSelf 的 UseItem 能力可参与暴击判定**（「自己使用」才可暴击；「其他物品使用则触发」类能力不掷暴击、不触发 Crit）。
+- **Crit 触发时机**：在**调用 ExecuteOneEffect 之前**，当该物品本帧**首次**判定为暴击（刚掷骰且 `isCrit == true`）时调用一次 `InvokeTrigger(Trigger.Crit, item, null, ...)`；复用本帧已有暴击结果时不再触发。ExecuteOneEffect 内不再调用 Crit 触发。
+- **语义**：与 Freeze/Slow 统一——**任意物品造成暴击时触发**；默认 `Condition.SameSide` 表现为己方暴击时触发，可重写 Condition 实现对方暴击时触发。
 - **条件**：`EnsureTriggerCondition(Trigger.Crit)` 默认 `Condition.SameSide`。
 
 ### 战斗内属性统一带光环（BattleSide.GetItemInt）

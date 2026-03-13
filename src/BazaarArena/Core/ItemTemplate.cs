@@ -135,6 +135,12 @@ public class ItemTemplate
     public const string KeyAmmoRemaining = "AmmoRemaining";
     /// <summary>每个能力上次触发时间（毫秒）的键前缀，完整键为 KeyLastTriggerMsPrefix + abilityIndex。</summary>
     public const string KeyLastTriggerMsPrefix = "LastTriggerMs_";
+    /// <summary>本次暴击判定所适用的时间（毫秒）；与当前帧 timeMs 相同时表示本帧已判定可复用。</summary>
+    public const string KeyCritTimeMs = "CritTimeMs";
+    /// <summary>本次判定是否暴击（0/1）。</summary>
+    public const string KeyIsCritThisUse = "IsCritThisUse";
+    /// <summary>本次判定若暴击时的暴击伤害百分比（复用时可避免重复读光环）。</summary>
+    public const string KeyCritDamagePercentThisUse = "CritDamagePercentThisUse";
 
     /// <summary>根据字段名读取 int 值（无 tier 时按第一档），不存在则返回 0。</summary>
     public int GetInt(string key) => GetInt(key, ItemTier.Bronze, 0);

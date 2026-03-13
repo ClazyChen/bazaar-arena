@@ -1,5 +1,13 @@
 # 变更记录
 
+## 暴击按物品按帧统一与 UseSelf
+
+- **暴击机制**：每个物品在同一帧内只做一次暴击判定。物品状态新增 **CritTimeMs**、**IsCritThisUse**、**CritDamagePercentThisUse**（ItemTemplate 键 KeyCritTimeMs / KeyIsCritThisUse / KeyCritDamagePercentThisUse）；本帧已判定则复用，不重复掷骰、不重复触发 Crit。**Crit 触发**从 ExecuteOneEffect 末尾移到步骤 8 循环内、调用 ExecuteOneEffect **之前**，仅在该物品本帧首次判定为暴击时调用一次。
+- **UseSelf**：AbilityDefinition 新增 **UseSelf**（默认 true）：表示 Trigger 为 UseItem 且未在 Override 中提供 condition；Override 时若传入 `condition` 则设为 false。仅 UseSelf 的 UseItem 能力可参与暴击判定（「自己使用」才可暴击，「其他物品使用则触发」类不暴击）。ApplyCritMultiplier 仍区分效果是否乘暴击倍率（伤害/护盾/治疗等为 true，充能/冻结等为 false）。
+- **文档与规则**：implementation-notes 更新「运行时变量」补暴击键、「造成暴击时」改为暴击按帧统一与 UseSelf；project-conventions、battle-simulator-ability-queue、item-design 同步 UseSelf 与暴击约定。
+
+---
+
 ## 运行时变量字典化、Formula 委托类型与光环公式统一
 
 - **运行时变量存字典**：BattleItemState 的 SideIndex、ItemIndex、Tier、CooldownElapsedMs、HasteRemainingMs、SlowRemainingMs、FreezeRemainingMs、InFlight、Destroyed、AmmoRemaining、LastTriggerMs 等全部存入 **ItemTemplate** 的 `_intsByTier`（单值存为长度 1 的列表）；bool 用 GetBool/SetBool（0/1）。BattleSide 的 MaxHp、Hp、Shield、Burn、Poison、Regen、SideIndex 存入 **BattleSide** 的字典，通过 GetInt(key)/SetInt(key) 按名访问。便于公式与扩展用统一接口解析。

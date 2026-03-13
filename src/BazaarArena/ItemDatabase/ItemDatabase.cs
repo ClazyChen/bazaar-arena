@@ -106,6 +106,7 @@ public class ItemDatabase : IItemTemplateResolver
                 Value = a.Value,
                 ValueKey = a.ValueKey,
                 ApplyCritMultiplier = a.ApplyCritMultiplier,
+                UseSelf = a.UseSelf,
                 Apply = a.Apply,
             })],
             Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), Value = a.Value, Percent = a.Percent }).ToList(),

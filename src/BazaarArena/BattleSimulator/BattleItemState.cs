@@ -29,6 +29,13 @@ public class BattleItemState
     /// <summary>设置指定能力上次触发的时间（毫秒）。</summary>
     public void SetLastTriggerMs(int abilityIndex, int timeMs) => Template.SetInt(ItemTemplate.KeyLastTriggerMsPrefix + abilityIndex, timeMs);
 
+    /// <summary>本次暴击判定所适用的时间（毫秒）；与当前帧 timeMs 相同时表示本帧已判定可复用。</summary>
+    public int CritTimeMs { get => Template.GetInt(ItemTemplate.KeyCritTimeMs, -1); set => Template.SetInt(ItemTemplate.KeyCritTimeMs, value); }
+    /// <summary>本次判定是否暴击；仅当 CritTimeMs == 当前帧 timeMs 时有效。</summary>
+    public bool IsCritThisUse { get => Template.GetBool(ItemTemplate.KeyIsCritThisUse); set => Template.SetBool(ItemTemplate.KeyIsCritThisUse, value); }
+    /// <summary>本次判定若暴击时的暴击伤害百分比。</summary>
+    public int CritDamagePercentThisUse { get => Template.GetInt(ItemTemplate.KeyCritDamagePercentThisUse, 200); set => Template.SetInt(ItemTemplate.KeyCritDamagePercentThisUse, value); }
+
     public BattleItemState(ItemTemplate template, ItemTier tier)
     {
         Template = template;

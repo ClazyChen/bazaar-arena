@@ -153,15 +153,31 @@ public class BattleSimulator
                     item.SetLastTriggerMs(entry.AbilityIndex, timeMs);
                     entry.LastTriggerMs = timeMs;
                     var ability = item.Template.Abilities[entry.AbilityIndex];
-                    bool canCrit = ItemHasAnyCrittableField(item) && ability.Apply != null && ability.ApplyCritMultiplier;
+                    bool canCrit = ItemHasAnyCrittableField(item) && ability.Apply != null && ability.ApplyCritMultiplier && ability.UseSelf;
                     bool isCrit = false;
                     int critDamagePercent = 200;
-                    var auraContext = new BattleAuraContext(side, item, opp);
-                    int critRate = item.Template.GetInt(Key.CritRatePercent, item.Tier, 0, auraContext);
-                    if (canCrit && critRate > 0 && Random.Shared.Next(100) < critRate)
+                    if (canCrit)
                     {
-                        isCrit = true;
-                        critDamagePercent = item.Template.GetInt(Key.CritDamagePercent, item.Tier, 200, auraContext);
+                        if (item.CritTimeMs == timeMs)
+                        {
+                            isCrit = item.IsCritThisUse;
+                            critDamagePercent = item.CritDamagePercentThisUse;
+                        }
+                        else
+                        {
+                            var auraContext = new BattleAuraContext(side, item, opp);
+                            int critRate = item.Template.GetInt(Key.CritRatePercent, item.Tier, 0, auraContext);
+                            if (critRate > 0 && Random.Shared.Next(100) < critRate)
+                            {
+                                isCrit = true;
+                                critDamagePercent = item.Template.GetInt(Key.CritDamagePercent, item.Tier, 200, auraContext);
+                            }
+                            item.CritTimeMs = timeMs;
+                            item.IsCritThisUse = isCrit;
+                            item.CritDamagePercentThisUse = critDamagePercent;
+                            if (isCrit)
+                                InvokeTrigger(Trigger.Crit, item, null, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                        }
                     }
                     ExecuteOneEffect(item, ability, isCrit, critDamagePercent, side0, side1, timeMs, logSink, castQueue, currentAbilityQueue, nextAbilityQueue);
                     entry.PendingCount--;
@@ -247,6 +263,7 @@ public class BattleSimulator
                     Value = a.Value,
                     ValueKey = a.ValueKey,
                     ApplyCritMultiplier = a.ApplyCritMultiplier,
+                    UseSelf = a.UseSelf,
                     Apply = a.Apply,
                 }).ToList(),
                 Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), Value = a.Value, Percent = a.Percent }).ToList(),
@@ -459,7 +476,5 @@ public class BattleSimulator
             },
         };
         ability.Apply(ctx);
-        if (isCrit)
-            InvokeTrigger(Trigger.Crit, item, null, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
     }
 }

@@ -30,6 +30,9 @@ public class AbilityDefinition
     /// <summary>是否对基础数值乘暴击倍率；Charge/Freeze/Slow 等为 false。</summary>
     public bool ApplyCritMultiplier { get; set; } = true;
 
+    /// <summary>Trigger 为 UseItem 且未在 Override 中提供过 condition（仅用 additionalCondition 时）为 true，表示「自己使用」；Override 时若传入了 condition 则设为 false。仅 UseSelf 的 UseItem 能力可参与暴击判定。</summary>
+    public bool UseSelf { get; set; } = true;
+
     /// <summary>效果应用委托；由 Core/Effect 预定义或自定义效果设置。</summary>
     public Action<IEffectApplyContext>? Apply { get; set; }
 
@@ -67,6 +70,8 @@ public class AbilityDefinition
 
         if (condition != null || additionalCondition != null)
         {
+            if (condition != null && TriggerName == Trigger.UseItem)
+                UseSelf = false;
             var defaultCond = TriggerName == Trigger.UseItem ? Condition.SameAsSource : Condition.SameSide;
             var baseCond = condition ?? Condition ?? defaultCond;
             Condition = additionalCondition != null ? (baseCond & additionalCondition) : baseCond;

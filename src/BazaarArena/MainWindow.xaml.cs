@@ -10,6 +10,7 @@ using BazaarArena.Core;
 using BazaarArena.DeckManager;
 using BazaarArena.ItemDatabase;
 using Microsoft.Win32;
+using TagConst = BazaarArena.Core.Tag;
 
 namespace BazaarArena;
 
@@ -492,9 +493,31 @@ public partial class MainWindow
     /// <summary>构建物品标签行：尺寸（小型/中型/大型）+ 现有 Tags，用空格连接。</summary>
     private static string BuildTagsLine(ItemTemplate template)
     {
+        // UI 只显示 1 次尺寸；并隐藏注册时自动补充的“尺寸/效果类型”标签（伤害/护盾/治疗等）。
+        // 这些标签主要用于 Condition/可暴击判定等内部逻辑，展示出来会显得冗余且容易造成尺寸重复。
+        var hiddenAutoTags = new HashSet<string>
+        {
+            TagConst.Small,
+            TagConst.Medium,
+            TagConst.Large,
+            TagConst.Damage,
+            TagConst.Shield,
+            TagConst.Heal,
+            TagConst.Burn,
+            TagConst.Poison,
+            TagConst.Regen,
+        };
+
         var parts = new List<string> { template.Size.GetDisplayName() };
         if (template.Tags?.Count > 0)
-            parts.AddRange(template.Tags);
+        {
+            foreach (var tag in template.Tags)
+            {
+                if (hiddenAutoTags.Contains(tag)) continue;
+                if (!parts.Contains(tag))
+                    parts.Add(tag);
+            }
+        }
         return string.Join(" ", parts);
     }
 
