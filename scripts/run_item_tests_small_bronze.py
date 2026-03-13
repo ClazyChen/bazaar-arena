@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # 使用 CLI 运行小型铜物品测试用例，校验日志内容与退出码，并记录测试结果。
 # 用法：
-#   - 全量测试：在仓库根目录执行 python scripts/run_item_tests.py
-#   - 仅重跑上次未通过的用例：python scripts/run_item_tests.py --failed-only
+#   - 全量测试：在仓库根目录执行 python scripts/run_item_tests_small_bronze.py
+#   - 仅重跑上次未通过的用例：python scripts/run_item_tests_small_bronze.py --failed-only
 
 import json
 import os
@@ -188,3 +188,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

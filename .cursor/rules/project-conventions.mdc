@@ -24,6 +24,6 @@ alwaysApply: true
 - **效果应用上下文**：`IEffectApplyContext` 仅暴露施放者为 **Item**；冻结/减速/摧毁等「施加时触发」通过模拟器传入的 **EffectAppliedTriggerQueue** 上报，上下文只追加 `(TriggerName, SideIndex, ItemIndex)`，模拟器在 Apply 后统一 `InvokeTrigger` 并处理 Destroyed。详见 `docs/implementation-notes.md`「EffectApplyContextImpl 化简与触发器统一」。
 - **源文件长度与拆分**：除 `ItemDatabase/CommonSmall.cs`、`CommonMedium.cs` 等以数据定义为主的文件外，单文件不宜过长。可将嵌套类、静态辅助拆到同命名空间下的独立源文件（例如 BattleSimulator 下的 `EffectApplyContextImpl.cs`、`BattleSideDamage.cs`、`BattleAuraContext.cs`、`TriggerInvokeContext.cs`）。详见 `docs/implementation-notes.md` 中「BattleSimulator 文件拆分与代码结构」。
 
-- **CLI 与测试**：完成任务后用 **CLI** 与 **scripts/run_item_tests.py** 做验证；测试未通过时在文档中标注「未通过测试」、不放松断言。详见 **.cursor/rules/cli-and-testing.mdc** 与 **docs/cli-and-testing.md**。
+- **CLI 与测试**：完成任务后用 **CLI** 与物品测试脚本（如小型铜 `scripts/run_item_tests_small_bronze.py`、小型银 `scripts/run_item_tests_small_silver.py`）做验证；测试未通过时在文档中标注「未通过测试」、不放松断言。详见 **.cursor/rules/cli-and-testing.mdc** 与 **docs/cli-and-testing.md**。
 
 - **Git 提交信息**：提交信息须符合 **.cursor/rules/git-commit-format.mdc**（`<type>(<scope>): <subject>`，中文主题，如 `feat(gui): 卡组 MinTier 显示与拖拽`）。

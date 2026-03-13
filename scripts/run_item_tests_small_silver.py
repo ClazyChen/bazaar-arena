@@ -22,7 +22,7 @@ SMALL_SILVER_TESTS: list[dict] = [
     {"name": "失落神祇_forgotten_god", "deck1": "ss_forgotten_god_p1", "deck2": "ss_forgotten_god_p2", "log_contains": ["失落神祇", "剧毒"]},
     {"name": "神经毒素_neural_toxin", "deck1": "ss_neural_toxin_p1", "deck2": "ss_neural_toxin_p2", "log_contains": ["神经毒素", "减速"]},
     {"name": "断裂镣铐_broken_shackles", "deck1": "ss_broken_shackles_p1", "deck2": "ss_broken_shackles_p2", "log_contains": ["断裂镣铐", "獠牙", "伤害"]},
-    {"name": "宇宙护符_cosmic_amulet", "deck1": "ss_cosmic_amulet_p1", "deck2": "ss_cosmic_amulet_p2", "log_contains": ["宇宙护符", "加速"]},
+    {"name": "宇宙护符_cosmic_amulet", "deck1": "ss_cosmic_amulet_p1", "deck2": "ss_cosmic_amulet_p2", "log_contains": ["宇宙护符", "加速", "开始飞行"]},
     {"name": "巨龙崽崽_dragon_whelp", "deck1": "ss_dragon_whelp_p1", "deck2": "ss_dragon_whelp_p2", "log_contains": ["巨龙崽崽", "伤害", "灼烧"]},
     {"name": "纳米机器人_nanobot", "deck1": "ss_nanobot_p1", "deck2": "ss_nanobot_p2", "log_contains": ["纳米机器人", "伤害"]},
     {"name": "工蜂_busy_bee", "deck1": "ss_busy_bee_p1", "deck2": "ss_busy_bee_p2", "log_contains": ["工蜂", "伤害"]},

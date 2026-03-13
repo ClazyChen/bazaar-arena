@@ -59,6 +59,7 @@ public class AbilityDefinition
         bool? applyCritMultiplier = null,
         Action<IEffectApplyContext>? apply = null)
     {
+        string originalTrigger = TriggerName;
         if (trigger != null) TriggerName = trigger;
         if (priority != null) Priority = priority.Value;
         if (sourceCondition != null) SourceCondition = sourceCondition;
@@ -75,6 +76,12 @@ public class AbilityDefinition
             var defaultCond = TriggerName == Trigger.UseItem ? Condition.SameAsSource : Condition.SameSide;
             var baseCond = condition ?? Condition ?? defaultCond;
             Condition = additionalCondition != null ? (baseCond & additionalCondition) : baseCond;
+        }
+        else if (trigger != null && originalTrigger != TriggerName)
+        {
+            // 仅修改 Trigger 且未传入 condition 时，直接按新 Trigger 设置默认条件：
+            // UseItem → SameAsSource，其余 → SameSide。
+            Condition = TriggerName == Trigger.UseItem ? Condition.SameAsSource : Condition.SameSide;
         }
         if (targetCondition != null || additionalTargetCondition != null)
         {

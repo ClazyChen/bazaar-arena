@@ -93,5 +93,5 @@
 ## 运行方式
 
 - **CLI 单次运行**：`dotnet run --project src/BazaarArena.Cli -- Data/Decks/test_small_bronze.json <deck1_id> <deck2_id> --log Logs/test.log`
-- **自动化**：在仓库根目录执行 `python scripts/run_item_tests.py`，会依次运行上述用例并检查日志与退出码。
+- **自动化**：在仓库根目录执行 `python scripts/run_item_tests_small_bronze.py`，会依次运行上述用例并检查日志与退出码。
 - **CLI 与测试流程说明**：见 **docs/cli-and-testing.md**。

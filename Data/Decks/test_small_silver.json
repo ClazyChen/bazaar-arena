@@ -25,7 +25,7 @@
 
     { "id": "ss_cosmic_amulet_p1", "deck": { "playerLevel": 5, "slots": [
       { "itemName": "宇宙护符", "tier": 1 },
-      { "itemName": "獠牙", "tier": 0 }
+      { "itemName": "友好玩偶", "tier": 3 }
     ] } },
     { "id": "ss_cosmic_amulet_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
 

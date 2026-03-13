@@ -368,6 +368,8 @@ public static class CommonSmall
                 Ability.Haste,
                 Ability.StartFlying.Override(
                     trigger: Trigger.Crit,
+                    condition: Condition.SameSide,
+                    targetCondition: Condition.SameAsSource,
                     priority: AbilityPriority.Low
                 ),
             ],
