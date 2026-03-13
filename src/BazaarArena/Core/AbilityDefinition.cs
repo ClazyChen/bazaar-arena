@@ -3,6 +3,25 @@ namespace BazaarArena.Core;
 /// <summary>能力定义：触发器名、优先级与效果应用（Apply）。触发间隔 5 帧（250ms）由模拟器维护。</summary>
 public class AbilityDefinition
 {
+    /// <summary>单条触发配置：一套 Trigger/Condition/SourceCondition/InvokeTargetCondition 组合。</summary>
+    public sealed class TriggerEntry
+    {
+        /// <summary>触发器名字，如「使用物品」。</summary>
+        public string TriggerName { get; set; } = "";
+
+        /// <summary>引起触发的物品需满足的条件；语义同 AbilityDefinition.Condition。</summary>
+        public Condition? Condition { get; set; }
+
+        /// <summary>能力持有者需满足的条件；语义同 AbilityDefinition.SourceCondition。</summary>
+        public Condition? SourceCondition { get; set; }
+
+        /// <summary>触发器所指向的物品需满足的条件；语义同 AbilityDefinition.InvokeTargetCondition。</summary>
+        public Condition? InvokeTargetCondition { get; set; }
+    }
+
+    /// <summary>多套触发配置；为空或空列表时按旧字段（TriggerName/Condition/...）行为。</summary>
+    public List<TriggerEntry>? Triggers { get; set; }
+
     /// <summary>触发器名字，如「使用物品」。</summary>
     public string TriggerName { get; set; } = "";
 
@@ -35,6 +54,27 @@ public class AbilityDefinition
 
     /// <summary>效果应用委托；由 Core/Effect 预定义或自定义效果设置。</summary>
     public Action<IEffectApplyContext>? Apply { get; set; }
+
+    /// <summary>确保 Triggers 至少包含一条与主字段（TriggerName/Condition/...）一致的配置。</summary>
+    internal void SyncPrimaryTriggerEntryFromTopLevel()
+    {
+        Triggers ??= new List<TriggerEntry>();
+        if (Triggers.Count == 0)
+            Triggers.Add(new TriggerEntry());
+
+        var primary = Triggers[0];
+        primary.TriggerName = TriggerName;
+        primary.Condition = Condition;
+        primary.SourceCondition = SourceCondition;
+        primary.InvokeTargetCondition = InvokeTargetCondition;
+    }
+
+    /// <summary>若尚未初始化 Triggers，则根据主字段创建首条 TriggerEntry；不覆盖已有配置。</summary>
+    internal void EnsureTriggersInitializedFromTopLevel()
+    {
+        if (Triggers != null && Triggers.Count > 0) return;
+        SyncPrimaryTriggerEntryFromTopLevel();
+    }
 
     /// <summary>解析数值：ValueKey 或 defaultKey 对应 template.GetInt；结果为 0 时用 Value。</summary>
     public int ResolveValue(ItemTemplate template, ItemTier tier, string defaultKey)
@@ -90,6 +130,47 @@ public class AbilityDefinition
                 ? (additionalTargetCondition != null ? (baseTarget & additionalTargetCondition) : baseTarget)
                 : additionalTargetCondition;
         }
+        SyncPrimaryTriggerEntryFromTopLevel();
+        return this;
+    }
+
+    /// <summary>在现有能力基础上追加一套触发配置，返回 this 以便链式调用。</summary>
+    public AbilityDefinition Also(
+        string trigger,
+        Condition? condition = null,
+        Condition? additionalCondition = null,
+        Condition? sourceCondition = null,
+        Condition? invokeTargetCondition = null)
+    {
+        EnsureTriggersInitializedFromTopLevel();
+
+        Condition? defaultCond = null;
+        if (trigger == Trigger.UseItem)
+            defaultCond = Condition.SameAsSource;
+        else if (trigger == Trigger.Freeze || trigger == Trigger.Slow || trigger == Trigger.Crit || trigger == Trigger.Destroy)
+            defaultCond = Condition.SameSide;
+        else if (trigger == Trigger.BattleStart)
+            defaultCond = Condition.Always;
+
+        var baseCond = condition ?? defaultCond;
+        Condition? mergedCondition;
+        if (additionalCondition != null)
+        {
+            mergedCondition = baseCond != null ? (baseCond & additionalCondition) : additionalCondition;
+        }
+        else
+        {
+            mergedCondition = baseCond;
+        }
+
+        Triggers!.Add(new TriggerEntry
+        {
+            TriggerName = trigger,
+            Condition = mergedCondition,
+            SourceCondition = sourceCondition ?? SourceCondition,
+            InvokeTargetCondition = invokeTargetCondition ?? InvokeTargetCondition,
+        });
+
         return this;
     }
 }

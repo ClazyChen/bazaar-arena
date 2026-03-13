@@ -4,14 +4,14 @@ alwaysApply: false
 globs: "**/ItemDatabase/**","**/Core/Ability*.cs"
 ---
 
-# Override 格式要求
+# Override / Also 格式要求
 
-在物品定义或能力相关代码中书写 **Ability.xxx.Override(...)** 时，须遵守以下格式与参数顺序。
+在物品定义或能力相关代码中书写 **Ability.xxx.Override(...)**，以及在现有能力基础上追加触发条件的 **ability.Also(...)** 时，须遵守以下格式与参数顺序。
 
 ## 格式
 
-- **Override(** 之后**换行并缩进**，每个指定参数**单独一行**。
-- 最后一个参数后**不**加逗号；然后**换行**、回到与 `Ability.xxx` 对齐的缩进、写 **)**。
+- **Override(** / **Also(** 之后**换行并缩进**，每个指定参数**单独一行**。
+- 最后一个参数后**不**加逗号；然后**换行**、回到与 `Ability.xxx` 或能力变量对齐的缩进、写 `)**。
 
 ## 参数顺序
 
@@ -24,7 +24,8 @@ globs: "**/ItemDatabase/**","**/Core/Ability*.cs"
 5. **targetCondition** / **additionalTargetCondition**
 6. **priority**
 
-其余可选参数（如 valueKey、value、applyCritMultiplier、apply）如确需覆盖，放在 priority 之后即可。
+其余可选参数（如 valueKey、value、applyCritMultiplier、apply）如确需覆盖，放在 priority 之后即可。  
+对于 **ability.Also(...)**，通常只传前四类参数（trigger / condition / invokeTargetCondition / sourceCondition），不应在 Also 中修改 priority / valueKey / value / targetCondition 等共享属性。
 
 ## 示例
 
@@ -52,5 +53,14 @@ Ability.Damage.Override(
 ```csharp
 Ability.Burn.Override(
     trigger: Trigger.BattleStart
+),
+
+// 多触发示例：同一条能力在「战斗开始」与「使用物品」时都能触发，但共享数值与 250ms 触发间隔
+Ability.Burn.Override(
+    trigger: Trigger.BattleStart,
+    condition: Condition.SameSide
+).Also(
+    trigger: Trigger.UseItem,
+    condition: Condition.SameAsSource
 ),
 ```

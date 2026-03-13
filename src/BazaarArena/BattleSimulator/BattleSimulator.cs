@@ -228,38 +228,50 @@ public class BattleSimulator
 
     private static BattleSide? BuildSide(Deck deck, IItemTemplateResolver resolver)
     {
-        var side = new BattleSide
+                var side = new BattleSide
         {
             MaxHp = deck.PlayerOverrides?.GetValueOrDefault("MaxHp", LevelUpTable.GetMaxHp(deck.PlayerLevel)) ?? LevelUpTable.GetMaxHp(deck.PlayerLevel),
             Shield = deck.PlayerOverrides?.GetValueOrDefault("Shield", 0) ?? 0,
             Regen = deck.PlayerOverrides?.GetValueOrDefault("Regen", 0) ?? 0,
         };
         side.Hp = side.MaxHp;
-        foreach (var entry in deck.Slots)
+                foreach (var entry in deck.Slots)
         {
-            var t = resolver.GetTemplate(entry.ItemName);
+                    var t = resolver.GetTemplate(entry.ItemName);
             if (t == null) return null;
-            var clone = new ItemTemplate
+                    var clone = new ItemTemplate
             {
                 Name = t.Name,
                 Desc = t.Desc,
                 MinTier = t.MinTier,
-                Size = t.Size,
-                Tags = [..t.Tags],
-                Abilities = t.Abilities.Select(a => new AbilityDefinition
-                {
-                    TriggerName = a.TriggerName,
-                    Priority = a.Priority,
-                    Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
-                    SourceCondition = Condition.Clone(a.SourceCondition),
-                    InvokeTargetCondition = Condition.Clone(a.InvokeTargetCondition),
-                    TargetCondition = Condition.Clone(a.TargetCondition),
-                    Value = a.Value,
-                    ValueKey = a.ValueKey,
-                    ApplyCritMultiplier = a.ApplyCritMultiplier,
-                    UseSelf = a.UseSelf,
-                    Apply = a.Apply,
-                }).ToList(),
+                        Size = t.Size,
+                        Tags = [..t.Tags],
+                        Abilities = t.Abilities.Select(a =>
+                        {
+                            var def = new AbilityDefinition
+                            {
+                                TriggerName = a.TriggerName,
+                                Priority = a.Priority,
+                                Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
+                                SourceCondition = Condition.Clone(a.SourceCondition),
+                                InvokeTargetCondition = Condition.Clone(a.InvokeTargetCondition),
+                                TargetCondition = Condition.Clone(a.TargetCondition),
+                                Value = a.Value,
+                                ValueKey = a.ValueKey,
+                                ApplyCritMultiplier = a.ApplyCritMultiplier,
+                                UseSelf = a.UseSelf,
+                                Apply = a.Apply,
+                                Triggers = a.Triggers?.Select(e => new AbilityDefinition.TriggerEntry
+                                {
+                                    TriggerName = e.TriggerName,
+                                    Condition = Condition.Clone(e.Condition),
+                                    SourceCondition = Condition.Clone(e.SourceCondition),
+                                    InvokeTargetCondition = Condition.Clone(e.InvokeTargetCondition),
+                                }).ToList(),
+                            };
+                            def.EnsureTriggersInitializedFromTopLevel();
+                            return def;
+                        }).ToList(),
                 Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), Value = a.Value, Percent = a.Percent }).ToList(),
             };
             clone.SetIntsByTier(t.GetIntsByTierSnapshot());
@@ -373,46 +385,93 @@ public class BattleSimulator
         {
             BattleSide mySide = ownerSide;
             BattleSide enemySide = ownerSideIndex == 0 ? side1 : side0;
-            for (int ownerItemIndex = 0; ownerItemIndex < ownerSide.Items.Count; ownerItemIndex++)
+                for (int ownerItemIndex = 0; ownerItemIndex < ownerSide.Items.Count; ownerItemIndex++)
             {
                 var abilityOwner = ownerSide.Items[ownerItemIndex];
                 if (abilityOwner.Destroyed) continue;
                 for (int a = 0; a < abilityOwner.Template.Abilities.Count; a++)
                 {
                     var ab = abilityOwner.Template.Abilities[a];
-                    if (ab.TriggerName != triggerName) continue;
-                    var conditionCtx = new ConditionContext
-                    {
-                        MySide = mySide,
-                        EnemySide = enemySide,
-                        Item = causeItem,
-                        Source = abilityOwner,
-                    };
-                    if (ab.Condition != null && !ab.Condition.Evaluate(conditionCtx)) continue;
-                    if (ab.SourceCondition != null)
-                    {
-                        var sourceConditionCtx = new ConditionContext
+                        ab.EnsureTriggersInitializedFromTopLevel();
+                        if (ab.Triggers == null || ab.Triggers.Count == 0)
                         {
-                            MySide = mySide,
-                            EnemySide = enemySide,
-                            Item = abilityOwner,
-                            Source = abilityOwner,
-                        };
-                        if (!ab.SourceCondition.Evaluate(sourceConditionCtx)) continue;
-                    }
-                    if (ab.InvokeTargetCondition != null && context?.InvokeTargetItem is { } invokeTargetItem)
-                    {
-                        var invokeTargetCtx = new ConditionContext
+                            if (ab.TriggerName != triggerName) continue;
+                            var conditionCtx = new ConditionContext
+                            {
+                                MySide = mySide,
+                                EnemySide = enemySide,
+                                Item = causeItem,
+                                Source = abilityOwner,
+                            };
+                            if (ab.Condition != null && !ab.Condition.Evaluate(conditionCtx)) continue;
+                            if (ab.SourceCondition != null)
+                            {
+                                var sourceConditionCtx = new ConditionContext
+                                {
+                                    MySide = mySide,
+                                    EnemySide = enemySide,
+                                    Item = abilityOwner,
+                                    Source = abilityOwner,
+                                };
+                                if (!ab.SourceCondition.Evaluate(sourceConditionCtx)) continue;
+                            }
+                            if (ab.InvokeTargetCondition != null && context?.InvokeTargetItem is { } invokeTargetItem0)
+                            {
+                                var invokeTargetCtx = new ConditionContext
+                                {
+                                    MySide = mySide,
+                                    EnemySide = enemySide,
+                                    Item = invokeTargetItem0,
+                                    Source = abilityOwner,
+                                };
+                                if (!ab.InvokeTargetCondition.Evaluate(invokeTargetCtx)) continue;
+                            }
+                            int lastMs = triggerName == Trigger.BattleStart ? battleStartLastTriggerMs : abilityOwner.GetLastTriggerMs(a);
+                            AddOrMergeAbility(abilityOwner, a, ab, pendingCount, lastMs, current, next);
+                            continue;
+                        }
+
+                        bool matched = false;
+                        foreach (var entry in ab.Triggers)
                         {
-                            MySide = mySide,
-                            EnemySide = enemySide,
-                            Item = invokeTargetItem,
-                            Source = abilityOwner,
-                        };
-                        if (!ab.InvokeTargetCondition.Evaluate(invokeTargetCtx)) continue;
-                    }
-                    int lastMs = triggerName == Trigger.BattleStart ? battleStartLastTriggerMs : abilityOwner.GetLastTriggerMs(a);
-                    AddOrMergeAbility(abilityOwner, a, ab, pendingCount, lastMs, current, next);
+                            if (entry.TriggerName != triggerName) continue;
+                            var conditionCtx = new ConditionContext
+                            {
+                                MySide = mySide,
+                                EnemySide = enemySide,
+                                Item = causeItem,
+                                Source = abilityOwner,
+                            };
+                            if (entry.Condition != null && !entry.Condition.Evaluate(conditionCtx)) continue;
+                            if (entry.SourceCondition != null)
+                            {
+                                var sourceConditionCtx = new ConditionContext
+                                {
+                                    MySide = mySide,
+                                    EnemySide = enemySide,
+                                    Item = abilityOwner,
+                                    Source = abilityOwner,
+                                };
+                                if (!entry.SourceCondition.Evaluate(sourceConditionCtx)) continue;
+                            }
+                            if (entry.InvokeTargetCondition != null && context?.InvokeTargetItem is { } invokeTargetItem)
+                            {
+                                var invokeTargetCtx = new ConditionContext
+                                {
+                                    MySide = mySide,
+                                    EnemySide = enemySide,
+                                    Item = invokeTargetItem,
+                                    Source = abilityOwner,
+                                };
+                                if (!entry.InvokeTargetCondition.Evaluate(invokeTargetCtx)) continue;
+                            }
+                            matched = true;
+                            break;
+                        }
+
+                        if (!matched) continue;
+                        int lastMs2 = triggerName == Trigger.BattleStart ? battleStartLastTriggerMs : abilityOwner.GetLastTriggerMs(a);
+                        AddOrMergeAbility(abilityOwner, a, ab, pendingCount, lastMs2, current, next);
                 }
             }
         }

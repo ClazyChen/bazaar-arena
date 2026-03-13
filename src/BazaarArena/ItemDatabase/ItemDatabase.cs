@@ -95,19 +95,31 @@ public class ItemDatabase : IItemTemplateResolver
             MinTier = t.MinTier,
             Size = t.Size,
             Tags = [..t.Tags],
-            Abilities = [.. t.Abilities.Select(a => new AbilityDefinition
+            Abilities = [.. t.Abilities.Select(a =>
             {
-                TriggerName = a.TriggerName,
-                Priority = a.Priority,
-                Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
-                SourceCondition = Condition.Clone(a.SourceCondition),
-                InvokeTargetCondition = Condition.Clone(a.InvokeTargetCondition),
-                TargetCondition = Condition.Clone(a.TargetCondition),
-                Value = a.Value,
-                ValueKey = a.ValueKey,
-                ApplyCritMultiplier = a.ApplyCritMultiplier,
-                UseSelf = a.UseSelf,
-                Apply = a.Apply,
+                var def = new AbilityDefinition
+                {
+                    TriggerName = a.TriggerName,
+                    Priority = a.Priority,
+                    Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
+                    SourceCondition = Condition.Clone(a.SourceCondition),
+                    InvokeTargetCondition = Condition.Clone(a.InvokeTargetCondition),
+                    TargetCondition = Condition.Clone(a.TargetCondition),
+                    Value = a.Value,
+                    ValueKey = a.ValueKey,
+                    ApplyCritMultiplier = a.ApplyCritMultiplier,
+                    UseSelf = a.UseSelf,
+                    Apply = a.Apply,
+                    Triggers = a.Triggers?.Select(e => new AbilityDefinition.TriggerEntry
+                    {
+                        TriggerName = e.TriggerName,
+                        Condition = Condition.Clone(e.Condition),
+                        SourceCondition = Condition.Clone(e.SourceCondition),
+                        InvokeTargetCondition = Condition.Clone(e.InvokeTargetCondition),
+                    }).ToList(),
+                };
+                def.EnsureTriggersInitializedFromTopLevel();
+                return def;
             })],
             Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), Value = a.Value, Percent = a.Percent }).ToList(),
             OverridableAttributes = t.OverridableAttributes != null ? new Dictionary<string, IntOrByTier>(t.OverridableAttributes) : null,

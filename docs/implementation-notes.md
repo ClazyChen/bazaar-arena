@@ -72,6 +72,21 @@
 
 修改能力或触发器逻辑时：condition 管「谁触发」，InvokeTargetCondition 管「触发器目标是否满足」（仅 Slow/Freeze 等有目标时），TargetCondition 管「效果选谁」。不再使用 UseOtherItem；「其他物品使用则触发」一律用 UseItem + condition。
 
+### AbilityDefinition 多触发与 Ability.Also
+
+- **多套触发配置**：一条 AbilityDefinition 可以拥有多套 `(TriggerName, Condition, SourceCondition, InvokeTargetCondition)` 组合，内部通过 `AbilityDefinition.TriggerEntry` 列表（`Triggers`）表示；同一条能力仍只有一份 `Priority` / `TargetCondition` / `ValueKey` / `Value` / `ApplyCritMultiplier` / `UseSelf` / `Apply`，以及一套队列节流状态（`LastTriggerMs` / PendingCount 等）。
+- **共享 250ms 触发间隔**：无论由哪一套 Trigger/Condition 命中，最终都只向队列中加入同一条 ability（同一个 `AbilityIndex`）的 Pending，一并受「每 5 帧（250ms）最多触发一次」的限制，即「同一条能力的多套触发条件**共享**节流，不会互相绕过冷却」。
+- **顶层字段与主触发条目**：`TriggerName` / `Condition` / `SourceCondition` / `InvokeTargetCondition` 仍作为「主触发条目」存在，`AbilityDefinition.Override(...)` 修改这些字段时会同步更新 `Triggers[0]`；旧代码在不显式使用 `Triggers` 时行为保持不变。
+- **AbilityDefinition.Also(...)**：在已构造好的能力上追加一套新的触发条件：
+  - 签名为 `ability.Also(trigger, condition?, additionalCondition?, sourceCondition?, invokeTargetCondition?)`，返回 `this` 以便链式调用。
+  - `trigger` 的默认 Condition 与 `EnsureTriggerCondition` 一致：UseItem → SameAsSource，Freeze/Slow/Crit/Destroy → SameSide，BattleStart → Always；若传入 `condition`/`additionalCondition` 则在此默认上做与运算。
+  - `sourceCondition` / `invokeTargetCondition` 为空时沿用当前 ability 顶层对应字段。
+  - `InvokeTrigger` 评估时会遍历该 ability 的所有 TriggerEntry，只要有一条条目匹配当前 triggerName 且通过条件，即视为这条 ability 命中一次并入队。
+- **使用场景与约定**：
+  - 当**同一条效果语义**需要在多个触发器或条件下生效、且数值/目标/优先级完全一致、需要共享 250ms 节流时，优先使用一条能力 + 多次 `Also(...)`（避免复制多条几乎相同的能力定义）。
+  - 当不同触发下的效果语义或数值明显不同（例如「战斗开始加盾」和「使用时造成伤害」），仍然使用多条独立 AbilityDefinition，而不是混在一条里用多套触发条件。
+  - 与对齐当前游戏版本的正式物品定义保持一致时，**不要为了使用 Also 调整原有物品行为**；如需验证多触发逻辑，应在独立的测试物品中尝试，见「物品与测试物品的约定」一节。
+
 ---
 
 ## EffectApplyContextImpl 化简与触发器统一
@@ -129,6 +144,15 @@
 ### 小结
 
 按等级属性用单字典 + 列表长度区分单值/多值；初始器用 IntOrByTier 统一写法；对外用字符串 key、默认值 0 简化逻辑。需要 `X = [a,b,c]` 时用 CollectionBuilder + IEnumerable 让自定义类型支持集合表达式。
+
+---
+
+## 物品与测试物品的约定
+
+- **与游戏对齐的物品不可随意更改**：`ItemDatabase/CommonSmall.cs`、`CommonMedium.cs`、`CommonLarge.cs` 中已有的物品用于对齐当前版本的 The Bazaar，**不得为调试/实验随意修改数值、文案或能力行为**；如需重构能力或触发逻辑，应通过额外测试物品或测试脚本验证，确认无误后再考虑与正式物品对齐。
+- **测试物品单独存放**：为验证新机制（如 Ability 多触发、复杂光环等），可以在 `ItemDatabase` 下新建独立文件（如 `TestItems.cs` / `CommonExperimental.cs`）中定义测试专用的 `ItemTemplate`，命名和注释中明确标注「仅测试使用」。
+- **注册与清理**：测试期间可以在对应 `RegisterAll` 中**临时**调用 `db.Register(...)` 注册测试物品，用 CLI/脚本跑完用例后，须删除这些注册调用（测试物品工厂方法本身可保留或按需删掉），避免测试物品意外出现在正式卡组或被当成与游戏对齐的内容。
+- **测试脚本与日志**：新增测试物品时，应优先通过现有 CLI 批量脚本（或新增脚本）构造最小覆盖用例，通过对战日志（伤害、护盾、触发次数等）验证新机制行为是否符合预期，再据此更新实现笔记与规则文件。
 
 ---
 
