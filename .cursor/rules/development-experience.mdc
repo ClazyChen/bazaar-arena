@@ -24,7 +24,9 @@ globs: "**/*.cs","**/*.xaml","**/docs/**"
 
 - **主窗口**：`MainWindow` 为入口，持有 `DeckManager`、卡组列表与编辑区。子窗口（单次模拟、批量模拟）创建时设置 `Owner = this`，以便 `WindowStartupLocation="CenterOwner"` 生效。
 - **对话框**：卡组“另存为”等需用户输入的对话框设置 `Owner`，并在 `Loaded` 中通过 `Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () => { TextBox.Focus(); TextBox.SelectAll(); })` 使输入框立即获得焦点，无需再点击。
-- **单次模拟**：生命曲线为阶梯状；仅在生命值变化时记录点，且每次变化记录两点 (timeMs, 旧HP)、(timeMs, 新HP)；战斗结束前在 BattleSimulator 中调用 `OnHpSnapshot` 再 `OnResult`，保证最后一帧写入曲线；HP 显示时用 `Math.Max(0, hp)`。
+- **单次模拟**：
+  - 生命曲线为阶梯状；仅在生命值变化时记录点，且每次变化记录两点 (timeMs, 旧HP)、(timeMs, 新HP)；战斗结束前在 BattleSimulator 中调用 `OnHpSnapshot` 再 `OnResult`，保证最后一帧写入曲线；HP 显示时用 `Math.Max(0, hp)`。
+  - 右侧「每物品统计」表格使用 `StatsCollectingSink` 的 `ItemStatRow` 输出（含 `Player`、`ItemName`、`CastCount` 等），并在「物品效果」区域展示当前选中行对应物品的 Tooltip：实现上复用主界面卡组区域的 Tooltip 构建逻辑（`ItemUiHelper.BuildDeckSlotToolTip`），按本次对战中记录的 `Tier` 着色与替换占位符，保证单次模拟与卡组编辑看到的是同一套物品效果说明。
 
 ## 对战模拟与日志
 
@@ -44,7 +46,7 @@ globs: "**/*.cs","**/*.xaml","**/docs/**"
 
 ## Tooltip 与悬停说明
 
-- **延后构建防卡顿**：不在 MouseEnter 时构建 Tooltip 内容。卡组内物品：为 Border 设置空 `ToolTip`，在 `ToolTip.Opened` 中根据 `PlacementTarget.Tag`（SlotRowViewModel）再构建并赋 `Content`。物品池：使用 `ToolTipService.ToolTipOpening`，在事件里根据 DataContext（itemName）构建或从缓存取，赋给该元素的 `ToolTip.Content`。
+- **延后构建防卡顿**：不在 MouseEnter 时构建 Tooltip 内容。卡组内物品：为 Border 设置空 `ToolTip`，在 `ToolTip.Opened` 中根据 `PlacementTarget.Tag`（SlotRowViewModel）再构建并赋 `Content`。物品池：使用 `ToolTipService.ToolTipOpening`，在事件里根据 DataContext（itemName）构建或从缓存取，赋给该元素的 `ToolTip.Content`。单次模拟窗口中右侧「物品效果」区域不再单独实现描述逻辑，而是统一调用 `ItemUiHelper.BuildDeckSlotToolTip`，保持 Tooltip 与卡组编辑区域风格与内容完全一致。
 - **冷却行条件**：仅当物品有冷却（`CooldownMs > 0`）时显示「冷却时间：X 秒」行；无冷却物品不显示该行。
 - **物品池缓存**：`_poolToolTipCache`（Dictionary<itemName, Border>）缓存已构建的物品池 Tooltip，同一物品多次悬停不重复构建。
 - **等级颜色**：Tier 使用标准色（Bronze 180,98,65；Silver 192,192,192；Gold 255,215,0；Diamond 0,255,255），`TierToBrush` 与 `TierToBrushConverter` 一致。Tooltip 背景 `#35322e`，默认文字白色。效果关键词（灼烧、剧毒等）颜色与战斗日志一致，见 `EffectKeywordFormatting`。

@@ -288,18 +288,6 @@ public partial class MainWindow
         UpdateDeckGridDisplay();
     }
 
-    private static Brush TierToBrush(ItemTier tier)
-    {
-        return tier switch
-        {
-            ItemTier.Bronze => new SolidColorBrush(Color.FromRgb(180, 98, 65)),
-            ItemTier.Silver => new SolidColorBrush(Color.FromRgb(192, 192, 192)),
-            ItemTier.Gold => new SolidColorBrush(Color.FromRgb(255, 215, 0)),
-            ItemTier.Diamond => new SolidColorBrush(Color.FromRgb(0, 255, 255)),
-            _ => EmptySlotBrush,
-        };
-    }
-
     private void UpdateDeckGridDisplay()
     {
         int level = GetPlayerLevel();
@@ -381,9 +369,9 @@ public partial class MainWindow
         // 物品 tier 色块（与物品同跨列），可点击切换等级
         foreach (var item in DeckSlotDisplays)
         {
-            var border = new Border
-            {
-                Background = TierToBrush(item.ViewModel.Tier),
+                var border = new Border
+                {
+                    Background = ItemUiHelper.TierToBrush(item.ViewModel.Tier),
                 Tag = item.ViewModel,
                 Cursor = Cursors.Hand,
                 CornerRadius = new CornerRadius(1),
@@ -478,87 +466,13 @@ public partial class MainWindow
         }
     }
 
-    private static readonly Brush ToolTipBackground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#35322e"));
-    private static readonly Brush ToolTipForeground = Brushes.White;
-
     /// <summary>卡组内 ToolTip 即将显示时再构建内容，避免 MouseEnter 时卡顿。</summary>
     private void DeckSlot_ToolTipOpened(object sender, EventArgs e)
     {
         if (sender is not ToolTip tt || tt.PlacementTarget is not Border border || border.Tag is not SlotRowViewModel row) return;
         var template = _itemDatabase.GetTemplate(row.ItemName);
         if (template != null)
-            tt.Content = BuildDeckSlotToolTip(template, row.Tier);
-    }
-
-    /// <summary>构建物品标签行：尺寸（小型/中型/大型）+ 现有 Tags，用空格连接。</summary>
-    private static string BuildTagsLine(ItemTemplate template)
-    {
-        // UI 只显示 1 次尺寸；并隐藏注册时自动补充的“尺寸/效果类型”标签（伤害/护盾/治疗等）。
-        // 这些标签主要用于 Condition/可暴击判定等内部逻辑，展示出来会显得冗余且容易造成尺寸重复。
-        var hiddenAutoTags = new HashSet<string>
-        {
-            TagConst.Small,
-            TagConst.Medium,
-            TagConst.Large,
-            TagConst.Damage,
-            TagConst.Shield,
-            TagConst.Heal,
-            TagConst.Burn,
-            TagConst.Poison,
-            TagConst.Regen,
-        };
-
-        var parts = new List<string> { template.Size.GetDisplayName() };
-        if (template.Tags?.Count > 0)
-        {
-            foreach (var tag in template.Tags)
-            {
-                if (hiddenAutoTags.Contains(tag)) continue;
-                if (!parts.Contains(tag))
-                    parts.Add(tag);
-            }
-        }
-        return string.Join(" ", parts);
-    }
-
-    /// <summary>卡组内物品悬停：名称按 tier 色、冷却（若有）、Desc；占位符为单 tier 数值并加粗。</summary>
-    private static Border BuildDeckSlotToolTip(ItemTemplate template, ItemTier tier)
-    {
-        var panel = new StackPanel { Margin = new Thickness(2) };
-        var line1 = new TextBlock { Foreground = ToolTipForeground };
-        line1.Inlines.Add(new Run(template.Name) { FontWeight = FontWeights.Bold, Foreground = TierToBrush(tier) });
-        panel.Children.Add(line1);
-        var tagsLine = new TextBlock { Foreground = ToolTipForeground, FontStyle = FontStyles.Italic };
-        tagsLine.Inlines.Add(new Run(BuildTagsLine(template)));
-        panel.Children.Add(tagsLine);
-        if (template.GetInt("CooldownMs", tier) > 0)
-        {
-            var (line2, ranges2) = ItemDescHelper.ReplacePlaceholdersSingle(template, tier, "冷却时间：{Cooldown} 秒");
-            var tb2 = new TextBlock { Foreground = ToolTipForeground };
-            foreach (var inline in ItemDescHelper.BuildLineInlines(line2, ranges2, null))
-                tb2.Inlines.Add(inline);
-            panel.Children.Add(tb2);
-        }
-        if (!string.IsNullOrEmpty(template.Desc))
-        {
-            foreach (var segment in template.Desc.Split([';', '；']))
-            {
-                var trimmed = segment.Trim();
-                if (string.IsNullOrEmpty(trimmed)) continue;
-                var (line3, ranges3) = ItemDescHelper.ReplacePlaceholdersSingle(template, tier, trimmed);
-                var tb3 = new TextBlock { Foreground = ToolTipForeground };
-                foreach (var inline in ItemDescHelper.BuildLineInlines(line3, ranges3, null))
-                    tb3.Inlines.Add(inline);
-                panel.Children.Add(tb3);
-            }
-        }
-        var wrap = new Border
-        {
-            Background = ToolTipBackground,
-            Child = panel,
-            Padding = new Thickness(2, 2, 2, 2),
-        };
-        return wrap;
+            tt.Content = ItemUiHelper.BuildDeckSlotToolTip(template, row.Tier);
     }
 
     /// <summary>物品池悬停：名称、冷却（若有）、Desc；占位符为全 tier「5 » 10 » 15 » 20」并加粗按 tier 着色。</summary>
@@ -568,20 +482,20 @@ public partial class MainWindow
         var template = _itemDatabase.GetTemplate(itemName);
         if (template == null)
         {
-            panel.Children.Add(new TextBlock { Text = itemName, FontWeight = FontWeights.Bold, Foreground = ToolTipForeground });
-            return new Border { Background = ToolTipBackground, Child = panel, Padding = new Thickness(2, 2, 2, 2) };
+            panel.Children.Add(new TextBlock { Text = itemName, FontWeight = FontWeights.Bold, Foreground = ItemUiHelper.ToolTipForeground });
+            return new Border { Background = ItemUiHelper.ToolTipBackground, Child = panel, Padding = new Thickness(2, 2, 2, 2) };
         }
-        var line1 = new TextBlock { Foreground = ToolTipForeground };
-        line1.Inlines.Add(new Run(template.Name) { FontWeight = FontWeights.Bold, Foreground = ToolTipForeground });
+        var line1 = new TextBlock { Foreground = ItemUiHelper.ToolTipForeground };
+        line1.Inlines.Add(new Run(template.Name) { FontWeight = FontWeights.Bold, Foreground = ItemUiHelper.ToolTipForeground });
         panel.Children.Add(line1);
-        var tagsLine = new TextBlock { Foreground = ToolTipForeground, FontStyle = FontStyles.Italic };
-        tagsLine.Inlines.Add(new Run(BuildTagsLine(template)));
+        var tagsLine = new TextBlock { Foreground = ItemUiHelper.ToolTipForeground, FontStyle = FontStyles.Italic };
+        tagsLine.Inlines.Add(new Run(ItemUiHelper.BuildTagsLine(template)));
         panel.Children.Add(tagsLine);
         bool hasCooldown = Enumerable.Range(0, 4).Any(i => template.GetInt("CooldownMs", (ItemTier)i) > 0);
         if (hasCooldown)
         {
-            var (line2, ranges2) = ItemDescHelper.ReplacePlaceholdersAllTiers(template, "冷却时间：{Cooldown} 秒", ToolTipForeground);
-            var tb2 = new TextBlock { Foreground = ToolTipForeground };
+            var (line2, ranges2) = ItemDescHelper.ReplacePlaceholdersAllTiers(template, "冷却时间：{Cooldown} 秒", ItemUiHelper.ToolTipForeground);
+            var tb2 = new TextBlock { Foreground = ItemUiHelper.ToolTipForeground };
             var ranges2Simple = ranges2.Select(r => (r.Start, r.Length, r.OverrideBrush)).ToList();
             foreach (var inline in ItemDescHelper.BuildLineInlines(line2, ranges2Simple, null))
                 tb2.Inlines.Add(inline);
@@ -593,14 +507,14 @@ public partial class MainWindow
             {
                 var trimmed = segment.Trim();
                 if (string.IsNullOrEmpty(trimmed)) continue;
-                var (line3, ranges3) = ItemDescHelper.ReplacePlaceholdersAllTiers(template, trimmed, ToolTipForeground);
-                var tb3 = new TextBlock { Foreground = ToolTipForeground };
-                foreach (var inline in ItemDescHelper.BuildLineInlinesWithTiers(line3, ranges3, TierToBrush))
+                var (line3, ranges3) = ItemDescHelper.ReplacePlaceholdersAllTiers(template, trimmed, ItemUiHelper.ToolTipForeground);
+                var tb3 = new TextBlock { Foreground = ItemUiHelper.ToolTipForeground };
+                foreach (var inline in ItemDescHelper.BuildLineInlinesWithTiers(line3, ranges3, ItemUiHelper.TierToBrush))
                     tb3.Inlines.Add(inline);
                 panel.Children.Add(tb3);
             }
         }
-        return new Border { Background = ToolTipBackground, Child = panel, Padding = new Thickness(2, 2, 2, 2) };
+        return new Border { Background = ItemUiHelper.ToolTipBackground, Child = panel, Padding = new Thickness(2, 2, 2, 2) };
     }
 
     /// <summary>物品池 ToolTip 即将显示时再构建（或从缓存取），避免 MouseEnter 卡顿。</summary>

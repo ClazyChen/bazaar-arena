@@ -44,12 +44,15 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Text="每物品统计" FontWeight="Bold" Margin="0,0,0,4"/>
                 <ScrollViewer Grid.Row="1" x:Name="StatsScrollViewer" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
                               MinHeight="120" CanContentScroll="False">
                     <DataGrid x:Name="StatsGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False"
-                              HeadersVisibility="Column" MinWidth="320" PreviewMouseWheel="StatsGrid_PreviewMouseWheel">
+                              HeadersVisibility="Column" MinWidth="320" PreviewMouseWheel="StatsGrid_PreviewMouseWheel"
+                              SelectionMode="Single" SelectionUnit="FullRow" SelectionChanged="StatsGrid_SelectionChanged">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="玩家" Binding="{Binding Player}" Width="50"/>
                             <DataGridTextColumn Header="物品" Binding="{Binding ItemName}" Width="*" MinWidth="90"/>
@@ -63,6 +66,8 @@
                         </DataGrid.Columns>
                     </DataGrid>
                 </ScrollViewer>
+                <TextBlock Grid.Row="2" Text="物品效果" FontWeight="Bold" Margin="0,8,0,4"/>
+                <Border Grid.Row="3" x:Name="SelectedItemToolTipHost" Margin="0,0,0,0" Background="Transparent"/>
             </Grid>
         </Grid>
         <TextBlock x:Name="CurveTitleText" Grid.Row="4" Text="生命曲线（玩家1：蓝色，玩家2：红色）" FontWeight="Bold" Margin="0,8,0,4"/>

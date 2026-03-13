@@ -1,5 +1,10 @@
 # 变更记录
 
+## 单次模拟物品效果 Tooltip 与多目标日志格式统一
+
+- **单次模拟物品效果查看**：单次模拟窗口右侧「每物品统计」表格下方新增「物品效果」区域，选中某一统计行时展示对应物品的详细效果说明。实现上复用主界面卡组区域的 Tooltip 构建逻辑（`ItemUiHelper.BuildDeckSlotToolTip`），并从 `StatsCollectingSink.ItemStats` 中读取本次对战该物品实际使用的档位（`Tier`）做着色与占位符替换，保证模拟结果查看与卡组编辑看到的是同一套物品说明。
+- **多目标日志 extraSuffix 统一**：冻结、减速、充能、加速、修复、摧毁等多目标效果的日志 extraSuffix 统一为 `" →[目标1、目标2、...]"` 的形式，目标名用顿号 `、` 分隔；AddAttribute/ReduceAttribute 等按条件作用多件物品的日志也沿用该格式，替代旧的 `" →[目标1] →[目标2]"` 累加写法，便于在一行中快速看出本次效果命中的全部物品。
+
 ## EffectApplyContextImpl 化简与 IEffectApplyContext 属性精简
 
 - **触发器统一**：移除 `OnFreezeApplied` / `OnSlowApplied` / `OnDestroyApplied` 三个回调，改为由模拟器传入 **EffectAppliedTriggerQueue**（`List<(string TriggerName, int SideIndex, int ItemIndex)>`）。上下文在 ApplyFreeze/ApplySlow/ApplyDestroy 内只追加条目；`ability.Apply(ctx)` 后模拟器统一遍历队列、调用 `InvokeTrigger` 并在 Destroy 时标记 `target.Destroyed = true`。

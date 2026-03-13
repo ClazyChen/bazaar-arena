@@ -1,3 +1,5 @@
+using BazaarArena.Core;
+
 namespace BazaarArena.BattleSimulator;
 
 /// <summary>单次对战统计结果：胜方、时长、每物品统计、强度曲线。</summary>
@@ -29,6 +31,8 @@ public class ItemStatRow
     /// <summary>显示用玩家编号（1 或 2）。</summary>
     public int Player => SideIndex + 1;
     public string ItemName { get; set; } = "";
+    /// <summary>本物品在本次对战中使用的档位（用于在 UI 中按实际等级展示 Tooltip）。</summary>
+    public ItemTier Tier { get; set; }
     public int CastCount { get; set; }
     public int Damage { get; set; }
     public int Burn { get; set; }

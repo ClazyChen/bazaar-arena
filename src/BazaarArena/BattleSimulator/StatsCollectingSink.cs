@@ -216,6 +216,7 @@ public class StatsCollectingSink : IBattleLogSink
             {
                 SideIndex = kv.Key.SideIndex,
                 ItemName = kv.Value.ItemName,
+                Tier = kv.Key.Tier,
                 CastCount = kv.Value.Accum.CastCount,
                 Damage = kv.Value.Accum.Damage,
                 Burn = kv.Value.Accum.Burn,

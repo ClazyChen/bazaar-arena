@@ -23,3 +23,4 @@ globs: "**/*.cs"
 - **摧毁/修复 日志**：`EffectLogFormat.FormatEffectValue` 对「摧毁」「修复」返回空串，日志行只显示效果名与 extraSuffix（如「[牵引光束] 摧毁 →[工蜂]」「[废品场维修机器人] 修复 →[xxx]」），不显示数值。各 sink 在拼行时仅当 valueStr 非空才加空格与数值（`valuePart = string.IsNullOrEmpty(valueStr) ? "" : " " + valueStr`）。
 - **效果关键词颜色**：「摧毁」在 `EffectKeywordFormatting` 中为 rgb(255, 50, 120)；「修复」为 rgb(143, 252, 188)。与 Tooltip、战斗日志一致。
 - **伤害报表**：`StatsCollectingSink.OnEffect` 按 `effectKind` 累加物品与阵营统计。**「伤害」与「吸血」** 均计入伤害（同一数值，仅展示不同）；定向效果「护盾降低」「伤害提高」不参与 Damage 累加，格式为「[物品名] 效果名 数值 →[目标]」。
+ - **多目标 extraSuffix 统一格式**：多目标效果（冻结/减速/充能/加速/修复/摧毁等）与按条件多件目标的属性增减（AddAttribute/ReduceAttribute）在日志中统一使用 `extraSuffix = " →[目标1、目标2、...]"` 的形式，其中目标名用顿号 `、` 分隔，保证一条效果日志即可看清本次命中的所有物品。

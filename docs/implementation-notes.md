@@ -340,7 +340,7 @@
 
 ### 多目标效果与日志
 
-- **extraSuffix**：`IBattleLogSink.OnEffect` 增加可选参数 `string? extraSuffix = null`。冻结等多目标效果在应用时收集目标物品名，拼成 `" →[物品名1] →[物品名2]..."` 传入，各 sink 在数值后追加显示。
+- **extraSuffix**：`IBattleLogSink.OnEffect` 增加可选参数 `string? extraSuffix = null`。冻结、减速、充能、加速、修复、摧毁等多目标效果在应用时收集目标物品名，拼成统一格式 `" →[物品名1、物品名2、物品名3]"` 传入，各 sink 在数值后追加显示。AddAttribute/ReduceAttribute 等按条件给多件物品加减属性也复用同一格式，便于快速看出一条效果命中了哪些目标。
 - **时间类效果显示秒**：`EffectLogFormat.FormatEffectValue` 对「充能」「冻结」将毫秒格式化为「N 秒」或「N.F 秒」，与物品描述一致。
 - **冻结关键词颜色**：`EffectKeywordFormatting` 中「冻结」使用 `Color.FromRgb(63, 200, 247)`。
 

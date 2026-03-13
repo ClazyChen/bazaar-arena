@@ -106,7 +106,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             var target = fromSide.Items[i];
             targetNames.Add(perTarget(target, i));
         }
-        string extraSuffix = string.Concat(targetNames.Select(name => " →[" + name + "]"));
+        string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
         LogSink.OnEffect(Item, Item.Template.Name, effectName, logValue ?? indices.Count, TimeMs, isCrit: false, extraSuffix);
         if (effectTriggerName != null && EffectAppliedTriggerQueue != null)
         {

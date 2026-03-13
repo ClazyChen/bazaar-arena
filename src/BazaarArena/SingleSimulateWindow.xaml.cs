@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -57,6 +58,19 @@ public partial class SingleSimulateWindow
         offset = Math.Max(0, Math.Min(StatsScrollViewer.ScrollableHeight, offset));
         StatsScrollViewer.ScrollToVerticalOffset(offset);
         e.Handled = true;
+    }
+
+    /// <summary>选中某一物品统计行时，在下方展示该物品的详细效果说明（与卡组管理界面的 Tooltip 一致）。</summary>
+    private void StatsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (SelectedItemToolTipHost == null) return;
+        SelectedItemToolTipHost.Child = null;
+        if (StatsGrid.SelectedItem is not ItemStatRow row) return;
+        if (string.IsNullOrEmpty(row.ItemName)) return;
+        var template = _itemDatabase.GetTemplate(row.ItemName);
+        if (template == null) return;
+        var content = ItemUiHelper.BuildDeckSlotToolTip(template, row.Tier);
+        SelectedItemToolTipHost.Child = content;
     }
 
     private void Run_Click(object sender, RoutedEventArgs e)
