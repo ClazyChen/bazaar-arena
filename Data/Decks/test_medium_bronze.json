@@ -1,0 +1,53 @@
+{
+  "version": "1.0",
+  "decks": [
+    { "id": "mb_spiked_buckler_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "尖刺圆盾", "tier": 0 }] } },
+    { "id": "mb_spiked_buckler_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mb_improvised_bludgeon_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "临时钝器", "tier": 0 }] } },
+    { "id": "mb_improvised_bludgeon_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mb_shadowed_cloak_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "暗影斗篷", "tier": 0 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "mb_shadowed_cloak_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mb_frozen_bludgeon_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "冰冻钝器", "tier": 0 }] } },
+    { "id": "mb_frozen_bludgeon_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mb_clockwork_blades_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "发条刀", "tier": 0 }] } },
+    { "id": "mb_clockwork_blades_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mb_marble_scalemail_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "大理石鳞甲", "tier": 0 }] } },
+    { "id": "mb_marble_scalemail_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mb_junkyard_club_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "废品场大棒", "tier": 0 }] } },
+    { "id": "mb_junkyard_club_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mb_rocket_boots_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "火箭靴", "tier": 0 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "mb_rocket_boots_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mb_salamander_pup_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "火蜥幼兽", "tier": 0 }] } },
+    { "id": "mb_salamander_pup_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mb_makeshift_barricade_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "简易路障", "tier": 0 }] } },
+    { "id": "mb_makeshift_barricade_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mb_exoskeleton_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "外骨骼", "tier": 0 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "mb_exoskeleton_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mb_junkyard_repairbot_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "牵引光束", "tier": 1 },
+      { "itemName": "獠牙", "tier": 0 },
+      { "itemName": "废品场维修机器人", "tier": 0 }
+    ] } },
+    { "id": "mb_junkyard_repairbot_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+  ]
+}

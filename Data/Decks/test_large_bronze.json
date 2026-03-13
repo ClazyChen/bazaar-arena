@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "decks": [
+    { "id": "lb_temporary_shelter_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "临时避难所", "tier": 0 }] } },
+    { "id": "lb_temporary_shelter_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "lb_harkuvian_launcher_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "哈库维发射器", "tier": 0 }] } },
+    { "id": "lb_harkuvian_launcher_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "lb_tourist_chariot_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "观光缆车", "tier": 0 }] } },
+    { "id": "lb_tourist_chariot_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "lb_hot_springs_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "温泉", "tier": 0 }] } },
+    { "id": "lb_hot_springs_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "lb_junkyard_lance_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "废品场长枪", "tier": 0 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "lb_junkyard_lance_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+  ]
+}
