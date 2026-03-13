@@ -1,5 +1,15 @@
 # 变更记录
 
+## EffectApplyContextImpl 化简与 IEffectApplyContext 属性精简
+
+- **触发器统一**：移除 `OnFreezeApplied` / `OnSlowApplied` / `OnDestroyApplied` 三个回调，改为由模拟器传入 **EffectAppliedTriggerQueue**（`List<(string TriggerName, int SideIndex, int ItemIndex)>`）。上下文在 ApplyFreeze/ApplySlow/ApplyDestroy 内只追加条目；`ability.Apply(ctx)` 后模拟器统一遍历队列、调用 `InvokeTrigger` 并在 Destroy 时标记 `target.Destroyed = true`。
+- **ApplyToTargets**：增加可选参数 `effectTriggerName`，Freeze/Slow 应用后写入队列；ApplyDestroy 只写队列不在此处设 Destroyed。
+- **属性方法**：抽成私有 `ApplyToSideWithCondition`，AddAttributeToCasterSide / SetAttributeOnCasterSide / ReduceAttributeToOpponentSide 复用同一套「按条件遍历 + perItem + 日志」。
+- **IEffectApplyContext**：施放者统一为 **Item**（移除 CasterItem）；移除 **HasLifeSteal**（效果内用 `GetResolvedValue(Key.LifeSteal, defaultValue: 0) != 0`）；移除 **IsCasterInFlight**（需时用 `ctx.Item.InFlight`）。
+- **文档与规则**：implementation-notes 新增「EffectApplyContextImpl 化简与触发器统一」「效果施加触发器统一」并修正 CasterItem/HasLifeSteal 等引用；changelog 本条目；battle-simulator-ability-queue、project-conventions 补充 EffectAppliedTriggerQueue 与效果上下文约定。
+
+---
+
 ## 暴击按物品按帧统一与 UseSelf
 
 - **暴击机制**：每个物品在同一帧内只做一次暴击判定。物品状态新增 **CritTimeMs**、**IsCritThisUse**、**CritDamagePercentThisUse**（ItemTemplate 键 KeyCritTimeMs / KeyIsCritThisUse / KeyCritDamagePercentThisUse）；本帧已判定则复用，不重复掷骰、不重复触发 Crit。**Crit 触发**从 ExecuteOneEffect 末尾移到步骤 8 循环内、调用 ExecuteOneEffect **之前**，仅在该物品本帧首次判定为暴击时调用一次。

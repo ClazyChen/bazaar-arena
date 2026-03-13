@@ -8,17 +8,11 @@ public interface IEffectApplyContext
     /// <summary>当前效果数值（已乘暴击倍率，若适用）；仅当效果指定了 ValueKey（如 AddAttribute）时由模拟器填入，否则委托应使用 GetResolvedValue 按 key 取值。</summary>
     int Value { get; }
 
-    /// <summary>施放者物品是否带吸血（LifeSteal &gt; 0）。</summary>
-    bool HasLifeSteal { get; }
-
-    /// <summary>施放者物品当前是否处于飞行状态。</summary>
-    bool IsCasterInFlight { get; }
-
     /// <summary>本轮能力是否掷出暴击；可暴击效果在 LogEffect 时传 showCrit: IsCrit，不可暴击效果传 false。</summary>
     bool IsCrit { get; }
 
-    /// <summary>施放者物品（能力持有者）；槽位等可用 CasterItem.ItemIndex / CasterItem.SideIndex。</summary>
-    BattleItemState CasterItem { get; }
+    /// <summary>施放者物品（能力持有者）；槽位等可用 Item.ItemIndex / Item.SideIndex。</summary>
+    BattleItemState Item { get; }
 
     /// <summary>从施放者物品模板按 key 取值（缺省时用 defaultValue），若 applyCritMultiplier 则乘暴击倍率。用于数值与目标数等，key 建议用 Key.Damage、Key.Shield 等。</summary>
     int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0);

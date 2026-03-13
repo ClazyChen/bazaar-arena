@@ -440,6 +440,7 @@ public class BattleSimulator
             bool applyCrit = ItemHasAnyCrittableField(item) && ability.ApplyCritMultiplier;
             value = applyCrit ? baseValue * critMultiplier : baseValue;
         }
+        var effectAppliedTriggerQueue = new List<(string TriggerName, int SideIndex, int ItemIndex)>();
         var ctx = new EffectApplyContextImpl
         {
             Side = side,
@@ -451,30 +452,16 @@ public class BattleSimulator
             TimeMs = timeMs,
             LogSink = logSink,
             ChargeInducedCastQueue = chargeInducedCastQueue,
+            EffectAppliedTriggerQueue = effectAppliedTriggerQueue,
             TargetCondition = ability.TargetCondition,
-            OnFreezeApplied = (targets) =>
-            {
-                foreach (var (ts, ti) in targets)
-                {
-                    var target = (ts == 0 ? side0 : side1).Items[ti];
-                    InvokeTrigger(Trigger.Freeze, item, new TriggerInvokeContext { InvokeTargetItem = target, Multicast = 1 }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
-                }
-            },
-            OnSlowApplied = (targets) =>
-            {
-                foreach (var (ts, ti) in targets)
-                {
-                    var target = (ts == 0 ? side0 : side1).Items[ti];
-                    InvokeTrigger(Trigger.Slow, item, new TriggerInvokeContext { InvokeTargetItem = target, Multicast = 1 }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
-                }
-            },
-            OnDestroyApplied = (destroyedItemIdx) =>
-            {
-                var target = side.Items[destroyedItemIdx];
-                InvokeTrigger(Trigger.Destroy, item, new TriggerInvokeContext { InvokeTargetItem = target }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
-                target.Destroyed = true;
-            },
         };
         ability.Apply(ctx);
+        foreach (var (triggerName, sideIndex, itemIndex) in effectAppliedTriggerQueue)
+        {
+            var target = (sideIndex == side0.SideIndex ? side0 : side1).Items[itemIndex];
+            InvokeTrigger(triggerName, item, new TriggerInvokeContext { InvokeTargetItem = target, Multicast = triggerName == Trigger.Destroy ? null : 1 }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+            if (triggerName == Trigger.Destroy)
+                target.Destroyed = true;
+        }
     }
 }

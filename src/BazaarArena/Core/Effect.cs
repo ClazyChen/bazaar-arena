@@ -11,8 +11,9 @@ public static class Effect
     {
         int value = ctx.GetResolvedValue(Key.Damage, applyCritMultiplier: true);
         int actualHp = ctx.ApplyDamageToOpp(value, isBurn: false);
-        if (ctx.HasLifeSteal && actualHp > 0) ctx.HealCaster(actualHp);
-        ctx.LogEffect(ctx.HasLifeSteal ? "吸血" : "伤害", value, showCrit: ctx.IsCrit);
+        bool lifeSteal = ctx.GetResolvedValue(Key.LifeSteal, defaultValue: 0) != 0;
+        if (lifeSteal && actualHp > 0) ctx.HealCaster(actualHp);
+        ctx.LogEffect(lifeSteal ? "吸血" : "伤害", value, showCrit: ctx.IsCrit);
     };
 
     /// <summary>灼烧：数值来自模板的 Burn。</summary>

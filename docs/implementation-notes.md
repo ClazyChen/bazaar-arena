@@ -64,13 +64,28 @@
 
 当前能力写法见下节「Ability / Key / Override 重构」；Condition/Trigger 语义不变，仅 API 改为无参属性 + Override。
 
-### Slow/Freeze 与 InvokeTargetCondition
+### 效果施加触发器统一（EffectAppliedTriggerQueue）
 
-`OnFreezeApplied` / `OnSlowApplied` 仍传递目标列表 `(sideIndex, itemIndex)[]`（EffectApplyContextImpl 内部构造），模拟器对每个目标解析为 `BattleItemState` 后调用一次 `InvokeTrigger`，context 带 `InvokeTargetItem`、`Multicast = 1`；`AddOrMergeAbility` 按 (Owner, AbilityIndex) 合并 PendingCount。若能力有 `InvokeTargetCondition`，则以 `InvokeTargetItem` 为 Item 求值，不通过则不入队。
+冻结/减速/摧毁等「施加效果时触发」不再通过上下文注入多个回调（OnFreezeApplied / OnSlowApplied / OnDestroyApplied），改为**待处理队列**：模拟器传入 `List<(string TriggerName, int SideIndex, int ItemIndex)>? EffectAppliedTriggerQueue`，上下文在 `ApplyFreeze`/`ApplySlow`/`ApplyDestroy` 内只追加 `(Trigger.Freeze|Slow|Destroy, sideIndex, itemIndex)`，不持有任何委托。`ability.Apply(ctx)` 返回后，模拟器**统一**遍历该列表：按 (SideIndex, ItemIndex) 解析出 `BattleItemState`，调用 `InvokeTrigger(triggerName, item, new TriggerInvokeContext { InvokeTargetItem = target, ... })`；若 `triggerName == Trigger.Destroy` 再执行 `target.Destroyed = true`。这样扩展新「施加时触发」只需在上下文中写队列、模拟器里多处理一种 triggerName，无需新增回调。详见「EffectApplyContextImpl 化简与触发器统一」节。
 
 ### 小结
 
 修改能力或触发器逻辑时：condition 管「谁触发」，InvokeTargetCondition 管「触发器目标是否满足」（仅 Slow/Freeze 等有目标时），TargetCondition 管「效果选谁」。不再使用 UseOtherItem；「其他物品使用则触发」一律用 UseItem + condition。
+
+---
+
+## EffectApplyContextImpl 化简与触发器统一
+
+### 经验总结
+
+1. **触发器统一为待处理队列**：用 `EffectAppliedTriggerQueue`（`List<(TriggerName, SideIndex, ItemIndex)>`）替代 OnFreezeApplied / OnSlowApplied / OnDestroyApplied 三个回调。上下文只追加条目，模拟器在 `ability.Apply(ctx)` 后统一解析并调用 `InvokeTrigger`，Destroy 在此时再设 `target.Destroyed = true`。扩展新「施加时触发」只需在上下文写队列、模拟器多一种 triggerName 分支。
+2. **ApplyToTargets 与 effectTriggerName**：`ApplyToTargets` 增加可选参数 `effectTriggerName`；Freeze/Slow 传入 `Trigger.Freeze`/`Trigger.Slow`，应用完 perTarget 后把本次目标写入队列；ApplyDestroy 单独选目标与打日志，只往队列写 `(Trigger.Destroy, Side.SideIndex, i)`，不在此处标记 Destroyed。
+3. **属性方法复用**：`AddAttributeToCasterSide` / `SetAttributeOnCasterSide` / `ReduceAttributeToOpponentSide` 抽成私有 `ApplyToSideWithCondition(fromSide, enemySide, targetCondition, logEffectName, logValue, perItem)`，统一「按条件遍历、perItem 改状态并返回名称、收集后打一条日志」。
+4. **接口化简**：`IEffectApplyContext` 仅暴露施放者为 **Item**（移除 CasterItem 别名）；移除 **HasLifeSteal**（效果内用 `GetResolvedValue(Key.LifeSteal, defaultValue: 0) != 0`）；移除未使用的 **IsCasterInFlight**（需要时用 `ctx.Item.InFlight`）。
+
+### 对照规则
+
+修改效果上下文或 Freeze/Slow/Destroy 触发逻辑时，见 **.cursor/rules/battle-simulator-ability-queue.mdc**；上下文不持有触发器回调，仅通过 EffectAppliedTriggerQueue 上报，模拟器单点消费。
 
 ---
 
@@ -192,7 +207,7 @@
 
 - **AuraDefinition**（Core）：`AttributeName`（用 **Key.***）、`Condition`、`SourceCondition`、**Value**（`Formula?`）、**Percent**（bool，默认 false）。固定/百分比已统一为 **Value = Formula** + **Percent**（如 `Value = Formula.Source(Key.Custom_0)`、百分比时 `Percent = true`）。BuildSide 与 ItemDatabase 克隆模板时对 Auras 做深拷贝（复制 Value、Percent）。
 - **战斗内读属性**：需要光环时传入 context，例如暴击率：`item.Template.GetInt("CritRatePercent", item.Tier, 0, auraContext)`；模拟器在能力队列处理处按当前 `entry.Owner`（BattleItemState）创建 `BattleAuraContext(side, entry.Owner, opp)` 并传入。
-- **效果数值必须带光环上下文**：`IEffectApplyContext.GetResolvedValue` 用于效果委托内取 Damage、Shield 等。若实现内只调 `Item.Template.GetInt(key, tier, default)` 而不传 `IAuraContext`，则「基础 0 + 光环加成」类物品（如废品场长枪）施放时伤害仍为 0。**正确做法**：`EffectApplyContextImpl.GetResolvedValue` 内创建 `new BattleAuraContext(Side, Item)` 并调用 `GetInt(key, tier, default, auraContext)`（Item 即 CasterItem），使施放时读取的数值已含光环。
+- **效果数值必须带光环上下文**：`IEffectApplyContext.GetResolvedValue` 用于效果委托内取 Damage、Shield 等。若实现内只调 `Item.Template.GetInt(key, tier, default)` 而不传 `IAuraContext`，则「基础 0 + 光环加成」类物品（如废品场长枪）施放时伤害仍为 0。**正确做法**：`EffectApplyContextImpl.GetResolvedValue` 内创建 `new BattleAuraContext(Side, Item)` 并调用 `GetInt(key, tier, default, auraContext)`（Item 即施放者物品），使施放时读取的数值已含光环。
 
 ### 光环公式（Formula 委托类型）与 SourceCondition 优先
 
@@ -233,7 +248,7 @@
 
 - **原则**：游戏运行时读取任意物品字段都应包含光环上下文，避免「依赖变量的光环」漏算（如 Burn += Damage 时读 Damage 也需光环）。
 - **统一入口**：`BattleSide.GetItemInt(itemIndex, key, defaultValue)` 内部用 `new BattleAuraContext(this, Items[itemIndex])` 调用 `Items[itemIndex].Template.GetInt(key, tier, default, context)`。
-- **调用点**：BattleSimulator 步骤 7（AmmoCap、Multicast）、ProcessCooldown（CooldownMs、AmmoCap）；EffectApplyContextImpl 内 ChargeCasterItem、GetTargetIndices、ChargeItemAt、HasLifeSteal 等，凡有 (side, item) 的读属性均用 `side.GetItemInt(item.ItemIndex, ...)` 或等效。
+- **调用点**：BattleSimulator 步骤 7（AmmoCap、Multicast）、ProcessCooldown（CooldownMs、AmmoCap）；EffectApplyContextImpl 内 ChargeCasterItem、GetTargetIndices、ChargeItemAt 等，凡有 (side, item) 的读属性均用 `side.GetItemInt(item.ItemIndex, ...)` 或等效。吸血等由效果委托内 `ctx.GetResolvedValue(Key.LifeSteal, defaultValue: 0)` 判断，不单独暴露 HasLifeSteal。
 - **光环内部**：`BattleAuraContext.GetAuraModifiers` 对每条 Aura 若 **Value != null** 则 `aura.Value.Evaluate(FormulaContext)`，按 **Percent** 累加到 percentSum 或 fixedSum。
 
 ### 依赖变量的光环（Formula.Source）
@@ -477,7 +492,7 @@
 
 ### 问题：吸血伤害未统计
 
-- **现象**：毒刺等带 `LifeSteal` 的物品造成伤害时，`Effect.Damage` 为区分展示会以 **「吸血」** 调用 `LogEffect`（`ctx.LogEffect(ctx.HasLifeSteal ? "吸血" : "伤害", value, ...)`），而 **StatsCollectingSink** 的 `OnEffect` 仅对 `effectKind == "伤害"` 累加 `a.Damage` 与 `AddSide(damage: value)`，导致吸血那一下的数值未进入伤害报表。
+- **现象**：毒刺等带 `LifeSteal` 的物品造成伤害时，`Effect.Damage` 为区分展示会以 **「吸血」** 调用 `LogEffect`（由 `ctx.GetResolvedValue(Key.LifeSteal, defaultValue: 0) != 0` 判断后传 "吸血" 或 "伤害"），而 **StatsCollectingSink** 的 `OnEffect` 仅对 `effectKind == "伤害"` 累加 `a.Damage` 与 `AddSide(damage: value)`，导致吸血那一下的数值未进入伤害报表。
 - **修复**：在 **StatsCollectingSink** 的 switch 中，将 **「吸血」** 与 **「伤害」** 同等处理：`case "伤害": case "吸血":` 均执行 `a.Damage += value` 与 `AddSide(caster.SideIndex, damage: value)`。吸血与伤害为同一数值，仅展示不同，统计时均计入伤害。OnEffect 签名为 `(BattleItemState caster, ...)`。
 
 ### 定向效果日志格式统一
@@ -512,7 +527,7 @@
 ### 单目标武器伤害提高
 
 - **AddWeaponDamageBonusToCasterSideItem(value, targetItemIndexOnCasterSide)**：仅对己方指定下标物品生效；若该物品带 `Tag.Weapon` 则 `Damage.Add(value)` 并 `LogEffect("伤害提高", value, " →[目标名]")`，非武器则不操作、不记日志。
-- **Effect.WeaponDamageBonusToRightItem(ValueKey)**：从 ValueKey 取值，对 `ctx.CasterItem.ItemIndex + 1` 调用上述方法，用于暗影斗篷「若右侧为武器则伤害提高」。
+- **Effect.WeaponDamageBonusToRightItem(ValueKey)**：从 ValueKey 取值，对 `ctx.Item.ItemIndex + 1` 调用上述方法，用于暗影斗篷「若右侧为武器则伤害提高」。
 
 ---
 
