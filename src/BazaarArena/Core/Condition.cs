@@ -29,6 +29,9 @@ public class Condition
     /// <summary>克隆（复制委托引用），供模板克隆时使用。</summary>
     public static Condition? Clone(Condition? c) => c == null ? null : new Condition(c._evaluate);
 
+    /// <summary>总是满足的条件。</summary>
+    public static Condition Always { get; } = new(_ => true);
+
     /// <summary>被评估对象与能力持有者相同（Item == Source）；Item 为 null 时为 false。</summary>
     public static Condition SameAsSource { get; } = new(ctx =>
         ctx.Item != null && ctx.Item.SideIndex == ctx.Source.SideIndex && ctx.Item.ItemIndex == ctx.Source.ItemIndex);

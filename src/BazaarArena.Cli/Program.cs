@@ -1,11 +1,16 @@
 // Bazaar Arena 命令行对战测试工具：读入卡组集 JSON，选定两个卡组进行对战，并将日志输出到文件。
+// 支持两种模式：
+//   1. 单次对战：指定 deck1/deck2 与 --log；
+//   2. 批量对战：指定 --batch <批量配置.json>，在一次进程内完成多个测试点（每个测试点各写一份日志）。
+using System.Text.Json;
 using BazaarArena.BattleSimulator;
 using BazaarArena.Core;
 using BazaarArena.DeckManager;
 using BazaarArena.ItemDatabase;
+using BazaarArena.Cli;
 
-var (jsonPath, deck1Id, deck2Id, logPath, detailed, skipFileLog) = ParseArgs(args);
-if (jsonPath == null || deck1Id == null || deck2Id == null)
+var (jsonPath, deck1Id, deck2Id, logPath, detailed, skipFileLog, batchPath) = ParseArgs(args);
+if (jsonPath == null || (batchPath == null && (deck1Id == null || deck2Id == null)))
 {
     PrintUsage();
     return 1;
@@ -28,6 +33,21 @@ if (!File.Exists(jsonPath))
 var deckManager = new DeckManager();
 deckManager.OpenCollection(jsonPath);
 
+var db = new ItemDatabase();
+CommonSmall.RegisterAll(db);
+CommonMedium.RegisterAll(db);
+CommonLarge.RegisterAll(db);
+
+var logLevel = detailed ? BattleLogLevel.Detailed : BattleLogLevel.Summary;
+var simulator = new BattleSimulator();
+
+if (batchPath != null)
+{
+    int exitCode = RunBatch(simulator, deckManager, db, batchPath, logLevel);
+    return exitCode;
+}
+
+// 单次对战模式
 var deckA = deckManager.Load(deck1Id);
 var deckB = deckManager.Load(deck2Id);
 
@@ -47,12 +67,6 @@ if (deckA == null || deckB == null)
     return 1;
 }
 
-var db = new ItemDatabase();
-CommonSmall.RegisterAll(db);
-CommonMedium.RegisterAll(db);
-CommonLarge.RegisterAll(db);
-
-var logLevel = detailed ? BattleLogLevel.Detailed : BattleLogLevel.Summary;
 IBattleLogSink logSink;
 FileBattleLogSink? fileSink = null;
 
@@ -70,8 +84,7 @@ else
     logSink = new CompositeBattleLogSink(new ConsoleBattleLogSink(logLevel), fileSink);
 }
 
-var simulator = new BattleSimulator();
-int winner = simulator.Run(deckA, deckB, db, logSink, BattleLogLevel.Detailed);
+int singleWinner = simulator.Run(deckA, deckB, db, logSink, BattleLogLevel.Detailed);
 
 if (fileSink != null)
 {
@@ -79,10 +92,10 @@ if (fileSink != null)
     fileSink.Dispose();
 }
 
-Console.WriteLine(winner < 0 ? "对战结束：平局。" : $"对战结束：玩家 {winner + 1} 获胜。");
+Console.WriteLine(singleWinner < 0 ? "对战结束：平局。" : $"对战结束：玩家 {singleWinner + 1} 获胜。");
 return 0;
 
-static (string? jsonPath, string? deck1Id, string? deck2Id, string? logPath, bool detailed, bool skipFileLog) ParseArgs(string[] args)
+static (string? jsonPath, string? deck1Id, string? deck2Id, string? logPath, bool detailed, bool skipFileLog, string? batchPath) ParseArgs(string[] args)
 {
     string? jsonPath = null;
     string? deck1Id = null;
@@ -90,6 +103,7 @@ static (string? jsonPath, string? deck1Id, string? deck2Id, string? logPath, boo
     string? logPath = null;
     bool detailed = false;
     bool skipFileLog = false;
+    string? batchPath = null;
 
     var list = args.Select(a => a.Trim()).ToList();
     for (var i = 0; i < list.Count; i++)
@@ -115,6 +129,11 @@ static (string? jsonPath, string? deck1Id, string? deck2Id, string? logPath, boo
             if (i + 1 >= list.Count) continue;
             logPath = list[++i];
         }
+        else if (a.Equals("--batch", StringComparison.OrdinalIgnoreCase))
+        {
+            if (i + 1 >= list.Count) continue;
+            batchPath = list[++i];
+        }
         else if (a.Equals("--detailed", StringComparison.OrdinalIgnoreCase))
             detailed = true;
         else if (a.Equals("--nolog", StringComparison.OrdinalIgnoreCase) || a.Equals("--nofile", StringComparison.OrdinalIgnoreCase))
@@ -131,15 +150,74 @@ static (string? jsonPath, string? deck1Id, string? deck2Id, string? logPath, boo
         }
     }
 
-    return (jsonPath, deck1Id, deck2Id, logPath, detailed, skipFileLog);
+    return (jsonPath, deck1Id, deck2Id, logPath, detailed, skipFileLog, batchPath);
 }
 
 static void PrintUsage()
 {
     Console.WriteLine("用法：BazaarArena.Cli <卡组集.json> <卡组1ID> <卡组2ID> [选项]");
     Console.WriteLine("  或：BazaarArena.Cli --json <路径> --deck1 <ID> --deck2 <ID> [选项]");
+    Console.WriteLine("  或：BazaarArena.Cli --json <路径> --batch <批量配置.json> [选项]");
     Console.WriteLine("选项：");
     Console.WriteLine("  --log <路径>    日志输出文件路径（默认：Logs/ 下时间戳命名）");
     Console.WriteLine("  --detailed      控制台也输出详细日志");
     Console.WriteLine("  --nolog        不写文件日志，仅控制台");
+}
+
+static int RunBatch(BattleSimulator simulator, DeckManager deckManager, ItemDatabase db, string batchPath, BattleLogLevel logLevel)
+{
+    if (!File.Exists(batchPath))
+    {
+        Console.WriteLine($"错误：批量配置文件不存在：{batchPath}");
+        return 1;
+    }
+
+    BatchConfig? config;
+    try
+    {
+        var json = File.ReadAllText(batchPath);
+        config = JsonSerializer.Deserialize<BatchConfig>(json, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"错误：无法解析批量配置文件：{ex.Message}");
+        return 1;
+    }
+
+    if (config == null || config.Battles.Count == 0)
+    {
+        Console.WriteLine("错误：批量配置文件中未包含任何对战项（Battles）。");
+        return 1;
+    }
+
+    int exitCode = 0;
+    foreach (var battle in config.Battles)
+    {
+        var deckA = deckManager.Load(battle.Deck1);
+        var deckB = deckManager.Load(battle.Deck2);
+        if (deckA == null || deckB == null)
+        {
+            Console.WriteLine("错误：批量配置中的某个对战项使用了不存在的卡组 ID。");
+            Console.WriteLine($"  Deck1: {battle.Deck1}, Deck2: {battle.Deck2}");
+            exitCode = 1;
+            continue;
+        }
+
+        var logPath = string.IsNullOrWhiteSpace(battle.Log) ? LogPaths.GetTimestampedLogPath() : battle.Log;
+        var fullLogPath = Path.GetFullPath(logPath);
+        var dir = Path.GetDirectoryName(fullLogPath);
+        if (!string.IsNullOrEmpty(dir))
+            Directory.CreateDirectory(dir);
+
+        using var fileSink = new FileBattleLogSink(BattleLogLevel.Detailed, fullLogPath);
+        IBattleLogSink logSink = new CompositeBattleLogSink(new ConsoleBattleLogSink(logLevel), fileSink);
+
+        int winner = simulator.Run(deckA, deckB, db, logSink, BattleLogLevel.Detailed);
+        Console.WriteLine($"批量对战：{battle.Deck1} vs {battle.Deck2} 完成，结果：{(winner < 0 ? "平局" : $"玩家 {winner + 1} 获胜")}，日志：{fullLogPath}");
+    }
+
+    return exitCode;
 }

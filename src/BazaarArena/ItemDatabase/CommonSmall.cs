@@ -37,7 +37,8 @@ public static class CommonSmall
             Abilities =
             [
                 Ability.Burn.Override(
-                    trigger: Trigger.BattleStart
+                    trigger: Trigger.BattleStart,
+                    condition: Condition.SameSide
                 ),
             ],
         };
@@ -207,7 +208,8 @@ public static class CommonSmall
             Abilities =
             [
                 Ability.Freeze.Override(
-                    trigger: Trigger.BattleStart
+                    trigger: Trigger.BattleStart,
+                    condition: Condition.SameSide
                 ),
             ],
         };

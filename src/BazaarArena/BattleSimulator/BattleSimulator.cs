@@ -273,7 +273,7 @@ public class BattleSimulator
         return side;
     }
 
-    /// <summary>condition ?? default：UseItem → SameAsSource，其他触发器（Freeze/Slow/Crit/Destroy/BattleStart）→ SameSide。</summary>
+    /// <summary>condition ?? default：UseItem → SameAsSource，Freeze/Slow/Crit/Destroy → SameSide，BattleStart → Always。</summary>
     private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
     {
         if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
@@ -281,7 +281,7 @@ public class BattleSimulator
         if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Crit) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Destroy) return condition ?? Condition.SameSide;
-        if (triggerName == Trigger.BattleStart) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.BattleStart) return condition ?? Condition.Always;
         return condition;
     }
 
