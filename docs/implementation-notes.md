@@ -190,16 +190,15 @@
 
 ### 光环数据与条件
 
-- **AuraDefinition**（Core）：`AttributeName`、`Condition`（`AuraConditionKind`）、`FixedValueKey`、`PercentValueKey`。条件首期支持 `AdjacentToSource`（`|sourceIndex - targetItemIndex| == 1`）；BuildSide 与 ItemDatabase 克隆模板时对 Auras 做深拷贝（逐个 `new AuraDefinition`）。
+- **AuraDefinition**（Core）：`AttributeName`（用 **Key.***）、`Condition`、`SourceCondition`、**Value**（`Formula?`）、**Percent**（bool，默认 false）。固定/百分比已统一为 **Value = Formula** + **Percent**（如 `Value = Formula.Source(Key.Custom_0)`、百分比时 `Percent = true`）。BuildSide 与 ItemDatabase 克隆模板时对 Auras 做深拷贝（复制 Value、Percent）。
 - **战斗内读属性**：需要光环时传入 context，例如暴击率：`item.Template.GetInt("CritRatePercent", item.Tier, 0, auraContext)`；模拟器在能力队列处理处按当前 `entry.Owner`（BattleItemState）创建 `BattleAuraContext(side, entry.Owner, opp)` 并传入。
 - **效果数值必须带光环上下文**：`IEffectApplyContext.GetResolvedValue` 用于效果委托内取 Damage、Shield 等。若实现内只调 `Item.Template.GetInt(key, tier, default)` 而不传 `IAuraContext`，则「基础 0 + 光环加成」类物品（如废品场长枪）施放时伤害仍为 0。**正确做法**：`EffectApplyContextImpl.GetResolvedValue` 内创建 `new BattleAuraContext(Side, Item)` 并调用 `GetInt(key, tier, default, auraContext)`（Item 即 CasterItem），使施放时读取的数值已含光环。
 
 ### 光环公式（Formula 委托类型）与 SourceCondition 优先
 
-- **能用 SourceCondition 表达的优先用 SourceCondition**：若光环「仅当提供者满足某条件时生效」且数值来自模板字段（如 Custom_0），应使用 **AuraDefinition.SourceCondition** + **FixedValueKey**，不必写 Formula 表达式。例如「若此为唯一伙伴则暴击率 +Custom_0%」用 **SourceCondition = Condition.OnlyCompanion**、**FixedValueKey = nameof(ItemTemplate.Custom_0)**。
-- **Formula 为委托类型**：`AuraDefinition.FixedValueFormula` 类型为 **Formula?**（非字符串）。Formula 持有一个 `Func<IFormulaContext, int>`，通过 **Formula.Source(key)**（当前物品字段）、**Formula.Side(key)** / **Formula.Opp(key)**（己方/敌方阵营字段）、**Formula.Count(condition)**（双方未摧毁且满足条件的物品数）、**Formula.Constant(n)** 与 **+ / - / *** 运算符组合成表达式。求值时 BattleSimulator 构造 **FormulaContext(source, side, opp)** 实现 IFormulaContext，调用 **formula.Evaluate(ctx)** 得到固定加成。新增 Aura 只需在物品定义处写表达式，无需改 evaluator。
-- **key 与运算符**：来源物品用 `nameof(ItemTemplate.XXX)`；阵营用 **BattleSide.KeyPoison** 等常量。支持 **一元负号**（如 `-Formula.Count(...)`）与 **int * Formula**（如 `-1000 * Formula.Count(...)`），避免冗长的 `Formula.Constant(-1000) * ...`。**RatioUtil.PercentFloor(Formula, percent)** 接受 Formula 重载，用于「数值的 percent% 向下取整」类光环。
-- **克隆**：ItemDatabase、BattleSimulator BuildSide 克隆 Aura 时复制 `FixedValueFormula`（Formula? 引用）即可。
+- **能用 SourceCondition 表达的优先用 SourceCondition**：若光环「仅当提供者满足某条件时生效」且数值来自模板字段，用 **AuraDefinition.SourceCondition** + **Value = Formula.Source(Key.xxx)**。例如「若此为唯一伙伴则暴击率 +Custom_0%」为 **SourceCondition = Condition.OnlyCompanion**、**Value = Formula.Source(Key.Custom_0)**、**Percent = true**。
+- **Formula**：`AuraDefinition.Value` 类型为 **Formula?**。Formula 持有一个 `Func<IFormulaContext, int>`，通过 **Formula.Source(key)**、**Formula.Side(key)** / **Formula.Opp(key)**、**Formula.Count(condition)**、**Formula.Constant(n)** 与 **+ / - / *** 组合。求值时构造 **FormulaContext(source, side, opp)**，调用 **formula.Evaluate(ctx)**。key 用 **Key.*** 或 **BattleSide.KeyPoison** 等。支持 **一元负号**、**int * Formula**；**RatioUtil.PercentFloor(Formula, percent)** 用于百分比向下取整。
+- **克隆**：克隆 Aura 时复制 **Value**、**Percent**（Formula 引用不变）。
 
 ### 描述占位符：前缀/后缀
 
@@ -218,10 +217,9 @@
 
 ### 飞行（In Flight）
 
-- **运行时状态**：`BattleItemState.InFlight`，战斗开始为 false；由「开始飞行」「结束飞行」类效果修改。
-- **效果**：`Effect.StartFlying` 调用 `ctx.SetCasterInFlight(true)` 并 `ctx.LogEffect("开始飞行", 0, showCrit: false)`。若 `ctx.IsCasterInFlight` 已为 true 则**不**设置、不记日志（幂等）。
-- **光环条件**：`Condition.InFlight` 表示被评估对象（Item）在飞行。光环「提供者在飞行」用 **AuraDefinition.SourceCondition = Condition.InFlight**，评估时 Item=Source=提供者；如「此物品飞行时 +1 多重释放」为 Condition=SameAsSource、SourceCondition=InFlight。
-- **日志与 UI**：`EffectLogFormat.FormatEffectValue("开始飞行", value)` 返回空串，避免显示 0；`EffectKeywordFormatting` 中「飞行」与护盾同色。
+- **飞行为属性**：运行时状态存于模板字典（**Key.InFlight**）。**开始飞行** = 对己方满足目标条件且**未飞行**的物品设为飞行：**Ability.StartFlying**（等价于 `AddAttribute(Key.InFlight).Override(value: 1, additionalTargetCondition: Condition.NotInFlight)`），效果走 AddAttributeToCasterSide，内部对 Key.InFlight 设 `wi.InFlight = (value != 0)`。**结束飞行** 已改名为 **StopFlying**（**Ability.StopFlying**），目标默认己方且 **InFlight**，效果为 **SetAttributeOnCasterSide(Key.InFlight, 0, ctx.TargetCondition)**。
+- **光环条件**：`Condition.InFlight` / **Condition.NotInFlight** 表示被评估对象（Item）在/不在飞行。光环「提供者在飞行」用 **AuraDefinition.SourceCondition = Condition.InFlight**。
+- **日志与 UI**：「开始飞行」「结束飞行」日志与 **EffectKeywordFormatting** 中「飞行」与护盾同色。
 
 ### 造成暴击时（Trigger.Crit）
 
@@ -234,11 +232,11 @@
 - **原则**：游戏运行时读取任意物品字段都应包含光环上下文，避免「依赖变量的光环」漏算（如 Burn += Damage 时读 Damage 也需光环）。
 - **统一入口**：`BattleSide.GetItemInt(itemIndex, key, defaultValue)` 内部用 `new BattleAuraContext(this, Items[itemIndex])` 调用 `Items[itemIndex].Template.GetInt(key, tier, default, context)`。
 - **调用点**：BattleSimulator 步骤 7（AmmoCap、Multicast）、ProcessCooldown（CooldownMs、AmmoCap）；EffectApplyContextImpl 内 ChargeCasterItem、GetTargetIndices、ChargeItemAt、HasLifeSteal 等，凡有 (side, item) 的读属性均用 `side.GetItemInt(item.ItemIndex, ...)` 或等效。
-- **光环内部**：`BattleAuraContext.GetAuraModifiers` 中 FixedValueKey/PercentValueKey 的读取带 `new BattleAuraContext(side, source)`；`AuraFormulaEvaluator.Evaluate(formulaName, source, side, opp)` 依赖来源属性时（如 `Formula.SourceDamage`）用 `BattleAuraContext(side, source)` 读值。
+- **光环内部**：`BattleAuraContext.GetAuraModifiers` 对每条 Aura 若 **Value != null** 则 `aura.Value.Evaluate(FormulaContext)`，按 **Percent** 累加到 percentSum 或 fixedSum。
 
 ### 依赖变量的光环（Formula.Source）
 
-- **用途**：如「Burn = 0 + 自身 Damage（含光环）」：Aura 的 `AttributeName = Burn`、`FixedValueFormula = Formula.Source(nameof(ItemTemplate.Damage))`，SameAsSource。
+- **用途**：如「Burn = 0 + 自身 Damage（含光环）」：Aura 的 `AttributeName = Key.Burn`、`Value = Formula.Source(Key.Damage)`，Condition=SameAsSource。
 - **实现**：FormulaContext.GetSourceInt(key) 内部调用 `source.Template.GetInt(key, source.Tier, 0, new BattleAuraContext(side, source, opp))`，保证读 Damage 时带光环且不形成 Burn↔Burn 循环。
 
 ---
@@ -249,7 +247,7 @@
 
 - **标签**：`Core/Tag.cs` 提供 `Tag.Weapon`、`Tag.Tool`、`Tag.Apparel`、`Tag.Friend`、`Tag.Food`、`Tag.Tech` 等常量，对应「武器」「工具」「服饰」「伙伴」「食物」「科技」。物品的 `Tags = [Tag.Weapon]`、`Tags = [Tag.Friend, Tag.Tech]` 等，条件与效果处用 `Tags.Contains(Tag.Weapon)`，不再手写字符串。
 - **触发器**：`Core/Trigger.cs` 提供 `Trigger.UseItem`、`Trigger.BattleStart`。能力定义用 `TriggerName = Trigger.UseItem`；模拟器判断用 `ab.TriggerName == Trigger.BattleStart`、`ab.TriggerName != Trigger.UseItem`。
-- **属性名与 key**：AuraDefinition 的 `AttributeName`、`FixedValueKey`、`PercentValueKey` 以及 Effect 的 `ValueKey` 使用 `nameof(ItemTemplate.xxx)`，如 `nameof(ItemTemplate.CritRatePercent)`、`nameof(ItemTemplate.Custom_0)`。BattleSimulator 中 `GetInt(nameof(ItemTemplate.CritDamagePercent), ...)` 等同理，重命名属性时编译期可发现漏改。
+- **属性名与 key**：AuraDefinition 的 **AttributeName** 与能力/效果中的 key 统一使用 **Key.***（`Core/Key.cs`），如 **Key.CritRatePercent**、**Key.Custom_0**、**Key.Damage**。BattleSimulator 中 `GetInt(Key.CritDamagePercent, ...)` 等同理。
 
 ### 小结
 
@@ -299,7 +297,7 @@
 ### 暴击伤害（CritDamagePercent）
 
 - **属性**：ItemTemplate 增加 `CritDamagePercent`，默认 200（表示 2 倍暴击）。暴击时最终倍率 = `CritDamagePercent / 100`（200 → 2x，400 → 4x）。作用于伤害、灼烧、剧毒、护盾、治疗、生命再生等所有可暴击效果。
-- **光环**：利爪等「自身暴击伤害 +100%」使用 `AuraConditionKind.SameAsSource`（仅 targetItemIndex == sourceItemIndex），`AttributeName = nameof(ItemTemplate.CritDamagePercent)`，`PercentValueKey = nameof(ItemTemplate.Custom_0)`，Custom_0 = 100；公式 `(基础 + Σ固定) × (1 + Σ百分比/100)` 得 200×2=400 即 4 倍。
+- **光环**：利爪等「自身暴击伤害 +100%」使用 **AttributeName = Key.CritDamagePercent**、**Value = Formula.Source(Key.Custom_0)**、**Percent = true**，Custom_0 = 100；公式 `(基础 + Σ固定) × (1 + Σ百分比/100)` 得 200×2=400 即 4 倍。
 
 ### Desc 按分号分两行
 

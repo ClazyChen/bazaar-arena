@@ -56,18 +56,14 @@ public static class CommonMedium
             Custom_0 = [3, 5, 7, 9],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Low,
-                    Condition = Condition.DifferentFromSource & Condition.SameSide & Condition.RightOfSource,
-                    TargetCondition = Condition.RightOfSource,
-                    ApplyCritMultiplier = false,
-                    Apply = Effect.HasteApply,
-                },
+                Ability.Haste.Override(
+                    condition: Condition.RightOfSource,
+                    targetCondition: Condition.RightOfSource,
+                    priority: AbilityPriority.Low
+                ),
                 Ability.AddAttribute(Key.Damage).Override(
-                    condition: Condition.DifferentFromSource & Condition.SameSide & Condition.RightOfSource,
-                    additionalTargetCondition: Condition.RightOfSource & Condition.WithTag(Tag.Weapon),
+                    condition: Condition.RightOfSource & Condition.WithTag(Tag.Weapon),
+                    targetCondition: Condition.RightOfSource,
                     priority: AbilityPriority.Low
                 ),
             ],
@@ -195,7 +191,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "简易路障",
-            Desc = "减速 1 件物品 {SlowSeconds} 秒",
+            Desc = "减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
             Tags = [],
             Cooldown = 7.0,
             Slow = [1.0, 2.0, 3.0, 4.0],
@@ -219,9 +215,9 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    AttributeName = nameof(ItemTemplate.Damage),
+                    AttributeName = Key.Damage,
                     Condition = Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon),
-                    FixedValueKey = nameof(ItemTemplate.Custom_0),
+                    Value = Formula.Source(Key.Custom_0),
                 },
             ],
         };
@@ -239,13 +235,9 @@ public static class CommonMedium
             Heal = [30, 60, 120, 240],
             Abilities =
             [
-                new()
-                {
-                    TriggerName = Trigger.UseItem,
-                    Priority = AbilityPriority.Lowest,
-                    ApplyCritMultiplier = false,
-                    Apply = Effect.RepairApply,
-                },
+                Ability.Repair.Override(
+                    priority: AbilityPriority.Lowest
+                ),
                 Ability.Heal,
             ],
         };

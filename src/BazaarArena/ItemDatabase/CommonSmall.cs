@@ -144,9 +144,9 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = nameof(ItemTemplate.CritRatePercent),
+                    AttributeName = Key.CritRatePercent,
                     Condition = Condition.AdjacentToSource,
-                    FixedValueKey = nameof(ItemTemplate.Custom_0),
+                    Value = Formula.Source(Key.Custom_0),
                 },
             ],
         };
@@ -162,7 +162,6 @@ public static class CommonSmall
             Tags = [Tag.Weapon],
             Cooldown = 4.0,
             Damage = [10, 20, 30, 40],
-            Custom_0 = 100,
             Abilities =
             [
                 Ability.Damage,
@@ -171,8 +170,9 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = nameof(ItemTemplate.CritDamagePercent),
-                    PercentValueKey = nameof(ItemTemplate.Custom_0),
+                    AttributeName = Key.CritDamagePercent,
+                    Value = Formula.Constant(100),
+                    Percent = true,
                 },
             ],
         };
@@ -201,7 +201,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "冰锥",
-            Desc = "每场战斗开始时，冻结一件物品 {FreezeSeconds} 秒",
+            Desc = "战斗开始时，冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒",
             Tags = [],
             Freeze = [3.0, 4.0, 5.0, 6.0],
             Abilities =
@@ -276,8 +276,8 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = nameof(ItemTemplate.Heal),
-                    FixedValueFormula = Formula.Opp(BattleSide.KeyPoison),
+                    AttributeName = Key.Heal,
+                    Value = Formula.Opp(BattleSide.KeyPoison),
                 },
             ],
         };
@@ -313,13 +313,13 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "神经毒素",
-            Desc = "使用相邻武器时，减速 1 件物品 {SlowSeconds} 秒",
+            Desc = "使用相邻武器时，减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
             Tags = [],
             Slow = [1.0, 2.0, 3.0],
             Abilities =
             [
                 Ability.Slow.Override(
-                    additionalCondition: Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon)
+                    condition: Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon)
                 ),
             ],
         };
@@ -343,7 +343,7 @@ public static class CommonSmall
                     priority: AbilityPriority.High
                 ),
                 Ability.Charge.Override(
-                    additionalCondition: Condition.WithTag(Tag.Weapon),
+                    condition: Condition.SameSide & Condition.WithTag(Tag.Weapon),
                     targetCondition: Condition.SameAsSource
                 ),
             ],
@@ -356,7 +356,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "宇宙护符",
-            Desc = "加速一件物品 {HasteSeconds} 秒；造成暴击时，此物品开始飞行；此物品飞行时，+1 多重释放",
+            Desc = "加速 {HasteTargetCount} 件物品 {HasteSeconds} 秒；造成暴击时，此物品开始飞行；此物品飞行时，{+Custom_0} 多重释放",
             Tags = [Tag.Relic],
             Cooldown = 5.0,
             Haste = [1.0, 2.0, 3.0],
@@ -373,9 +373,9 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = nameof(ItemTemplate.Multicast),
+                    AttributeName = Key.Multicast,
                     SourceCondition = Condition.InFlight,
-                    FixedValueKey = nameof(ItemTemplate.Custom_0),
+                    Value = Formula.Source(Key.Custom_0),
                 },
             ],
         };
@@ -402,8 +402,8 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = nameof(ItemTemplate.Burn),
-                    FixedValueFormula = Formula.Source(nameof(ItemTemplate.Damage)),
+                    AttributeName = Key.Burn,
+                    Value = Formula.Source(Key.Damage),
                 },
             ],
         };
@@ -426,7 +426,7 @@ public static class CommonSmall
                     priority: AbilityPriority.Low
                 ),
                 Ability.Charge.Override(
-                    additionalCondition: Condition.WithTag(Tag.Tool),
+                    condition: Condition.SameSide & Condition.WithTag(Tag.Tool),
                     targetCondition: Condition.SameAsSource
                 ),
             ],
@@ -451,13 +451,13 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = nameof(ItemTemplate.Damage),
-                    FixedValueFormula = Formula.Source(nameof(ItemTemplate.Custom_0)) * Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Friend)),
+                    AttributeName = Key.Damage,
+                    Value = Formula.Source(Key.Custom_0) * Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Friend)),
                 },
                 new AuraDefinition
                 {
-                    AttributeName = nameof(ItemTemplate.CooldownMs),
-                    FixedValueFormula = -1000 * Formula.Count(Condition.AdjacentToSource & Condition.WithTag(Tag.Friend)),
+                    AttributeName = Key.CooldownMs,
+                    Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToSource & Condition.WithTag(Tag.Friend)),
                 },
             ],
         };
@@ -518,9 +518,9 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = nameof(ItemTemplate.CritRatePercent),
+                    AttributeName = Key.CritRatePercent,
                     SourceCondition = Condition.OnlyCompanion,
-                    FixedValueKey = nameof(ItemTemplate.Custom_0),
+                    Value = Formula.Source(Key.Custom_0),
                 },
             ],
         };

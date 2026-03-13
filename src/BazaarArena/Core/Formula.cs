@@ -23,7 +23,7 @@ public class Formula
     /// <summary>求值。</summary>
     public int Evaluate(IFormulaContext ctx) => _evaluate(ctx);
 
-    /// <summary>当前物品字段 key 的值（nameof(ItemTemplate.XXX)）。</summary>
+    /// <summary>当前物品字段 key 的值（如 Key.Damage、Key.Custom_0）。</summary>
     public static Formula Source(string key) => new(ctx => ctx.GetSourceInt(key));
     /// <summary>己方阵营字段（如 BattleSide.KeyPoison）。</summary>
     public static Formula Side(string key) => new(ctx => ctx.GetSideInt(key));

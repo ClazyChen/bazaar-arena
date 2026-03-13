@@ -20,7 +20,7 @@ public interface IEffectApplyContext
     /// <summary>施放者物品（能力持有者）；槽位等可用 CasterItem.ItemIndex / CasterItem.SideIndex。</summary>
     BattleItemState CasterItem { get; }
 
-    /// <summary>从施放者物品模板按 key 取值（缺省时用 defaultValue），若 applyCritMultiplier 则乘暴击倍率。用于数值与目标数等，key 建议用 nameof(ItemTemplate.XXX)。</summary>
+    /// <summary>从施放者物品模板按 key 取值（缺省时用 defaultValue），若 applyCritMultiplier 则乘暴击倍率。用于数值与目标数等，key 建议用 Key.Damage、Key.Shield 等。</summary>
     int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0);
 
     /// <summary>当前能力的目标选择条件（用于冻结/减速/充能/加速/摧毁等多目标效果）；由模拟器从 AbilityDefinition.TargetCondition 注入。</summary>
@@ -65,8 +65,11 @@ public interface IEffectApplyContext
     /// <summary>修复已摧毁物品：目标由 targetCondition 与已摧毁组合（null 时默认己方）；不放回随机选取至多 targetCount 个，将其设为未摧毁并重置冷却已过时间。</summary>
     void ApplyRepair(int targetCount, Condition? targetCondition = null);
 
-    /// <summary>对己方满足 targetCondition 的物品增加指定属性（限本场战斗）。attributeName 为模板属性名（如 Damage、Poison），value 为增加量；目标由 targetCondition 筛选（Source=施放者）。</summary>
+    /// <summary>对己方满足 targetCondition 的物品增加指定属性（限本场战斗）。attributeName 为模板属性名（如 Damage、Poison、Key.InFlight），value 为增加量；目标由 targetCondition 筛选（Source=施放者）。InFlight 时设为 value != 0。</summary>
     void AddAttributeToCasterSide(string attributeName, int value, Condition? targetCondition);
+
+    /// <summary>对己方满足 targetCondition 的物品将指定属性设为 value（限本场战斗）。用于 StopFlying（Key.InFlight, 0）等。目标由 targetCondition 筛选（Source=施放者）。</summary>
+    void SetAttributeOnCasterSide(string attributeName, int value, Condition? targetCondition);
 
     /// <summary>对敌方满足 targetCondition 的物品减少指定属性（限本场战斗，不低于 0）。attributeName 为模板属性名（如 Shield），value 为减少量；目标由 targetCondition 筛选（Source=施放者），可用 Condition.WithTag(Tag.Shield) 等。</summary>
     void ReduceAttributeToOpponentSide(string attributeName, int value, Condition? targetCondition);

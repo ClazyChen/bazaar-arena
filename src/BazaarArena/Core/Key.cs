@@ -3,10 +3,41 @@ namespace BazaarArena.Core;
 /// <summary>物品模板字段名常量，与 ItemTemplate 属性一致，供能力/物品定义与 GetInt(key)、GetResolvedValue(key) 使用。</summary>
 public static class Key
 {
+    // 数值/类型属性
     public const string Damage = nameof(ItemTemplate.Damage);
     public const string Shield = nameof(ItemTemplate.Shield);
     public const string Heal = nameof(ItemTemplate.Heal);
     public const string Burn = nameof(ItemTemplate.Burn);
     public const string Poison = nameof(ItemTemplate.Poison);
     public const string Custom_0 = nameof(ItemTemplate.Custom_0);
+
+    // 冷却与暴击
+    public const string CooldownMs = nameof(ItemTemplate.CooldownMs);
+    public const string CritRatePercent = nameof(ItemTemplate.CritRatePercent);
+    public const string CritDamagePercent = nameof(ItemTemplate.CritDamagePercent);
+
+    // 施放与弹药
+    public const string Multicast = nameof(ItemTemplate.Multicast);
+    public const string AmmoCap = nameof(ItemTemplate.AmmoCap);
+
+    // 充能 / 冻结 / 减速 / 加速
+    public const string Charge = nameof(ItemTemplate.Charge);
+    public const string ChargeTargetCount = nameof(ItemTemplate.ChargeTargetCount);
+    public const string Freeze = nameof(ItemTemplate.Freeze);
+    public const string FreezeTargetCount = nameof(ItemTemplate.FreezeTargetCount);
+    public const string Slow = nameof(ItemTemplate.Slow);
+    public const string SlowTargetCount = nameof(ItemTemplate.SlowTargetCount);
+    public const string Haste = nameof(ItemTemplate.Haste);
+    public const string HasteTargetCount = nameof(ItemTemplate.HasteTargetCount);
+
+    // 修复 / 摧毁 / 吸血等
+    public const string RepairTargetCount = nameof(ItemTemplate.RepairTargetCount);
+    public const string DestroyTargetCount = nameof(ItemTemplate.DestroyTargetCount);
+    public const string LifeSteal = nameof(ItemTemplate.LifeSteal);
+
+    // 其他
+    public const string StashParameter = nameof(ItemTemplate.StashParameter);
+
+    /// <summary>运行时飞行状态（与 ItemTemplate.KeyInFlight 一致）。</summary>
+    public const string InFlight = "InFlight";
 }

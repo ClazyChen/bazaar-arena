@@ -22,7 +22,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public Action<int>? OnDestroyApplied { get; init; }
 
     public BattleItemState CasterItem => Item;
-    public bool HasLifeSteal => Side.GetItemInt(Item.ItemIndex, nameof(ItemTemplate.LifeSteal), 0) != 0;
+    public bool HasLifeSteal => Side.GetItemInt(Item.ItemIndex, Key.LifeSteal, 0) != 0;
     public bool IsCasterInFlight => Item.InFlight;
 
     public int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0)
@@ -184,22 +184,57 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
                 Source = Item,
             };
             if (!targetCondition.Evaluate(ctx)) continue;
-            if (attributeName == nameof(ItemTemplate.Damage))
+            if (attributeName == Key.Damage)
             {
                 wi.Template.Damage = wi.Template.Damage.Add(value);
                 targetNames.Add(wi.Template.Name);
             }
-            else if (attributeName == nameof(ItemTemplate.Poison))
+            else if (attributeName == Key.Poison)
             {
                 wi.Template.Poison = wi.Template.Poison.Add(value);
+                targetNames.Add(wi.Template.Name);
+            }
+            else if (attributeName == Key.InFlight)
+            {
+                wi.InFlight = value != 0;
                 targetNames.Add(wi.Template.Name);
             }
         }
         if (targetNames.Count > 0)
         {
-            string logName = attributeName == nameof(ItemTemplate.Damage) ? "伤害提高" : attributeName == nameof(ItemTemplate.Poison) ? "剧毒提高" : "属性提高";
+            string logName = attributeName == Key.Damage ? "伤害提高" : attributeName == Key.Poison ? "剧毒提高" : attributeName == Key.InFlight ? "开始飞行" : "属性提高";
             string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
             LogEffect(logName, value, extraSuffix, showCrit: false);
+        }
+    }
+
+    public void SetAttributeOnCasterSide(string attributeName, int value, Condition? targetCondition)
+    {
+        if (targetCondition == null) return;
+        var targetNames = new List<string>();
+        for (int i = 0; i < Side.Items.Count; i++)
+        {
+            var wi = Side.Items[i];
+            if (wi.Destroyed) continue;
+            var ctx = new ConditionContext
+            {
+                MySide = Side,
+                EnemySide = Opp,
+                Item = wi,
+                Source = Item,
+            };
+            if (!targetCondition.Evaluate(ctx)) continue;
+            if (attributeName == Key.InFlight)
+            {
+                wi.InFlight = value != 0;
+                targetNames.Add(wi.Template.Name);
+            }
+        }
+        if (targetNames.Count > 0)
+        {
+            string logName = attributeName == Key.InFlight && value == 0 ? "结束飞行" : "属性变更";
+            string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
+            LogEffect(logName, 0, extraSuffix, showCrit: false);
         }
     }
 
@@ -219,17 +254,17 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
                 Source = Item,
             };
             if (!targetCondition.Evaluate(ctx)) continue;
-            if (attributeName == nameof(ItemTemplate.Shield))
+            if (attributeName == Key.Shield)
             {
-                int current = wi.Template.GetInt(nameof(ItemTemplate.Shield), wi.Tier, 0);
+                int current = wi.Template.GetInt(Key.Shield, wi.Tier, 0);
                 int newVal = Math.Max(0, current - value);
-                wi.Template.SetInt(nameof(ItemTemplate.Shield), newVal);
+                wi.Template.SetInt(Key.Shield, newVal);
                 targetNames.Add(wi.Template.Name);
             }
         }
         if (targetNames.Count > 0)
         {
-            string logName = attributeName == nameof(ItemTemplate.Shield) ? "护盾降低" : "属性降低";
+            string logName = attributeName == Key.Shield ? "护盾降低" : "属性降低";
             string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
             LogEffect(logName, value, extraSuffix, showCrit: false);
         }

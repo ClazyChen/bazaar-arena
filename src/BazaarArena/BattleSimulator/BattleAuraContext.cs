@@ -35,12 +35,14 @@ internal sealed class BattleAuraContext(BattleSide side, BattleItemState targetI
                     };
                     if (!aura.SourceCondition.Evaluate(sourceOnlyCtx)) continue;
                 }
-                if (aura.FixedValueFormula != null)
-                    fixedSum += aura.FixedValueFormula.Evaluate(new FormulaContext(source, side, opp));
-                else if (!string.IsNullOrEmpty(aura.FixedValueKey))
-                    fixedSum += source.Template.GetInt(aura.FixedValueKey, source.Tier, 0, new BattleAuraContext(side, source));
-                if (!string.IsNullOrEmpty(aura.PercentValueKey))
-                    percentSum += source.Template.GetInt(aura.PercentValueKey, source.Tier, 0, new BattleAuraContext(side, source));
+                if (aura.Value != null)
+                {
+                    int v = aura.Value.Evaluate(new FormulaContext(source, side, opp));
+                    if (aura.Percent)
+                        percentSum += v;
+                    else
+                        fixedSum += v;
+                }
             }
         }
     }

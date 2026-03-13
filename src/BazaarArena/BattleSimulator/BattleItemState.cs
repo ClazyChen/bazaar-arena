@@ -33,7 +33,7 @@ public class BattleItemState
     {
         Template = template;
         template.SetInt(ItemTemplate.KeyTier, (int)tier);
-        template.SetInt(ItemTemplate.KeyAmmoRemaining, template.GetInt(nameof(ItemTemplate.AmmoCap), tier));
+        template.SetInt(ItemTemplate.KeyAmmoRemaining, template.GetInt(Key.AmmoCap, tier));
         for (int i = 0; i < template.Abilities.Count; i++)
             template.SetInt(ItemTemplate.KeyLastTriggerMsPrefix + i, -1000);
     }

@@ -120,11 +120,11 @@ public class BattleSimulator
                 foreach (var item in toProcess)
                 {
                     var side = item.SideIndex == 0 ? side0 : side1;
-                    int ammoCap = side.GetItemInt(item.ItemIndex, nameof(ItemTemplate.AmmoCap), 0);
+                    int ammoCap = side.GetItemInt(item.ItemIndex, Key.AmmoCap, 0);
                     if (ammoCap > 0)
                         item.AmmoRemaining--;
                     logSink.OnCast(item, item.Template.Name, timeMs, ammoCap > 0 ? item.AmmoRemaining : null);
-                    int multicast = side.GetItemInt(item.ItemIndex, nameof(ItemTemplate.Multicast), 1);
+                    int multicast = side.GetItemInt(item.ItemIndex, Key.Multicast, 1);
                     InvokeTrigger(Trigger.UseItem, item, new TriggerInvokeContext { Multicast = multicast, UsedTemplate = item.Template }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
                 }
 
@@ -157,11 +157,11 @@ public class BattleSimulator
                     bool isCrit = false;
                     int critDamagePercent = 200;
                     var auraContext = new BattleAuraContext(side, item, opp);
-                    int critRate = item.Template.GetInt(nameof(ItemTemplate.CritRatePercent), item.Tier, 0, auraContext);
+                    int critRate = item.Template.GetInt(Key.CritRatePercent, item.Tier, 0, auraContext);
                     if (canCrit && critRate > 0 && Random.Shared.Next(100) < critRate)
                     {
                         isCrit = true;
-                        critDamagePercent = item.Template.GetInt(nameof(ItemTemplate.CritDamagePercent), item.Tier, 200, auraContext);
+                        critDamagePercent = item.Template.GetInt(Key.CritDamagePercent, item.Tier, 200, auraContext);
                     }
                     ExecuteOneEffect(item, ability, isCrit, critDamagePercent, side0, side1, timeMs, logSink, castQueue, currentAbilityQueue, nextAbilityQueue);
                     entry.PendingCount--;
@@ -249,7 +249,7 @@ public class BattleSimulator
                     ApplyCritMultiplier = a.ApplyCritMultiplier,
                     Apply = a.Apply,
                 }).ToList(),
-                Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey, FixedValueFormula = a.FixedValueFormula }).ToList(),
+                Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), Value = a.Value, Percent = a.Percent }).ToList(),
             };
             clone.SetIntsByTier(t.GetIntsByTierSnapshot());
             if (entry.Overrides != null)

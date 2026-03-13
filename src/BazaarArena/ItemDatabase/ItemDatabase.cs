@@ -36,11 +36,11 @@ public class ItemDatabase : IItemTemplateResolver
         else if (template.Size == ItemSize.Medium) TryAddTag(template, Tag.Medium);
         else if (template.Size == ItemSize.Large) TryAddTag(template, Tag.Large);
 
-        if (HasAnyTierPositive(template, nameof(ItemTemplate.Damage))) TryAddTag(template, Tag.Damage);
-        if (HasAnyTierPositive(template, nameof(ItemTemplate.Burn))) TryAddTag(template, Tag.Burn);
-        if (HasAnyTierPositive(template, nameof(ItemTemplate.Poison))) TryAddTag(template, Tag.Poison);
-        if (HasAnyTierPositive(template, nameof(ItemTemplate.Heal))) TryAddTag(template, Tag.Heal);
-        if (HasAnyTierPositive(template, nameof(ItemTemplate.Shield))) TryAddTag(template, Tag.Shield);
+        if (HasAnyTierPositive(template, Key.Damage)) TryAddTag(template, Tag.Damage);
+        if (HasAnyTierPositive(template, Key.Burn)) TryAddTag(template, Tag.Burn);
+        if (HasAnyTierPositive(template, Key.Poison)) TryAddTag(template, Tag.Poison);
+        if (HasAnyTierPositive(template, Key.Heal)) TryAddTag(template, Tag.Heal);
+        if (HasAnyTierPositive(template, Key.Shield)) TryAddTag(template, Tag.Shield);
         if (HasAnyTierPositive(template, "Regen")) TryAddTag(template, Tag.Regen);
 
         foreach (var aura in template.Auras ?? [])
@@ -56,11 +56,11 @@ public class ItemDatabase : IItemTemplateResolver
     {
         return attributeName switch
         {
-            nameof(ItemTemplate.Damage) => Tag.Damage,
-            nameof(ItemTemplate.Burn) => Tag.Burn,
-            nameof(ItemTemplate.Poison) => Tag.Poison,
-            nameof(ItemTemplate.Heal) => Tag.Heal,
-            nameof(ItemTemplate.Shield) => Tag.Shield,
+            Key.Damage => Tag.Damage,
+            Key.Burn => Tag.Burn,
+            Key.Poison => Tag.Poison,
+            Key.Heal => Tag.Heal,
+            Key.Shield => Tag.Shield,
             "Regen" => Tag.Regen,
             _ => null,
         };
@@ -108,7 +108,7 @@ public class ItemDatabase : IItemTemplateResolver
                 ApplyCritMultiplier = a.ApplyCritMultiplier,
                 Apply = a.Apply,
             })],
-            Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), FixedValueKey = a.FixedValueKey, PercentValueKey = a.PercentValueKey, FixedValueFormula = a.FixedValueFormula }).ToList(),
+            Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), Value = a.Value, Percent = a.Percent }).ToList(),
             OverridableAttributes = t.OverridableAttributes != null ? new Dictionary<string, IntOrByTier>(t.OverridableAttributes) : null,
         };
         clone.SetIntsByTier(t.GetIntsByTierSnapshot());

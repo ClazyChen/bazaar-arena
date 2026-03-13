@@ -28,6 +28,8 @@ globs: "**/ItemDatabase/**","**/Core/Ability*.cs"
 
 ## 示例
 
+「使用工具时为此物品充能」等「当其他某类物品被使用」须用 **condition: Condition.SameSide & Condition.WithTag(Tag.xxx)**，不能用 additionalCondition。
+
 ```csharp
 Ability.AddAttribute(Key.Damage).Override(
     trigger: Trigger.Freeze,
@@ -35,7 +37,7 @@ Ability.AddAttribute(Key.Damage).Override(
     priority: AbilityPriority.Low
 ),
 Ability.Charge.Override(
-    additionalCondition: Condition.WithTag(Tag.Tool),
+    condition: Condition.SameSide & Condition.WithTag(Tag.Tool),
     targetCondition: Condition.SameAsSource
 ),
 Ability.Damage.Override(

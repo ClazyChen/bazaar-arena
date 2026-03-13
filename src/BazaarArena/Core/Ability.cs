@@ -105,24 +105,18 @@ public static class Ability
         TargetCondition = WithCooldownTarget(Condition.DifferentSide),
     };
 
-    /// <summary>开始飞行（Effect.StartFlyingApply）。默认触发器 UseItem；定制用 .Override(...)。</summary>
-    public static AbilityDefinition StartFlying => new()
-    {
-        TriggerName = Trigger.UseItem,
-        Condition = Condition.SameAsSource,
-        ApplyCritMultiplier = false,
-        Apply = Effect.StartFlyingApply,
-        Priority = AbilityPriority.Medium,
-    };
+    /// <summary>开始飞行：对己方满足目标条件且未飞行的物品设为飞行（等价于 AddAttribute(Key.InFlight) 设 1）。默认 additionalTargetCondition 为 NotInFlight；定制用 .Override(...)。</summary>
+    public static AbilityDefinition StartFlying => AddAttribute(Key.InFlight).Override(value: 1, additionalTargetCondition: Condition.NotInFlight);
 
-    /// <summary>结束飞行（Effect.EndFlyingApply）。默认触发器 UseItem；定制用 .Override(...)。</summary>
-    public static AbilityDefinition EndFlying => new()
+    /// <summary>结束飞行（Effect.StopFlyingApply）。默认触发器 UseItem；目标默认己方且处于飞行状态；定制用 .Override(...)。</summary>
+    public static AbilityDefinition StopFlying => new()
     {
         TriggerName = Trigger.UseItem,
         Condition = Condition.SameAsSource,
         ApplyCritMultiplier = false,
-        Apply = Effect.EndFlyingApply,
+        Apply = Effect.StopFlyingApply,
         Priority = AbilityPriority.Medium,
+        TargetCondition = Condition.SameSide & Condition.InFlight,
     };
 
     /// <summary>摧毁（Effect.DestroyApply）。默认触发器 UseItem；目标默认己方、未摧毁；定制用 .Override(...)。</summary>
@@ -134,6 +128,17 @@ public static class Ability
         Apply = Effect.DestroyApply,
         Priority = AbilityPriority.Medium,
         TargetCondition = WithNotDestroyedTarget(Condition.SameSide),
+    };
+
+    /// <summary>修复（Effect.RepairApply）。默认触发器 UseItem；目标默认己方（实现内与 Condition.Destroyed 组合）；定制用 .Override(...)。</summary>
+    public static AbilityDefinition Repair => new()
+    {
+        TriggerName = Trigger.UseItem,
+        Condition = Condition.SameAsSource,
+        ApplyCritMultiplier = false,
+        Apply = Effect.RepairApply,
+        Priority = AbilityPriority.Medium,
+        TargetCondition = Condition.SameSide,
     };
 
     /// <summary>对己方满足目标条件的物品增加指定属性（限本场战斗）。attributeName 如 Key.Damage、Key.Poison；amountKey 默认 Key.Custom_0。目标默认己方；定制用 .Override(...)。</summary>

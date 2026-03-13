@@ -13,7 +13,7 @@ public static class ItemDescHelper
     /// <summary>大括号内：可选前缀(非字母数字下划线) + key(字母数字下划线) + 可选后缀(非字母数字下划线)。</summary>
     private static readonly Regex PlaceholderRegex = new(@"\{([^a-zA-Z0-9_]*)([a-zA-Z0-9_]+)([^a-zA-Z0-9_]*)\}", RegexOptions.Compiled);
 
-    /// <summary>描述中可用 {Cooldown} 表示冷却秒数，实际读 CooldownMs；{ChargeSeconds} 表示充能秒数，实际读 Charge（毫秒）；{FreezeSeconds} 表示冻结秒数，实际读 Freeze（毫秒）；{SlowSeconds} 表示减速秒数，实际读 Slow（毫秒）；{HasteSeconds} 表示加速秒数，实际读 Haste（毫秒）。</summary>
+    /// <summary>描述中可用 {Cooldown} 表示冷却秒数，实际读 CooldownMs；{ChargeSeconds} 表示充能秒数，实际读 Charge（毫秒）；{FreezeSeconds}、{SlowSeconds}、{HasteSeconds} 表示冻结/减速/加速秒数。仅当能力为默认选取目标时，描述采用「X {XTargetCount} 件物品 {XSeconds} 秒」形式；有确定目标（如相邻、右侧）时保留如「加速相邻物品 {HasteSeconds} 秒」等写法。</summary>
     private static string ResolveKey(string key) => key switch
     {
         "Cooldown" => "CooldownMs",

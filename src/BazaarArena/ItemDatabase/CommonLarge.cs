@@ -87,7 +87,7 @@ public static class CommonLarge
             Custom_0 = [15, 30, 60, 100],
             StashParameter = [1, 2, 3, 4],
             OverridableAttributes = new Dictionary<string, IntOrByTier> { 
-                [nameof(ItemTemplate.StashParameter)] = [1, 2, 3, 4] 
+                [Key.StashParameter] = [1, 2, 3, 4] 
             },
             Abilities =
             [
@@ -97,8 +97,8 @@ public static class CommonLarge
             [
                 new AuraDefinition
                 {
-                    AttributeName = nameof(ItemTemplate.Damage),
-                    FixedValueFormula = Formula.Source(nameof(ItemTemplate.Custom_0)) * (Formula.Source(nameof(ItemTemplate.StashParameter)) + Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Small))),
+                    AttributeName = Key.Damage,
+                    Value = Formula.Source(Key.Custom_0) * (Formula.Source(Key.StashParameter) + Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Small))),
                 },
             ],
         };

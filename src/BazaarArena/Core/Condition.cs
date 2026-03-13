@@ -88,6 +88,9 @@ public class Condition
     /// <summary>被评估对象（Item）处于飞行状态；Item 为 null 时为 false。</summary>
     public static Condition InFlight { get; } = new(ctx => ctx.Item != null && ctx.Item.InFlight);
 
+    /// <summary>被评估对象（Item）未处于飞行状态；Item 为 null 时为 false。用于 StartFlying 的 additionalTargetCondition。</summary>
+    public static Condition NotInFlight { get; } = new(ctx => ctx.Item != null && !ctx.Item.InFlight);
+
     /// <summary>被评估对象未摧毁；Item 为 null 时为 false。用于目标选取（充能/冻结/减速/加速等）。</summary>
     public static Condition NotDestroyed { get; } = new(ctx => ctx.Item != null && !ctx.Item.Destroyed);
 
