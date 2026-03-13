@@ -1,0 +1,64 @@
+{
+  "version": "1.0",
+  "decks": [
+    { "id": "ss_ectoplasm_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "灵质", "tier": 1 }] } },
+    { "id": "ss_ectoplasm_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "驯化蜘蛛", "tier": 0 }] } },
+
+    { "id": "ss_forgotten_god_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "失落神祇", "tier": 1 },
+      { "itemName": "神经毒素", "tier": 1 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "ss_forgotten_god_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ss_neural_toxin_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "神经毒素", "tier": 1 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "ss_neural_toxin_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ss_broken_shackles_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "断裂镣铐", "tier": 1 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "ss_broken_shackles_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ss_cosmic_amulet_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "宇宙护符", "tier": 1 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "ss_cosmic_amulet_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ss_dragon_whelp_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "巨龙崽崽", "tier": 1 }] } },
+    { "id": "ss_dragon_whelp_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ss_nanobot_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "纳米机器人", "tier": 1 },
+      { "itemName": "驯化蜘蛛", "tier": 0 },
+      { "itemName": "姜饼人", "tier": 0 }
+    ] } },
+    { "id": "ss_nanobot_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ss_busy_bee_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "工蜂", "tier": 1 }] } },
+    { "id": "ss_busy_bee_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ss_proboscis_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "神经毒素", "tier": 1 },
+      { "itemName": "獠牙", "tier": 0 },
+      { "itemName": "口器", "tier": 1 }
+    ] } },
+    { "id": "ss_proboscis_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ss_friendly_doll_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "友好玩偶", "tier": 1 }
+    ] } },
+    { "id": "ss_friendly_doll_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ss_tractor_beam_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "牵引光束", "tier": 1 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "ss_tractor_beam_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+  ]
+}
+
