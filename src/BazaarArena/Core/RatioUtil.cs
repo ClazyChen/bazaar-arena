@@ -21,4 +21,8 @@ public static class RatioUtil
     /// <summary>对公式求值结果再按 percent% 向下取整，返回新公式（用于光环等）。</summary>
     public static Formula PercentFloor(Formula valueFormula, int percent) =>
         Formula.Apply(valueFormula, v => PercentFloor(v, percent));
+
+    /// <summary>对 valueFormula 求值结果按 percentFormula 求值得到的百分比向下取整，返回新公式（percent 可来自字段或公式）。</summary>
+    public static Formula PercentFloor(Formula valueFormula, Formula percentFormula) =>
+        Formula.Apply(valueFormula, percentFormula, PercentFloor);
 }

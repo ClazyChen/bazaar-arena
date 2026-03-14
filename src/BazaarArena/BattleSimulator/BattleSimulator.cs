@@ -401,6 +401,7 @@ public class BattleSimulator
         BattleSide side0, BattleSide side1, List<AbilityQueueEntry> current, List<AbilityQueueEntry> next)
     {
         int pendingCount = (triggerName == Trigger.UseItem || triggerName == Trigger.Freeze || triggerName == Trigger.Slow || triggerName == Trigger.Haste || triggerName == Trigger.Burn || triggerName == Trigger.Poison) && context?.Multicast is int m ? m : 1;
+        Func<BattleItemState, IReadOnlySet<string>> getEffectiveTags = item => EffectiveTagHelper.GetEffectiveTags(side0, side1, item);
 
         foreach (var (ownerSideIndex, ownerSide) in new[] { (0, side0), (1, side1) })
         {
@@ -423,6 +424,7 @@ public class BattleSimulator
                                 EnemySide = enemySide,
                                 Item = causeItem,
                                 Source = abilityOwner,
+                                GetEffectiveTagsForItem = getEffectiveTags,
                             };
                             if (ab.Condition != null && !ab.Condition.Evaluate(conditionCtx)) continue;
                             if (ab.SourceCondition != null)
@@ -433,6 +435,7 @@ public class BattleSimulator
                                     EnemySide = enemySide,
                                     Item = abilityOwner,
                                     Source = abilityOwner,
+                                    GetEffectiveTagsForItem = getEffectiveTags,
                                 };
                                 if (!ab.SourceCondition.Evaluate(sourceConditionCtx)) continue;
                             }
@@ -444,6 +447,7 @@ public class BattleSimulator
                                     EnemySide = enemySide,
                                     Item = invokeTargetItem0,
                                     Source = abilityOwner,
+                                    GetEffectiveTagsForItem = getEffectiveTags,
                                 };
                                 if (!ab.InvokeTargetCondition.Evaluate(invokeTargetCtx)) continue;
                             }
@@ -461,6 +465,7 @@ public class BattleSimulator
                                 EnemySide = enemySide,
                                 Item = causeItem,
                                 Source = abilityOwner,
+                                GetEffectiveTagsForItem = getEffectiveTags,
                             };
                             if (entry.Condition != null && !entry.Condition.Evaluate(conditionCtx)) continue;
                             if (entry.SourceCondition != null)
@@ -471,6 +476,7 @@ public class BattleSimulator
                                     EnemySide = enemySide,
                                     Item = abilityOwner,
                                     Source = abilityOwner,
+                                    GetEffectiveTagsForItem = getEffectiveTags,
                                 };
                                 if (!entry.SourceCondition.Evaluate(sourceConditionCtx)) continue;
                             }
@@ -482,6 +488,7 @@ public class BattleSimulator
                                     EnemySide = enemySide,
                                     Item = invokeTargetItem,
                                     Source = abilityOwner,
+                                    GetEffectiveTagsForItem = getEffectiveTags,
                                 };
                                 if (!entry.InvokeTargetCondition.Evaluate(invokeTargetCtx)) continue;
                             }

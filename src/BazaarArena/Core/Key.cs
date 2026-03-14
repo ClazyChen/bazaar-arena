@@ -32,6 +32,8 @@ public static class Key
     public const string FreezeRemainingMs = "FreezeRemainingMs";
     /// <summary>冻结时长减免百分比（0–100）；施加冻结时有效时长 = 原始时长 × (100 - 此值) / 100。默认 0。</summary>
     public const string PercentFreezeReduction = nameof(ItemTemplate.PercentFreezeReduction);
+    /// <summary>冷却时间缩短百分比（0–100）；由光环提供，有效冷却 = 原冷却 × (100 - 此值) / 100，至少 1 秒。</summary>
+    public const string PercentCooldownReduction = "PercentCooldownReduction";
     public const string Slow = nameof(ItemTemplate.Slow);
     public const string SlowTargetCount = nameof(ItemTemplate.SlowTargetCount);
     public const string Haste = nameof(ItemTemplate.Haste);

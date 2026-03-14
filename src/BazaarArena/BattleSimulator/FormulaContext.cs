@@ -41,10 +41,11 @@ internal sealed class FormulaContext(BattleItemState source, BattleSide side, Ba
     {
         if (condition == null) return 0;
         int n = 0;
+        Func<BattleItemState, IReadOnlySet<string>> getTags = item => EffectiveTagHelper.GetEffectiveTags(side, opp ?? side, item);
         foreach (var item in side.Items)
         {
             if (item.Destroyed) continue;
-            var ctx = new ConditionContext { MySide = side, EnemySide = opp ?? side, Item = item, Source = source };
+            var ctx = new ConditionContext { MySide = side, EnemySide = opp ?? side, Item = item, Source = source, GetEffectiveTagsForItem = getTags };
             if (condition.Evaluate(ctx)) n++;
         }
         if (opp != null)
@@ -52,7 +53,7 @@ internal sealed class FormulaContext(BattleItemState source, BattleSide side, Ba
             foreach (var item in opp.Items)
             {
                 if (item.Destroyed) continue;
-                var ctx = new ConditionContext { MySide = opp, EnemySide = side, Item = item, Source = source };
+                var ctx = new ConditionContext { MySide = opp, EnemySide = side, Item = item, Source = source, GetEffectiveTagsForItem = getTags };
                 if (condition.Evaluate(ctx)) n++;
             }
         }

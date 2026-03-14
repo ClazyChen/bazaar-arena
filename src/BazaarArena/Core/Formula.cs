@@ -51,6 +51,9 @@ public class Formula
     /// <summary>对公式结果做变换，用于如 RatioUtil.PercentFloor(formula, percent)。</summary>
     public static Formula Apply(Formula f, Func<int, int> transform) => new(ctx => transform(f.Evaluate(ctx)));
 
+    /// <summary>对两个公式求值后合并，用于如 RatioUtil.PercentFloor(valueFormula, percentFormula)（percent 来自字段或公式）。</summary>
+    public static Formula Apply(Formula a, Formula b, Func<int, int, int> combine) => new(ctx => combine(a.Evaluate(ctx), b.Evaluate(ctx)));
+
     public static Formula operator +(Formula a, Formula b) => new(ctx => a.Evaluate(ctx) + b.Evaluate(ctx));
     public static Formula operator -(Formula a, Formula b) => new(ctx => a.Evaluate(ctx) - b.Evaluate(ctx));
     public static Formula operator -(Formula f) => new(ctx => -f.Evaluate(ctx));

@@ -1,3 +1,4 @@
+using BazaarArena.BattleSimulator;
 using BazaarArena.Core;
 
 namespace BazaarArena.ItemDatabase;
@@ -544,13 +545,55 @@ public static class CommonMedium
         };
     }
 
+    /// <summary>曲速引擎（Warp Drive）：8s 中 金 科技；▶ 摧毁此物品（限本场战斗）（Highest）；相邻物品视为载具；己方载具冷却时间缩短 10% » 15%；此物品被摧毁时，为你的所有物品充能 2 秒（Low）。</summary>
+    public static ItemTemplate WarpDrive()
+    {
+        return new ItemTemplate
+        {
+            Name = "曲速引擎",
+            Desc = "▶ 摧毁此物品（限本场战斗）；相邻物品视为载具；己方载具冷却时间缩短 {Custom_0%}；此物品被摧毁时，为你的所有物品充能 {ChargeSeconds} 秒",
+            Tags = [Tag.Tech],
+            Cooldown = 8.0,
+            Custom_0 = [10, 15],
+            Charge = 2.0,
+            ChargeTargetCount = 20,
+            Abilities =
+            [
+                Ability.Destroy.Override(
+                    targetCondition: Condition.SameAsSource,
+                    priority: AbilityPriority.Highest
+                ),
+                Ability.Charge.Override(
+                    trigger: Trigger.Destroy,
+                    invokeTargetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameSide,
+                    priority: AbilityPriority.Low
+                ),
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    Condition = Condition.AdjacentToSource,
+                    GrantedTags = [Tag.Vehicle],
+                },
+                new AuraDefinition
+                {
+                    AttributeName = Key.PercentCooldownReduction,
+                    Condition = Condition.SameSide & Condition.WithTag(Tag.Vehicle),
+                    Value = Formula.Source(Key.Custom_0),
+                },
+            ],
+        };
+    }
+
     /// <summary>生体融合臂（Biomerge Arm）：中 金 武器 工具；弹药消耗且耗尽时造成 100 » 200 伤害；此物品相邻左侧的弹药物品暴击率 +100%、最大弹药量 +1。</summary>
     public static ItemTemplate BiomergeArm()
     {
         return new ItemTemplate
         {
             Name = "生体融合臂",
-            Desc = "▶ 弹药耗尽时造成 {Damage} 伤害；▶ 此物品左侧的弹药物品暴击率 +100%；▶ 此物品左侧的弹药物品最大弹药量 +1",
+            Desc = "▶ 弹药耗尽时造成 {Damage} 伤害；此物品左侧的弹药物品暴击率 +100%；此物品左侧的弹药物品最大弹药量 +1",
             Tags = [Tag.Weapon, Tag.Tool],
             Damage = [100, 200],
             Abilities =
@@ -575,6 +618,140 @@ public static class CommonMedium
                     AttributeName = Key.AmmoCap,
                     Condition = Condition.LeftOfSource & Condition.HasAmmoCap,
                     Value = Formula.Constant(1),
+                },
+            ],
+        };
+    }
+
+    /// <summary>分解射线（Disintegration Ray）：3 » 2s 中 金 武器 科技 射线；▶ 造成 100 » 200 伤害；弹药：3；此物品弹药耗尽时，摧毁 1 件敌方物品（Highest）。</summary>
+    public static ItemTemplate DisintegrationRay()
+    {
+        return new ItemTemplate
+        {
+            Name = "分解射线",
+            Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；此物品弹药耗尽时，摧毁 1 件敌方物品（Highest）",
+            Tags = [Tag.Weapon, Tag.Tech, Tag.Ray],
+            Cooldown = [3.0, 2.0],
+            Damage = [100, 200],
+            AmmoCap = 3,
+            Abilities =
+            [
+                Ability.Damage,
+                Ability.Destroy.Override(
+                    trigger: Trigger.Ammo,
+                    condition: Condition.SameAsSource,
+                    additionalCondition: Condition.AmmoDepleted,
+                    targetCondition: Condition.DifferentSide,
+                    priority: AbilityPriority.Highest
+                ),
+            ],
+        };
+    }
+
+    /// <summary>凡躯之缚（Mortal Coil）：9s 中 金 武器 遗物；▶ 造成 50 » 100 伤害；此物品左侧的武器获得吸血（光环）；吸血。</summary>
+    public static ItemTemplate MortalCoil()
+    {
+        return new ItemTemplate
+        {
+            Name = "凡躯之缚",
+            Desc = "▶ 造成 {Damage} 伤害；此物品左侧的武器获得吸血；吸血",
+            Tags = [Tag.Weapon, Tag.Relic],
+            Cooldown = 9.0,
+            Damage = [50, 100],
+            LifeSteal = 1,
+            Abilities =
+            [
+                Ability.Damage,
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = Key.LifeSteal,
+                    Condition = Condition.LeftOfSource & Condition.WithTag(Tag.Weapon),
+                    Value = Formula.Constant(1),
+                },
+            ],
+        };
+    }
+
+    /// <summary>锡箔帽（Tinfoil Hat）：中 钻 服饰；敌方使用物品时，获得 1 护盾。</summary>
+    public static ItemTemplate TinfoilHat()
+    {
+        return new ItemTemplate
+        {
+            Name = "锡箔帽",
+            Desc = "敌方使用物品时，获得 {Shield} 护盾",
+            Tags = [Tag.Apparel],
+            Shield = 1,
+            Abilities =
+            [
+                Ability.Shield.Override(
+                    trigger: Trigger.UseItem,
+                    condition: Condition.DifferentSide
+                ),
+            ],
+        };
+    }
+
+    /// <summary>虚空干扰器（Void Disruptor）：10s 中 钻 科技；▶ 摧毁相邻物品（限本场战斗）；摧毁物品时，获得护盾，等量于你最大生命值的 25%。</summary>
+    public static ItemTemplate VoidDisruptor()
+    {
+        return new ItemTemplate
+        {
+            Name = "虚空干扰器",
+            Desc = "▶ 摧毁相邻物品（限本场战斗）；摧毁物品时，获得护盾，等量于你最大生命值的 {Custom_0}%",
+            Tags = [Tag.Tech],
+            Cooldown = 10.0,
+            DestroyTargetCount = 2,
+            Custom_0 = 25,
+            Abilities =
+            [
+                Ability.Destroy.Override(
+                    targetCondition: Condition.AdjacentToSource
+                ),
+                Ability.Shield.Override(
+                    trigger: Trigger.Destroy,
+                    condition: Condition.SameAsSource
+                ),
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = Key.Shield,
+                    Condition = Condition.SameAsSource,
+                    Value = RatioUtil.PercentFloor(Formula.Side(BattleSide.KeyMaxHp), Formula.Source(Key.Custom_0)),
+                },
+            ],
+        };
+    }
+
+    /// <summary>虚空护盾（Void Shield）：8s 中 钻 遗物；▶ 获得护盾，等量于敌人的灼烧；敌人使用物品时，造成 1 灼烧。</summary>
+    public static ItemTemplate VoidShield()
+    {
+        return new ItemTemplate
+        {
+            Name = "虚空护盾",
+            Desc = "▶ 获得护盾，等量于敌人的灼烧；敌人使用物品时，造成 {Burn} 灼烧",
+            Tags = [Tag.Relic],
+            Cooldown = 8.0,
+            Burn = 1,
+            Abilities =
+            [
+                Ability.Shield,
+                Ability.Burn.Override(
+                    trigger: Trigger.UseItem,
+                    condition: Condition.DifferentSide
+                ),
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = Key.Shield,
+                    Condition = Condition.SameAsSource,
+                    Value = Formula.Opp(BattleSide.KeyBurn),
                 },
             ],
         };
@@ -611,6 +788,14 @@ public static class CommonMedium
         db.DefaultMinTier = ItemTier.Gold;
         db.Register(ZootFlute());
         db.Register(VoidRay());
+        db.Register(WarpDrive());
         db.Register(BiomergeArm());
+        db.Register(DisintegrationRay());
+        db.Register(MortalCoil());
+
+        db.DefaultMinTier = ItemTier.Diamond;
+        db.Register(TinfoilHat());
+        db.Register(VoidDisruptor());
+        db.Register(VoidShield());
     }
 }

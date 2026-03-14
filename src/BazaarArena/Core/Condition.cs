@@ -15,6 +15,9 @@ public readonly struct ConditionContext
     public BattleItemState Source { get; init; }
     /// <summary>触发器指向的单个目标（如被加速/被减速的物品）；仅在评估 TargetCondition 且能力由带 InvokeTarget 的触发入队时非空，供 SameAsInvokeTarget 限定「仅该物品」。</summary>
     public BattleItemState? InvokeTargetItem { get; init; }
+
+    /// <summary>按「被评估对象」解析其有效标签（含光环授予，如「相邻视为载具」）。为 null 时 WithTag/NotWithTag 仅用 Item.Template.Tags；非空时用此委托返回的集合。计算光环授予时须传入仅用 Template.Tags 的委托以避免循环。</summary>
+    public Func<BattleItemState, IReadOnlySet<string>>? GetEffectiveTagsForItem { get; init; }
 }
 
 /// <summary>通用条件：由委托表示谓词，用于光环或能力触发。支持 &amp; / | 组合（如「己方其他物品」= DifferentFromSource &amp; SameSide）。</summary>
@@ -88,13 +91,17 @@ public class Condition
     public static Condition StrictlyRightOfSource { get; } = new(ctx =>
         ctx.Item != null && ctx.Item.SideIndex == ctx.Source.SideIndex && ctx.Item.ItemIndex > ctx.Source.ItemIndex);
 
-    /// <summary>被评估对象带指定标签（仅看 Item）；Item 为 null 时为 false。能力持有者带某 tag 时在 AbilityDefinition 上用 SourceCondition = WithTag(tag)，评估时 Item=Source。</summary>
+    /// <summary>被评估对象带指定标签（含光环授予的有效标签）；Item 为 null 时为 false。能力持有者带某 tag 时在 AbilityDefinition 上用 SourceCondition = WithTag(tag)，评估时 Item=Source。</summary>
     public static Condition WithTag(string tag) => new(ctx =>
-        ctx.Item != null && (ctx.Item.Template.Tags?.Contains(tag) ?? false));
+    {
+        if (ctx.Item == null) return false;
+        var tags = ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? new HashSet<string>(ctx.Item.Template.Tags ?? []);
+        return tags.Contains(tag);
+    });
 
-    /// <summary>被评估对象不带指定标签（Item 为 null 或 Tags 不包含 tag 时为 true）。用于「非武器」「非工具」等目标筛选。</summary>
+    /// <summary>被评估对象不带指定标签（Item 为 null 或有效标签不包含 tag 时为 true）。用于「非武器」「非工具」等目标筛选。</summary>
     public static Condition NotWithTag(string tag) => new(ctx =>
-        ctx.Item == null || !(ctx.Item.Template.Tags?.Contains(tag) ?? false));
+        ctx.Item == null || !(ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? new HashSet<string>(ctx.Item.Template.Tags ?? [])).Contains(tag));
 
     /// <summary>两个条件的与（也可用 a &amp;&amp; b）。</summary>
     public static Condition And(Condition a, Condition b) => new(ctx => a.Evaluate(ctx) && b.Evaluate(ctx));
@@ -132,16 +139,19 @@ public class Condition
     /// <summary>被评估对象处于冻结状态（FreezeRemainingMs &gt; 0）；Item 为 null 时为 false。用于解除冻结目标选取。</summary>
     public static Condition IsFrozen { get; } = new(ctx => ctx.Item != null && ctx.Item.FreezeRemainingMs > 0);
 
-    /// <summary>被评估对象（Item）是己方唯一伙伴：同侧未摧毁且带 Tag.Friend 的物品恰有一个且为该 Item。用于光环 SourceCondition（如「若此为唯一伙伴则暴击率加成」）。</summary>
+    /// <summary>被评估对象（Item）是己方唯一伙伴：同侧未摧毁且带 Tag.Friend 的物品恰有一个且为该 Item。用于光环 SourceCondition（如「若此为唯一伙伴则暴击率加成」）。计数时使用有效标签（含光环授予）。</summary>
     public static Condition OnlyCompanion { get; } = new(ctx =>
     {
         if (ctx.Item == null || ctx.Item.Destroyed) return false;
-        if (ctx.Item.Template.Tags?.Contains(Tag.Friend) != true) return false;
+        var itemTags = ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? new HashSet<string>(ctx.Item.Template.Tags ?? []);
+        if (!itemTags.Contains(Tag.Friend)) return false;
         int count = 0;
         for (int j = 0; j < ctx.MySide.Items.Count; j++)
         {
             var it = ctx.MySide.Items[j];
-            if (!it.Destroyed && it.Template.Tags?.Contains(Tag.Friend) == true) count++;
+            if (it.Destroyed) continue;
+            var t = ctx.GetEffectiveTagsForItem?.Invoke(it) ?? new HashSet<string>(it.Template.Tags ?? []);
+            if (t.Contains(Tag.Friend)) count++;
         }
         return count == 1;
     });

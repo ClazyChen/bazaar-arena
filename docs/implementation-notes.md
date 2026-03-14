@@ -303,7 +303,7 @@
 ### 光环公式（Formula 委托类型）与 SourceCondition 优先
 
 - **能用 SourceCondition 表达的优先用 SourceCondition**：若光环「仅当提供者满足某条件时生效」且数值来自模板字段，用 **AuraDefinition.SourceCondition** + **Value = Formula.Source(Key.xxx)**。例如「若此为唯一伙伴则暴击率 +Custom_0%」为 **SourceCondition = Condition.OnlyCompanion**、**Value = Formula.Source(Key.Custom_0)**、**Percent = true**。
-- **Formula**：`AuraDefinition.Value` 类型为 **Formula?**。Formula 持有一个 `Func<IFormulaContext, int>`，通过 **Formula.Source(key)**、**Formula.Side(key)** / **Formula.Opp(key)**、**Formula.Count(condition)**、**Formula.Constant(n)** 与 **+ / - / *** 组合。求值时构造 **FormulaContext(source, side, opp)**，调用 **formula.Evaluate(ctx)**。key 用 **Key.*** 或 **BattleSide.KeyPoison** 等。支持 **一元负号**、**int * Formula**；**RatioUtil.PercentFloor(Formula, percent)** 用于百分比向下取整。
+- **Formula**：`AuraDefinition.Value` 类型为 **Formula?**。Formula 持有一个 `Func<IFormulaContext, int>`，通过 **Formula.Source(key)**、**Formula.Side(key)** / **Formula.Opp(key)**、**Formula.Count(condition)**、**Formula.Constant(n)** 与 **+ / - / *** 组合。求值时构造 **FormulaContext(source, side, opp)**，调用 **formula.Evaluate(ctx)**。key 用 **Key.*** 或 **BattleSide.KeyMaxHp**、**BattleSide.KeyBurn** 等。支持 **一元负号**、**int * Formula**；**RatioUtil.PercentFloor(Formula, percent)** 或 **PercentFloor(Formula, percentFormula)** 用于百分比向下取整（percent 可来自公式）；**Formula.Apply(a, b, combine)** 用于两公式求值后合并。
 - **克隆**：克隆 Aura 时复制 **Value**、**Percent**（Formula 引用不变）。
 
 ### 描述占位符：前缀/后缀
@@ -457,12 +457,42 @@
 ## 摧毁（Destroy）与「施加摧毁时」触发器
 
 - **Trigger.Destroy**：`Core/Trigger.cs` 中 `Destroy = "摧毁物品时"`。语义：**任意物品施加摧毁时触发**，实现同 Slow：Condition 判定施加摧毁的物品，InvokeTargetCondition 判定被摧毁的物品；`EnsureTriggerCondition` 默认 `Condition.SameSide`，能力上常用 `SameAsSource` 表示「仅施加摧毁的物品自身」触发。
-- **统一摧毁接口**：使用 **Ability.Destroy** + **Effect.DestroyApply**，接口与 Slow 类似；目标要求**未摧毁**（`Condition.NotDestroyed`），**不**要求有冷却。目标默认己方(SameSide)；`targetCondition` / `additionalTargetCondition` 与其余多目标能力一致。`ItemTemplate.DestroyTargetCount` 默认 1，可省略。多目标选取**一律随机**（不放回）；「右侧下一件」等语义用**条件**限定候选池，例如 **Condition.FirstNonDestroyedRightOfSource**（右侧第一个未摧毁物品，可能隔多格），池中至多一个，随机选 1 即得。
+- **统一摧毁接口**：使用 **Ability.Destroy** + **Effect.DestroyApply**，接口与 Slow 类似；目标要求**未摧毁**（`Condition.NotDestroyed`），**不**要求有冷却。目标默认己方(SameSide)；当 **targetCondition** 限定为敌方（如 **Condition.DifferentSide**）时，**ApplyDestroy** 从敌方阵营选目标并施加摧毁（入队时用敌方 SideIndex）。`targetCondition` / `additionalTargetCondition` 与其余多目标能力一致。`ItemTemplate.DestroyTargetCount` 默认 1，可省略。多目标选取**一律随机**（不放回）；「右侧下一件」等语义用**条件**限定候选池，例如 **Condition.FirstNonDestroyedRightOfSource**（右侧第一个未摧毁物品，可能隔多格），池中至多一个，随机选 1 即得。
 - **Condition.FirstNonDestroyedRightOfSource**：被评估对象是能力持有者右侧第一个未摧毁的物品（同侧、ItemIndex > Source.ItemIndex，且中间槽位均已摧毁）。牵引光束用 `Ability.Destroy(additionalTargetCondition: Condition.FirstNonDestroyedRightOfSource)`，不再使用特化 Effect。
 - **执行顺序**：「施加摧毁」必须在**将目标标记为 Destroyed 之前**调用 `InvokeTrigger`。实现：`ApplyDestroy` 选目标后对每个目标调用 `OnDestroyApplied(i)`；回调内先 `InvokeTrigger(Trigger.Destroy, ...)`，再 `target.Destroyed = true`。
 - **ConditionContext**：与 Slow 相同。被摧毁目标为大型或飞行时用 **`InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight`**。
 - **已移除**：`Effect.DestroyNextItemToRightOfCasterApply`、`ChargeSelfApply`（充能统一用 ChargeApply + targetCondition/SameAsSource 与默认 ChargeTargetCount=1）。
 - **日志与颜色**：`EffectLogFormat.FormatEffectValue("摧毁"|"修复", value)` 返回空串；`EffectKeywordFormatting` 中「摧毁」rgb(255,50,120)，「修复」rgb(143,252,188)。见 **.cursor/rules/data-and-logging.mdc**。
+
+---
+
+## 物品定义经验：Trigger.Ammo「此物品」、Highest 优先级、左侧语义、动态数值与公式
+
+本节记录近期物品扩展中的易错点与约定，便于与规则文件一致。
+
+### Trigger.Ammo「此物品」弹药耗尽
+
+- **语义**：文案「**此物品**弹药耗尽时」表示仅当**能力持有者自身**消耗弹药且当次耗尽时触发，不是「己方任意弹药物品耗尽」。
+- **写法**：除 **additionalCondition: Condition.AmmoDepleted** 外，须显式 **condition: Condition.SameAsSource**（引起触发的物品 = 能力持有者）。否则 Trigger.Ammo 默认 Condition 为 SameSide，会误触发于己方其他弹药物品耗尽。
+
+### 物品文案中「Highest」/「Lowest」与目标选取
+
+- **优先级**：物品描述里的「（Highest）」「（Lowest）」通常指**能力执行优先级**（**AbilityPriority.Highest** / **AbilityPriority.Lowest**），不是「选取优先级最高的目标」。目标选取当前一律随机（不放回），不另做「按优先级排序选目标」。
+- **写法**：需要「先于/晚于其他能力执行」时在能力上设 **priority: AbilityPriority.Highest** 等，**不要**新增「按某顺序选目标」的 Condition（如误用「最高位」等条件表达「Highest」会与文案语义不符）。
+
+### 左侧/右侧：相邻与严格一侧
+
+- **约定**：**LeftOfSource** / **RightOfSource** = 仅**相邻**一格（ItemIndex ± 1）；**StrictlyLeftOfSource** / **StrictlyRightOfSource** = **所有**严格在左侧/右侧的槽位。文案「此物品**左侧**的武器」若无「所有」「每有一件」等字样，一般指**相邻左侧**，用 **LeftOfSource**；「此物品左侧**每有一件**」等用 **StrictlyLeftOfSource**。
+
+### 护盾/伤害等「等量于 X」：用光环提供数值，不新增专用 Ability
+
+- **原则**：当效果数值依赖运行时数据（如「护盾等量于己方最大生命值 25%」「护盾等量于敌人灼烧」）时，**不**新增 ShieldPercentOfMaxHp 等专用 Ability/Effect；应**用光环为该属性提供公式值**，配合原有 **Ability.Shield** / **Ability.Damage** 等。
+- **做法**：在物品上增加 **AuraDefinition**：**AttributeName** = Key.Shield（或 Key.Damage 等），**Condition** = SameAsSource（作用在自身），**Value** = Formula（如 **Formula.Opp(BattleSide.KeyBurn)**、**RatioUtil.PercentFloor(Formula.Side(BattleSide.KeyMaxHp), 25)**）。能力仍用 **Ability.Shield**（或对应能力），执行时 **GetResolvedValue(Key.Shield)** 会带上光环，得到公式结果。阵营 key 用 **BattleSide.KeyMaxHp**、**BattleSide.KeyBurn** 等（需 `using BazaarArena.BattleSimulator`）。
+
+### RatioUtil 与 Formula 的百分比重载
+
+- **RatioUtil.PercentFloor**：支持 **PercentFloor(Formula valueFormula, int percent)** 与 **PercentFloor(Formula valueFormula, Formula percentFormula)**，后者用于百分比来自字段或公式（如 **Formula.Source(Key.Custom_0)**）。
+- **Formula.Apply**：**Formula.Apply(Formula a, Formula b, Func<int,int,int> combine)** 对两公式在同一上下文中求值后合并，供 **RatioUtil.PercentFloor(valueFormula, percentFormula)** 等使用。
 
 ---
 

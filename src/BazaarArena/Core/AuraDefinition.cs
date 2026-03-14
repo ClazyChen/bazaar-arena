@@ -17,4 +17,7 @@ public class AuraDefinition
 
     /// <summary>为 true 时公式结果为百分比加成（+N% 加算），为 false 时为固定值加成。默认 false。</summary>
     public bool Percent { get; set; }
+
+    /// <summary>授予的标签列表（如 [Tag.Vehicle]）；非空时表示「满足 Condition 的目标在条件评估时视为带这些标签」。仅用于「相邻视为载具」等光环，与 AttributeName/Value 互斥。</summary>
+    public IReadOnlyList<string>? GrantedTags { get; set; }
 }

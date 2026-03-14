@@ -76,6 +76,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         if (condition == null) return [];
         var pool = new List<int>();
         BattleSide enemySide = fromSide == Side ? Opp : Side;
+        Func<BattleItemState, IReadOnlySet<string>> getTags = item => EffectiveTagHelper.GetEffectiveTags(Side, Opp, item);
         for (int i = 0; i < fromSide.Items.Count; i++)
         {
             var it = fromSide.Items[i];
@@ -86,6 +87,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
                 Item = it,
                 Source = Item,
                 InvokeTargetItem = InvokeTargetItem,
+                GetEffectiveTagsForItem = getTags,
             };
             if (!condition.Evaluate(ctx)) continue;
             pool.Add(i);
@@ -105,6 +107,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     {
         if (condition == null) return [];
         var pool = new List<(BattleSide side, int index)>();
+        Func<BattleItemState, IReadOnlySet<string>> getTags = item => EffectiveTagHelper.GetEffectiveTags(Side, Opp, item);
         foreach (var (fromSide, enemySide) in new[] { (Side, Opp), (Opp, Side) })
         {
             for (int i = 0; i < fromSide.Items.Count; i++)
@@ -117,6 +120,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
                     Item = it,
                     Source = Item,
                     InvokeTargetItem = InvokeTargetItem,
+                    GetEffectiveTagsForItem = getTags,
                 };
                 if (!condition.Evaluate(ctx)) continue;
                 pool.Add((fromSide, i));
@@ -245,6 +249,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     {
         if (targetCondition == null) return;
         var targetNames = new List<string>();
+        Func<BattleItemState, IReadOnlySet<string>> getTags = item => EffectiveTagHelper.GetEffectiveTags(fromSide, enemySide, item);
         for (int i = 0; i < fromSide.Items.Count; i++)
         {
             var wi = fromSide.Items[i];
@@ -255,6 +260,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
                 EnemySide = enemySide,
                 Item = wi,
                 Source = Item,
+                GetEffectiveTagsForItem = getTags,
             };
             if (!targetCondition.Evaluate(ctx)) continue;
             var name = perItem(wi, i);
@@ -361,20 +367,32 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     {
         if (targetCount <= 0) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed;
-        var indices = GetTargetIndices(Side, targetCount, cond);
+        var sideIndices = GetTargetIndices(Side, targetCount, cond);
+        BattleSide targetSide;
+        List<int> indices;
+        if (sideIndices.Count > 0)
+        {
+            targetSide = Side;
+            indices = sideIndices;
+        }
+        else
+        {
+            indices = GetTargetIndices(Opp, targetCount, cond);
+            targetSide = Opp;
+        }
         if (indices.Count == 0) return;
-        var targetNames = indices.Select(i => Side.Items[i].Template.Name).ToList();
+        var targetNames = indices.Select(i => targetSide.Items[i].Template.Name).ToList();
         string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
         LogEffect("摧毁", indices.Count, extraSuffix, showCrit: false);
         if (EffectAppliedTriggerQueue != null)
         {
             foreach (int i in indices)
-                EffectAppliedTriggerQueue.Add((Trigger.Destroy, Side.SideIndex, i));
+                EffectAppliedTriggerQueue.Add((Trigger.Destroy, targetSide.SideIndex, i));
         }
         else
         {
             foreach (int i in indices)
-                Side.Items[i].Destroyed = true;
+                targetSide.Items[i].Destroyed = true;
         }
     }
 }

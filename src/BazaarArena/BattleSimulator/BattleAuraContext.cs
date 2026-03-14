@@ -16,12 +16,16 @@ internal sealed class BattleAuraContext(BattleSide side, BattleItemState targetI
             foreach (var aura in source.Template.Auras)
             {
                 if (aura.AttributeName != attributeName) continue;
+                // 评估光环条件时仅用模板标签，避免 GrantedTags 产生循环
+                IReadOnlySet<string> TemplateTagsOnly(BattleItemState i) =>
+                    (i.Template.Tags != null && i.Template.Tags.Count > 0) ? new HashSet<string>(i.Template.Tags) : [];
                 var auraCtx = new ConditionContext
                 {
                     MySide = side,
                     EnemySide = opp ?? side,
                     Item = targetItem,
                     Source = source,
+                    GetEffectiveTagsForItem = TemplateTagsOnly,
                 };
                 if (aura.Condition != null && !aura.Condition.Evaluate(auraCtx)) continue;
                 if (aura.SourceCondition != null)
@@ -32,6 +36,7 @@ internal sealed class BattleAuraContext(BattleSide side, BattleItemState targetI
                         EnemySide = opp ?? side,
                         Item = source,
                         Source = source,
+                        GetEffectiveTagsForItem = TemplateTagsOnly,
                     };
                     if (!aura.SourceCondition.Evaluate(sourceOnlyCtx)) continue;
                 }

@@ -191,7 +191,12 @@ public class ItemTemplate
         context.GetAuraModifiers(key, out int fixedSum, out int percentSum);
         int result = (int)Math.Round((baseVal + fixedSum) * (1 + percentSum / 100.0));
         if (key == KeyCooldownMs && result > 0)
+        {
+            context.GetAuraModifiers(Key.PercentCooldownReduction, out int redFix, out int redPct);
+            int totalRed = Math.Min(99, redFix + redPct);
+            result = result * (100 - totalRed) / 100;
             return Math.Max(1000, result);
+        }
         return result;
     }
 

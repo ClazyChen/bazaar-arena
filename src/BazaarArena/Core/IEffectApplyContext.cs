@@ -86,6 +86,6 @@ public interface IEffectApplyContext
     /// <summary>设置施放者物品的飞行状态（开始/结束飞行）。</summary>
     void SetCasterInFlight(bool inFlight);
 
-    /// <summary>摧毁：对己方满足 targetCondition 的未摧毁物品选取至多 targetCount 个施加摧毁；先触发 Destroy 再标记 Destroyed。目标不要求有冷却。</summary>
+    /// <summary>摧毁：对满足 targetCondition 的未摧毁物品选取至多 targetCount 个施加摧毁（默认己方）；当 targetCondition 限定为敌方（如 DifferentSide）时从敌方选取；先触发 Destroy 再标记 Destroyed。目标不要求有冷却。</summary>
     void ApplyDestroy(int targetCount, Condition? targetCondition = null);
 }
