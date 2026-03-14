@@ -182,14 +182,17 @@ public class ItemTemplate
         return list[listIndex];
     }
 
-    /// <summary>根据字段名与等级读取，若有光环上下文则先取基础值再叠加光环：最终值 = (基础 + Σ固定) × (1 + Σ百分比/100)。</summary>
+    /// <summary>根据字段名与等级读取，若有光环上下文则先取基础值再叠加光环：最终值 = (基础 + Σ固定) × (1 + Σ百分比/100)。冷却时间（CooldownMs）有光环时至少为 1 秒。</summary>
     public int GetInt(string key, ItemTier tier, int defaultValue, IAuraContext? context)
     {
         int baseVal = GetInt(key, tier, defaultValue);
         if (context == null)
             return baseVal;
         context.GetAuraModifiers(key, out int fixedSum, out int percentSum);
-        return (int)Math.Round((baseVal + fixedSum) * (1 + percentSum / 100.0));
+        int result = (int)Math.Round((baseVal + fixedSum) * (1 + percentSum / 100.0));
+        if (key == KeyCooldownMs && result > 0)
+            return Math.Max(1000, result);
+        return result;
     }
 
     /// <summary>写入单值（用于 Overrides、运行时变量等），存为长度为 1 的列表。</summary>
@@ -230,7 +233,7 @@ public class ItemTemplate
     /// <summary>暴击伤害（百分比，200 表示 2 倍暴击）。默认 200，作用于伤害、灼烧、剧毒、治疗等可暴击效果。</summary>
     public IntOrByTier CritDamagePercent { get => GetInt(KeyCritDamagePercent, 200); set => SetIntOrByTier(KeyCritDamagePercent, value.ToList()); }
 
-    /// <summary>多重触发。默认 1，不指定时可省略。</summary>
+    /// <summary>多重释放。默认 1，不指定时可省略。</summary>
     public IntOrByTier Multicast { get => GetInt(KeyMulticast, 1); set => SetIntOrByTier(KeyMulticast, value.ToList()); }
 
     /// <summary>弹药上限，0 表示不依赖弹药。默认 0，不指定时可省略。</summary>

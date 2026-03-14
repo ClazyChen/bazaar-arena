@@ -24,8 +24,8 @@ public class TextBoxBattleLogSink : IBattleLogSink
 
     public void OnCast(BattleItemState caster, string itemName, int timeMs, int? ammoRemainingAfter = null)
     {
-        if (!ammoRemainingAfter.HasValue) return; // 无弹药时不单独输出施放行
-        _appendLine($"[{TimeSec(timeMs)}] 玩家{caster.SideIndex + 1} 施放 [{itemName}] 剩余弹药 {ammoRemainingAfter.Value}");
+        // GUI 不显示施放行，仅保留效果（伤害、护盾、充能等）日志
+        return;
     }
 
     public void OnEffect(BattleItemState caster, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)

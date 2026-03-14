@@ -13,6 +13,7 @@ public static class AttributeLogNames
         [Key.CritRatePercent] = "暴击率",
         [Key.InFlight] = "飞行",
         [Key.FreezeRemainingMs] = "冻结",
+        [Key.CooldownMs] = "冷却时间",
     };
 
     /// <summary>获取属性 key 的中文名；未收录时返回「属性」。</summary>
@@ -59,6 +60,7 @@ public static class Effect
         int value = ctx.GetResolvedValue(Key.Shield, applyCritMultiplier: true);
         ctx.AddShieldToCaster(value);
         ctx.LogEffect("护盾", value, showCrit: ctx.IsCrit);
+        ctx.ReportTriggerCause(Trigger.Shield);
     };
 
     /// <summary>治疗：数值来自模板的 Heal；治疗时清除 5% 灼烧/剧毒。日志与统计使用预期（请求）治疗量；实际施加量受生命上限限制。</summary>
@@ -104,7 +106,7 @@ public static class Effect
         ctx.ApplySlow(slowMs, count, ctx.TargetCondition);
     };
 
-    /// <summary>对己方满足能力 TargetCondition 的物品增加指定属性（限本场战斗）。attributeName 为要增加的属性名（如 Damage、Poison、Key.InFlight）；目标条件由能力 TargetCondition 注入，默认 SameSide。TargetCountKey 默认 ModifyAttributeTargetCount，默认值 20 表示全部，小于 20 时仅对至多该数量目标生效。</summary>
+    /// <summary>对己方满足能力 TargetCondition 的物品增加指定属性（限本场战斗）。attributeName 为要增加的属性名（如 Damage、Poison、Key.InFlight）；目标条件由能力 TargetCondition 注入，默认 SameSide；实现层隐性要求目标未摧毁（与 Freeze 一致）。TargetCountKey 默认 ModifyAttributeTargetCount，默认值 20 表示全部，小于 20 时仅对至多该数量目标生效。</summary>
     public static Action<IEffectApplyContext> AddAttributeApply(string attributeName) => ctx =>
     {
         var targetCond = ctx.TargetCondition ?? Condition.SameSide;
@@ -114,7 +116,7 @@ public static class Effect
         ctx.AddAttributeToCasterSide(attributeName, ctx.Value, targetCond, maxTarget);
     };
 
-    /// <summary>对满足能力 TargetCondition 的目标（从双方选取）减少指定属性（限本场战斗，不低于 0）。目标数取自 TargetCountKey（默认 ModifyAttributeTargetCount）；日志名优先用 ctx.EffectLogName，否则属性中文名+「降低」。</summary>
+    /// <summary>对满足能力 TargetCondition 的目标（从双方选取）减少指定属性（限本场战斗，不低于 0）。实现层隐性要求目标未摧毁（与 Freeze 一致）。目标数取自 TargetCountKey（默认 ModifyAttributeTargetCount）；日志名优先用 ctx.EffectLogName，否则属性中文名+「降低」。</summary>
     public static Action<IEffectApplyContext> ReduceAttributeApply(string attributeName) => ctx =>
     {
         var targetCond = ctx.TargetCondition ?? Condition.DifferentSide;

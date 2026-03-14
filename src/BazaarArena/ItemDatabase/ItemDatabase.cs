@@ -111,6 +111,7 @@ public class ItemDatabase : IItemTemplateResolver
                     UseSelf = a.UseSelf,
                     Apply = a.Apply,
                     EffectLogName = a.EffectLogName,
+                    TargetCountKey = a.TargetCountKey,
                     Triggers = a.Triggers?.Select(e => new AbilityDefinition.TriggerEntry
                     {
                         TriggerName = e.TriggerName,
@@ -129,17 +130,20 @@ public class ItemDatabase : IItemTemplateResolver
         return clone;
     }
 
-    /// <summary>condition ?? default：UseItem → SameAsSource，Freeze/Slow/Crit/Destroy/Burn → SameSide，BattleStart → Always。</summary>
+    /// <summary>condition ?? default：UseItem → SameAsSource，Freeze/Slow/Haste/Crit/Destroy/Burn → SameSide，BattleStart → Always。</summary>
     private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
     {
         if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.Haste) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Crit) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Destroy) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Burn) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Poison) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.Shield) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.BattleStart) return condition ?? Condition.Always;
+        if (triggerName == Trigger.Ammo) return condition ?? Condition.SameSide;
         return condition;
     }
 }

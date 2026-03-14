@@ -6,13 +6,13 @@ public static class EffectLogFormat
     /// <summary>返回效果数值的日志显示字符串。充能、冻结、减速、加速（毫秒）格式化为「N 秒」；开始飞行等无数值效果返回空。</summary>
     public static string FormatEffectValue(string effectKind, int value)
     {
-        if (effectKind == "充能" || effectKind == "冻结" || effectKind == "减速" || effectKind == "加速")
+        if (effectKind == "充能" || effectKind == "冻结" || effectKind == "减速" || effectKind == "加速" || effectKind == "冷却缩短")
         {
             if (value % 1000 == 0)
                 return $"{value / 1000} 秒";
             return $"{value / 1000.0:F1} 秒";
         }
-        if (effectKind == "开始飞行" || effectKind == "结束飞行" || effectKind == "摧毁" || effectKind == "修复")
+        if (effectKind == "开始飞行" || effectKind == "结束飞行" || effectKind == "摧毁" || effectKind == "修复" || effectKind == "解除冻结")
             return "";
         return value.ToString();
     }

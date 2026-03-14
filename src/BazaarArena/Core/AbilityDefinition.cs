@@ -157,7 +157,9 @@ public class AbilityDefinition
         Condition? defaultCond = null;
         if (trigger == Trigger.UseItem)
             defaultCond = Condition.SameAsSource;
-        else if (trigger == Trigger.Freeze || trigger == Trigger.Slow || trigger == Trigger.Crit || trigger == Trigger.Destroy || trigger == Trigger.Burn || trigger == Trigger.Poison)
+        else if (trigger == Trigger.Freeze || trigger == Trigger.Slow || trigger == Trigger.Haste || trigger == Trigger.Crit || trigger == Trigger.Destroy || trigger == Trigger.Burn || trigger == Trigger.Poison || trigger == Trigger.Shield)
+            defaultCond = Condition.SameSide;
+        else if (trigger == Trigger.Ammo)
             defaultCond = Condition.SameSide;
         else if (trigger == Trigger.BattleStart)
             defaultCond = Condition.Always;

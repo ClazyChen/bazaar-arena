@@ -26,6 +26,9 @@ public interface IEffectApplyContext
     /// <summary>多目标效果的目标数量取自施放者模板的该 key（由能力 TargetCountKey 注入）；效果内未设时使用该效果类型的默认 key。</summary>
     string? TargetCountKey { get; }
 
+    /// <summary>当非 null 时表示本能力由触发器指向的单个目标触发（如月光宝珠「敌方加速时令其减速」），冻结/减速/加速等应对该物品施加，忽略 TargetCondition 与 targetCount。</summary>
+    BattleItemState? InvokeTargetItem { get; }
+
     /// <summary>对敌方造成伤害；isBurn 为灼烧结算。返回实际扣减的生命值（用于吸血等）。</summary>
     int ApplyDamageToOpp(int value, bool isBurn);
 
@@ -65,13 +68,13 @@ public interface IEffectApplyContext
     /// <summary>修复已摧毁物品：目标由 targetCondition 与已摧毁组合（null 时默认己方）；不放回随机选取至多 targetCount 个，将其设为未摧毁并重置冷却已过时间。</summary>
     void ApplyRepair(int targetCount, Condition? targetCondition = null);
 
-    /// <summary>对己方满足 targetCondition 的物品增加指定属性（限本场战斗）。attributeName 为模板属性名（如 Damage、Poison、Key.InFlight），value 为增加量；目标由 targetCondition 筛选（Source=施放者）。InFlight 时设为 value != 0。maxTargetCount 大于 0 时仅对随机选取的至多该数量目标生效，0 表示不限制。</summary>
+    /// <summary>对己方满足 targetCondition 的物品增加指定属性（限本场战斗）。attributeName 为模板属性名（如 Damage、Poison、Key.InFlight），value 为增加量；目标由 targetCondition 筛选（Source=施放者），隐性要求未摧毁（与 Freeze 等一致）。InFlight 时设为 value != 0。maxTargetCount 大于 0 时仅对随机选取的至多该数量目标生效，0 表示不限制。</summary>
     void AddAttributeToCasterSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0);
 
     /// <summary>对己方满足 targetCondition 的物品将指定属性设为 value（限本场战斗）。用于 StopFlying（Key.InFlight, 0）等。目标由 targetCondition 筛选（Source=施放者）。</summary>
     void SetAttributeOnCasterSide(string attributeName, int value, Condition? targetCondition);
 
-    /// <summary>对满足 targetCondition 的目标（从双方选取）减少指定属性（限本场战斗，不低于 0）。maxTargetCount 为 0 表示不限制；effectLogName 非空时用于日志，否则用属性中文名+「降低」。</summary>
+    /// <summary>对满足 targetCondition 的目标（从双方选取）减少指定属性（限本场战斗，不低于 0）。目标隐性要求未摧毁（与 Freeze 等一致）。maxTargetCount 为 0 表示不限制；effectLogName 非空时用于日志，否则用属性中文名+「降低」。</summary>
     void ReduceAttributeToSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0, string? effectLogName = null);
 
     /// <summary>将本次效果施加报告为触发器原因（如灼烧施加后报告 Trigger.Burn），供模拟器统一 InvokeTrigger；仅部分效果（如 BurnApply）调用。</summary>

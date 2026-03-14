@@ -11,7 +11,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "尖刺圆盾",
-            Desc = "▶ 造成 {Damage} 伤害；获得 {Shield} 护盾",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 获得 {Shield} 护盾",
             Tags = [Tag.Weapon],
             Cooldown = 9.0,
             Damage = [10, 20, 40, 80],
@@ -30,7 +30,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "临时钝器",
-            Desc = "▶ 造成 {Damage} 伤害；减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
             Tags = [Tag.Weapon],
             Cooldown = 8.0,
             Damage = [20, 40, 80, 160],
@@ -50,7 +50,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "暗影斗篷",
-            Desc = "▶ 使用此物品右侧的物品时，使之加速 {HasteSeconds} 秒；若为武器则伤害提高 {Custom_0}（限本场战斗）",
+            Desc = "使用此物品右侧的物品时，使之加速 {HasteSeconds} 秒；若为武器则伤害提高 {Custom_0}（限本场战斗）",
             Tags = [Tag.Apparel],
             Haste = [1.0, 2.0, 3.0, 4.0],
             Custom_0 = [3, 5, 7, 9],
@@ -76,7 +76,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "冰冻钝器",
-            Desc = "▶ 造成 {Damage} 伤害；冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒；触发冻结时，己方武器伤害提高 {Custom_0}（限本场战斗）",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒；触发冻结时，己方武器伤害提高 {Custom_0}（限本场战斗）",
             Tags = [Tag.Weapon],
             Cooldown = 9.0,
             Damage = [20, 40, 60, 80],
@@ -208,7 +208,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "外骨骼",
-            Desc = "▶ 相邻武器 {+Custom_0} 伤害",
+            Desc = "相邻武器 {+Custom_0} 伤害",
             Tags = [Tag.Apparel],
             Custom_0 = [5, 10, 20, 40],
             Auras =
@@ -229,7 +229,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "废品场维修机器人",
-            Desc = "▶ 修复 {RepairTargetCount} 件物品；治疗 {Heal} 生命值",
+            Desc = "▶ 修复 {RepairTargetCount} 件物品；▶ 治疗 {Heal} 生命值",
             Tags = [Tag.Friend, Tag.Tech],
             Cooldown = 5.0,
             Heal = [30, 60, 120, 240],
@@ -249,7 +249,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "宇宙炫羽",
-            Desc = "▶ {Custom_1} 件物品开始飞行；飞行物品暴击率 {+Custom_0%}；造成暴击或使用飞行物品时，为此物品充能 {ChargeSeconds} 秒",
+            Desc = "▶ {Custom_1} 件物品开始飞行；▶ 飞行物品暴击率 {+Custom_0%}；造成暴击或使用飞行物品时，为此物品充能 {ChargeSeconds} 秒",
             Tags = [Tag.Relic],
             Cooldown = 4.0,
             Custom_0 = [5, 10, 15],
@@ -404,7 +404,7 @@ public static class CommonMedium
             [
                 Ability.Damage,
                 Ability.ReduceAttribute(Key.FreezeRemainingMs).Override(
-                    targetCondition: Condition.SameSide,
+                    targetCondition: Condition.SameSide & Condition.IsFrozen,
                     value: 1_000_000,
                     effectLogName: "解除冻结"
                 ),
@@ -416,11 +416,166 @@ public static class CommonMedium
                 Ability.ReduceAttribute(Key.FreezeRemainingMs).Override(
                     trigger: Trigger.Freeze,
                     invokeTargetCondition: Condition.SameAsSource,
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsSource & Condition.IsFrozen,
                     value: 1_000_000,
                     effectLogName: "解除冻结",
                     priority: AbilityPriority.Low
                 ),
+            ],
+        };
+    }
+
+    /// <summary>仿生手臂（Bionic Arm）：8 » 7 » 6s 中 银 武器 科技；此物品左侧每有一件物品造成 50 » 75 » 100 伤害；此物品右侧每有一件科技物品，此物品的冷却时间缩短 1 秒。</summary>
+    public static ItemTemplate BionicArm()
+    {
+        return new ItemTemplate
+        {
+            Name = "仿生手臂",
+            Desc = "▶ 此物品左侧每有一件物品，造成 {Custom_0} 伤害；此物品右侧每有一件科技物品，此物品的冷却时间缩短 1 秒",
+            Tags = [Tag.Weapon, Tag.Tech],
+            Cooldown = [8.0, 7.0, 6.0],
+            Custom_0 = [50, 75, 100],
+            Abilities =
+            [
+                Ability.Damage,
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = Key.Damage,
+                    Value = Formula.Source(Key.Custom_0) * Formula.Count(Condition.StrictlyLeftOfSource),
+                },
+                new AuraDefinition
+                {
+                    AttributeName = Key.CooldownMs,
+                    Value = Formula.Constant(-1000) * Formula.Count(Condition.StrictlyRightOfSource & Condition.WithTag(Tag.Tech)),
+                },
+            ],
+        };
+    }
+
+    /// <summary>时光指针（Hands of Time）：9 » 8 » 7s 中 银 遗物 工具；另一件工具的冷却时间缩短 1 秒（限本场战斗，不低于 1s）；每有一件相邻的工具，此物品的冷却时间就缩短 1 秒。</summary>
+    public static ItemTemplate HandsOfTime()
+    {
+        return new ItemTemplate
+        {
+            Name = "时光指针",
+            Desc = "▶ 另一件工具的冷却时间缩短 1 秒（限本场战斗）；每有一件相邻的工具，此物品的冷却时间缩短 1 秒",
+            Tags = [Tag.Relic, Tag.Tool],
+            Cooldown = [9.0, 8.0, 7.0],
+            Custom_0 = 1000,
+            ModifyAttributeTargetCount = 1,
+            Abilities =
+            [
+                Ability.ReduceAttribute(Key.CooldownMs).Override(
+                    targetCondition: Condition.SameSide,
+                    additionalTargetCondition: Condition.HasCooldown & Condition.DifferentFromSource & Condition.WithTag(Tag.Tool),
+                    effectLogName: "冷却缩短"
+                ),
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = Key.CooldownMs,
+                    Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToSource & Condition.WithTag(Tag.Tool)),
+                },
+            ],
+        };
+    }
+
+    /// <summary>祖特笛（Zoot Flute）：7s 中 金；▶ 减速 2 » 3 件物品 2 秒；相邻物品 +25% » +50% 暴击率；造成暴击时，为此物品充能 2 秒（Low，任意己方物品造成暴击）。</summary>
+    public static ItemTemplate ZootFlute()
+    {
+        return new ItemTemplate
+        {
+            Name = "祖特笛",
+            Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；相邻物品暴击率 {+Custom_0%}；造成暴击时，为此物品充能 {ChargeSeconds} 秒",
+            Tags = [],
+            Cooldown = 7.0,
+            Slow = 2.0,
+            SlowTargetCount = [2, 3],
+            Custom_0 = [25, 50],
+            Charge = 2.0,
+            Abilities =
+            [
+                Ability.Slow,
+                Ability.Charge.Override(
+                    trigger: Trigger.Crit,
+                    targetCondition: Condition.SameAsSource,
+                    priority: AbilityPriority.Low
+                ),
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = Key.CritRatePercent,
+                    Condition = Condition.AdjacentToSource,
+                    Value = Formula.Source(Key.Custom_0),
+                },
+            ],
+        };
+    }
+
+    /// <summary>虚空射线（Void Ray）：7s 中 金 射线 遗物；▶ 造成 4 » 6 灼烧；多重释放：2；获得护盾时，此物品的灼烧提高 1 » 2（限本场战斗）（Low）。</summary>
+    public static ItemTemplate VoidRay()
+    {
+        return new ItemTemplate
+        {
+            Name = "虚空射线",
+            Desc = "▶ 造成 {Burn} 灼烧；多重释放：{Multicast}；获得护盾时，此物品的灼烧提高 {Custom_0}（限本场战斗）",
+            Tags = [Tag.Ray, Tag.Relic],
+            Cooldown = 7.0,
+            Burn = [4, 6],
+            Multicast = 2,
+            Custom_0 = [1, 2],
+            Abilities =
+            [
+                Ability.Burn,
+                Ability.AddAttribute(Key.Burn).Override(
+                    trigger: Trigger.Shield,
+                    targetCondition: Condition.SameAsSource,
+                    valueKey: Key.Custom_0,
+                    priority: AbilityPriority.Low
+                ),
+            ],
+        };
+    }
+
+    /// <summary>生体融合臂（Biomerge Arm）：中 金 武器 工具；弹药消耗且耗尽时造成 100 » 200 伤害；此物品相邻左侧的弹药物品暴击率 +100%、最大弹药量 +1。</summary>
+    public static ItemTemplate BiomergeArm()
+    {
+        return new ItemTemplate
+        {
+            Name = "生体融合臂",
+            Desc = "▶ 弹药耗尽时造成 {Damage} 伤害；▶ 此物品左侧的弹药物品暴击率 +100%；▶ 此物品左侧的弹药物品最大弹药量 +1",
+            Tags = [Tag.Weapon, Tag.Tool],
+            Damage = [100, 200],
+            Abilities =
+            [
+                Ability.Damage.Override(
+                    trigger: Trigger.Ammo,
+                    additionalCondition: Condition.AmmoDepleted,
+                    targetCondition: Condition.DifferentSide
+                ),
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = Key.CritRatePercent,
+                    Condition = Condition.LeftOfSource & Condition.HasAmmoCap,
+                    Value = Formula.Constant(100),
+                    Percent = true,
+                },
+                new AuraDefinition
+                {
+                    AttributeName = Key.AmmoCap,
+                    Condition = Condition.LeftOfSource & Condition.HasAmmoCap,
+                    Value = Formula.Constant(1),
+                },
             ],
         };
     }
@@ -450,5 +605,12 @@ public static class CommonMedium
         db.Register(Cryosleeve());
         db.Register(GuardianShell());
         db.Register(Icebreaker());
+        db.Register(BionicArm());
+        db.Register(HandsOfTime());
+
+        db.DefaultMinTier = ItemTier.Gold;
+        db.Register(ZootFlute());
+        db.Register(VoidRay());
+        db.Register(BiomergeArm());
     }
 }

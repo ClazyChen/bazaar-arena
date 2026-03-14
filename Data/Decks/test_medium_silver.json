@@ -1,0 +1,58 @@
+{
+  "version": "1.0",
+  "decks": [
+    { "id": "ms_cosmic_plume_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "宇宙炫羽", "tier": 1 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "ms_cosmic_plume_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_cosmic_plume_250ms_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "宇宙炫羽", "tier": 2 },
+      { "itemName": "友好玩偶", "tier": 2 }
+    ] } },
+    { "id": "ms_cosmic_plume_250ms_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_dragon_wing_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "巨龙翼", "tier": 1 },
+      { "itemName": "獠牙", "tier": 0 },
+      { "itemName": "放大镜", "tier": 0 }
+    ] } },
+    { "id": "ms_dragon_wing_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_dragon_wing_whelp_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "巨龙翼", "tier": 1 },
+      { "itemName": "巨龙崽崽", "tier": 1 },
+      { "itemName": "獠牙", "tier": 0 },
+      { "itemName": "放大镜", "tier": 0 }
+    ] } },
+    { "id": "ms_dragon_wing_whelp_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_crusher_claw_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "大理石鳞甲", "tier": 0 },
+      { "itemName": "碾骨爪", "tier": 1 }
+    ] } },
+    { "id": "ms_crusher_claw_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_cryosleeve_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "寒冰特服", "tier": 1 }] } },
+    { "id": "ms_cryosleeve_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_guardian_shell_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "守护神之壳", "tier": 1 }] } },
+    { "id": "ms_guardian_shell_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_icebreaker_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "破冰尖镐", "tier": 1 }] } },
+    { "id": "ms_icebreaker_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_bionic_arm_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "獠牙", "tier": 0 },
+      { "itemName": "仿生手臂", "tier": 1 }
+    ] } },
+    { "id": "ms_bionic_arm_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_hands_of_time_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "时光指针", "tier": 1 },
+      { "itemName": "放大镜", "tier": 0 }
+    ] } },
+    { "id": "ms_hands_of_time_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+  ]
+}

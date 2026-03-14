@@ -20,6 +20,8 @@ public static class Key
     // 施放与弹药
     public const string Multicast = nameof(ItemTemplate.Multicast);
     public const string AmmoCap = nameof(ItemTemplate.AmmoCap);
+    /// <summary>剩余弹药数，运行时存于物品模板字典（与 ItemTemplate.KeyAmmoRemaining 一致）。</summary>
+    public const string AmmoRemaining = "AmmoRemaining";
 
     // 充能 / 冻结 / 减速 / 加速
     public const string Charge = nameof(ItemTemplate.Charge);

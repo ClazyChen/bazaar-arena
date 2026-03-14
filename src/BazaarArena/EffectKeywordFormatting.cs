@@ -19,6 +19,8 @@ public static class EffectKeywordFormatting
         ("暴击", Color.FromRgb(0xf5, 0x50, 0x3d), false),
         ("吸血", Color.FromRgb(157, 74, 111), false),
         ("伤害", Color.FromRgb(0xf5, 0x50, 0x3d), false),
+        ("冷却时间", Color.FromRgb(0, 236, 195), false),
+        ("冷却缩短", Color.FromRgb(0, 236, 195), false),
         ("减速", Color.FromRgb(203, 159, 110), false),
         ("加速", Color.FromRgb(0, 236, 195), false),
         ("灼烧", Color.FromRgb(255, 159, 69), false),

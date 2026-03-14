@@ -23,6 +23,8 @@ public static class Tag
     public const string Toy = "玩具";
     /// <summary>水系。</summary>
     public const string Aquatic = "水系";
+    /// <summary>射线。</summary>
+    public const string Ray = "射线";
 
     /// <summary>小型（由注册时按 Size 自动添加）。</summary>
     public const string Small = "小型";

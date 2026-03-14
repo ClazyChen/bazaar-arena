@@ -41,7 +41,7 @@
 
 4. **触发器调用方式与 PendingCount 合并**  
    - 所有触发器通过**统一**的 `InvokeTrigger(triggerName, causeItem?, context, ...)` 调用（causeItem 为引起触发的物品引用，BattleStart 传 null），遍历双方所有物品，构建 `ConditionContext`（Source=能力持有者、Item=causeItem）后调用 `condition.Evaluate(ctx)`；若能力有 `InvokeTargetCondition` 且 context 提供 `InvokeTargetItem`，则再以该目标为 Item 求值。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。  
-   - **PendingCount 为通用机制**：新能力入队时，**先查 currentAbilityQueue** 是否存在同 (Owner, AbilityIndex)（引用相等），有则只加 PendingCount；**再查 nextAbilityQueue** 同上；**都没有**才新建条目（AbilityQueueEntry 持有多元组 Owner=BattleItemState、AbilityIndex、PendingCount、LastTriggerMs），且新建时仅 Immediate 入 current，其余入 next。
+   - **PendingCount 为通用机制**：新能力入队时，**先查 currentAbilityQueue** 是否存在同 (Owner, AbilityIndex) 且无 InvokeTarget 的条目，有则只加 PendingCount；**再查 nextAbilityQueue** 同上；**都没有**才新建条目。当 context 提供 InvokeTargetItem 时**不合并**，直接新建条目（该条目带 InvokeTargetSideIndex/InvokeTargetItemIndex）。250ms 节流状态存于物品（GetLastTriggerMs/SetLastTriggerMs），见「能力队列 250ms 节流状态与冷却缩短联动」。
 
 5. **总结**  
    修改能力队列逻辑时务必对照：cast/使用物品 → 只入 next；步骤 8 只消费 current；next → current 仅步骤 11；新触发能力先合并 PendingCount（current 再 next），再按优先级决定入 current 或 next。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。
@@ -75,11 +75,11 @@
 ### AbilityDefinition 多触发与 Ability.Also
 
 - **多套触发配置**：一条 AbilityDefinition 可以拥有多套 `(TriggerName, Condition, SourceCondition, InvokeTargetCondition)` 组合，内部通过 `AbilityDefinition.TriggerEntry` 列表（`Triggers`）表示；同一条能力仍只有一份 `Priority` / `TargetCondition` / `ValueKey` / `Value` / `ApplyCritMultiplier` / `UseSelf` / `Apply`，以及一套队列节流状态（`LastTriggerMs` / PendingCount 等）。
-- **共享 250ms 触发间隔**：无论由哪一套 Trigger/Condition 命中，最终都只向队列中加入同一条 ability（同一个 `AbilityIndex`）的 Pending，一并受「每 5 帧（250ms）最多触发一次」的限制，即「同一条能力的多套触发条件**共享**节流，不会互相绕过冷却」。
+- **共享 250ms 触发间隔**：无论由哪一套 Trigger/Condition 命中，最终都只向队列中加入同一条 ability（同一个 `AbilityIndex`）的 Pending，一并受「每 5 帧（250ms）最多触发一次」的限制，即「同一条能力的多套触发条件**共享**节流，不会互相绕过冷却」。节流状态存于物品（GetLastTriggerMs/SetLastTriggerMs），见「能力队列 250ms 节流状态与冷却缩短联动」。
 - **顶层字段与主触发条目**：`TriggerName` / `Condition` / `SourceCondition` / `InvokeTargetCondition` 仍作为「主触发条目」存在，`AbilityDefinition.Override(...)` 修改这些字段时会同步更新 `Triggers[0]`；旧代码在不显式使用 `Triggers` 时行为保持不变。
 - **AbilityDefinition.Also(...)**：在已构造好的能力上追加一套新的触发条件：
   - 签名为 `ability.Also(trigger, condition?, additionalCondition?, sourceCondition?, invokeTargetCondition?)`，返回 `this` 以便链式调用。
-  - `trigger` 的默认 Condition 与 `EnsureTriggerCondition` 一致：UseItem → SameAsSource，Freeze/Slow/Crit/Destroy → SameSide，BattleStart → Always；若传入 `condition`/`additionalCondition` 则在此默认上做与运算。
+  - `trigger` 的默认 Condition 与 `EnsureTriggerCondition` 一致：UseItem → SameAsSource，Freeze/Slow/Haste/Crit/Destroy/Burn/Poison/Shield/Ammo → SameSide，BattleStart → Always；若传入 `condition`/`additionalCondition` 则在此默认上做与运算。
   - `sourceCondition` / `invokeTargetCondition` 为空时沿用当前 ability 顶层对应字段。
   - `InvokeTrigger` 评估时会遍历该 ability 的所有 TriggerEntry，只要有一条条目匹配当前 triggerName 且通过条件，即视为这条 ability 命中一次并入队。
 - **使用场景与约定**：
@@ -101,6 +101,33 @@
 ### 对照规则
 
 修改效果上下文或 Freeze/Slow/Destroy 触发逻辑时，见 **.cursor/rules/battle-simulator-ability-queue.mdc**；上下文不持有触发器回调，仅通过 EffectAppliedTriggerQueue 上报，模拟器单点消费。
+
+---
+
+## 弹药消耗触发器（Trigger.Ammo）与 Condition.AmmoDepleted
+
+- **设计**：不在「弹药耗尽」时单独设触发器，而是**每次弹药消耗**时触发 **Trigger.Ammo**（步骤 7 中 `AmmoRemaining--` 后立即 `InvokeTrigger(Trigger.Ammo, item, ...)`）。来源（causeItem）= 消耗弹药的那个物品。默认 Condition 为 SameSide。
+- **「仅耗尽当次」**：用 **additionalCondition: Condition.AmmoDepleted** 限定。`Condition.AmmoDepleted` 表示被评估对象（Item，即引起触发的物品）满足 AmmoCap > 0 且 AmmoRemaining == 0（刚扣完一发后为 0）。例如生体融合臂：`Ability.Damage.Override(trigger: Trigger.Ammo, additionalCondition: Condition.AmmoDepleted, targetCondition: Condition.DifferentSide)`，即「己方某物品消耗弹药且当次耗尽时，对该物品所在侧无关、对敌方造成伤害」。
+- **Condition.HasAmmoCap**：被评估对象有 AmmoCap > 0，用于「弹药物品」筛选（如光环「此物品左侧的弹药物品 +1 最大弹药」用 `Condition.LeftOfSource & Condition.HasAmmoCap`）。**左侧**若指**相邻左侧**用 **LeftOfSource**，若指**所有严格左侧**用 **StrictlyLeftOfSource**。
+- **Key.AmmoRemaining**：运行时剩余弹药存于物品模板字典（与 `ItemTemplate.KeyAmmoRemaining` 一致），供 Condition 与公式使用。
+
+---
+
+## InvokeTarget 与 SameAsInvokeTarget（单目标施加）
+
+- **场景**：部分能力由「触发器指向的单个目标」触发（如月光宝珠「敌方加速时令其减速」、Freeze/Slow 每目标一次）。效果应对**该目标**施加，而不是再按 TargetCondition 从双方选目标。
+- **入队**：当 `InvokeTrigger` 的 context 提供 `InvokeTargetItem` 且能力通过 InvokeTargetCondition 时，**AddOrMergeAbility** 传入 `invokeTargetSideIndex` / `invokeTargetItemIndex`，新建条目且**不参与合并**（不查同 Owner+AbilityIndex 合并 PendingCount），保证「每目标一条」。
+- **AbilityQueueEntry**：新增 **InvokeTargetSideIndex**、**InvokeTargetItemIndex**（均为可空）。非空时表示本条目应对该 (side, index) 物品施加效果；ExecuteOneEffect 内从 entry 解析出 **InvokeTargetItem** 注入 **IEffectApplyContext**。
+- **效果层**：**IEffectApplyContext.InvokeTargetItem** 非空时，冻结/减速/加速等多目标效果应对该单一物品施加（实现内用 SameAsInvokeTarget 或直接对 InvokeTargetItem 施加），不再按 TargetCondition 选目标。目标选取与 Condition 评估时 **ConditionContext.InvokeTargetItem** 传入，**Condition.SameAsInvokeTarget** 表示「候选目标与触发器指向目标相同」。
+- **Burn/Poison/Shield**：EffectAppliedTriggerQueue 中 Burn/Poison/Shield 存的是施加者（己方），故 InvokeTrigger 时 causeItem = 施加者、InvokeTargetItem = null；Freeze/Slow/Destroy 存的是目标，causeItem = 施放者、InvokeTargetItem = 目标。
+
+---
+
+## 能力队列 250ms 节流状态与冷却缩短联动
+
+- **LastTriggerMs 挂在物品上**：250ms 触发间隔按「能力持有者 + 能力下标」维护，状态存于**物品**（BattleItemState）的字典（GetLastTriggerMs/SetLastTriggerMs），不再存在 AbilityQueueEntry 上。这样同一物品的多条能力各自节流，合并 PendingCount 时也不依赖条目的 LastTriggerMs。
+- **AbilityQueueEntry**：移除 LastTriggerMs；保留 Owner、AbilityIndex、PendingCount，以及可选的 InvokeTargetSideIndex/InvokeTargetItemIndex。步骤 8 中「与上次触发间隔不足 250ms」用 `item.GetLastTriggerMs(entry.AbilityIndex)` 判断。
+- **冷却缩短与充能联动**：ReduceAttribute（CooldownMs）时，目标隐性要求未摧毁；冷却时间有下限 **1000ms**（1 秒）。若缩短后该物品「已过冷却已满」（CooldownElapsedMs >= 新 CooldownMs），与充能满一致：加入 **ChargeInducedCastQueue** 并清零 CooldownElapsedMs（仅当该物品无弹药或弹药未耗尽时可加入施放队列）。这样「时光指针」「仿生手臂」等缩短冷却后立即可施放。
 
 ---
 

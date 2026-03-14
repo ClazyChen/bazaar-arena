@@ -19,6 +19,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
 
     public string? EffectLogName { get; init; }
     public string? TargetCountKey { get; init; }
+    public BattleItemState? InvokeTargetItem { get; init; }
 
     public int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0)
     {
@@ -84,6 +85,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
                 EnemySide = enemySide,
                 Item = it,
                 Source = Item,
+                InvokeTargetItem = InvokeTargetItem,
             };
             if (!condition.Evaluate(ctx)) continue;
             pool.Add(i);
@@ -98,7 +100,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         return pool.Take(take).ToList();
     }
 
-    /// <summary>从双方所有物品中选取至多 targetCount 个满足 condition 的目标（Source=施放者）；不放回随机选取。</summary>
+    /// <summary>从双方所有物品中选取至多 targetCount 个满足 condition 的目标（Source=施放者）；不放回随机选取。评估条件时传入 InvokeTargetItem 供 SameAsInvokeTarget 使用。</summary>
     private List<(BattleSide side, int index)> GetTargetsFromBothSides(int targetCount, Condition? condition)
     {
         if (condition == null) return [];
@@ -114,6 +116,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
                     EnemySide = enemySide,
                     Item = it,
                     Source = Item,
+                    InvokeTargetItem = InvokeTargetItem,
                 };
                 if (!condition.Evaluate(ctx)) continue;
                 pool.Add((fromSide, i));
@@ -222,12 +225,12 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     {
         if (hasteMs <= 0 || targetCount <= 0) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.HasCooldown;
-        ApplyToTargetsBothSides(targetCount, cond, "加速", hasteMs, (side, index) =>
+        ApplyToTargetsBothSides(targetCount, cond, EffectLogName ?? "加速", hasteMs, (side, index) =>
         {
             var t = side.Items[index];
             t.HasteRemainingMs += hasteMs;
             return t.Template.Name;
-        }, null);
+        }, Trigger.Haste);
     }
 
     public void ApplyRepair(int targetCount, Condition? targetCondition = null)
@@ -267,10 +270,11 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public void AddAttributeToCasterSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0)
     {
         if (value <= 0 || targetCondition == null) return;
+        var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed;
         string logName = EffectLogName ?? (AttributeLogNames.Get(attributeName) + "提高");
         if (maxTargetCount > 0)
         {
-            var indices = GetTargetIndices(Side, maxTargetCount, targetCondition);
+            var indices = GetTargetIndices(Side, maxTargetCount, cond);
             if (indices.Count == 0) return;
             var targetNames = new List<string>();
             foreach (int i in indices)
@@ -286,7 +290,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
                 LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
             return;
         }
-        ApplyToSideWithCondition(Side, Opp, targetCondition, logName, value, (wi, _) =>
+        ApplyToSideWithCondition(Side, Opp, cond, logName, value, (wi, _) =>
         {
             if (attributeName == Key.Damage) { wi.Template.Damage = wi.Template.Damage.Add(value); return wi.Template.Name; }
             if (attributeName == Key.Poison) { wi.Template.Poison = wi.Template.Poison.Add(value); return wi.Template.Name; }
@@ -309,22 +313,37 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         });
     }
 
-    /// <summary>对满足 targetCondition 的目标（从双方选取）减少指定属性（不低于 0）。目标数由 maxTargetCount 限制，0 表示不限制。</summary>
+    /// <summary>对满足 targetCondition 的目标（从双方选取）减少指定属性（不低于 0）。目标数由 maxTargetCount 限制，0 表示不限制。隐性要求目标未摧毁（与 Freeze 等一致）。</summary>
     public void ReduceAttributeToSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0, string? effectLogName = null)
     {
         if (value <= 0 || targetCondition == null) return;
+        var cond = (targetCondition ?? Condition.DifferentSide) & Condition.NotDestroyed;
         string logName = effectLogName ?? (AttributeLogNames.Get(attributeName) + "降低");
         int take = maxTargetCount > 0 ? maxTargetCount : 100;
-        var targets = GetTargetsFromBothSides(take, targetCondition);
+        var targets = GetTargetsFromBothSides(take, cond);
         if (targets.Count == 0) return;
         var targetNames = new List<string>();
+        const int minCooldownMs = 1000;
         foreach (var (side, index) in targets)
         {
             var wi = side.Items[index];
             int current = wi.Template.GetInt(attributeName, wi.Tier, 0);
-            int newVal = Math.Max(0, current - value);
+            int newVal = current - value;
+            if (attributeName == Key.CooldownMs)
+                newVal = Math.Max(minCooldownMs, newVal);
+            else
+                newVal = Math.Max(0, newVal);
             wi.Template.SetInt(attributeName, newVal);
             targetNames.Add(wi.Template.Name);
+
+            // 冷却缩短后若充能已满，与充能效果一致：加入施放队列并清零已过冷却
+            if (attributeName == Key.CooldownMs && side == Side && wi.CooldownElapsedMs >= newVal && ChargeInducedCastQueue != null)
+            {
+                int ammoCap = side.GetItemInt(index, "AmmoCap", 0);
+                if (ammoCap <= 0 || wi.AmmoRemaining > 0)
+                    ChargeInducedCastQueue.Add(wi);
+                wi.CooldownElapsedMs = 0;
+            }
         }
         if (targetNames.Count > 0)
             LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");

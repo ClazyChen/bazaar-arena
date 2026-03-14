@@ -31,7 +31,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "岩浆核心",
-            Desc = "▶ 战斗开始时，造成 {Burn} 灼烧",
+            Desc = "战斗开始时，造成 {Burn} 灼烧",
             Tags = [],
             Burn = [6, 9, 12, 15],
             Abilities =
@@ -138,7 +138,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "轻步靴",
-            Desc = "▶ 相邻物品 {+Custom_0%} 暴击率",
+            Desc = "相邻物品 {+Custom_0%} 暴击率",
             Tags = [Tag.Apparel],
             Custom_0 = [3, 6, 9, 12],
             Auras =
@@ -202,7 +202,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "冰锥",
-            Desc = "▶ 战斗开始时，冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒",
+            Desc = "战斗开始时，冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒",
             Tags = [],
             Freeze = [3.0, 4.0, 5.0, 6.0],
             Abilities =
@@ -221,7 +221,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "毒刺",
-            Desc = "▶ 造成 {Damage} 伤害；减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；吸血",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；吸血",
             Tags = [Tag.Weapon],
             Cooldown = 7.0,
             Damage = [5, 10, 20, 40],
@@ -242,7 +242,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "裂盾刀",
-            Desc = "▶ 造成 {Damage} 伤害；敌人的护盾物品损失 {Custom_0} 护盾（限本场战斗）",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 敌人的护盾物品损失 {Custom_0} 护盾（限本场战斗）",
             Tags = [Tag.Weapon],
             Cooldown = 5.0,
             Damage = [10, 20, 30, 40],
@@ -264,7 +264,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "灵质",
-            Desc = "▶ 造成 {Poison} 剧毒；获得治疗，等量于敌人的剧毒",
+            Desc = "▶ 造成 {Poison} 剧毒；▶ 获得治疗，等量于敌人的剧毒",
             Tags = [],
             Cooldown = 7.0,
             Poison = [10, 20, 30],
@@ -315,7 +315,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "神经毒素",
-            Desc = "▶ 使用相邻武器时，减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
+            Desc = "使用相邻武器时，减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
             Tags = [],
             Slow = [1.0, 2.0, 3.0],
             Abilities =
@@ -391,7 +391,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "巨龙崽崽",
-            Desc = "▶ 造成 {Damage} 伤害；造成灼烧，等量于此物品伤害；此物品开始飞行",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 造成灼烧，等量于此物品伤害；▶ 此物品开始飞行",
             Tags = [Tag.Weapon, Tag.Friend, Tag.Dragon],
             Cooldown = [9.0, 8.0, 7.0],
             Damage = 5,
@@ -400,7 +400,9 @@ public static class CommonSmall
             [
                 Ability.Damage,
                 Ability.Burn,
-                Ability.StartFlying.Override(targetCondition: Condition.SameAsSource),
+                Ability.StartFlying.Override(
+                    additionalTargetCondition: Condition.SameAsSource
+                ),
             ],
             Auras =
             [
@@ -490,7 +492,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "口器",
-            Desc = "▶ 触发减速时，造成 {Damage} 伤害",
+            Desc = "触发减速时，造成 {Damage} 伤害",
             Tags = [Tag.Weapon],
             Damage = [8, 12, 16],
             Abilities =
@@ -536,7 +538,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "牵引光束",
-            Desc = "▶ 摧毁右侧下一件己方物品，造成 {Damage} 伤害；若被毁物品为大型或飞行，再造成 {Damage} 伤害",
+            Desc = "▶ 摧毁右侧下一件己方物品，造成 {Damage} 伤害；▶ 若被毁物品为大型或飞行，再造成 {Damage} 伤害",
             Tags = [Tag.Weapon],
             Cooldown = 6.0,
             Damage = [150, 300, 600],
@@ -553,6 +555,106 @@ public static class CommonSmall
                     trigger: Trigger.Destroy,
                     condition: Condition.SameAsSource,
                     invokeTargetCondition: Condition.WithTag(Tag.Large) | Condition.InFlight
+                ),
+            ],
+        };
+    }
+
+    /// <summary>魔杖（Wand）：6s 小 金 玩具 遗物；为其他非武器物品充能 1 » 2 秒（10 个物品）。</summary>
+    public static ItemTemplate Wand()
+    {
+        return new ItemTemplate
+        {
+            Name = "魔杖",
+            Desc = "▶ 为其他非武器物品充能 {ChargeSeconds} 秒",
+            Tags = [Tag.Toy, Tag.Relic],
+            Cooldown = 6.0,
+            ChargeTargetCount = 10,
+            Charge = [1.0, 2.0],
+            Abilities =
+            [
+                Ability.Charge.Override(
+                    additionalTargetCondition: Condition.DifferentFromSource & Condition.NotWithTag(Tag.Weapon),
+                    priority: AbilityPriority.High
+                )
+            ],
+        };
+    }
+
+    /// <summary>远古标本（Ancient Specimen）：5s 小 金 伙伴 遗物 水系；治疗 80 » 120 生命值；造成 8 » 12 剧毒；每有一件相邻的水系、伙伴或遗物，此物品的冷却时间就缩短 1 秒。</summary>
+    public static ItemTemplate AncientSpecimen()
+    {
+        return new ItemTemplate
+        {
+            Name = "远古标本",
+            Desc = "▶ 治疗 {Heal} 生命值；▶ 造成 {Poison} 剧毒；每有一件相邻的水系、伙伴或遗物，此物品的冷却时间就缩短 1 秒",
+            Tags = [Tag.Friend, Tag.Relic, Tag.Aquatic],
+            Cooldown = 5.0,
+            Heal = [80, 120],
+            Poison = [8, 12],
+            Abilities = 
+            [
+                Ability.Heal,
+                Ability.Poison,
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = Key.CooldownMs,
+                    Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToSource & (Condition.WithTag(Tag.Aquatic) | Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Relic))),
+                },
+            ],
+        };
+    }
+
+    /// <summary>汤哞冲锋枪（Tommoo Gun）：3s 钻石 武器；造成伤害，等量于此物品弹药数量；弹药：50。</summary>
+    public static ItemTemplate TommooGun()
+    {
+        return new ItemTemplate
+        {
+            Name = "汤哞冲锋枪",
+            Desc = "▶ 造成伤害，等量于此物品弹药数量；弹药：{AmmoCap}",
+            Tags = [Tag.Weapon],
+            Cooldown = 3.0,
+            AmmoCap = 50,
+            Abilities =
+            [
+                Ability.Damage
+            ],
+            Auras = [
+                new AuraDefinition
+                {
+                    AttributeName = Key.Damage,
+                    Value = Formula.Source(Key.AmmoRemaining),
+                },
+            ]
+        };
+    }
+
+    /// <summary>月光宝珠（Moon Orb）：遗物。敌方物品被加速时，对该物品施加减速 {SlowSeconds} 秒；己方物品被减速时，对该物品施加加速 {HasteSeconds} 秒。目标由 additionalTargetCondition: SameAsInvokeTarget 限定为触发器指向的那一件。</summary>
+    public static ItemTemplate MoonOrb()
+    {
+        return new ItemTemplate
+        {
+            Name = "月光宝珠",
+            Desc = "敌方物品加速时，令其减速 {SlowSeconds} 秒；己方物品减速时，令其加速 {HasteSeconds} 秒",
+            Tags = [Tag.Relic],
+            Slow = 1.0,
+            Haste = 1.0,
+            Abilities =
+            [
+                Ability.Slow.Override(
+                    trigger: Trigger.Haste,
+                    invokeTargetCondition: Condition.DifferentSide,
+                    additionalTargetCondition: Condition.SameAsInvokeTarget,
+                    priority: AbilityPriority.High
+                ),
+                Ability.Haste.Override(
+                    trigger: Trigger.Slow,
+                    invokeTargetCondition: Condition.SameSide,
+                    additionalTargetCondition: Condition.SameAsInvokeTarget,
+                    priority: AbilityPriority.High
                 ),
             ],
         };
@@ -591,5 +693,15 @@ public static class CommonSmall
         db.Register(Proboscis());
         db.Register(FriendlyDoll());
         db.Register(TractorBeam());
+
+        db.Register(MoonOrb());
+
+        db.DefaultMinTier = ItemTier.Gold;
+        db.Register(Wand());
+        db.Register(AncientSpecimen());
+
+        db.DefaultMinTier = ItemTier.Diamond;
+        db.Register(TommooGun());
+        db.Register(MoonOrb());
     }
 }

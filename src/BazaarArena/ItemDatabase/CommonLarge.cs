@@ -104,6 +104,49 @@ public static class CommonLarge
         };
     }
 
+    /// <summary>废品场弹射机（Junkyard Catapult）：7s 银 大 武器，造成 25 » 50 » 100 伤害；造成 6 » 8 » 10 灼烧；造成 4 » 6 » 8 剧毒；弹药：1。</summary>
+    public static ItemTemplate JunkyardCatapult()
+    {
+        return new ItemTemplate
+        {
+            Name = "废品场弹射机",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 造成 {Burn} 灼烧；▶ 造成 {Poison} 剧毒；弹药：{AmmoCap}",
+            Tags = [Tag.Weapon],
+            Cooldown = 7.0,
+            Damage = [25, 50, 100],
+            Burn = [6, 8, 10],
+            Poison = [4, 6, 8],
+            AmmoCap = 1,
+            Abilities =
+            [
+                Ability.Damage,
+                Ability.Burn,
+                Ability.Poison,
+            ],
+        };
+    }
+
+    /// <summary>巨型冰棒（Colossal Popsicle）：9s 银 大 武器，造成 50 » 100 » 200 伤害；冻结 2 件物品 1 » 2 » 3 秒。</summary>
+    public static ItemTemplate ColossalPopsicle()
+    {
+        return new ItemTemplate
+        {
+            Name = "巨型冰棒",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒",
+            Tags = [Tag.Weapon, Tag.Food],
+            Cooldown = 9.0,
+            Damage = [50, 100, 200],
+            FreezeTargetCount = 2,
+            Freeze = [1.0, 2.0, 3.0],
+            Abilities =
+            [
+                Ability.Damage,
+                Ability.Freeze,
+            ],
+        };
+    }
+
+
     /// <summary>注册所有公共大型物品到数据库。</summary>
     public static void RegisterAll(ItemDatabase db)
     {
@@ -114,5 +157,9 @@ public static class CommonLarge
         db.Register(TouristChariot());
         db.Register(HotSprings());
         db.Register(JunkyardLance());
+
+        db.DefaultMinTier = ItemTier.Silver;
+        db.Register(JunkyardCatapult());
+        db.Register(ColossalPopsicle());
     }
 }
