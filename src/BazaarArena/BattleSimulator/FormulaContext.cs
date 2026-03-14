@@ -11,6 +11,32 @@ internal sealed class FormulaContext(BattleItemState source, BattleSide side, Ba
     public int GetSideInt(string key) => side.GetInt(key, 0);
     public int GetOppInt(string key) => opp?.GetInt(key, 0) ?? 0;
 
+    public int GetSideItemMax(string key)
+    {
+        int max = 0;
+        foreach (var item in side.Items)
+        {
+            if (item.Destroyed) continue;
+            int v = item.Template.GetInt(key, item.Tier, 0, new BattleAuraContext(side, item, opp));
+            if (v > max) max = v;
+        }
+        return max;
+    }
+
+    public int GetSideItemMin(string key)
+    {
+        bool any = false;
+        int min = 0;
+        foreach (var item in side.Items)
+        {
+            if (item.Destroyed) continue;
+            int v = item.Template.GetInt(key, item.Tier, 0, new BattleAuraContext(side, item, opp));
+            if (!any) { min = v; any = true; }
+            else if (v < min) min = v;
+        }
+        return any ? min : 0;
+    }
+
     public int Count(Condition? condition)
     {
         if (condition == null) return 0;

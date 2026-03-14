@@ -55,6 +55,12 @@ public class AbilityDefinition
     /// <summary>效果应用委托；由 Core/Effect 预定义或自定义效果设置。</summary>
     public Action<IEffectApplyContext>? Apply { get; set; }
 
+    /// <summary>减少属性效果是否作用于己方（true=己方，false=敌方）；仅 ReduceAttribute 使用，由 Override(reduceToCasterSide: true) 设置。</summary>
+    public bool ReduceAttributeToCasterSide { get; set; }
+
+    /// <summary>效果日志名覆盖；非空时用于 AddAttribute/ReduceAttribute 的日志（如「解除冻结」「开始飞行」），否则用属性中文名+提高/降低。</summary>
+    public string? EffectLogName { get; set; }
+
     /// <summary>确保 Triggers 至少包含一条与主字段（TriggerName/Condition/...）一致的配置。</summary>
     internal void SyncPrimaryTriggerEntryFromTopLevel()
     {
@@ -97,7 +103,9 @@ public class AbilityDefinition
         string? valueKey = null,
         int? value = null,
         bool? applyCritMultiplier = null,
-        Action<IEffectApplyContext>? apply = null)
+        Action<IEffectApplyContext>? apply = null,
+        bool? reduceToCasterSide = null,
+        string? effectLogName = null)
     {
         string originalTrigger = TriggerName;
         if (trigger != null) TriggerName = trigger;
@@ -108,6 +116,8 @@ public class AbilityDefinition
         if (value != null) Value = value.Value;
         if (applyCritMultiplier != null) ApplyCritMultiplier = applyCritMultiplier.Value;
         if (apply != null) Apply = apply;
+        if (reduceToCasterSide != null) ReduceAttributeToCasterSide = reduceToCasterSide.Value;
+        if (effectLogName != null) EffectLogName = effectLogName;
 
         if (condition != null || additionalCondition != null)
         {
@@ -147,7 +157,7 @@ public class AbilityDefinition
         Condition? defaultCond = null;
         if (trigger == Trigger.UseItem)
             defaultCond = Condition.SameAsSource;
-        else if (trigger == Trigger.Freeze || trigger == Trigger.Slow || trigger == Trigger.Crit || trigger == Trigger.Destroy)
+        else if (trigger == Trigger.Freeze || trigger == Trigger.Slow || trigger == Trigger.Crit || trigger == Trigger.Destroy || trigger == Trigger.Burn || trigger == Trigger.Poison)
             defaultCond = Condition.SameSide;
         else if (trigger == Trigger.BattleStart)
             defaultCond = Condition.Always;

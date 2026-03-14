@@ -112,6 +112,7 @@ public class ItemTemplate
     private const string KeyChargeTargetCount = "ChargeTargetCount";
     private const string KeyFreeze = "Freeze";
     private const string KeyFreezeTargetCount = "FreezeTargetCount";
+    private const string KeyPercentFreezeReduction = "PercentFreezeReduction";
     private const string KeySlow = "Slow";
     private const string KeySlowTargetCount = "SlowTargetCount";
     private const string KeyHaste = "Haste";
@@ -260,6 +261,9 @@ public class ItemTemplate
 
     /// <summary>冻结目标数量（可单值或按等级）；随机选取敌人物品时选取的次数（每次独立，可能重复）。</summary>
     public IntOrByTier FreezeTargetCount { get => GetInt(KeyFreezeTargetCount, 1); set => SetIntOrByTier(KeyFreezeTargetCount, value.ToList()); }
+
+    /// <summary>冻结时长减免百分比（0–100）；施加冻结时有效时长 = 原始时长 × (100 - 此值) / 100。默认 0；可由光环提供。</summary>
+    public IntOrByTier PercentFreezeReduction { get => GetInt(KeyPercentFreezeReduction, 0); set => SetIntOrByTier(KeyPercentFreezeReduction, value.ToList()); }
 
     /// <summary>减速时长（秒，可单值或按等级）。Slow = 1.0 或 Slow = [1.0, 2.0, 3.0]；内部存为毫秒。</summary>
     public SecondsOrByTier Slow { get => SecondsOrByTier.FromMilliseconds(GetIntOrByTier(KeySlow).ToList()); set => SetIntOrByTier(KeySlow, value.ToMilliseconds()); }

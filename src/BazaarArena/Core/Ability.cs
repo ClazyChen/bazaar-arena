@@ -105,8 +105,8 @@ public static class Ability
         TargetCondition = WithCooldownTarget(Condition.DifferentSide),
     };
 
-    /// <summary>开始飞行：对己方满足目标条件且未飞行的物品设为飞行（等价于 AddAttribute(Key.InFlight) 设 1）。默认 additionalTargetCondition 为 NotInFlight；定制用 .Override(...)。</summary>
-    public static AbilityDefinition StartFlying => AddAttribute(Key.InFlight).Override(value: 1, additionalTargetCondition: Condition.NotInFlight);
+    /// <summary>开始飞行：对己方满足目标条件且未飞行的物品设为飞行（等价于 AddAttribute(Key.InFlight) 设 1）。默认 additionalTargetCondition 为 NotInFlight；日志显示「开始飞行」。</summary>
+    public static AbilityDefinition StartFlying => AddAttribute(Key.InFlight).Override(value: 1, additionalTargetCondition: Condition.NotInFlight, effectLogName: "开始飞行");
 
     /// <summary>结束飞行（Effect.StopFlyingApply）。默认触发器 UseItem；目标默认己方且处于飞行状态；定制用 .Override(...)。</summary>
     public static AbilityDefinition StopFlying => new()
@@ -164,4 +164,8 @@ public static class Ability
         Priority = AbilityPriority.Medium,
         TargetCondition = Condition.DifferentSide,
     };
+
+    /// <summary>对己方满足目标条件的物品减少指定属性（限本场战斗，不低于 0）。等价于 ReduceAttribute(attributeName).Override(targetCondition: Condition.SameSide, reduceToCasterSide: true)；可再 Override(effectLogName: "解除冻结") 等。</summary>
+    public static AbilityDefinition ReduceAttributeCaster(string attributeName, string? amountKey = null) =>
+        ReduceAttribute(attributeName, amountKey).Override(targetCondition: Condition.SameSide, reduceToCasterSide: true);
 }

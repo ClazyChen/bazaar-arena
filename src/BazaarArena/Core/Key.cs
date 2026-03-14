@@ -25,6 +25,10 @@ public static class Key
     public const string ChargeTargetCount = nameof(ItemTemplate.ChargeTargetCount);
     public const string Freeze = nameof(ItemTemplate.Freeze);
     public const string FreezeTargetCount = nameof(ItemTemplate.FreezeTargetCount);
+    /// <summary>剩余冻结时间（毫秒），运行时存于物品模板字典。</summary>
+    public const string FreezeRemainingMs = "FreezeRemainingMs";
+    /// <summary>冻结时长减免百分比（0–100）；施加冻结时有效时长 = 原始时长 × (100 - 此值) / 100。默认 0。</summary>
+    public const string PercentFreezeReduction = nameof(ItemTemplate.PercentFreezeReduction);
     public const string Slow = nameof(ItemTemplate.Slow);
     public const string SlowTargetCount = nameof(ItemTemplate.SlowTargetCount);
     public const string Haste = nameof(ItemTemplate.Haste);

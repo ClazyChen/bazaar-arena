@@ -249,7 +249,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "宇宙炫羽",
-            Desc = "▶ 1 件物品开始飞行；飞行物品暴击率 {+Custom_0%}；造成暴击或使用飞行物品时，为此物品充能 {ChargeSeconds} 秒",
+            Desc = "▶ {ModifyAttributeTargetCount} 件物品开始飞行；飞行物品暴击率 {+Custom_0%}；造成暴击或使用飞行物品时，为此物品充能 {ChargeSeconds} 秒",
             Tags = [Tag.Relic],
             Cooldown = 4.0,
             Custom_0 = [5, 10, 15],
@@ -269,6 +269,153 @@ public static class CommonMedium
                 ).Also(
                     trigger: Trigger.UseItem,
                     condition: Condition.SameSide & Condition.InFlight
+                ),
+            ],
+        };
+    }
+
+    /// <summary>巨龙翼（Dragon Wing）：7s 中 银 巨龙，获得 40 » 60 » 80 护盾；1 件物品开始飞行；触发灼烧时，为此物品充能 2 秒（Low）。</summary>
+    public static ItemTemplate DragonWing()
+    {
+        return new ItemTemplate
+        {
+            Name = "巨龙翼",
+            Desc = "▶ 获得 {Shield} 护盾；▶ {ModifyAttributeTargetCount} 件物品开始飞行；触发灼烧时，为此物品充能 {ChargeSeconds} 秒",
+            Tags = [Tag.Dragon],
+            Cooldown = 7.0,
+            Shield = [40, 60, 80],
+            Charge = 2.0,
+            ModifyAttributeTargetCount = 1,
+            Abilities =
+            [
+                Ability.Shield,
+                Ability.StartFlying,
+                Ability.Charge.Override(
+                    trigger: Trigger.Burn,
+                    targetCondition: Condition.SameAsSource,
+                    priority: AbilityPriority.Low
+                ),
+            ],
+        };
+    }
+
+    /// <summary>碾骨爪（Crusher Claw）：9s 中 银 武器 水系，造成伤害等量于己方物品中最高的护盾值；护盾物品的护盾提高 +20 » +40 » +60（限本场战斗）（High）。</summary>
+    public static ItemTemplate CrusherClaw()
+    {
+        return new ItemTemplate
+        {
+            Name = "碾骨爪",
+            Desc = "▶ 造成伤害，等量于己方物品中最高的护盾值；▶ 护盾物品的护盾提高 {+Custom_0}（限本场战斗）",
+            Tags = [Tag.Weapon, Tag.Aquatic],
+            Cooldown = 9.0,
+            Custom_0 = [20, 40, 60],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = Key.Damage,
+                    Value = Formula.SideSelect(Key.Shield, SideSelectKind.Max),
+                },
+            ],
+            Abilities =
+            [
+                Ability.Damage,
+                Ability.AddAttribute(Key.Shield).Override(
+                    additionalTargetCondition: Condition.WithTag(Tag.Shield),
+                    priority: AbilityPriority.High
+                ),
+            ],
+        };
+    }
+
+    /// <summary>寒冰特服（Cryosleeve）：4s 中 银 服饰，▶冻结此物品以及相邻物品1秒；任意物品冻结时，获得50 » 75 » 100护盾；己方物品受到的冻结效果时长减半（光环）。</summary>
+    public static ItemTemplate Cryosleeve()
+    {
+        return new ItemTemplate
+        {
+            Name = "寒冰特服",
+            Desc = "▶ 冻结此物品以及相邻物品 {FreezeSeconds} 秒；任意物品冻结时，获得 {Shield} 护盾；己方物品受到的冻结效果时长减半",
+            Tags = [Tag.Apparel],
+            Cooldown = 4.0,
+            Freeze = 1.0,
+            FreezeTargetCount = 3,
+            Shield = [50, 75, 100],
+            Abilities =
+            [
+                Ability.Freeze.Override(
+                    targetCondition: Condition.SameAsSource | Condition.AdjacentToSource
+                ),
+                Ability.Shield.Override(
+                    trigger: Trigger.Freeze,
+                    targetCondition: Condition.SameAsSource
+                ),
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = Key.PercentFreezeReduction,
+                    Condition = Condition.SameSide,
+                    Value = Formula.Constant(50),
+                },
+            ],
+        };
+    }
+
+    /// <summary>守护神之壳（Guardian Shell）：7s 中 银 遗物，▶获得40 » 60 » 80护盾；触发剧毒时，为此物品充能2秒（Low）。</summary>
+    public static ItemTemplate GuardianShell()
+    {
+        return new ItemTemplate
+        {
+            Name = "守护神之壳",
+            Desc = "▶ 获得 {Shield} 护盾；触发剧毒时，为此物品充能 {ChargeSeconds} 秒",
+            Tags = [Tag.Relic],
+            Cooldown = 7.0,
+            Shield = [40, 60, 80],
+            Charge = 2.0,
+            Abilities =
+            [
+                Ability.Shield,
+                Ability.Charge.Override(
+                    trigger: Trigger.Poison,
+                    targetCondition: Condition.SameAsSource,
+                    priority: AbilityPriority.Low
+                ),
+            ],
+        };
+    }
+
+    /// <summary>破冰尖镐（Icebreaker）：7s 中 银 武器 工具，造成 100 » 200 » 300 伤害；解除己方物品的冻结效果（剩余冻结时间减去 1000 秒）；任意物品冻结时为此物品充能 1 » 2 » 3 秒（Low）；此物品冻结时解除其冻结效果（Low）。</summary>
+    public static ItemTemplate Icebreaker()
+    {
+        return new ItemTemplate
+        {
+            Name = "破冰尖镐",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 解除己方物品的冻结效果；任意物品冻结时，为此物品充能 {ChargeSeconds} 秒；此物品冻结时，解除其冻结效果",
+            Tags = [Tag.Weapon, Tag.Tool],
+            Cooldown = 7.0,
+            Damage = [100, 200, 300],
+            Charge = [1.0, 2.0, 3.0],
+            Abilities =
+            [
+                Ability.Damage,
+                Ability.ReduceAttributeCaster(Key.FreezeRemainingMs).Override(
+                    value: 1_000_000,
+                    effectLogName: "解除冻结",
+                    priority: AbilityPriority.Medium
+                ),
+                Ability.Charge.Override(
+                    trigger: Trigger.Freeze,
+                    targetCondition: Condition.SameAsSource,
+                    priority: AbilityPriority.Low
+                ),
+                Ability.ReduceAttributeCaster(Key.FreezeRemainingMs).Override(
+                    trigger: Trigger.Freeze,
+                    invokeTargetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsSource,
+                    value: 1_000_000,
+                    effectLogName: "解除冻结",
+                    priority: AbilityPriority.Low
                 ),
             ],
         };
@@ -294,5 +441,10 @@ public static class CommonMedium
 
         db.DefaultMinTier = ItemTier.Silver;
         db.Register(CosmicPlume());
+        db.Register(DragonWing());
+        db.Register(CrusherClaw());
+        db.Register(Cryosleeve());
+        db.Register(GuardianShell());
+        db.Register(Icebreaker());
     }
 }

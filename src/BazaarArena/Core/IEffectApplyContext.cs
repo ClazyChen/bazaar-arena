@@ -20,6 +20,12 @@ public interface IEffectApplyContext
     /// <summary>当前能力的目标选择条件（用于冻结/减速/充能/加速/摧毁等多目标效果）；由模拟器从 AbilityDefinition.TargetCondition 注入。</summary>
     Condition? TargetCondition { get; }
 
+    /// <summary>减少属性效果是否作用于己方（由能力 Override(reduceToCasterSide) 注入）；用于统一 ReduceAttribute Apply 选边。</summary>
+    bool ReduceAttributeToCasterSide { get; }
+
+    /// <summary>效果日志名覆盖（由能力 Override(effectLogName) 注入）；非空时用于属性提高/降低的日志显示。</summary>
+    string? EffectLogName { get; }
+
     /// <summary>对敌方造成伤害；isBurn 为灼烧结算。返回实际扣减的生命值（用于吸血等）。</summary>
     int ApplyDamageToOpp(int value, bool isBurn);
 
@@ -44,16 +50,16 @@ public interface IEffectApplyContext
     /// <summary>为施放者物品充能（毫秒）；fullAndShouldCast 表示是否已满且应加入施放队列。</summary>
     void ChargeCasterItem(int chargeMs, out bool fullAndShouldCast);
 
-    /// <summary>对目标施加冻结 freezeMs 毫秒。目标由 targetCondition 决定（null 时默认敌方、未摧毁且有冷却）；不放回随机选取至多 targetCount 个；触发次数按实际目标数。</summary>
+    /// <summary>对目标施加冻结 freezeMs 毫秒。目标由 targetCondition 在双方所有物品中筛选（null 时默认敌方、未摧毁且有冷却）；不放回随机选取至多 targetCount 个；触发次数按实际目标数。施加时受目标的 PercentFreezeReduction 影响。</summary>
     void ApplyFreeze(int freezeMs, int targetCount, Condition? targetCondition = null);
 
-    /// <summary>对目标施加减速 slowMs 毫秒。目标由 targetCondition 决定（null 时默认敌方、未摧毁且有冷却）；不放回随机选取至多 targetCount 个。</summary>
+    /// <summary>对目标施加减速 slowMs 毫秒。目标由 targetCondition 在双方所有物品中筛选（null 时默认敌方、未摧毁且有冷却）；不放回随机选取至多 targetCount 个。</summary>
     void ApplySlow(int slowMs, int targetCount, Condition? targetCondition = null);
 
-    /// <summary>对目标施加充能 chargeMs 毫秒。目标由 targetCondition 决定（null 时默认己方、未摧毁且有冷却）；不放回随机选取至多 targetCount 个。</summary>
+    /// <summary>对目标施加充能 chargeMs 毫秒。目标由 targetCondition 在双方所有物品中筛选（null 时默认己方、未摧毁且有冷却）；不放回随机选取至多 targetCount 个。</summary>
     void ApplyCharge(int chargeMs, int targetCount, Condition? targetCondition = null);
 
-    /// <summary>对目标施加加速 hasteMs 毫秒。目标由 targetCondition 决定（null 时默认己方、未摧毁且有冷却）；不放回随机选取至多 targetCount 个。</summary>
+    /// <summary>对目标施加加速 hasteMs 毫秒。目标由 targetCondition 在双方所有物品中筛选（null 时默认己方、未摧毁且有冷却）；不放回随机选取至多 targetCount 个。</summary>
     void ApplyHaste(int hasteMs, int targetCount, Condition? targetCondition = null);
 
     /// <summary>修复已摧毁物品：目标由 targetCondition 与已摧毁组合（null 时默认己方）；不放回随机选取至多 targetCount 个，将其设为未摧毁并重置冷却已过时间。</summary>
@@ -65,8 +71,11 @@ public interface IEffectApplyContext
     /// <summary>对己方满足 targetCondition 的物品将指定属性设为 value（限本场战斗）。用于 StopFlying（Key.InFlight, 0）等。目标由 targetCondition 筛选（Source=施放者）。</summary>
     void SetAttributeOnCasterSide(string attributeName, int value, Condition? targetCondition);
 
-    /// <summary>对敌方满足 targetCondition 的物品减少指定属性（限本场战斗，不低于 0）。attributeName 为模板属性名（如 Shield），value 为减少量；目标由 targetCondition 筛选（Source=施放者）。maxTargetCount 大于 0 时仅对随机选取的至多该数量目标生效，0 表示不限制。</summary>
-    void ReduceAttributeToOpponentSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0);
+    /// <summary>对指定阵营满足 targetCondition 的物品减少指定属性（限本场战斗，不低于 0）。applyToCasterSide 为 true 时作用己方，否则敌方；attributeName 为 Key；effectLogName 非空时用于日志，否则用属性中文名+「降低」。</summary>
+    void ReduceAttributeToSide(bool applyToCasterSide, string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0, string? effectLogName = null);
+
+    /// <summary>将本次效果施加报告为触发器原因（如灼烧施加后报告 Trigger.Burn），供模拟器统一 InvokeTrigger；仅部分效果（如 BurnApply）调用。</summary>
+    void ReportTriggerCause(string triggerName);
 
     /// <summary>记录效果日志。showCrit 为 true 时显示「（暴击）」；仅对实际参与暴击的效果传 true（如伤害/灼烧/治疗等），冻结/减速等不可暴击效果传 false。</summary>
     void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false);

@@ -261,6 +261,8 @@ public class BattleSimulator
                                 ApplyCritMultiplier = a.ApplyCritMultiplier,
                                 UseSelf = a.UseSelf,
                                 Apply = a.Apply,
+                                ReduceAttributeToCasterSide = a.ReduceAttributeToCasterSide,
+                                EffectLogName = a.EffectLogName,
                                 Triggers = a.Triggers?.Select(e => new AbilityDefinition.TriggerEntry
                                 {
                                     TriggerName = e.TriggerName,
@@ -293,6 +295,7 @@ public class BattleSimulator
         if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Crit) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Destroy) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.Burn) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.BattleStart) return condition ?? Condition.Always;
         return condition;
     }
@@ -378,7 +381,7 @@ public class BattleSimulator
     private static void InvokeTrigger(string triggerName, BattleItemState? causeItem, TriggerInvokeContext? context, int timeMs,
         BattleSide side0, BattleSide side1, List<AbilityQueueEntry> current, List<AbilityQueueEntry> next)
     {
-        int pendingCount = (triggerName == Trigger.UseItem || triggerName == Trigger.Freeze || triggerName == Trigger.Slow) && context?.Multicast is int m ? m : 1;
+        int pendingCount = (triggerName == Trigger.UseItem || triggerName == Trigger.Freeze || triggerName == Trigger.Slow || triggerName == Trigger.Burn || triggerName == Trigger.Poison) && context?.Multicast is int m ? m : 1;
         int battleStartLastTriggerMs = -TriggerIntervalMs;
 
         foreach (var (ownerSideIndex, ownerSide) in new[] { (0, side0), (1, side1) })
@@ -507,12 +510,17 @@ public class BattleSimulator
             ChargeInducedCastQueue = chargeInducedCastQueue,
             EffectAppliedTriggerQueue = effectAppliedTriggerQueue,
             TargetCondition = ability.TargetCondition,
+            ReduceAttributeToCasterSide = ability.ReduceAttributeToCasterSide,
+            EffectLogName = ability.EffectLogName,
         };
         ability.Apply(ctx);
         foreach (var (triggerName, sideIndex, itemIndex) in effectAppliedTriggerQueue)
         {
             var target = (sideIndex == side0.SideIndex ? side0 : side1).Items[itemIndex];
-            InvokeTrigger(triggerName, item, new TriggerInvokeContext { InvokeTargetItem = target, Multicast = triggerName == Trigger.Destroy ? null : 1 }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+            // Burn/Poison 的 queue 存的是施加者（己方），故 causeItem = target；Freeze/Slow/Destroy 存的是目标，causeItem = item（施放者）
+            var causeItem = (triggerName == Trigger.Burn || triggerName == Trigger.Poison) ? target : item;
+            var context = new TriggerInvokeContext { InvokeTargetItem = (triggerName == Trigger.Burn || triggerName == Trigger.Poison) ? null : target, Multicast = triggerName == Trigger.Destroy ? null : 1 };
+            InvokeTrigger(triggerName, causeItem, context, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
             if (triggerName == Trigger.Destroy)
                 target.Destroyed = true;
         }

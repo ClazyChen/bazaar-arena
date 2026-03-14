@@ -1,5 +1,13 @@
 # 变更记录
 
+## 属性增减与效果目标选取统一（文档与规则）
+
+- **实现笔记**：**docs/implementation-notes.md** 新增「属性增减与效果目标选取统一」：Reduce 与 ReduceAttributeCaster 合并、AttributeLogNames/EffectLogName、冻结/减速/加速/充能从双方选目标、Apply 层强制 NotDestroyed/HasCooldown、冻结减免用 RatioUtil.PercentOf。
+- **项目约定**：**.cursor/rules/project-conventions.mdc** 补充效果应用上下文的属性增减（ReduceAttributeCaster、effectLogName）、双方选目标与 Apply 强制条件、RatioUtil 百分比。
+- **Override 格式**：**.cursor/rules/ability-override-format.mdc** 补充冻结/减速/加速/充能 Override targetCondition 时不必写 NotDestroyed/HasCooldown。
+
+---
+
 ## 单次模拟物品效果 Tooltip 与多目标日志格式统一
 
 - **单次模拟物品效果查看**：单次模拟窗口右侧「每物品统计」表格下方新增「物品效果」区域，选中某一统计行时展示对应物品的详细效果说明。实现上复用主界面卡组区域的 Tooltip 构建逻辑（`ItemUiHelper.BuildDeckSlotToolTip`），并从 `StatsCollectingSink.ItemStats` 中读取本次对战该物品实际使用的档位（`Tier`）做着色与占位符替换，保证模拟结果查看与卡组编辑看到的是同一套物品说明。

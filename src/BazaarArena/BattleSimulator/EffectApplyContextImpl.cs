@@ -17,6 +17,9 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     /// <summary>效果施加触发的触发器待处理队列（由模拟器传入）。冻结/减速/摧毁时追加 (TriggerName, SideIndex, ItemIndex)，模拟器在 Apply 后统一 InvokeTrigger 并处理 Destroyed。</summary>
     public List<(string TriggerName, int SideIndex, int ItemIndex)>? EffectAppliedTriggerQueue { get; init; }
 
+    public bool ReduceAttributeToCasterSide { get; init; }
+    public string? EffectLogName { get; init; }
+
     public int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0)
     {
         var auraContext = new BattleAuraContext(Side, Item, Opp);
@@ -95,6 +98,37 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         return pool.Take(take).ToList();
     }
 
+    /// <summary>从双方所有物品中选取至多 targetCount 个满足 condition 的目标（Source=施放者）；不放回随机选取。</summary>
+    private List<(BattleSide side, int index)> GetTargetsFromBothSides(int targetCount, Condition? condition)
+    {
+        if (condition == null) return [];
+        var pool = new List<(BattleSide side, int index)>();
+        foreach (var (fromSide, enemySide) in new[] { (Side, Opp), (Opp, Side) })
+        {
+            for (int i = 0; i < fromSide.Items.Count; i++)
+            {
+                var it = fromSide.Items[i];
+                var ctx = new ConditionContext
+                {
+                    MySide = fromSide,
+                    EnemySide = enemySide,
+                    Item = it,
+                    Source = Item,
+                };
+                if (!condition.Evaluate(ctx)) continue;
+                pool.Add((fromSide, i));
+            }
+        }
+        int take = Math.Min(targetCount, pool.Count);
+        if (take <= 0) return [];
+        for (int n = 0; n < take; n++)
+        {
+            int j = Random.Shared.Next(n, pool.Count);
+            (pool[n], pool[j]) = (pool[j], pool[n]);
+        }
+        return pool.Take(take).ToList();
+    }
+
     /// <summary>通用「按条件选目标→逐目标应用→记日志」；logValue 为 null 时记目标数。effectTriggerName 非空时将本次目标写入 EffectAppliedTriggerQueue 供模拟器统一触发。</summary>
     private void ApplyToTargets(BattleSide fromSide, int targetCount, Condition? condition, string effectName, int? logValue, Func<BattleItemState, int, string> perTarget, string? effectTriggerName = null)
     {
@@ -115,17 +149,34 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }
     }
 
-    /// <summary>为指定下标的物品充能 chargeMs；若满则加入施放队列。返回该物品名称。</summary>
-    private string ChargeItemAt(int itemIndex, int chargeMs)
+    /// <summary>从双方选目标后逐目标应用并记日志；perTarget 返回目标名称并负责施加效果；effectTriggerName 非空时写入 EffectAppliedTriggerQueue。</summary>
+    private void ApplyToTargetsBothSides(int targetCount, Condition? condition, string effectName, int? logValue, Func<BattleSide, int, string> perTarget, string? effectTriggerName = null)
     {
-        var target = Side.Items[itemIndex];
-        int cooldownMs = Side.GetItemInt(itemIndex, "CooldownMs", 0);
+        var targets = GetTargetsFromBothSides(targetCount, condition);
+        if (targets.Count == 0) return;
+        var targetNames = new List<string>();
+        foreach (var (side, index) in targets)
+            targetNames.Add(perTarget(side, index));
+        string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
+        LogSink.OnEffect(Item, Item.Template.Name, effectName, logValue ?? targets.Count, TimeMs, isCrit: false, extraSuffix);
+        if (effectTriggerName != null && EffectAppliedTriggerQueue != null)
+        {
+            foreach (var (side, index) in targets)
+                EffectAppliedTriggerQueue.Add((effectTriggerName, side.SideIndex, index));
+        }
+    }
+
+    /// <summary>为指定阵营、下标的物品充能 chargeMs；若为己方且满则加入施放队列。返回该物品名称。</summary>
+    private string ChargeItemAt(BattleSide side, int itemIndex, int chargeMs)
+    {
+        var target = side.Items[itemIndex];
+        int cooldownMs = side.GetItemInt(itemIndex, "CooldownMs", 0);
         if (cooldownMs <= 0) return target.Template.Name;
         int newElapsed = Math.Min(cooldownMs, target.CooldownElapsedMs + chargeMs);
         target.CooldownElapsedMs = newElapsed;
-        if (target.CooldownElapsedMs >= cooldownMs && ChargeInducedCastQueue != null)
+        if (target.CooldownElapsedMs >= cooldownMs && side == Side && ChargeInducedCastQueue != null)
         {
-            int ammoCap = Side.GetItemInt(itemIndex, "AmmoCap", 0);
+            int ammoCap = side.GetItemInt(itemIndex, "AmmoCap", 0);
             if (ammoCap <= 0 || target.AmmoRemaining > 0)
                 ChargeInducedCastQueue.Add(target);
             target.CooldownElapsedMs = 0;
@@ -136,25 +187,47 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public void ApplyFreeze(int freezeMs, int targetCount, Condition? targetCondition = null)
     {
         if (freezeMs <= 0 || targetCount <= 0) return;
-        ApplyToTargets(Opp, targetCount, targetCondition, "冻结", freezeMs, (t, _) => { t.FreezeRemainingMs += freezeMs; return t.Template.Name; }, Trigger.Freeze);
+        var cond = (targetCondition ?? Condition.DifferentSide) & Condition.NotDestroyed;
+        ApplyToTargetsBothSides(targetCount, cond, "冻结", freezeMs, (side, index) =>
+        {
+            var t = side.Items[index];
+            var enemySide = side == Side ? Opp : Side;
+            int pct = Math.Clamp(t.Template.GetInt(Key.PercentFreezeReduction, t.Tier, 0, new BattleAuraContext(side, t, enemySide)), 0, 100);
+            int effectiveMs = freezeMs - RatioUtil.PercentOf(freezeMs, pct);
+            t.FreezeRemainingMs += effectiveMs;
+            return t.Template.Name;
+        }, Trigger.Freeze);
     }
 
     public void ApplySlow(int slowMs, int targetCount, Condition? targetCondition = null)
     {
         if (slowMs <= 0 || targetCount <= 0) return;
-        ApplyToTargets(Opp, targetCount, targetCondition, "减速", slowMs, (t, _) => { t.SlowRemainingMs += slowMs; return t.Template.Name; }, Trigger.Slow);
+        var cond = (targetCondition ?? Condition.DifferentSide) & Condition.NotDestroyed & Condition.HasCooldown;
+        ApplyToTargetsBothSides(targetCount, cond, "减速", slowMs, (side, index) =>
+        {
+            var t = side.Items[index];
+            t.SlowRemainingMs += slowMs;
+            return t.Template.Name;
+        }, Trigger.Slow);
     }
 
     public void ApplyCharge(int chargeMs, int targetCount, Condition? targetCondition = null)
     {
         if (chargeMs <= 0 || targetCount <= 0) return;
-        ApplyToTargets(Side, targetCount, targetCondition, "充能", chargeMs, (_, i) => ChargeItemAt(i, chargeMs), null);
+        var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.HasCooldown;
+        ApplyToTargetsBothSides(targetCount, cond, "充能", chargeMs, (side, index) => ChargeItemAt(side, index, chargeMs), null);
     }
 
     public void ApplyHaste(int hasteMs, int targetCount, Condition? targetCondition = null)
     {
         if (hasteMs <= 0 || targetCount <= 0) return;
-        ApplyToTargets(Side, targetCount, targetCondition, "加速", hasteMs, (t, _) => { t.HasteRemainingMs += hasteMs; return t.Template.Name; }, null);
+        var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.HasCooldown;
+        ApplyToTargetsBothSides(targetCount, cond, "加速", hasteMs, (side, index) =>
+        {
+            var t = side.Items[index];
+            t.HasteRemainingMs += hasteMs;
+            return t.Template.Name;
+        }, null);
     }
 
     public void ApplyRepair(int targetCount, Condition? targetCondition = null)
@@ -194,7 +267,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public void AddAttributeToCasterSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0)
     {
         if (value <= 0 || targetCondition == null) return;
-        string logName = attributeName == Key.Damage ? "伤害提高" : attributeName == Key.Poison ? "剧毒提高" : attributeName == Key.CritRatePercent ? "暴击率提高" : attributeName == Key.InFlight ? "开始飞行" : "属性提高";
+        string logName = EffectLogName ?? (AttributeLogNames.Get(attributeName) + "提高");
         if (maxTargetCount > 0)
         {
             var indices = GetTargetIndices(Side, maxTargetCount, targetCondition);
@@ -207,6 +280,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
                 else if (attributeName == Key.Poison) { wi.Template.Poison = wi.Template.Poison.Add(value); targetNames.Add(wi.Template.Name); }
                 else if (attributeName == Key.CritRatePercent) { wi.Template.CritRatePercent = wi.Template.CritRatePercent.Add(value); targetNames.Add(wi.Template.Name); }
                 else if (attributeName == Key.InFlight) { wi.InFlight = value != 0; targetNames.Add(wi.Template.Name); }
+                else { wi.Template.SetInt(attributeName, wi.Template.GetInt(attributeName, wi.Tier, 0) + value); targetNames.Add(wi.Template.Name); }
             }
             if (targetNames.Count > 0)
                 LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
@@ -218,57 +292,57 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             if (attributeName == Key.Poison) { wi.Template.Poison = wi.Template.Poison.Add(value); return wi.Template.Name; }
             if (attributeName == Key.CritRatePercent) { wi.Template.CritRatePercent = wi.Template.CritRatePercent.Add(value); return wi.Template.Name; }
             if (attributeName == Key.InFlight) { wi.InFlight = value != 0; return wi.Template.Name; }
-            return null;
+            wi.Template.SetInt(attributeName, wi.Template.GetInt(attributeName, wi.Tier, 0) + value);
+            return wi.Template.Name;
         });
     }
 
     public void SetAttributeOnCasterSide(string attributeName, int value, Condition? targetCondition)
     {
         if (targetCondition == null) return;
-        string logName = attributeName == Key.InFlight && value == 0 ? "结束飞行" : "属性变更";
+        string logName = EffectLogName ?? (attributeName == Key.InFlight && value == 0 ? "结束飞行" : AttributeLogNames.Get(attributeName) + "变更");
         ApplyToSideWithCondition(Side, Opp, targetCondition, logName, 0, (wi, _) =>
         {
             if (attributeName == Key.InFlight) { wi.InFlight = value != 0; return wi.Template.Name; }
-            return null;
+            wi.Template.SetInt(attributeName, value);
+            return wi.Template.Name;
         });
     }
 
-    public void ReduceAttributeToOpponentSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0)
+    public void ReduceAttributeToSide(bool applyToCasterSide, string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0, string? effectLogName = null)
     {
         if (value <= 0 || targetCondition == null) return;
-        string logName = attributeName == Key.Shield ? "护盾降低" : "属性降低";
+        var fromSide = applyToCasterSide ? Side : Opp;
+        var enemySide = applyToCasterSide ? Opp : Side;
+        string logName = effectLogName ?? (AttributeLogNames.Get(attributeName) + "降低");
         if (maxTargetCount > 0)
         {
-            var indices = GetTargetIndices(Opp, maxTargetCount, targetCondition);
+            var indices = GetTargetIndices(fromSide, maxTargetCount, targetCondition);
             if (indices.Count == 0) return;
             var targetNames = new List<string>();
             foreach (int i in indices)
             {
-                var wi = Opp.Items[i];
-                if (attributeName == Key.Shield)
-                {
-                    int current = wi.Template.GetInt(Key.Shield, wi.Tier, 0);
-                    int newVal = Math.Max(0, current - value);
-                    wi.Template.SetInt(Key.Shield, newVal);
-                    targetNames.Add(wi.Template.Name);
-                }
+                var wi = fromSide.Items[i];
+                int current = wi.Template.GetInt(attributeName, wi.Tier, 0);
+                int newVal = Math.Max(0, current - value);
+                wi.Template.SetInt(attributeName, newVal);
+                targetNames.Add(wi.Template.Name);
             }
             if (targetNames.Count > 0)
                 LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
             return;
         }
-        ApplyToSideWithCondition(Opp, Side, targetCondition, logName, value, (wi, _) =>
+        ApplyToSideWithCondition(fromSide, enemySide, targetCondition, logName, value, (wi, _) =>
         {
-            if (attributeName == Key.Shield)
-            {
-                int current = wi.Template.GetInt(Key.Shield, wi.Tier, 0);
-                int newVal = Math.Max(0, current - value);
-                wi.Template.SetInt(Key.Shield, newVal);
-                return wi.Template.Name;
-            }
-            return null;
+            int current = wi.Template.GetInt(attributeName, wi.Tier, 0);
+            int newVal = Math.Max(0, current - value);
+            wi.Template.SetInt(attributeName, newVal);
+            return wi.Template.Name;
         });
     }
+
+    public void ReportTriggerCause(string triggerName) =>
+        EffectAppliedTriggerQueue?.Add((triggerName, Side.SideIndex, Item.ItemIndex));
 
     public void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false) =>
         LogSink.OnEffect(Item, Item.Template.Name, effectName, value, TimeMs, showCrit, extraSuffix);
@@ -278,7 +352,8 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public void ApplyDestroy(int targetCount, Condition? targetCondition = null)
     {
         if (targetCount <= 0) return;
-        var indices = GetTargetIndices(Side, targetCount, targetCondition);
+        var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed;
+        var indices = GetTargetIndices(Side, targetCount, cond);
         if (indices.Count == 0) return;
         var targetNames = indices.Select(i => Side.Items[i].Template.Name).ToList();
         string extraSuffix = " →[" + string.Join("、", targetNames) + "]";

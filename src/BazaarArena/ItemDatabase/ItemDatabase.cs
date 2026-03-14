@@ -110,6 +110,8 @@ public class ItemDatabase : IItemTemplateResolver
                     ApplyCritMultiplier = a.ApplyCritMultiplier,
                     UseSelf = a.UseSelf,
                     Apply = a.Apply,
+                    ReduceAttributeToCasterSide = a.ReduceAttributeToCasterSide,
+                    EffectLogName = a.EffectLogName,
                     Triggers = a.Triggers?.Select(e => new AbilityDefinition.TriggerEntry
                     {
                         TriggerName = e.TriggerName,
@@ -128,7 +130,7 @@ public class ItemDatabase : IItemTemplateResolver
         return clone;
     }
 
-    /// <summary>condition ?? default：UseItem → SameAsSource，Freeze/Slow/Crit/Destroy → SameSide，BattleStart → Always。</summary>
+    /// <summary>condition ?? default：UseItem → SameAsSource，Freeze/Slow/Crit/Destroy/Burn → SameSide，BattleStart → Always。</summary>
     private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
     {
         if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
@@ -136,6 +138,8 @@ public class ItemDatabase : IItemTemplateResolver
         if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Crit) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Destroy) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.Burn) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.Poison) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.BattleStart) return condition ?? Condition.Always;
         return condition;
     }

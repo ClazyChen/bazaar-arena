@@ -21,6 +21,8 @@ public static class Tag
     public const string Drone = "无人机";
     /// <summary>玩具。</summary>
     public const string Toy = "玩具";
+    /// <summary>水系。</summary>
+    public const string Aquatic = "水系";
 
     /// <summary>小型（由注册时按 Size 自动添加）。</summary>
     public const string Small = "小型";

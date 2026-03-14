@@ -1,5 +1,24 @@
 namespace BazaarArena.Core;
 
+/// <summary>属性 key 对应的中文名，用于效果日志默认显示（如「护盾降低」「伤害提高」）；未收录时用「属性」。</summary>
+public static class AttributeLogNames
+{
+    private static readonly Dictionary<string, string> Map = new()
+    {
+        [Key.Damage] = "伤害",
+        [Key.Shield] = "护盾",
+        [Key.Heal] = "治疗",
+        [Key.Burn] = "灼烧",
+        [Key.Poison] = "剧毒",
+        [Key.CritRatePercent] = "暴击率",
+        [Key.InFlight] = "飞行",
+        [Key.FreezeRemainingMs] = "冻结",
+    };
+
+    /// <summary>获取属性 key 的中文名；未收录时返回「属性」。</summary>
+    public static string Get(string attributeName) => Map.TryGetValue(attributeName, out var name) ? name : "属性";
+}
+
 /// <summary>预定义效果应用委托：只读效果在委托内用 ctx.GetResolvedValue(key) 按常量 key 取值，不设 ValueKey；指定了 ValueKey 的能力（如 AddAttribute、ReduceAttribute）由模拟器填入 ctx.Value。</summary>
 public static class Effect
 {
@@ -22,6 +41,7 @@ public static class Effect
         int value = ctx.GetResolvedValue(Key.Burn, applyCritMultiplier: true);
         ctx.AddBurnToOpp(value);
         ctx.LogEffect("灼烧", value, showCrit: ctx.IsCrit);
+        ctx.ReportTriggerCause(Trigger.Burn);
     };
 
     /// <summary>剧毒：数值来自模板的 Poison。</summary>
@@ -30,6 +50,7 @@ public static class Effect
         int value = ctx.GetResolvedValue(Key.Poison, applyCritMultiplier: true);
         ctx.AddPoisonToOpp(value);
         ctx.LogEffect("剧毒", value, showCrit: ctx.IsCrit);
+        ctx.ReportTriggerCause(Trigger.Poison);
     };
 
     /// <summary>护盾：数值来自模板的 Shield。</summary>
@@ -89,13 +110,14 @@ public static class Effect
         ctx.AddAttributeToCasterSide(attributeName, ctx.Value, targetCond, maxTarget);
     };
 
-    /// <summary>对敌方满足能力 TargetCondition 的物品减少指定属性（限本场战斗，不低于 0）。目标条件由能力 TargetCondition 注入，默认 DifferentSide。ModifyAttributeTargetCount 默认 20 表示全部，小于 20 时仅对至多该数量目标生效。</summary>
+    /// <summary>对满足能力 TargetCondition 的一方减少指定属性（限本场战斗，不低于 0）。己方/敌方由 ctx.ReduceAttributeToCasterSide 决定；日志名优先用 ctx.EffectLogName，否则属性中文名+「降低」。</summary>
     public static Action<IEffectApplyContext> ReduceAttributeApply(string attributeName) => ctx =>
     {
-        var targetCond = ctx.TargetCondition ?? Condition.DifferentSide;
+        bool toCaster = ctx.ReduceAttributeToCasterSide;
+        var targetCond = ctx.TargetCondition ?? (toCaster ? Condition.SameSide : Condition.DifferentSide);
         int cap = ctx.GetResolvedValue(Key.ModifyAttributeTargetCount, defaultValue: 20);
         int maxTarget = cap >= 20 ? 0 : cap;
-        ctx.ReduceAttributeToOpponentSide(attributeName, ctx.Value, targetCond, maxTarget);
+        ctx.ReduceAttributeToSide(toCaster, attributeName, ctx.Value, targetCond, maxTarget, ctx.EffectLogName);
     };
 
     /// <summary>加速：根据 HasteTargetCount 与 Haste（毫秒）选取己方有冷却且满足能力 TargetCondition 的物品施加加速；未设 TargetCondition 时默认 SameSide。</summary>

@@ -13,4 +13,8 @@ public static class Trigger
     public const string Crit = "造成暴击";
     /// <summary>任意物品施加摧毁时触发，实现同 Slow：Condition 判定施加者，InvokeTargetCondition 判定被摧毁物品；须在将目标标记为 Destroyed 之前调用。</summary>
     public const string Destroy = "摧毁物品";
+    /// <summary>任意物品施加灼烧时触发（默认 Condition 为 SameSide）；来源=施加灼烧的物品。</summary>
+    public const string Burn = "触发灼烧";
+    /// <summary>任意物品施加剧毒时触发（默认 Condition 为 SameSide）；来源=施加剧毒的物品。</summary>
+    public const string Poison = "触发剧毒";
 }
