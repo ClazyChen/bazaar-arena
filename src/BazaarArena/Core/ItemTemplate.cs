@@ -118,6 +118,7 @@ public class ItemTemplate
     private const string KeyHasteTargetCount = "HasteTargetCount";
     private const string KeyRepairTargetCount = "RepairTargetCount";
     private const string KeyDestroyTargetCount = "DestroyTargetCount";
+    private const string KeyModifyAttributeTargetCount = "ModifyAttributeTargetCount";
     private const string KeyLifeSteal = "LifeSteal";
     private const string KeyCustom_0 = "Custom_0";
     private const string KeyStashParameter = "StashParameter";
@@ -153,6 +154,7 @@ public class ItemTemplate
         KeyHasteTargetCount => 1,
         KeyRepairTargetCount => 1,
         KeyDestroyTargetCount => 1,
+        KeyModifyAttributeTargetCount => 20,
         _ => 0,
     };
 
@@ -276,6 +278,9 @@ public class ItemTemplate
 
     /// <summary>摧毁目标数量（可单值或按等级）；与 TargetCondition 配合，从己方未摧毁物品中选取，默认 1。</summary>
     public IntOrByTier DestroyTargetCount { get => GetInt(KeyDestroyTargetCount, 1); set => SetIntOrByTier(KeyDestroyTargetCount, value.ToList()); }
+
+    /// <summary>增加/减少属性目标数量（可单值或按等级）；与 TargetCondition 配合；默认 20 表示对所有满足条件的物品生效，1、2… 表示至多选取该数量。</summary>
+    public IntOrByTier ModifyAttributeTargetCount { get => GetInt(KeyModifyAttributeTargetCount, 20); set => SetIntOrByTier(KeyModifyAttributeTargetCount, value.ToList()); }
 
     /// <summary>吸血：1 表示造成伤害时按实际伤害量治疗己方，0 表示无。用于伤害效果。</summary>
     public IntOrByTier LifeSteal { get => GetInt(KeyLifeSteal, 0); set => SetIntOrByTier(KeyLifeSteal, value.ToList()); }

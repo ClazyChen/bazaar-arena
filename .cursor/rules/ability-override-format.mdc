@@ -13,6 +13,13 @@ globs: "**/ItemDatabase/**","**/Core/Ability*.cs"
 - **Override(** / **Also(** 之后**换行并缩进**，每个指定参数**单独一行**。
 - 最后一个参数后**不**加逗号；然后**换行**、回到与 `Ability.xxx` 或能力变量对齐的缩进、写 `)**。
 
+## 简化原则
+
+当能力的**默认 TargetCondition** 已是 `Condition.SameSide`（如 AddAttribute、Charge、Haste）或 `Condition.DifferentSide`（如 ReduceAttribute、Slow、Freeze）时，若只需在默认上**追加**条件，应使用 **additionalTargetCondition** 而非重写 **targetCondition**，以保持简洁并与默认语义一致。
+
+- 示例：目标为「己方且飞行」→ 写 `additionalTargetCondition: Condition.InFlight`，勿写 `targetCondition: Condition.SameSide & Condition.InFlight`。
+- 示例：目标为「己方武器」→ 写 `additionalTargetCondition: Condition.WithTag(Tag.Weapon)`。
+
 ## 参数顺序
 
 按以下顺序书写（未指定的参数省略即可）：

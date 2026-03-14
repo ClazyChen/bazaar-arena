@@ -191,14 +191,32 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }
     }
 
-    public void AddAttributeToCasterSide(string attributeName, int value, Condition? targetCondition)
+    public void AddAttributeToCasterSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0)
     {
         if (value <= 0 || targetCondition == null) return;
-        string logName = attributeName == Key.Damage ? "伤害提高" : attributeName == Key.Poison ? "剧毒提高" : attributeName == Key.InFlight ? "开始飞行" : "属性提高";
+        string logName = attributeName == Key.Damage ? "伤害提高" : attributeName == Key.Poison ? "剧毒提高" : attributeName == Key.CritRatePercent ? "暴击率提高" : attributeName == Key.InFlight ? "开始飞行" : "属性提高";
+        if (maxTargetCount > 0)
+        {
+            var indices = GetTargetIndices(Side, maxTargetCount, targetCondition);
+            if (indices.Count == 0) return;
+            var targetNames = new List<string>();
+            foreach (int i in indices)
+            {
+                var wi = Side.Items[i];
+                if (attributeName == Key.Damage) { wi.Template.Damage = wi.Template.Damage.Add(value); targetNames.Add(wi.Template.Name); }
+                else if (attributeName == Key.Poison) { wi.Template.Poison = wi.Template.Poison.Add(value); targetNames.Add(wi.Template.Name); }
+                else if (attributeName == Key.CritRatePercent) { wi.Template.CritRatePercent = wi.Template.CritRatePercent.Add(value); targetNames.Add(wi.Template.Name); }
+                else if (attributeName == Key.InFlight) { wi.InFlight = value != 0; targetNames.Add(wi.Template.Name); }
+            }
+            if (targetNames.Count > 0)
+                LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
+            return;
+        }
         ApplyToSideWithCondition(Side, Opp, targetCondition, logName, value, (wi, _) =>
         {
             if (attributeName == Key.Damage) { wi.Template.Damage = wi.Template.Damage.Add(value); return wi.Template.Name; }
             if (attributeName == Key.Poison) { wi.Template.Poison = wi.Template.Poison.Add(value); return wi.Template.Name; }
+            if (attributeName == Key.CritRatePercent) { wi.Template.CritRatePercent = wi.Template.CritRatePercent.Add(value); return wi.Template.Name; }
             if (attributeName == Key.InFlight) { wi.InFlight = value != 0; return wi.Template.Name; }
             return null;
         });
@@ -215,10 +233,30 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         });
     }
 
-    public void ReduceAttributeToOpponentSide(string attributeName, int value, Condition? targetCondition)
+    public void ReduceAttributeToOpponentSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0)
     {
         if (value <= 0 || targetCondition == null) return;
         string logName = attributeName == Key.Shield ? "护盾降低" : "属性降低";
+        if (maxTargetCount > 0)
+        {
+            var indices = GetTargetIndices(Opp, maxTargetCount, targetCondition);
+            if (indices.Count == 0) return;
+            var targetNames = new List<string>();
+            foreach (int i in indices)
+            {
+                var wi = Opp.Items[i];
+                if (attributeName == Key.Shield)
+                {
+                    int current = wi.Template.GetInt(Key.Shield, wi.Tier, 0);
+                    int newVal = Math.Max(0, current - value);
+                    wi.Template.SetInt(Key.Shield, newVal);
+                    targetNames.Add(wi.Template.Name);
+                }
+            }
+            if (targetNames.Count > 0)
+                LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
+            return;
+        }
         ApplyToSideWithCondition(Opp, Side, targetCondition, logName, value, (wi, _) =>
         {
             if (attributeName == Key.Shield)

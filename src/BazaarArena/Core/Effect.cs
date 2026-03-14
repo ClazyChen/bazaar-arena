@@ -80,13 +80,23 @@ public static class Effect
         ctx.ApplySlow(slowMs, count, ctx.TargetCondition);
     };
 
-    /// <summary>对己方满足能力 TargetCondition 的物品增加指定属性（限本场战斗）。attributeName 为要增加的属性名（如 Damage、Poison）；目标条件由能力 TargetCondition 注入，默认 SameSide。</summary>
-    public static Action<IEffectApplyContext> AddAttributeApply(string attributeName) =>
-        ctx => ctx.AddAttributeToCasterSide(attributeName, ctx.Value, ctx.TargetCondition ?? Condition.SameSide);
+    /// <summary>对己方满足能力 TargetCondition 的物品增加指定属性（限本场战斗）。attributeName 为要增加的属性名（如 Damage、Poison、Key.InFlight）；目标条件由能力 TargetCondition 注入，默认 SameSide。ModifyAttributeTargetCount 默认 20 表示全部，小于 20 时仅对至多该数量目标生效。</summary>
+    public static Action<IEffectApplyContext> AddAttributeApply(string attributeName) => ctx =>
+    {
+        var targetCond = ctx.TargetCondition ?? Condition.SameSide;
+        int cap = ctx.GetResolvedValue(Key.ModifyAttributeTargetCount, defaultValue: 20);
+        int maxTarget = cap >= 20 ? 0 : cap;
+        ctx.AddAttributeToCasterSide(attributeName, ctx.Value, targetCond, maxTarget);
+    };
 
-    /// <summary>对敌方满足能力 TargetCondition 的物品减少指定属性（限本场战斗，不低于 0）。目标条件由能力 TargetCondition 注入，默认 DifferentSide。</summary>
-    public static Action<IEffectApplyContext> ReduceAttributeApply(string attributeName) =>
-        ctx => ctx.ReduceAttributeToOpponentSide(attributeName, ctx.Value, ctx.TargetCondition ?? Condition.DifferentSide);
+    /// <summary>对敌方满足能力 TargetCondition 的物品减少指定属性（限本场战斗，不低于 0）。目标条件由能力 TargetCondition 注入，默认 DifferentSide。ModifyAttributeTargetCount 默认 20 表示全部，小于 20 时仅对至多该数量目标生效。</summary>
+    public static Action<IEffectApplyContext> ReduceAttributeApply(string attributeName) => ctx =>
+    {
+        var targetCond = ctx.TargetCondition ?? Condition.DifferentSide;
+        int cap = ctx.GetResolvedValue(Key.ModifyAttributeTargetCount, defaultValue: 20);
+        int maxTarget = cap >= 20 ? 0 : cap;
+        ctx.ReduceAttributeToOpponentSide(attributeName, ctx.Value, targetCond, maxTarget);
+    };
 
     /// <summary>加速：根据 HasteTargetCount 与 Haste（毫秒）选取己方有冷却且满足能力 TargetCondition 的物品施加加速；未设 TargetCondition 时默认 SameSide。</summary>
     public static readonly Action<IEffectApplyContext> HasteApply = ctx =>

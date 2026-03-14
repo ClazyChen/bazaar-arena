@@ -33,6 +33,7 @@ public static class Key
     // 修复 / 摧毁 / 吸血等
     public const string RepairTargetCount = nameof(ItemTemplate.RepairTargetCount);
     public const string DestroyTargetCount = nameof(ItemTemplate.DestroyTargetCount);
+    public const string ModifyAttributeTargetCount = nameof(ItemTemplate.ModifyAttributeTargetCount);
     public const string LifeSteal = nameof(ItemTemplate.LifeSteal);
 
     // 其他

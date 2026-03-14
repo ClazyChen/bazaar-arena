@@ -14,7 +14,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "獠牙",
-            Desc = "造成 {Damage} 伤害",
+            Desc = "▶ 造成 {Damage} 伤害",
             Tags = [Tag.Weapon],
             Cooldown = 3.0,
             Damage = [5, 10, 15, 20],
@@ -31,14 +31,14 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "岩浆核心",
-            Desc = "战斗开始时，造成 {Burn} 灼烧",
+            Desc = "▶ 战斗开始时，造成 {Burn} 灼烧",
             Tags = [],
             Burn = [6, 9, 12, 15],
             Abilities =
             [
                 Ability.Burn.Override(
                     trigger: Trigger.BattleStart,
-                    condition: Condition.SameSide
+                    condition: Condition.Always
                 ),
             ],
         };
@@ -50,7 +50,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "驯化蜘蛛",
-            Desc = "造成 {Poison} 剧毒",
+            Desc = "▶ 造成 {Poison} 剧毒",
             Tags = [Tag.Friend],
             Cooldown = 6.0,
             Poison = [1, 2, 3, 4],
@@ -67,7 +67,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "举重手套",
-            Desc = "武器伤害提高 {Custom_0}（限本场战斗）",
+            Desc = "▶ 武器伤害提高 {Custom_0}（限本场战斗）",
             Tags = [Tag.Tool, Tag.Apparel],
             Cooldown = 5.0,
             Custom_0 = [1, 2, 3, 4],
@@ -87,7 +87,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "符文手斧",
-            Desc = "造成 {Damage} 伤害",
+            Desc = "▶ 造成 {Damage} 伤害",
             Tags = [Tag.Weapon],
             Cooldown = 8.0,
             Damage = [15, 30, 60, 120],
@@ -104,7 +104,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "放大镜",
-            Desc = "造成 {Damage} 伤害",
+            Desc = "▶ 造成 {Damage} 伤害",
             Tags = [Tag.Weapon, Tag.Tool],
             Cooldown = 6.0,
             Damage = [5, 15, 30, 50],
@@ -121,7 +121,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "古董剑",
-            Desc = "造成 {Damage} 伤害",
+            Desc = "▶ 造成 {Damage} 伤害",
             Tags = [Tag.Weapon],
             Cooldown = 5.0,
             Damage = [5, 10, 20, 40],
@@ -138,7 +138,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "轻步靴",
-            Desc = "相邻物品 {+Custom_0%} 暴击率",
+            Desc = "▶ 相邻物品 {+Custom_0%} 暴击率",
             Tags = [Tag.Apparel],
             Custom_0 = [3, 6, 9, 12],
             Auras =
@@ -159,7 +159,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "利爪",
-            Desc = "造成 {Damage} 伤害；此物品能造成双倍暴击伤害",
+            Desc = "▶ 造成 {Damage} 伤害；此物品能造成双倍暴击伤害",
             Tags = [Tag.Weapon],
             Cooldown = 4.0,
             Damage = [10, 20, 30, 40],
@@ -185,7 +185,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "蓝蕉",
-            Desc = "治疗 {Heal} 生命值",
+            Desc = "▶ 治疗 {Heal} 生命值",
             Tags = [Tag.Food],
             Cooldown = 10.0,
             Heal = [10, 20, 40, 80],
@@ -202,14 +202,14 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "冰锥",
-            Desc = "战斗开始时，冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒",
+            Desc = "▶ 战斗开始时，冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒",
             Tags = [],
             Freeze = [3.0, 4.0, 5.0, 6.0],
             Abilities =
             [
                 Ability.Freeze.Override(
                     trigger: Trigger.BattleStart,
-                    condition: Condition.SameSide
+                    condition: Condition.Always
                 ),
             ],
         };
@@ -221,7 +221,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "毒刺",
-            Desc = "造成 {Damage} 伤害；减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；吸血",
+            Desc = "▶ 造成 {Damage} 伤害；减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；吸血",
             Tags = [Tag.Weapon],
             Cooldown = 7.0,
             Damage = [5, 10, 20, 40],
@@ -242,7 +242,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "裂盾刀",
-            Desc = "造成 {Damage} 伤害；敌人的护盾物品损失 {Custom_0} 护盾（限本场战斗）",
+            Desc = "▶ 造成 {Damage} 伤害；敌人的护盾物品损失 {Custom_0} 护盾（限本场战斗）",
             Tags = [Tag.Weapon],
             Cooldown = 5.0,
             Damage = [10, 20, 30, 40],
@@ -264,7 +264,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "灵质",
-            Desc = "造成 {Poison} 剧毒；获得治疗，等量于敌人的剧毒",
+            Desc = "▶ 造成 {Poison} 剧毒；获得治疗，等量于敌人的剧毒",
             Tags = [],
             Cooldown = 7.0,
             Poison = [10, 20, 30],
@@ -291,7 +291,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "失落神祇",
-            Desc = "造成 {Poison} 剧毒；相邻物品触发减速时，此物品获得 {Custom_0} 剧毒（限本场战斗）",
+            Desc = "▶ 造成 {Poison} 剧毒；相邻物品触发减速时，此物品获得 {Custom_0} 剧毒（限本场战斗）",
             Tags = [Tag.Relic],
             Cooldown = 6.0,
             Poison = 4,
@@ -315,7 +315,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "神经毒素",
-            Desc = "使用相邻武器时，减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
+            Desc = "▶ 使用相邻武器时，减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
             Tags = [],
             Slow = [1.0, 2.0, 3.0],
             Abilities =
@@ -333,7 +333,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "断裂镣铐",
-            Desc = "武器伤害提高 {Custom_0}（限本场战斗）；使用武器时，为此物品充能 {ChargeSeconds} 秒",
+            Desc = "▶ 武器伤害提高 {Custom_0}（限本场战斗）；使用武器时，为此物品充能 {ChargeSeconds} 秒",
             Tags = [],
             Cooldown = 8.0,
             Custom_0 = [4, 8, 12],
@@ -358,7 +358,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "宇宙护符",
-            Desc = "加速 {HasteTargetCount} 件物品 {HasteSeconds} 秒；造成暴击时，此物品开始飞行；此物品飞行时，{+Custom_0} 多重释放",
+            Desc = "▶ 加速 {HasteTargetCount} 件物品 {HasteSeconds} 秒；造成暴击时，此物品开始飞行；此物品飞行时，{+Custom_0} 多重释放",
             Tags = [Tag.Relic],
             Cooldown = 5.0,
             Haste = [1.0, 2.0, 3.0],
@@ -391,7 +391,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "巨龙崽崽",
-            Desc = "造成 {Damage} 伤害；造成灼烧，等量于此物品伤害；此物品开始飞行",
+            Desc = "▶ 造成 {Damage} 伤害；造成灼烧，等量于此物品伤害；此物品开始飞行",
             Tags = [Tag.Weapon, Tag.Friend, Tag.Dragon],
             Cooldown = [9.0, 8.0, 7.0],
             Damage = 5,
@@ -400,7 +400,7 @@ public static class CommonSmall
             [
                 Ability.Damage,
                 Ability.Burn,
-                Ability.StartFlying,
+                Ability.StartFlying.Override(targetCondition: Condition.SameAsSource),
             ],
             Auras =
             [
@@ -419,7 +419,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "姜饼人",
-            Desc = "获得 {Shield} 护盾；使用工具时，为此物品充能 {ChargeSeconds} 秒",
+            Desc = "▶ 获得 {Shield} 护盾；使用工具时，为此物品充能 {ChargeSeconds} 秒",
             Tags = [Tag.Food, Tag.Friend],
             Cooldown = 5.0,
             Shield = [10, 20, 30, 40],
@@ -443,7 +443,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "纳米机器人",
-            Desc = "每拥有一位伙伴，造成 {Custom_0} 伤害；每有一个相邻的伙伴，冷却时间缩短 1 秒",
+            Desc = "▶ 每拥有一位伙伴，造成 {Custom_0} 伤害；每有一个相邻的伙伴，冷却时间缩短 1 秒",
             Tags = [Tag.Weapon, Tag.Friend],
             Cooldown = 6.0,
             Custom_0 = [15, 20, 25],
@@ -473,7 +473,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "工蜂",
-            Desc = "造成 {Damage} 伤害",
+            Desc = "▶ 造成 {Damage} 伤害",
             Tags = [Tag.Weapon, Tag.Friend, Tag.Drone],
             Cooldown = 6.0,
             Damage = [5, 10, 20],
@@ -490,7 +490,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "口器",
-            Desc = "触发减速时，造成 {Damage} 伤害",
+            Desc = "▶ 触发减速时，造成 {Damage} 伤害",
             Tags = [Tag.Weapon],
             Damage = [8, 12, 16],
             Abilities =
@@ -509,7 +509,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "友好玩偶",
-            Desc = "造成 {Damage} 伤害；若此为唯一伙伴，暴击率 {+Custom_0%}",
+            Desc = "▶ 造成 {Damage} 伤害；若此为唯一伙伴，暴击率 {+Custom_0%}",
             Tags = [Tag.Weapon, Tag.Friend, Tag.Toy],
             Cooldown = 3.0,
             Damage = [5, 15, 25],
@@ -536,7 +536,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "牵引光束",
-            Desc = "摧毁右侧下一件己方物品，造成 {Damage} 伤害；若被毁物品为大型或飞行，再造成 {Damage} 伤害",
+            Desc = "▶ 摧毁右侧下一件己方物品，造成 {Damage} 伤害；若被毁物品为大型或飞行，再造成 {Damage} 伤害",
             Tags = [Tag.Weapon],
             Cooldown = 6.0,
             Damage = [150, 300, 600],

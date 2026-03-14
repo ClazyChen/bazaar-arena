@@ -11,7 +11,7 @@ public static class CommonLarge
         return new ItemTemplate
         {
             Name = "临时避难所",
-            Desc = "获得 {Shield} 护盾",
+            Desc = "▶ 获得 {Shield} 护盾",
             Tags = [Tag.Property],
             Cooldown = 7.0,
             Shield = [10, 20, 40, 80],
@@ -28,7 +28,7 @@ public static class CommonLarge
         return new ItemTemplate
         {
             Name = "哈库维发射器",
-            Desc = "造成 {Damage} 伤害；弹药：{AmmoCap}",
+            Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}",
             Tags = [Tag.Weapon],
             Cooldown = 3.0,
             Damage = [100, 200, 300, 400],
@@ -46,7 +46,7 @@ public static class CommonLarge
         return new ItemTemplate
         {
             Name = "观光缆车",
-            Desc = "获得 {Shield} 护盾",
+            Desc = "▶ 获得 {Shield} 护盾",
             Tags = [Tag.Vehicle],
             Cooldown = 5.0,
             Shield = [20, 40, 80, 160],
@@ -63,7 +63,7 @@ public static class CommonLarge
         return new ItemTemplate
         {
             Name = "温泉",
-            Desc = "治疗 {Heal} 生命值",
+            Desc = "▶ 治疗 {Heal} 生命值",
             Tags = [Tag.Property],
             Cooldown = 6.0,
             Heal = [25, 50, 100, 200],
@@ -80,7 +80,7 @@ public static class CommonLarge
         return new ItemTemplate
         {
             Name = "废品场长枪",
-            Desc = "每拥有一件小型物品（含储存箱等效）造成 {Custom_0} 伤害",
+            Desc = "▶ 每拥有一件小型物品（含储存箱等效）造成 {Custom_0} 伤害",
             Tags = [Tag.Weapon],
             Cooldown = 11.0,
             Damage = 0,

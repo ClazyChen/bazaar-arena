@@ -59,14 +59,14 @@ public interface IEffectApplyContext
     /// <summary>修复已摧毁物品：目标由 targetCondition 与已摧毁组合（null 时默认己方）；不放回随机选取至多 targetCount 个，将其设为未摧毁并重置冷却已过时间。</summary>
     void ApplyRepair(int targetCount, Condition? targetCondition = null);
 
-    /// <summary>对己方满足 targetCondition 的物品增加指定属性（限本场战斗）。attributeName 为模板属性名（如 Damage、Poison、Key.InFlight），value 为增加量；目标由 targetCondition 筛选（Source=施放者）。InFlight 时设为 value != 0。</summary>
-    void AddAttributeToCasterSide(string attributeName, int value, Condition? targetCondition);
+    /// <summary>对己方满足 targetCondition 的物品增加指定属性（限本场战斗）。attributeName 为模板属性名（如 Damage、Poison、Key.InFlight），value 为增加量；目标由 targetCondition 筛选（Source=施放者）。InFlight 时设为 value != 0。maxTargetCount 大于 0 时仅对随机选取的至多该数量目标生效，0 表示不限制。</summary>
+    void AddAttributeToCasterSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0);
 
     /// <summary>对己方满足 targetCondition 的物品将指定属性设为 value（限本场战斗）。用于 StopFlying（Key.InFlight, 0）等。目标由 targetCondition 筛选（Source=施放者）。</summary>
     void SetAttributeOnCasterSide(string attributeName, int value, Condition? targetCondition);
 
-    /// <summary>对敌方满足 targetCondition 的物品减少指定属性（限本场战斗，不低于 0）。attributeName 为模板属性名（如 Shield），value 为减少量；目标由 targetCondition 筛选（Source=施放者），可用 Condition.WithTag(Tag.Shield) 等。</summary>
-    void ReduceAttributeToOpponentSide(string attributeName, int value, Condition? targetCondition);
+    /// <summary>对敌方满足 targetCondition 的物品减少指定属性（限本场战斗，不低于 0）。attributeName 为模板属性名（如 Shield），value 为减少量；目标由 targetCondition 筛选（Source=施放者）。maxTargetCount 大于 0 时仅对随机选取的至多该数量目标生效，0 表示不限制。</summary>
+    void ReduceAttributeToOpponentSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0);
 
     /// <summary>记录效果日志。showCrit 为 true 时显示「（暴击）」；仅对实际参与暴击的效果传 true（如伤害/灼烧/治疗等），冻结/减速等不可暴击效果传 false。</summary>
     void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false);
