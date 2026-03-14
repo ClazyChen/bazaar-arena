@@ -110,7 +110,6 @@ public class ItemDatabase : IItemTemplateResolver
                     ApplyCritMultiplier = a.ApplyCritMultiplier,
                     UseSelf = a.UseSelf,
                     Apply = a.Apply,
-                    ReduceAttributeToCasterSide = a.ReduceAttributeToCasterSide,
                     EffectLogName = a.EffectLogName,
                     Triggers = a.Triggers?.Select(e => new AbilityDefinition.TriggerEntry
                     {

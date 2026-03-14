@@ -261,7 +261,6 @@ public class BattleSimulator
                                 ApplyCritMultiplier = a.ApplyCritMultiplier,
                                 UseSelf = a.UseSelf,
                                 Apply = a.Apply,
-                                ReduceAttributeToCasterSide = a.ReduceAttributeToCasterSide,
                                 EffectLogName = a.EffectLogName,
                                 Triggers = a.Triggers?.Select(e => new AbilityDefinition.TriggerEntry
                                 {
@@ -510,8 +509,8 @@ public class BattleSimulator
             ChargeInducedCastQueue = chargeInducedCastQueue,
             EffectAppliedTriggerQueue = effectAppliedTriggerQueue,
             TargetCondition = ability.TargetCondition,
-            ReduceAttributeToCasterSide = ability.ReduceAttributeToCasterSide,
             EffectLogName = ability.EffectLogName,
+            TargetCountKey = ability.TargetCountKey,
         };
         ability.Apply(ctx);
         foreach (var (triggerName, sideIndex, itemIndex) in effectAppliedTriggerQueue)

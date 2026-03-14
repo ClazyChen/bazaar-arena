@@ -222,18 +222,18 @@
 
 ## 属性增减与效果目标选取统一（Reduce/Add、冻结/加速/减速/充能）
 
-本节记录「Reduce 与 ReduceAttributeCaster 合并」「冻结/减速/加速/充能从双方选目标」「Apply 层强制条件」「日志与百分比」等经验。
+本节记录「Reduce 统一为 ReduceAttribute + Override」「冻结/减速/加速/充能从双方选目标」「Apply 层强制条件」「日志与百分比」等经验。
 
-### ReduceAttribute 与 ReduceAttributeCaster 合并
+### ReduceAttribute 统一入口（与 AddAttribute 一致）
 
-- **统一入口**：仅保留 **Ability.ReduceAttribute(attributeName)**；**ReduceAttributeCaster(attributeName)** 等价于 `ReduceAttribute(attributeName).Override(targetCondition: Condition.SameSide, reduceToCasterSide: true)`。己方/敌方由 **ctx.ReduceAttributeToCasterSide**（来自能力的 **reduceToCasterSide**）决定，与 TargetCondition 语义一致。
-- **单 Apply**：**Effect.ReduceAttributeApply(attributeName)** 内根据 `ctx.ReduceAttributeToCasterSide` 选边，调用 **ctx.ReduceAttributeToSide(toCaster, attributeName, value, targetCond, maxTarget, ctx.EffectLogName)**。
+- **统一入口**：仅保留 **Ability.ReduceAttribute(attributeName)**；对己方减属性用 `ReduceAttribute(attributeName).Override(targetCondition: Condition.SameSide)`。己方/敌方完全由 **TargetCondition** 决定：从双方按 TargetCondition 选目标后施加减少，与 Freeze/Slow/AddAttribute 一致。
+- **单 Apply**：**Effect.ReduceAttributeApply(attributeName)** 内调用 **ctx.ReduceAttributeToSide(attributeName, value, targetCond, maxTarget, ctx.EffectLogName)**；**ReduceAttributeToSide** 内部用 **GetTargetsFromBothSides** 从双方选目标，不再需要 applyToCasterSide 参数。
 - **通用按 key 增减**：**ReduceAttributeToSide** 用 **Template.GetInt/SetInt(attributeName)** 做「当前值 − value、不低于 0」，不再对 Shield、FreezeRemainingMs 等写 if/else；新增属性时在 **AttributeLogNames** 与实现中补 key 即可。
 
 ### 效果日志名：AttributeLogNames 与 EffectLogName
 
 - **AttributeLogNames**（Core/Effect.cs）：Key → 中文名映射（如 Key.Damage→「伤害」、Key.FreezeRemainingMs→「冻结」）。默认日志为「属性中文名 + 提高/降低」。
-- **AbilityDefinition.EffectLogName**：Override 时可传 **effectLogName**（如「解除冻结」「开始飞行」），覆盖默认「X提高/X降低」。模拟器构建 ctx 时注入 **EffectLogName**、**ReduceAttributeToCasterSide**；克隆能力/模板时须复制这两项。
+- **AbilityDefinition.EffectLogName**：Override 时可传 **effectLogName**（如「解除冻结」「开始飞行」），覆盖默认「X提高/X降低」。模拟器构建 ctx 时注入 **EffectLogName**；克隆能力/模板时须复制此项。
 
 ### 冻结/减速/加速/充能：双方选目标与 Apply 强制条件
 
@@ -248,9 +248,14 @@
 - **PercentFreezeReduction**：施加冻结时有效时长 = 原始时长 − 减免量。减免量用 **RatioUtil.PercentOf(freezeMs, pct)**（value 的 percent% 向下取整，结果可为 0），勿手写 `freezeMs * (100 - pct) / 100`。
 - **RatioUtil**：**PercentOf(value, percent)** 用于「按百分比的数值」（如减免量、扣除量）；**PercentFloor(value, percent)** 用于「至少为 1」的场景（如治疗清除 5% 灼烧）。见 **Core/RatioUtil.cs**。
 
+### Override 经验
+
+- **只覆盖有变化的项**：priority、targetCondition 等与能力默认一致时不必写，避免冗余（如「解除冻结」UseItem 那条用默认 Medium 即可，无需写 `priority: AbilityPriority.Medium`）。
+- **Reduce 与 Add 统一**：不再使用 reduceToCasterSide；己方减属性仅用 `ReduceAttribute(...).Override(targetCondition: Condition.SameSide)`，目标由 TargetCondition 从双方筛选，与 Freeze/AddAttribute 一致。
+
 ### 小结
 
-修改属性增减或冻结/减速/加速/充能时：Reduce 己方用 ReduceAttributeCaster 或 ReduceAttribute + reduceToCasterSide；日志用 AttributeLogNames + 可选 effectLogName；目标由 TargetCondition 在双方中筛选，Apply 内固定加 NotDestroyed，减速/加速/充能固定加 HasCooldown；百分比用 RatioUtil。
+修改属性增减或冻结/减速/加速/充能时：Reduce 己方用 ReduceAttribute + Override(targetCondition: Condition.SameSide)；日志用 AttributeLogNames + 可选 effectLogName；目标由 TargetCondition 在双方中筛选（Reduce 与 Add/Freeze 一致），Apply 内固定加 NotDestroyed，减速/加速/充能固定加 HasCooldown；百分比用 RatioUtil。
 
 ---
 

@@ -249,15 +249,17 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "宇宙炫羽",
-            Desc = "▶ {ModifyAttributeTargetCount} 件物品开始飞行；飞行物品暴击率 {+Custom_0%}；造成暴击或使用飞行物品时，为此物品充能 {ChargeSeconds} 秒",
+            Desc = "▶ {Custom_1} 件物品开始飞行；飞行物品暴击率 {+Custom_0%}；造成暴击或使用飞行物品时，为此物品充能 {ChargeSeconds} 秒",
             Tags = [Tag.Relic],
             Cooldown = 4.0,
             Custom_0 = [5, 10, 15],
+            Custom_1 = 1,
             Charge = 1.0,
-            ModifyAttributeTargetCount = 1,
             Abilities =
             [
-                Ability.StartFlying,
+                Ability.StartFlying.Override(
+                    targetCountKey: Key.Custom_1
+                ),
                 Ability.AddAttribute(Key.CritRatePercent).Override(
                     additionalTargetCondition: Condition.InFlight,
                     priority: AbilityPriority.Low
@@ -280,16 +282,18 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "巨龙翼",
-            Desc = "▶ 获得 {Shield} 护盾；▶ {ModifyAttributeTargetCount} 件物品开始飞行；触发灼烧时，为此物品充能 {ChargeSeconds} 秒",
+            Desc = "▶ 获得 {Shield} 护盾；▶ {Custom_1} 件物品开始飞行；触发灼烧时，为此物品充能 {ChargeSeconds} 秒",
             Tags = [Tag.Dragon],
             Cooldown = 7.0,
             Shield = [40, 60, 80],
             Charge = 2.0,
-            ModifyAttributeTargetCount = 1,
+            Custom_1 = 1,
             Abilities =
             [
                 Ability.Shield,
-                Ability.StartFlying,
+                Ability.StartFlying.Override(
+                    targetCountKey: Key.Custom_1
+                ),
                 Ability.Charge.Override(
                     trigger: Trigger.Burn,
                     targetCondition: Condition.SameAsSource,
@@ -347,7 +351,7 @@ public static class CommonMedium
                 ),
                 Ability.Shield.Override(
                     trigger: Trigger.Freeze,
-                    targetCondition: Condition.SameAsSource
+                    condition: Condition.Always
                 ),
             ],
             Auras =
@@ -399,17 +403,17 @@ public static class CommonMedium
             Abilities =
             [
                 Ability.Damage,
-                Ability.ReduceAttributeCaster(Key.FreezeRemainingMs).Override(
+                Ability.ReduceAttribute(Key.FreezeRemainingMs).Override(
+                    targetCondition: Condition.SameSide,
                     value: 1_000_000,
-                    effectLogName: "解除冻结",
-                    priority: AbilityPriority.Medium
+                    effectLogName: "解除冻结"
                 ),
                 Ability.Charge.Override(
                     trigger: Trigger.Freeze,
                     targetCondition: Condition.SameAsSource,
                     priority: AbilityPriority.Low
                 ),
-                Ability.ReduceAttributeCaster(Key.FreezeRemainingMs).Override(
+                Ability.ReduceAttribute(Key.FreezeRemainingMs).Override(
                     trigger: Trigger.Freeze,
                     invokeTargetCondition: Condition.SameAsSource,
                     targetCondition: Condition.SameAsSource,

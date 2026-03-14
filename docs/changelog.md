@@ -1,5 +1,12 @@
 # 变更记录
 
+## Reduce 完全统一与 Override 经验整理
+
+- **Reduce 真正统一**：移除 **ReduceAttributeToCasterSide** 与 **reduceToCasterSide**；**ReduceAttributeToSide** 改为仅按 **TargetCondition** 从双方选目标（GetTargetsFromBothSides），与 AddAttribute/Freeze 一致。Reduce 己方仅需 `ReduceAttribute(...).Override(targetCondition: Condition.SameSide)`。
+- **Override 经验**：仅覆盖需要改变的参数，与默认相同的项不写（如 priority 仍为 Medium 时不写 `priority: AbilityPriority.Medium`）。实现笔记与 **.cursor/rules/ability-override-format.mdc** 补充「只覆盖有变化的项」与 Reduce 统一入口说明。
+
+---
+
 ## 属性增减与效果目标选取统一（文档与规则）
 
 - **实现笔记**：**docs/implementation-notes.md** 新增「属性增减与效果目标选取统一」：Reduce 与 ReduceAttributeCaster 合并、AttributeLogNames/EffectLogName、冻结/减速/加速/充能从双方选目标、Apply 层强制 NotDestroyed/HasCooldown、冻结减免用 RatioUtil.PercentOf。

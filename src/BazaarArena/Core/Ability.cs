@@ -70,6 +70,7 @@ public static class Ability
         Apply = Effect.ChargeApply,
         Priority = AbilityPriority.Medium,
         TargetCondition = WithCooldownTarget(Condition.SameSide),
+        TargetCountKey = Key.ChargeTargetCount,
     };
 
     /// <summary>加速（Effect.HasteApply）。默认触发器 UseItem；目标默认己方、未摧毁且有冷却；定制用 .Override(...)。</summary>
@@ -81,6 +82,7 @@ public static class Ability
         Apply = Effect.HasteApply,
         Priority = AbilityPriority.Medium,
         TargetCondition = WithCooldownTarget(Condition.SameSide),
+        TargetCountKey = Key.HasteTargetCount,
     };
 
     /// <summary>减速（Effect.SlowApply）。默认触发器 UseItem；目标默认敌方、未摧毁且有冷却；定制用 .Override(...)。</summary>
@@ -92,6 +94,7 @@ public static class Ability
         Apply = Effect.SlowApply,
         Priority = AbilityPriority.Medium,
         TargetCondition = WithCooldownTarget(Condition.DifferentSide),
+        TargetCountKey = Key.SlowTargetCount,
     };
 
     /// <summary>冻结（Effect.FreezeApply）。默认触发器 UseItem；目标默认敌方、未摧毁且有冷却；定制用 .Override(...)。</summary>
@@ -103,6 +106,7 @@ public static class Ability
         Apply = Effect.FreezeApply,
         Priority = AbilityPriority.Medium,
         TargetCondition = WithCooldownTarget(Condition.DifferentSide),
+        TargetCountKey = Key.FreezeTargetCount,
     };
 
     /// <summary>开始飞行：对己方满足目标条件且未飞行的物品设为飞行（等价于 AddAttribute(Key.InFlight) 设 1）。默认 additionalTargetCondition 为 NotInFlight；日志显示「开始飞行」。</summary>
@@ -128,6 +132,7 @@ public static class Ability
         Apply = Effect.DestroyApply,
         Priority = AbilityPriority.Medium,
         TargetCondition = WithNotDestroyedTarget(Condition.SameSide),
+        TargetCountKey = Key.DestroyTargetCount,
     };
 
     /// <summary>修复（Effect.RepairApply）。默认触发器 UseItem；目标默认己方（实现内与 Condition.Destroyed 组合）；定制用 .Override(...)。</summary>
@@ -139,9 +144,10 @@ public static class Ability
         Apply = Effect.RepairApply,
         Priority = AbilityPriority.Medium,
         TargetCondition = Condition.SameSide,
+        TargetCountKey = Key.RepairTargetCount,
     };
 
-    /// <summary>对己方满足目标条件的物品增加指定属性（限本场战斗）。attributeName 如 Key.Damage、Key.Poison；amountKey 默认 Key.Custom_0。目标默认己方；定制用 .Override(...)。</summary>
+    /// <summary>对己方满足目标条件的物品增加指定属性（限本场战斗）。attributeName 如 Key.Damage、Key.Poison；amountKey 默认 Key.Custom_0。目标默认己方；目标数默认 ModifyAttributeTargetCount；定制用 .Override(...)。</summary>
     public static AbilityDefinition AddAttribute(string attributeName, string? amountKey = null) => new()
     {
         TriggerName = Trigger.UseItem,
@@ -151,9 +157,10 @@ public static class Ability
         Apply = Effect.AddAttributeApply(attributeName),
         Priority = AbilityPriority.Medium,
         TargetCondition = Condition.SameSide,
+        TargetCountKey = Key.ModifyAttributeTargetCount,
     };
 
-    /// <summary>对敌方满足目标条件的物品减少指定属性（限本场战斗，不低于 0）。amountKey 默认 Key.Custom_0。目标默认敌方；定制用 .Override(...)。</summary>
+    /// <summary>对敌方满足目标条件的物品减少指定属性（限本场战斗，不低于 0）。amountKey 默认 Key.Custom_0。目标默认敌方；目标数默认 ModifyAttributeTargetCount；定制用 .Override(...)。</summary>
     public static AbilityDefinition ReduceAttribute(string attributeName, string? amountKey = null) => new()
     {
         TriggerName = Trigger.UseItem,
@@ -163,9 +170,6 @@ public static class Ability
         Apply = Effect.ReduceAttributeApply(attributeName),
         Priority = AbilityPriority.Medium,
         TargetCondition = Condition.DifferentSide,
+        TargetCountKey = Key.ModifyAttributeTargetCount,
     };
-
-    /// <summary>对己方满足目标条件的物品减少指定属性（限本场战斗，不低于 0）。等价于 ReduceAttribute(attributeName).Override(targetCondition: Condition.SameSide, reduceToCasterSide: true)；可再 Override(effectLogName: "解除冻结") 等。</summary>
-    public static AbilityDefinition ReduceAttributeCaster(string attributeName, string? amountKey = null) =>
-        ReduceAttribute(attributeName, amountKey).Override(targetCondition: Condition.SameSide, reduceToCasterSide: true);
 }

@@ -15,7 +15,8 @@ globs: "**/ItemDatabase/**","**/Core/Ability*.cs"
 
 ## 简化原则
 
-当能力的**默认 TargetCondition** 已是 `Condition.SameSide`（如 AddAttribute、Charge、Haste）或 `Condition.DifferentSide`（如 ReduceAttribute、Slow、Freeze）时，若只需在默认上**追加**条件，应使用 **additionalTargetCondition** 而非重写 **targetCondition**，以保持简洁并与默认语义一致。
+- **只覆盖需要改变的参数**：与默认值相同的参数不必写（例如 ReduceAttribute 默认 Priority 为 Medium，若仍为 Medium 则不要写 `priority: AbilityPriority.Medium`）。
+- 当能力的**默认 TargetCondition** 已是 `Condition.SameSide`（如 AddAttribute、Charge、Haste）或 `Condition.DifferentSide`（如 ReduceAttribute、Slow、Freeze）时，若只需在默认上**追加**条件，应使用 **additionalTargetCondition** 而非重写 **targetCondition**，以保持简洁并与默认语义一致。
 
 - 示例：目标为「己方且飞行」→ 写 `additionalTargetCondition: Condition.InFlight`，勿写 `targetCondition: Condition.SameSide & Condition.InFlight`。
 - 示例：目标为「己方武器」→ 写 `additionalTargetCondition: Condition.WithTag(Tag.Weapon)`。
@@ -32,7 +33,7 @@ globs: "**/ItemDatabase/**","**/Core/Ability*.cs"
 5. **targetCondition** / **additionalTargetCondition**
 6. **priority**
 
-其余可选参数（如 valueKey、value、applyCritMultiplier、apply、reduceToCasterSide、effectLogName）如确需覆盖，放在 priority 之后即可。  
+其余可选参数（如 valueKey、value、applyCritMultiplier、apply、effectLogName、targetCountKey）如确需覆盖，放在 priority 之后即可。  
 对于 **ability.Also(...)**，通常只传前四类参数（trigger / condition / invokeTargetCondition / sourceCondition），不应在 Also 中修改 priority / valueKey / value / targetCondition 等共享属性。
 
 ## 示例

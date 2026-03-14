@@ -77,61 +77,67 @@ public static class Effect
         ctx.LogEffect("生命再生", value, showCrit: ctx.IsCrit);
     };
 
-    /// <summary>充能：根据 ChargeTargetCount 与 Charge（毫秒）选取满足能力 TargetCondition 的己方物品施加充能（默认未摧毁且有冷却）；不参与暴击。</summary>
+    /// <summary>充能：根据 TargetCountKey（默认 ChargeTargetCount）与 Charge（毫秒）选取满足能力 TargetCondition 的己方物品施加充能（默认未摧毁且有冷却）；不参与暴击。</summary>
     public static readonly Action<IEffectApplyContext> ChargeApply = ctx =>
     {
         int chargeMs = ctx.GetResolvedValue(Key.Charge);
-        int count = ctx.GetResolvedValue(Key.ChargeTargetCount, defaultValue: 1);
+        string countKey = ctx.TargetCountKey ?? Key.ChargeTargetCount;
+        int count = ctx.GetResolvedValue(countKey, defaultValue: 1);
         ctx.ApplyCharge(chargeMs, count, ctx.TargetCondition);
     };
 
-    /// <summary>冻结：根据 FreezeTargetCount 与 Freeze（毫秒）选取满足能力 TargetCondition 的敌人物品施加冻结（默认未摧毁且有冷却）；触发次数按实际目标数。</summary>
+    /// <summary>冻结：根据 TargetCountKey（默认 FreezeTargetCount）与 Freeze（毫秒）选取满足能力 TargetCondition 的敌人物品施加冻结（默认未摧毁且有冷却）；触发次数按实际目标数。</summary>
     public static readonly Action<IEffectApplyContext> FreezeApply = ctx =>
     {
         int freezeMs = ctx.GetResolvedValue(Key.Freeze);
-        int count = ctx.GetResolvedValue(Key.FreezeTargetCount, defaultValue: 1);
+        string countKey = ctx.TargetCountKey ?? Key.FreezeTargetCount;
+        int count = ctx.GetResolvedValue(countKey, defaultValue: 1);
         ctx.ApplyFreeze(freezeMs, count, ctx.TargetCondition);
     };
 
-    /// <summary>减速：根据 SlowTargetCount 与 Slow（毫秒）选取满足能力 TargetCondition 的敌人物品施加减速（默认未摧毁且有冷却）。</summary>
+    /// <summary>减速：根据 TargetCountKey（默认 SlowTargetCount）与 Slow（毫秒）选取满足能力 TargetCondition 的敌人物品施加减速（默认未摧毁且有冷却）。</summary>
     public static readonly Action<IEffectApplyContext> SlowApply = ctx =>
     {
         int slowMs = ctx.GetResolvedValue(Key.Slow);
-        int count = ctx.GetResolvedValue(Key.SlowTargetCount, defaultValue: 1);
+        string countKey = ctx.TargetCountKey ?? Key.SlowTargetCount;
+        int count = ctx.GetResolvedValue(countKey, defaultValue: 1);
         ctx.ApplySlow(slowMs, count, ctx.TargetCondition);
     };
 
-    /// <summary>对己方满足能力 TargetCondition 的物品增加指定属性（限本场战斗）。attributeName 为要增加的属性名（如 Damage、Poison、Key.InFlight）；目标条件由能力 TargetCondition 注入，默认 SameSide。ModifyAttributeTargetCount 默认 20 表示全部，小于 20 时仅对至多该数量目标生效。</summary>
+    /// <summary>对己方满足能力 TargetCondition 的物品增加指定属性（限本场战斗）。attributeName 为要增加的属性名（如 Damage、Poison、Key.InFlight）；目标条件由能力 TargetCondition 注入，默认 SameSide。TargetCountKey 默认 ModifyAttributeTargetCount，默认值 20 表示全部，小于 20 时仅对至多该数量目标生效。</summary>
     public static Action<IEffectApplyContext> AddAttributeApply(string attributeName) => ctx =>
     {
         var targetCond = ctx.TargetCondition ?? Condition.SameSide;
-        int cap = ctx.GetResolvedValue(Key.ModifyAttributeTargetCount, defaultValue: 20);
+        string countKey = ctx.TargetCountKey ?? Key.ModifyAttributeTargetCount;
+        int cap = ctx.GetResolvedValue(countKey, defaultValue: 20);
         int maxTarget = cap >= 20 ? 0 : cap;
         ctx.AddAttributeToCasterSide(attributeName, ctx.Value, targetCond, maxTarget);
     };
 
-    /// <summary>对满足能力 TargetCondition 的一方减少指定属性（限本场战斗，不低于 0）。己方/敌方由 ctx.ReduceAttributeToCasterSide 决定；日志名优先用 ctx.EffectLogName，否则属性中文名+「降低」。</summary>
+    /// <summary>对满足能力 TargetCondition 的目标（从双方选取）减少指定属性（限本场战斗，不低于 0）。目标数取自 TargetCountKey（默认 ModifyAttributeTargetCount）；日志名优先用 ctx.EffectLogName，否则属性中文名+「降低」。</summary>
     public static Action<IEffectApplyContext> ReduceAttributeApply(string attributeName) => ctx =>
     {
-        bool toCaster = ctx.ReduceAttributeToCasterSide;
-        var targetCond = ctx.TargetCondition ?? (toCaster ? Condition.SameSide : Condition.DifferentSide);
-        int cap = ctx.GetResolvedValue(Key.ModifyAttributeTargetCount, defaultValue: 20);
+        var targetCond = ctx.TargetCondition ?? Condition.DifferentSide;
+        string countKey = ctx.TargetCountKey ?? Key.ModifyAttributeTargetCount;
+        int cap = ctx.GetResolvedValue(countKey, defaultValue: 20);
         int maxTarget = cap >= 20 ? 0 : cap;
-        ctx.ReduceAttributeToSide(toCaster, attributeName, ctx.Value, targetCond, maxTarget, ctx.EffectLogName);
+        ctx.ReduceAttributeToSide(attributeName, ctx.Value, targetCond, maxTarget, ctx.EffectLogName);
     };
 
-    /// <summary>加速：根据 HasteTargetCount 与 Haste（毫秒）选取己方有冷却且满足能力 TargetCondition 的物品施加加速；未设 TargetCondition 时默认 SameSide。</summary>
+    /// <summary>加速：根据 TargetCountKey（默认 HasteTargetCount）与 Haste（毫秒）选取己方有冷却且满足能力 TargetCondition 的物品施加加速；未设 TargetCondition 时默认 SameSide。</summary>
     public static readonly Action<IEffectApplyContext> HasteApply = ctx =>
     {
         int hasteMs = ctx.GetResolvedValue(Key.Haste);
-        int count = ctx.GetResolvedValue(Key.HasteTargetCount, defaultValue: 1);
+        string countKey = ctx.TargetCountKey ?? Key.HasteTargetCount;
+        int count = ctx.GetResolvedValue(countKey, defaultValue: 1);
         ctx.ApplyHaste(hasteMs, count, ctx.TargetCondition);
     };
 
-    /// <summary>修复：根据 RepairTargetCount 与能力 TargetCondition 选取己方已摧毁物品进行修复（实现内会与 Condition.Destroyed 组合）；默认 SameSide。</summary>
+    /// <summary>修复：根据 TargetCountKey（默认 RepairTargetCount）与能力 TargetCondition 选取己方已摧毁物品进行修复（实现内会与 Condition.Destroyed 组合）；默认 SameSide。</summary>
     public static readonly Action<IEffectApplyContext> RepairApply = ctx =>
     {
-        int count = ctx.GetResolvedValue(Key.RepairTargetCount, defaultValue: 1);
+        string countKey = ctx.TargetCountKey ?? Key.RepairTargetCount;
+        int count = ctx.GetResolvedValue(countKey, defaultValue: 1);
         ctx.ApplyRepair(count, ctx.TargetCondition);
     };
 
@@ -141,10 +147,11 @@ public static class Effect
         ctx.SetAttributeOnCasterSide(Key.InFlight, 0, ctx.TargetCondition);
     };
 
-    /// <summary>摧毁：根据 DestroyTargetCount 与能力 TargetCondition 选取己方未摧毁物品施加摧毁（默认 1 个）；先触发「摧毁物品时」，再标记 Destroyed。目标不要求有冷却。</summary>
+    /// <summary>摧毁：根据 TargetCountKey（默认 DestroyTargetCount）与能力 TargetCondition 选取己方未摧毁物品施加摧毁（默认 1 个）；先触发「摧毁物品时」，再标记 Destroyed。目标不要求有冷却。</summary>
     public static readonly Action<IEffectApplyContext> DestroyApply = ctx =>
     {
-        int count = ctx.GetResolvedValue(Key.DestroyTargetCount, defaultValue: 1);
+        string countKey = ctx.TargetCountKey ?? Key.DestroyTargetCount;
+        int count = ctx.GetResolvedValue(countKey, defaultValue: 1);
         ctx.ApplyDestroy(count, ctx.TargetCondition);
     };
 }

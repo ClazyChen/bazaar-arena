@@ -17,8 +17,8 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     /// <summary>效果施加触发的触发器待处理队列（由模拟器传入）。冻结/减速/摧毁时追加 (TriggerName, SideIndex, ItemIndex)，模拟器在 Apply 后统一 InvokeTrigger 并处理 Destroyed。</summary>
     public List<(string TriggerName, int SideIndex, int ItemIndex)>? EffectAppliedTriggerQueue { get; init; }
 
-    public bool ReduceAttributeToCasterSide { get; init; }
     public string? EffectLogName { get; init; }
+    public string? TargetCountKey { get; init; }
 
     public int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0)
     {
@@ -309,36 +309,25 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         });
     }
 
-    public void ReduceAttributeToSide(bool applyToCasterSide, string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0, string? effectLogName = null)
+    /// <summary>对满足 targetCondition 的目标（从双方选取）减少指定属性（不低于 0）。目标数由 maxTargetCount 限制，0 表示不限制。</summary>
+    public void ReduceAttributeToSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0, string? effectLogName = null)
     {
         if (value <= 0 || targetCondition == null) return;
-        var fromSide = applyToCasterSide ? Side : Opp;
-        var enemySide = applyToCasterSide ? Opp : Side;
         string logName = effectLogName ?? (AttributeLogNames.Get(attributeName) + "降低");
-        if (maxTargetCount > 0)
+        int take = maxTargetCount > 0 ? maxTargetCount : 100;
+        var targets = GetTargetsFromBothSides(take, targetCondition);
+        if (targets.Count == 0) return;
+        var targetNames = new List<string>();
+        foreach (var (side, index) in targets)
         {
-            var indices = GetTargetIndices(fromSide, maxTargetCount, targetCondition);
-            if (indices.Count == 0) return;
-            var targetNames = new List<string>();
-            foreach (int i in indices)
-            {
-                var wi = fromSide.Items[i];
-                int current = wi.Template.GetInt(attributeName, wi.Tier, 0);
-                int newVal = Math.Max(0, current - value);
-                wi.Template.SetInt(attributeName, newVal);
-                targetNames.Add(wi.Template.Name);
-            }
-            if (targetNames.Count > 0)
-                LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
-            return;
-        }
-        ApplyToSideWithCondition(fromSide, enemySide, targetCondition, logName, value, (wi, _) =>
-        {
+            var wi = side.Items[index];
             int current = wi.Template.GetInt(attributeName, wi.Tier, 0);
             int newVal = Math.Max(0, current - value);
             wi.Template.SetInt(attributeName, newVal);
-            return wi.Template.Name;
-        });
+            targetNames.Add(wi.Template.Name);
+        }
+        if (targetNames.Count > 0)
+            LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
     }
 
     public void ReportTriggerCause(string triggerName) =>

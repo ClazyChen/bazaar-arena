@@ -10,6 +10,7 @@ public static class Key
     public const string Burn = nameof(ItemTemplate.Burn);
     public const string Poison = nameof(ItemTemplate.Poison);
     public const string Custom_0 = nameof(ItemTemplate.Custom_0);
+    public const string Custom_1 = nameof(ItemTemplate.Custom_1);
 
     // 冷却与暴击
     public const string CooldownMs = nameof(ItemTemplate.CooldownMs);

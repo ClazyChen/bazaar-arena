@@ -20,11 +20,11 @@ public interface IEffectApplyContext
     /// <summary>当前能力的目标选择条件（用于冻结/减速/充能/加速/摧毁等多目标效果）；由模拟器从 AbilityDefinition.TargetCondition 注入。</summary>
     Condition? TargetCondition { get; }
 
-    /// <summary>减少属性效果是否作用于己方（由能力 Override(reduceToCasterSide) 注入）；用于统一 ReduceAttribute Apply 选边。</summary>
-    bool ReduceAttributeToCasterSide { get; }
-
     /// <summary>效果日志名覆盖（由能力 Override(effectLogName) 注入）；非空时用于属性提高/降低的日志显示。</summary>
     string? EffectLogName { get; }
+
+    /// <summary>多目标效果的目标数量取自施放者模板的该 key（由能力 TargetCountKey 注入）；效果内未设时使用该效果类型的默认 key。</summary>
+    string? TargetCountKey { get; }
 
     /// <summary>对敌方造成伤害；isBurn 为灼烧结算。返回实际扣减的生命值（用于吸血等）。</summary>
     int ApplyDamageToOpp(int value, bool isBurn);
@@ -71,8 +71,8 @@ public interface IEffectApplyContext
     /// <summary>对己方满足 targetCondition 的物品将指定属性设为 value（限本场战斗）。用于 StopFlying（Key.InFlight, 0）等。目标由 targetCondition 筛选（Source=施放者）。</summary>
     void SetAttributeOnCasterSide(string attributeName, int value, Condition? targetCondition);
 
-    /// <summary>对指定阵营满足 targetCondition 的物品减少指定属性（限本场战斗，不低于 0）。applyToCasterSide 为 true 时作用己方，否则敌方；attributeName 为 Key；effectLogName 非空时用于日志，否则用属性中文名+「降低」。</summary>
-    void ReduceAttributeToSide(bool applyToCasterSide, string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0, string? effectLogName = null);
+    /// <summary>对满足 targetCondition 的目标（从双方选取）减少指定属性（限本场战斗，不低于 0）。maxTargetCount 为 0 表示不限制；effectLogName 非空时用于日志，否则用属性中文名+「降低」。</summary>
+    void ReduceAttributeToSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0, string? effectLogName = null);
 
     /// <summary>将本次效果施加报告为触发器原因（如灼烧施加后报告 Trigger.Burn），供模拟器统一 InvokeTrigger；仅部分效果（如 BurnApply）调用。</summary>
     void ReportTriggerCause(string triggerName);

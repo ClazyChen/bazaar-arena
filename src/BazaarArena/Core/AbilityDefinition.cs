@@ -55,11 +55,11 @@ public class AbilityDefinition
     /// <summary>效果应用委托；由 Core/Effect 预定义或自定义效果设置。</summary>
     public Action<IEffectApplyContext>? Apply { get; set; }
 
-    /// <summary>减少属性效果是否作用于己方（true=己方，false=敌方）；仅 ReduceAttribute 使用，由 Override(reduceToCasterSide: true) 设置。</summary>
-    public bool ReduceAttributeToCasterSide { get; set; }
-
     /// <summary>效果日志名覆盖；非空时用于 AddAttribute/ReduceAttribute 的日志（如「解除冻结」「开始飞行」），否则用属性中文名+提高/降低。</summary>
     public string? EffectLogName { get; set; }
+
+    /// <summary>多目标效果（充能/加速/减速/冻结/修复/摧毁/增减属性）的目标数量取自模板的该 key；未设时由各效果使用默认 key（如 Charge→ChargeTargetCount，AddAttribute→ModifyAttributeTargetCount）。Override 时可指定以解决同一物品多条能力共用同一 key 的冲突（如宇宙炫羽 StartFlying 用 Custom_1）。</summary>
+    public string? TargetCountKey { get; set; }
 
     /// <summary>确保 Triggers 至少包含一条与主字段（TriggerName/Condition/...）一致的配置。</summary>
     internal void SyncPrimaryTriggerEntryFromTopLevel()
@@ -104,8 +104,8 @@ public class AbilityDefinition
         int? value = null,
         bool? applyCritMultiplier = null,
         Action<IEffectApplyContext>? apply = null,
-        bool? reduceToCasterSide = null,
-        string? effectLogName = null)
+        string? effectLogName = null,
+        string? targetCountKey = null)
     {
         string originalTrigger = TriggerName;
         if (trigger != null) TriggerName = trigger;
@@ -116,8 +116,8 @@ public class AbilityDefinition
         if (value != null) Value = value.Value;
         if (applyCritMultiplier != null) ApplyCritMultiplier = applyCritMultiplier.Value;
         if (apply != null) Apply = apply;
-        if (reduceToCasterSide != null) ReduceAttributeToCasterSide = reduceToCasterSide.Value;
         if (effectLogName != null) EffectLogName = effectLogName;
+        if (targetCountKey != null) TargetCountKey = targetCountKey;
 
         if (condition != null || additionalCondition != null)
         {
