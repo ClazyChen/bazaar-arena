@@ -61,6 +61,17 @@ public static class Ability
         Priority = AbilityPriority.Medium,
     };
 
+    /// <summary>对己方造成剧毒（Effect.PoisonSelfApply）。默认触发器 UseItem；用于舱底蠕虫 S11 等「对自己造成剧毒」。</summary>
+    public static AbilityDefinition PoisonSelf => new()
+    {
+        TriggerName = Trigger.UseItem,
+        Condition = Condition.SameAsSource,
+        ValueKey = Key.Poison,
+        ApplyCritMultiplier = true,
+        Apply = Effect.PoisonSelfApply,
+        Priority = AbilityPriority.Medium,
+    };
+
     /// <summary>充能（Effect.ChargeApply）。默认触发器 UseItem；目标默认己方、未摧毁且有冷却；定制用 .Override(...)。</summary>
     public static AbilityDefinition Charge => new()
     {

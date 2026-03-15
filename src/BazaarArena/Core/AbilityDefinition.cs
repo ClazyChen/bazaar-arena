@@ -133,6 +133,8 @@ public class AbilityDefinition
             // 仅修改 Trigger 且未传入 condition 时，直接按新 Trigger 设置默认条件：
             // UseItem → SameAsSource，其余 → SameSide。
             Condition = TriggerName == Trigger.UseItem ? Condition.SameAsSource : Condition.SameSide;
+            if (TriggerName != Trigger.UseItem)
+                UseSelf = false;
         }
         if (targetCondition != null || additionalTargetCondition != null)
         {

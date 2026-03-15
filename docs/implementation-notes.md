@@ -424,6 +424,26 @@
 
 ---
 
+## 暴击与暴击率（UseSelf、CanCrit、add/reduce 仅对可暴击物品）
+
+### 规则
+
+- **可暴击**：仅「使用**本**物品时」的伤害、护盾、治疗、生命再生、灼烧、剧毒可参与暴击判定；其他触发器触发的效果、使用其他物品时触发的效果均不可暴击。
+- **实现**：模拟器 `canCrit = ItemHasAnyCrittableField(item) && ability.Apply != null && ability.ApplyCritMultiplier && ability.UseSelf`。仅 **UseSelf** 为 true 的 UseItem 能力会掷暴击；Override 时若传入 condition 或改为非 UseItem 的 trigger，须将 **UseSelf = false**。
+
+### Override 仅改 trigger 时的 UseSelf
+
+- **漏洞**：若只传 `trigger`（如 `Ability.PoisonSelf.Override(trigger: Trigger.Crit)`）未传 condition，走 `else if (trigger != null && originalTrigger != TriggerName)` 分支，只更新了 Condition，**未**设置 UseSelf = false，导致非 UseItem 能力仍参与暴击。
+- **修复**：在该分支内增加：若 `TriggerName != Trigger.UseItem` 则 `UseSelf = false`。见 **AbilityDefinition.Override**。
+
+### add/reduce 暴击率仅对可暴击物品生效
+
+- **问题**：原用 **HasAnyCrittableTag**（六类 Tag 之一）限制加/减暴击率目标；但如舱底蠕虫 S9 有 Poison 会补 Tag.Poison，却无「使用本物品」可暴击能力，不应获得暴击率。
+- **Condition.CanCrit**：被评估对象「可参与暴击」= HasAnyCrittableTag 成立 **且** 至少有一条能力满足 `TriggerName == Trigger.UseItem && UseSelf && ApplyCritMultiplier`。用于 add/reduce 暴击率时的隐含目标条件。
+- **效果层**：**AddAttributeToCasterSide**、**ReduceAttributeToSide** 中当 `attributeName == Key.CritRatePercent` 时，使用 **Condition.CanCrit** 替代 HasAnyCrittableTag 过滤目标。不修改物品定义即可保证不可暴击物品（如 S9）不会收到暴击率。
+
+---
+
 ## 冰锥与冻结、相关修复与约定总结
 
 本节记录「冰锥」物品加入过程中涉及的实现选择与修复，便于后续扩展类似效果（多目标、持续时间、日志与持久化）时对照。
@@ -684,9 +704,22 @@
 - **物品池**：绑定到 `ItemPoolEntryViewModel`（BaseName + DisplayName）。默认 DisplayName = BaseName；右键循环 DisplayName 到下一版本，左键拖拽 payload 为 DisplayName（可历史版本）；左键点击任何其他位置且未发生「从池拖入卡组」的 Drop 时，将所有池项 DisplayName 重置为 BaseName（通过 `_poolDropInThisGesture` 在 `DeckGrid_Drop` 收到来自池的 Text 时置 true，`EditorPanel_PreviewMouseLeftButtonUp` 中若为 false 则重置并清标志）。
 - **卡组内**：右键物品 Border 循环 `row.ItemName` 到下一版本，循环后调用 `ApplyOverridableDefaultsForTier` 与 `UpdateSlotSummary`。卡组保存/加载仍用 `DeckSlotEntry.ItemName`，历史版本名会写入 JSON；对战解析用 `entry.ItemName` 查库即可。
 
+### 卡组内版本切换与 MinTier
+
+- **问题**：同一基名可有不同 MinTier 的版本（如舱底蠕虫最新=铜、_S10/_S9=银）。若卡组内右键切换时在所有版本间循环，铜槽会切到银版本，出现「铜槽里显示银物品」等错误。
+- **约定**：卡组内版本切换**仅在与当前槽位 MinTier 一致的版本间**循环。即先 `GetVersionCycle(baseName)`，再过滤为 `template.MinTier == row.Tier` 的版本列表；仅当过滤后多于 1 个版本时才做 (idx+1)%count 切换。物品池内右键仍为全版本循环（池不绑定槽位档位）。
+
 ### 经验小结
 
-- 新增多版本时只需按命名规则 Register，无需改 Deck/模拟器结构。GUI 默认只显示最新、池与卡组支持右键循环，图片统一用基名可避免重复资源。
+- 新增多版本时只需按命名规则 Register，无需改 Deck/模拟器结构。GUI 默认只显示最新、池与卡组支持右键循环，图片统一用基名可避免重复资源。卡组内切换须按 MinTier 过滤版本列表。
+
+---
+
+## GUI 启动时上次打开的卡组集
+
+- **存储**：路径写入 **Data/last-collection.txt**（一行、完整路径）。App 提供 **GetLastCollectionPath()** / **SetLastCollectionPath(path)**。
+- **启动**：MainWindow 构造时先尝试打开 last-collection 中的路径；若无记录或文件不存在或打开失败，再尝试 **default.json**；若 default 也不存在则新建空卡组集并保存为 default。成功打开后调用 SetLastCollectionPath 更新记录。
+- **更新时机**：打开卡组集、新建并另存为、保存卡组集时弹出另存为并保存成功时，均调用 SetLastCollectionPath。
 
 ---
 

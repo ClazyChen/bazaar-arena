@@ -112,6 +112,20 @@ public class Condition
             || tags.Contains(Tag.Heal) || tags.Contains(Tag.Shield) || tags.Contains(Tag.Regen);
     });
 
+    /// <summary>被评估对象可参与暴击判定：具备可暴击六类 Tag 且至少有一条 UseItem+UseSelf+ApplyCritMultiplier 能力。用于 add/reduce 暴击率时仅对可暴击物品生效。</summary>
+    public static Condition CanCrit { get; } = new(ctx =>
+    {
+        if (ctx.Item == null || !HasAnyCrittableTag.Evaluate(ctx)) return false;
+        var abilities = ctx.Item.Template.Abilities;
+        if (abilities == null) return false;
+        foreach (var a in abilities)
+        {
+            if (a.TriggerName == Trigger.UseItem && a.UseSelf && a.ApplyCritMultiplier)
+                return true;
+        }
+        return false;
+    });
+
     /// <summary>被评估对象模板带指定标签（仅读 Template.Tags，不含光环授予）；Item 为 null 时为 false。用于避免光环递归（如弹药物品用 Tag.Ammo）。</summary>
     public static Condition WithTemplateTag(string tag) => new(ctx =>
         ctx.Item != null && ctx.Item.Template.Tags != null && ctx.Item.Template.Tags.Contains(tag));
@@ -148,6 +162,9 @@ public class Condition
 
     /// <summary>被评估对象处于冻结状态（FreezeRemainingMs &gt; 0）；Item 为 null 时为 false。用于解除冻结目标选取。</summary>
     public static Condition IsFrozen { get; } = new(ctx => ctx.Item != null && ctx.Item.FreezeRemainingMs > 0);
+
+    /// <summary>被评估对象是能力持有者最左侧的物品（Item.ItemIndex == 0）；Item 为 null 时为 false。用于「敌人使用其最左侧的物品时」等。</summary>
+    public static Condition Leftmost { get; } = new(ctx => ctx.Item != null && ctx.Item.ItemIndex == 0);
 
     /// <summary>被评估对象（Item）是己方唯一伙伴：同侧未摧毁且带 Tag.Friend 的物品恰有一个且为该 Item。用于光环 SourceCondition（如「若此为唯一伙伴则暴击率加成」）。计数时使用有效标签（含光环授予）。</summary>
     public static Condition OnlyCompanion { get; } = new(ctx =>

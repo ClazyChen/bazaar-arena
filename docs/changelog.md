@@ -1,5 +1,15 @@
 # 变更记录
 
+## 暴击与暴击率、卡组版本切换 MinTier、GUI 上次打开卡组集
+
+- **暴击与 UseSelf**：仅「使用本物品时」的六类效果（伤害、护盾、治疗、生命再生、灼烧、剧毒）可参与暴击判定。**AbilityDefinition.Override** 中仅改 trigger 为非 UseItem 时补上 **UseSelf = false**，避免 Trigger.Crit 等能力误参与暴击。
+- **add/reduce 暴击率**：新增 **Condition.CanCrit**（HasAnyCrittableTag 且至少一条 UseItem+UseSelf+ApplyCritMultiplier）；**AddAttributeToCasterSide** / **ReduceAttributeToSide** 对 CritRatePercent 使用 CanCrit 替代 HasAnyCrittableTag，不可暴击物品（如舱底蠕虫 S9）不再获得暴击率。
+- **卡组内版本切换**：右键切换版本时仅在 **template.MinTier == row.Tier** 的版本间循环，避免铜槽切到银版本（如舱底蠕虫最新=铜、_S10/_S9=银）。
+- **GUI 上次打开卡组集**：路径存于 Data/last-collection.txt；启动时优先打开该路径，失败再 default.json；打开/新建另存为/保存另存为成功时更新记录。
+- **文档与规则**：implementation-notes 新增「暴击与暴击率」「卡组内版本切换与 MinTier」「GUI 启动时上次打开的卡组集」；project-conventions.mdc 补充 UseSelf/CanCrit、版本切换 MinTier、GUI 卡组集约定。
+
+---
+
 ## IntOrByTier 单值隐式转换与魔杖等多目标充能
 
 - **IntOrByTier 单值隐式转换**：修复 `implicit operator IntOrByTier(int single)` 使用 `new([single])` 时在部分路径下可能产生 `_values` 为空、`ToList()` 返回空列表的问题。改为显式 `new IntOrByTier(new List<int> { single })`，保证单值赋值（如 `ChargeTargetCount = 10`）写入的列表非空，战斗克隆后 `GetResolvedValue(ChargeTargetCount, defaultValue: 1)` 能正确取到 10。

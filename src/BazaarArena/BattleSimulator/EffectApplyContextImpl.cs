@@ -34,6 +34,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public void HealCaster(int amount) { Side.Hp = Math.Min(Side.MaxHp, Side.Hp + amount); }
     public void AddBurnToOpp(int value) => Opp.Burn += value;
     public void AddPoisonToOpp(int value) => Opp.Poison += value;
+    public void AddPoisonToCaster(int value) => Side.Poison += value;
     public void AddShieldToCaster(int value) => Side.Shield += value;
 
     /// <summary>实际加血 = min(请求量, 当前可接受量)；清除灼烧/剧毒按请求治疗量的 5%。</summary>
@@ -278,7 +279,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         if (value <= 0 || targetCondition == null) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed;
         if (attributeName == Key.CritRatePercent)
-            cond &= Condition.HasAnyCrittableTag;
+            cond &= Condition.CanCrit;
         string logName = EffectLogName ?? (AttributeLogNames.Get(attributeName) + "提高");
         if (maxTargetCount > 0)
         {
@@ -327,7 +328,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         if (value <= 0 || targetCondition == null) return;
         var cond = (targetCondition ?? Condition.DifferentSide) & Condition.NotDestroyed;
         if (attributeName == Key.CritRatePercent)
-            cond = cond & Condition.HasAnyCrittableTag;
+            cond = cond & Condition.CanCrit;
         string logName = effectLogName ?? (AttributeLogNames.Get(attributeName) + "降低");
         int take = maxTargetCount > 0 ? maxTargetCount : 100;
         var targets = GetTargetsFromBothSides(take, cond);

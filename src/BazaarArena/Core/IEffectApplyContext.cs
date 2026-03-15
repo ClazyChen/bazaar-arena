@@ -41,6 +41,9 @@ public interface IEffectApplyContext
     /// <summary>为敌方叠加剧毒值。</summary>
     void AddPoisonToOpp(int value);
 
+    /// <summary>为己方叠加剧毒值（如舱底蠕虫 S11「对自己造成剧毒」）。</summary>
+    void AddPoisonToCaster(int value);
+
     /// <summary>为己方增加护盾。</summary>
     void AddShieldToCaster(int value);
 

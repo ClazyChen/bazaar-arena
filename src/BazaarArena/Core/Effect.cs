@@ -54,6 +54,15 @@ public static class Effect
         ctx.ReportTriggerCause(Trigger.Poison);
     };
 
+    /// <summary>对己方造成剧毒（如舱底蠕虫 S11「对自己造成剧毒」）；数值来自模板的 Poison。</summary>
+    public static readonly Action<IEffectApplyContext> PoisonSelfApply = ctx =>
+    {
+        int value = ctx.GetResolvedValue(Key.Poison, applyCritMultiplier: true);
+        ctx.AddPoisonToCaster(value);
+        ctx.LogEffect("剧毒", value, showCrit: ctx.IsCrit);
+        ctx.ReportTriggerCause(Trigger.Poison);
+    };
+
     /// <summary>护盾：数值来自模板的 Shield。</summary>
     public static readonly Action<IEffectApplyContext> ShieldApply = ctx =>
     {

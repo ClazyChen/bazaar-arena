@@ -39,11 +39,13 @@ public partial class MainWindow
 
     public MainWindow()
     {
-        InitializeComponent();
+        // 必须在 InitializeComponent 之前设置 _itemDatabase，否则 XAML 加载时筛选控件触发 ItemFilter_Changed 会访问到 null。
         var app = (App)Application.Current;
         _deckManager = app.DeckManager;
         _itemDatabase = app.ItemDatabase;
         _itemNames = _itemDatabase.GetAllNames();
+
+        InitializeComponent();
 
         DeckListBox.ItemsSource = _deckListItems;
 
@@ -55,30 +57,44 @@ public partial class MainWindow
         RefreshItemPoolFilter();
 
         RefreshDeckList();
-        var defaultPath = Path.Combine(App.DecksDirectory, "default.json");
-        if (File.Exists(defaultPath))
+        var lastPath = App.GetLastCollectionPath();
+        if (!string.IsNullOrWhiteSpace(lastPath) && File.Exists(lastPath))
         {
             try
             {
-                _deckManager.OpenCollection(defaultPath);
+                _deckManager.OpenCollection(lastPath);
                 RefreshDeckList();
             }
-            catch { /* 启动时加载失败则保持空列表 */ }
+            catch { /* 记录无效或文件损坏，回退到 default */ }
         }
-        else
+        if (_deckManager.CurrentCollectionPath == null)
         {
-            // 仅在没有 default.json 时生成空卡组集，避免覆盖用户测试用的文件
-            try
+            var defaultPath = Path.Combine(App.DecksDirectory, "default.json");
+            if (File.Exists(defaultPath))
             {
-                var dir = Path.GetDirectoryName(defaultPath);
-                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
-                _deckManager.NewCollection();
-                _deckManager.SaveCollection(defaultPath);
-                RefreshDeckList();
+                try
+                {
+                    _deckManager.OpenCollection(defaultPath);
+                    RefreshDeckList();
+                }
+                catch { /* 启动时加载失败则保持空列表 */ }
             }
-            catch { /* 无法创建则保持空列表 */ }
+            else
+            {
+                try
+                {
+                    var dir = Path.GetDirectoryName(defaultPath);
+                    if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                        Directory.CreateDirectory(dir);
+                    _deckManager.NewCollection();
+                    _deckManager.SaveCollection(defaultPath);
+                    RefreshDeckList();
+                }
+                catch { /* 无法创建则保持空列表 */ }
+            }
         }
+        if (_deckManager.CurrentCollectionPath != null)
+            App.SetLastCollectionPath(_deckManager.CurrentCollectionPath);
         UpdateWindowTitle();
     }
 
@@ -111,8 +127,11 @@ public partial class MainWindow
         }
 
         var heroAllowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (FilterHeroAll?.IsChecked != true && FilterHeroCommon?.IsChecked == true)
-            heroAllowed.Add(Hero.Common);
+        if (FilterHeroAll?.IsChecked != true)
+        {
+            if (FilterHeroCommon?.IsChecked == true) heroAllowed.Add(Hero.Common);
+            if (FilterHeroVanessa?.IsChecked == true) heroAllowed.Add(Hero.Vanessa);
+        }
 
         _filteredItemPoolEntries.Clear();
         var latestNames = _itemDatabase.GetLatestOnlyNames();
@@ -172,6 +191,7 @@ public partial class MainWindow
         {
             _deckManager.NewCollection();
             _deckManager.SaveCollection(dlg.FileName);
+            App.SetLastCollectionPath(dlg.FileName);
             RefreshDeckList();
             _currentDeckId = null;
             _slotRows.Clear();
@@ -198,6 +218,7 @@ public partial class MainWindow
         try
         {
             _deckManager.OpenCollection(dlg.FileName);
+            App.SetLastCollectionPath(dlg.FileName);
             RefreshDeckList();
             _currentDeckId = null;
             _slotRows.Clear();
@@ -668,12 +689,15 @@ public partial class MainWindow
         DragDrop.DoDragDrop(border, data, DragDropEffects.Move);
     }
 
-    /// <summary>卡组内物品右键：循环到下一版本（最新→S10→S7→最新）。</summary>
+    /// <summary>卡组内物品右键：循环到下一版本（最新→S10→S7→最新）。仅在与当前槽位 MinTier 一致的版本间切换。</summary>
     private void DeckItem_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (sender is not Border border || border.Tag is not SlotRowViewModel row) return;
         var baseName = ItemDatabase.ItemDatabase.GetBaseName(row.ItemName);
-        var cycle = _itemDatabase.GetVersionCycle(baseName);
+        var allVersions = _itemDatabase.GetVersionCycle(baseName);
+        var cycle = allVersions
+            .Where(name => _itemDatabase.GetTemplate(name)?.MinTier == row.Tier)
+            .ToList();
         if (cycle.Count <= 1) return;
         int idx = -1;
         for (int i = 0; i < cycle.Count; i++)
@@ -951,6 +975,7 @@ public partial class MainWindow
         try
         {
             _deckManager.SaveCollection(dlg.FileName);
+            App.SetLastCollectionPath(dlg.FileName);
             UpdateWindowTitle();
         }
         catch (Exception ex)

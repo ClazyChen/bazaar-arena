@@ -3,6 +3,9 @@ using BazaarArena.BattleSimulator;
 using BazaarArena.Core;
 using BazaarArena.DeckManager;
 using BazaarArena.ItemDatabase;
+using BazaarArena.ItemDatabase.Vanessa.Large;
+using BazaarArena.ItemDatabase.Vanessa.Medium;
+using BazaarArena.ItemDatabase.Vanessa.Small;
 
 Console.WriteLine("你好，Bazaar Arena！");
 
@@ -22,6 +25,9 @@ var db = new ItemDatabase();
 CommonSmall.RegisterAll(db);
 CommonMedium.RegisterAll(db);
 CommonLarge.RegisterAll(db);
+VanessaSmall.RegisterAll(db);
+VanessaMedium.RegisterAll(db);
+VanessaLarge.RegisterAll(db);
 
 var defaultCollectionPath = Path.Combine(decksDir, "default.json");
 if (File.Exists(defaultCollectionPath))
