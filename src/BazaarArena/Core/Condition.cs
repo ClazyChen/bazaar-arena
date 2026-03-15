@@ -183,6 +183,10 @@ public class Condition
         return count == 1;
     });
 
+    /// <summary>能力持有者（Source）的 Custom_0 为 0；用于「首次使用前」暴击率加成等（如靴里剑首次使用 +100% 暴击率）。</summary>
+    public static Condition SourceCustom0IsZero { get; } = new(ctx =>
+        ctx.MySide.GetItemInt(ctx.Source.ItemIndex, Key.Custom_0, 0) == 0);
+
     /// <summary>被评估对象是己方满足 inner 条件的物品中 ItemIndex 最小的那一件（左端）。用于「己方最左侧的武器」等。遍历时跳过已摧毁。</summary>
     public static Condition LeftMost(Condition inner) => new(ctx =>
     {

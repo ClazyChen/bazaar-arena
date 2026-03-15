@@ -145,6 +145,18 @@
 - **效果层**：**IEffectApplyContext.InvokeTargetItem** 非空时，冻结/减速/加速等多目标效果应对该单一物品施加（实现内用 SameAsInvokeTarget 或直接对 InvokeTargetItem 施加），不再按 TargetCondition 选目标。目标选取与 Condition 评估时 **ConditionContext.InvokeTargetItem** 传入，**Condition.SameAsInvokeTarget** 表示「候选目标与触发器指向目标相同」。
 - **Burn/Poison/Shield**：EffectAppliedTriggerQueue 中 Burn/Poison/Shield 存的是施加者（己方），故 InvokeTrigger 时 causeItem = 施加者、InvokeTargetItem = null；Freeze/Slow/Destroy 存的是目标，causeItem = 施放者、InvokeTargetItem = 目标。
 
+### InvokeTrigger 遍历次序：先 cause 物品再其他
+
+- **约定**：调用 `InvokeTrigger` 时，**先检查引起触发的那件物品（causeItem）上的能力，再检查其他物品**。例如 UseItem 时，先检查「被使用的那件物品」的能力，再检查同侧其余物品、再检查另一侧。
+- **实现**：`BattleSimulator.InvokeTrigger` 中：(1) 侧顺序：若 causeItem 非空且未摧毁，先遍历 causeItem 所在侧，再遍历另一侧；(2) 同侧物品顺序：若本侧为 cause 所在侧，先遍历 `causeItem.ItemIndex` 该件，再按 0..Count-1 遍历其余（跳过 cause 下标）。无 causeItem 时仍按 (0, side0)、(1, side1) 与物品下标顺序。
+- **用途**：保证「使用物品时」先处理被使用物品自身的 UseItem 能力（如伤害、暴击判定），再处理其他物品的「当其他物品被使用时」类能力（如弹簧刀给相邻武器加伤害），顺序可预期。
+
+### UseItem 时传入 InvokeTargetItem
+
+- **约定**：步骤 7 调用 `InvokeTrigger(Trigger.UseItem, item, context)` 时，**context 中传入 InvokeTargetItem = item**（被使用的那件物品），以便「当其他物品被使用时、对**被使用的那件物品**施加效果」类能力能正确选目标。
+- **实现**：`new TriggerInvokeContext { Multicast = ..., UsedTemplate = ..., InvokeTargetItem = item }`。能力侧用 **additionalTargetCondition: Condition.SameAsInvokeTarget** 将 AddAttribute 等效果限定为「仅对触发时被使用的那件物品」施加（如弹簧刀：使用相邻武器时，使**该武器**伤害提高）。
+- **与遍历次序的关系**：先检查 cause 物品再其他，再配合 InvokeTargetItem，可保证「被使用物品」自身能力先入队，且「对被使用物品施加」的条目带 InvokeTargetSideIndex/InvokeTargetItemIndex 正确入队。
+
 ---
 
 ## 能力队列 250ms 节流状态与冷却缩短联动
@@ -227,16 +239,37 @@
 
 ## 从表格添加物品的约定
 
-当用户以**表格图片**形式提供物品需求时，列顺序为：**Name、所属、版本、minTier、Size、CD、TAG、效果**（第 2 列**所属**用于明确物品归属）。
+当用户以**表格图片**形式提供物品需求时，列顺序为：**Name、所属、版本、minTier、Size、CD、TAG、效果**（第 2 列**所属**、第 3 列**版本**用于明确物品归属与赛季）。
 
-- **列映射**：Name → 中文名；**所属** → 英雄名（如 Vanessa）或**公共**，决定放在 Hero/size 一物一文件还是在 Common*；版本第一行无后缀（当前版本）、其他行 _Sx；minTier B/S/G/D → Bronze/Silver/Gold/Diamond；Size S/M/L → Small/Medium/Large；CD → Cooldown（秒）；TAG → Tags；效果 → Desc（多条用分号隔开）与 Abilities/Auras。
-- **优先级**：效果末尾 (I)/(Hst)/(H)/(L)/(Lst) 分别对应 Immediate/Highest/High/Low/Lowest；无标注则 Medium，不需 Override priority。
-- **英文名**：用户会给出英文名（如 Honing Steel），**文件名**与**类名**取 PascalCase（如 `HoningSteel.cs`、类 `HoningSteel`），工厂方法 `Template()`、`Template_Sx()`。
-- **常用目标条件**：「己方最左侧/最右侧的武器」→ **Condition.LeftMost(Condition.WithTag(Tag.Weapon)) | Condition.RightMost(Condition.WithTag(Tag.Weapon))**（见 `Core/Condition.cs`）；「此物品右侧的武器」→ **Condition.RightOfSource & Condition.WithTag(Tag.Weapon)**；「使用其他某类物品时」须在 condition 中加 **Condition.DifferentFromSource**。
-- **效果文案与实现**：**▶** = 使用物品时的 Ability（UseItem）；**无 ▶ 但有触发短语**（如「造成暴击时」「使用其他水系物品时」）= 对应 trigger 的 Ability；**无 ▶ 且无触发条件** = 考虑光环（如「己方武器伤害 +X」用 Aura 而非 UseItem 的 AddAttribute）。**固定数值**（弹药 6、装填 2）用单值赋值（`AmmoCap = 6`、`Custom_0 = 2`），不写 `[6,6,6,6]`。**Desc** 中数值须用占位符正确引用（如 `{Custom_0}` 表示装填量）。
-- **归属**：由**所属**列决定——**公共**放 Common*；**英雄名**放 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;**，一物一文件。若表格无所属列（旧格式），则按表格或用户是否标明英雄判断；后续若确认为英雄专属须迁移。
+- **列映射**：Name → 中文名；**所属**（第 2 列）→ 英雄名（如 Vanessa）或**公共**；**版本**（第 3 列）→ 数字对应赛季，如 5 → _S5、12 → 无后缀或 _S12 视表格约定；minTier B/S/G/D；Size S/M/L；CD → Cooldown（秒）；TAG → Tags；效果 → Desc 与 Abilities/Auras。
+- **版本列**：表格**第三列**为版本号；同一物品多行若版本号不同则对应多个 Template_Sx() 或无后缀 Template()（通常数字最大/最新为无后缀）。
+- **效果文案与实现**：**▶** 以及文案中的「**提高**」「**造成**」等主动动词 = **使用物品时触发**的 Ability（UseItem），应实现为 Ability 而非被动光环。**无 ▶ 且无触发条件**的常驻加成（如「己方武器伤害 +X」）= 光环（Aura）。若误将「▶ 某类物品暴击率提高」写成光环，应改为 **Ability.AddAttribute(Key.CritRatePercent).Override(additionalTargetCondition: ..., priority: ...)**。
+- **局外成长**：表格中「购买此物品时获得 X」「购买时 Y」等**局外/商店**效果，对战模拟器不实现，仅在类注释中说明「局外成长忽略」。
+- **优先级**：效果末尾 (I)/(Hst)/(H)/(L)/(Lst) 分别对应 Immediate/Highest/High/Low/Lowest。
+- **英文名**：**文件名**与**类名**取英文名 PascalCase；工厂方法 `Template()`、`Template_Sx()`。
+- **常用目标条件**：「己方最左侧/最右侧的武器」→ **LeftMost/RightMost(WithTag(Weapon))**；「此物品右侧的武器」→ **RightOfSource & WithTag(Tag.Weapon)**；「使用其他某类物品时」须 **Condition.DifferentFromSource**。
+- **归属**：由**所属**列决定——**公共**放 Common*；**英雄名**放 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;**，一物一文件。
 
 详见 **.cursor/rules/item-table-convention.mdc**。
+
+---
+
+## Price、龙涎香公式与首次使用暴击率
+
+### Price 字段与注册时按尺寸默认值
+
+- **Key.Price**：物品价值，用于龙涎香等治疗公式。在 **Register** 时按 **DefaultSize** 自动设置默认值：Small → [1,2,4,8]、Medium → [2,4,8,16]、Large → [3,6,12,24]（见 `ItemDatabase.GetDefaultPriceBySize`）。模板中可不写 Price，由注册注入。
+- **Custom_2**：已加入 `Key.Custom_2` 与 `ItemTemplate.Custom_2`；可作为 **OverridableAttributes** 的 key（如龙涎香 Custom_2 默认 5/10/15/20，卡组可覆盖）。
+
+### 龙涎香公式（光环治疗 + 购买水系时加价值）
+
+- **治疗公式**：`Heal = (Price + Custom_1 * Custom_2) * Custom_0`，用光环提供 Key.Heal：`Value = (Formula.Source(Key.Price) + Formula.Source(Key.Custom_1) * Formula.Source(Key.Custom_2)) * Formula.Source(Key.Custom_0)`。
+- **购买水系时价值提高**：**Ability.AddAttribute(Key.Price).Override(condition: SameSide & WithTag(Tag.Aquatic) & DifferentFromSource, targetCondition: SameAsSource, valueKey: Key.Custom_1)**，即己方使用其他水系物品时，此物品 Price += Custom_1。
+
+### 首次使用暴击率 +100%（Custom_0 标记方案）
+
+- **需求**：首次使用此物品时暴击率 +100%，之后不再加成。
+- **实现**：(1) 模板 **Custom_0 = 0**；(2) 使用物品时若 Custom_0 == 0 则 **AddAttribute(Key.Custom_0)** 对自身 +1，**effectLogName: ""** 不显示日志，**priority: Low** 使伤害先于该能力执行（保证首次使用仍享暴击加成）；(3) 光环 **CritRatePercent +100%** 且 **SourceCondition = Condition.SourceCustom0IsZero**（仅当 Custom_0 == 0 时生效）。**Condition.SourceCustom0IsZero** 已加入 `Core/Condition.cs`，表示能力持有者（Source）的 Custom_0 为 0。
 
 ---
 

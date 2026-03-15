@@ -13,8 +13,8 @@ alwaysApply: false
 | 列 | 含义 | 代码对应 |
 |----|------|----------|
 | Name | 物品中文名 | `Name = "..."` |
-| **所属** | 所属英雄或公共 | **公共** → CommonSmall/CommonMedium/CommonLarge，在对应 Common* 的 RegisterAll 中注册；**Vanessa**（或其它英雄名）→ ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;，一物一文件，在对应英雄的 RegisterAll 中设 `db.DefaultHero` 后注册 |
-| 版本 | 第一行为当前版本（无后缀）；其他行如 9X、1X 等对应赛季后缀 _S9、_S1 | 无后缀→`Template()`；_Sx→`Template_Sx()`，显示名 `[名称]_Sx` |
+| **所属** | 所属英雄或公共（第 2 列） | **公共** → Common*；**Vanessa** 等 → ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;，一物一文件，RegisterAll 中设 `db.DefaultHero` 后注册 |
+| **版本** | 版本/赛季（**第 3 列**） | 数字如 5、1、12 → 对应 _S5、_S1 或无后缀（通常最新为无后缀）；多行同物不同版本则多套 Template_Sx() |
 | minTier | B/S/G/D | Bronze / Silver / Gold / Diamond，在 RegisterAll 中设 `db.DefaultMinTier` 后注册 |
 | Size | S/M/L | Small / Medium / Large，`db.DefaultSize` |
 | CD | 冷却秒数 | `Cooldown = 数值` 或 `Cooldown = [a, b, c, d]`（按档位） |
@@ -45,9 +45,10 @@ alwaysApply: false
 
 解读表格「效果」列时，按以下规则决定实现为 **Ability** 还是 **光环（Aura）**：
 
-- **前面有 ▶**：表示「使用物品时」触发的主动效果 → 实现为 **Ability**（默认 `Trigger.UseItem`，如 `Ability.Damage`、`Ability.Shield`、`Ability.Slow`）。
-- **无 ▶ 但写明触发条件**（如「造成暴击时」「使用其他水系物品时」）：实现为**对应触发器的 Ability**，用 `Ability.xxx.Override(trigger: Trigger.Crit, ...)` 或 `condition: Condition.SameSide & Condition.WithTag(Tag.Aquatic)` 等。
-- **无 ▶ 且无任何触发条件**：应考虑实现为**光环**（如「己方武器伤害 +X」→ `AuraDefinition` 的 `AttributeName = Key.Damage`、`Condition = SameSide & WithTag(Tag.Weapon)`、`Value = Formula.Source(Key.Custom_0)`），而不是 UseItem 的 AddAttribute。
+- **前面有 ▶** 或文案含「**提高**」「**造成**」等主动动词：表示**使用物品时**触发的主动效果 → 实现为 **Ability**（默认 `Trigger.UseItem`），如 `Ability.Damage`、`Ability.AddAttribute(Key.CritRatePercent).Override(...)`。勿误写成被动光环。
+- **无 ▶ 但写明触发条件**（如「造成暴击时」「使用其他水系物品时」）：实现为**对应触发器的 Ability**，用 `Override(trigger: ...)` 或 `condition: SameSide & WithTag(...)` 等。
+- **无 ▶ 且无任何触发条件**：实现为**光环**（如「己方武器伤害 +X」→ `AuraDefinition`），而不是 UseItem 的 AddAttribute。
+- **「购买此物品时获得 X」等局外/商店效果**：对战模拟器**不实现**，仅在类注释中注明「局外成长忽略」。
 
 **数值与 Desc**：
 

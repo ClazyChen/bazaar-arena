@@ -12,6 +12,9 @@ public static class Key
     public const string Gold = nameof(ItemTemplate.Gold);
     public const string Custom_0 = nameof(ItemTemplate.Custom_0);
     public const string Custom_1 = nameof(ItemTemplate.Custom_1);
+    public const string Custom_2 = nameof(ItemTemplate.Custom_2);
+    /// <summary>物品价值（用于龙涎香等治疗公式）；注册时按尺寸自动设置默认值。</summary>
+    public const string Price = nameof(ItemTemplate.Price);
 
     // 冷却与暴击
     public const string CooldownMs = nameof(ItemTemplate.CooldownMs);

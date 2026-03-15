@@ -1,5 +1,18 @@
 # 变更记录
 
+## Vanessa 物品与 InvokeTrigger 次序、Price/龙涎香/首次使用、表格约定
+
+- **InvokeTrigger 遍历次序**：调用触发器时**先检查引起触发的物品（causeItem）上的能力**，再检查同侧其余、再检查另一侧；无 cause 时仍按 side0→side1、下标顺序。保证 UseItem 时先处理「被使用物品」自身能力再处理「其他物品被使用时」类能力。
+- **UseItem 传 InvokeTargetItem**：步骤 7 调用 `InvokeTrigger(Trigger.UseItem, item, context)` 时 context 传入 **InvokeTargetItem = item**，便于「对被使用的那件物品施加效果」用 **SameAsInvokeTarget**（如弹簧刀：使用相邻武器时使该武器伤害提高）。
+- **Price 与注册默认值**：新增 **Key.Price**、**ItemTemplate.Price**；**Register** 时按 **DefaultSize** 自动设置默认值（Small [1,2,4,8]、Medium [2,4,8,16]、Large [3,6,12,24]）。**Key.Custom_2**、**ItemTemplate.Custom_2** 支持 OverridableAttributes。
+- **龙涎香（Ambergris）**：治疗公式 (Price + Custom_1×Custom_2)×Custom_0 用光环提供 Heal；购买水系时价值提高用 AddAttribute(Key.Price)、valueKey: Custom_1。
+- **首次使用暴击率**：靴里剑「首次使用此物品时暴击率 +100%」用 Custom_0=0 + 使用后 AddAttribute(Custom_0, value:1, effectLogName:"", Low) + 光环 CritRatePercent 且 **SourceCondition = Condition.SourceCustom0IsZero**。**Condition.SourceCustom0IsZero** 已加入 Core/Condition.cs。
+- **表格约定**：**版本为第三列**；**▶** 与「**提高**」「造成」等主动动词 = **使用物品时**触发的 Ability，勿误写为被动光环（鱼饵更正）；「购买时获得 X」等**局外成长**不实现。
+- **Vanessa 小型物品**：新增 Zoarcid、Grapeshot、TinyCutlass、ShoeBlade、Ambergris、Switchblade、Lighter、Chum 等；Grapeshot 银/铜两档；鱼饵 Chum 为 UseItem 时水系暴击率提高（AddAttribute CritRatePercent）。
+- **文档与规则**：implementation-notes 新增「InvokeTrigger 遍历次序与 UseItem 的 InvokeTargetItem」「Price、龙涎香公式与首次使用暴击率」、表格约定补充版本列与▶/提高/局外成长；item-table-convention.mdc 版本第三列、▶与提高、局外成长；project-conventions.mdc 与 battle-simulator-ability-queue.mdc 补充 InvokeTrigger 次序与 UseItem InvokeTargetItem。
+
+---
+
 ## 暴击与暴击率、卡组版本切换 MinTier、GUI 上次打开卡组集
 
 - **暴击与 UseSelf**：仅「使用本物品时」的六类效果（伤害、护盾、治疗、生命再生、灼烧、剧毒）可参与暴击判定。**AbilityDefinition.Override** 中仅改 trigger 为非 UseItem 时补上 **UseSelf = false**，避免 Trigger.Crit 等能力误参与暴击。

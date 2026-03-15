@@ -123,7 +123,7 @@ public class BattleSimulator
                     var side = item.SideIndex == 0 ? side0 : side1;
                     int ammoCap = side.GetItemInt(item.ItemIndex, Key.AmmoCap, 0);
                     int multicast = side.GetItemInt(item.ItemIndex, Key.Multicast, 1);
-                    InvokeTrigger(Trigger.UseItem, item, new TriggerInvokeContext { Multicast = multicast, UsedTemplate = item.Template }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue,
+                    InvokeTrigger(Trigger.UseItem, item, new TriggerInvokeContext { Multicast = multicast, UsedTemplate = item.Template, InvokeTargetItem = item }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue,
                         executeImmediate: (owner, abilityIdx, ability) =>
                         {
                             var entry = new AbilityQueueEntry { Owner = owner, AbilityIndex = abilityIdx, PendingCount = 1 };
@@ -402,7 +402,7 @@ public class BattleSimulator
             next.Add(newEntry);
     }
 
-    /// <summary>统一触发器调用：给定触发器名、引起触发的物品与上下文，遍历双方所有物品；条件匹配的能力入队（Immediate→current，其余→next）。若传入 executeImmediate，则 Immediate 能力不入队、当场执行。Condition 评估时 Item=引起触发的物品、Source=能力持有者。</summary>
+    /// <summary>统一触发器调用：给定触发器名、引起触发的物品与上下文，遍历双方所有物品；条件匹配的能力入队（Immediate→current，其余→next）。若传入 executeImmediate，则 Immediate 能力不入队、当场执行。Condition 评估时 Item=引起触发的物品、Source=能力持有者。遍历次序：若有 causeItem，则先检查 causeItem 所在侧且先检查 causeItem 该件，再检查同侧其余物品，再检查另一侧；无 causeItem 时按侧 0、侧 1 与物品下标顺序。</summary>
     private static void InvokeTrigger(string triggerName, BattleItemState? causeItem, TriggerInvokeContext? context, int timeMs,
         BattleSide side0, BattleSide side1, List<AbilityQueueEntry> current, List<AbilityQueueEntry> next,
         Action<BattleItemState, int, AbilityDefinition>? executeImmediate = null)
@@ -410,11 +410,29 @@ public class BattleSimulator
         int pendingCount = (triggerName == Trigger.UseItem || triggerName == Trigger.Freeze || triggerName == Trigger.Slow || triggerName == Trigger.Haste || triggerName == Trigger.Burn || triggerName == Trigger.Poison) && context?.Multicast is int m ? m : 1;
         Func<BattleItemState, IReadOnlySet<string>> getEffectiveTags = item => EffectiveTagHelper.GetEffectiveTags(side0, side1, item);
 
-        foreach (var (ownerSideIndex, ownerSide) in new[] { (0, side0), (1, side1) })
+        // 规定次序：有 causeItem 时先处理 causeItem 所在侧，且该侧先处理 causeItem 再处理其余；无 causeItem 时按 (0, side0), (1, side1) 顺序。
+        var sideOrder = causeItem != null && !causeItem.Destroyed
+            ? new[] { (causeItem.SideIndex, causeItem.SideIndex == 0 ? side0 : side1), (1 - causeItem.SideIndex, causeItem.SideIndex == 0 ? side1 : side0) }
+            : new[] { (0, side0), (1, side1) };
+
+        foreach (var (ownerSideIndex, ownerSide) in sideOrder)
         {
             BattleSide mySide = ownerSide;
             BattleSide enemySide = ownerSideIndex == 0 ? side1 : side0;
-                for (int ownerItemIndex = 0; ownerItemIndex < ownerSide.Items.Count; ownerItemIndex++)
+            // 该侧物品下标顺序：有 causeItem 且本侧为 cause 所在侧时，先 causeItem.ItemIndex，再其余下标；否则 0..Count-1。
+            var indices = new List<int>();
+            if (causeItem != null && !causeItem.Destroyed && ownerSideIndex == causeItem.SideIndex && causeItem.ItemIndex < ownerSide.Items.Count)
+            {
+                indices.Add(causeItem.ItemIndex);
+                for (int i = 0; i < ownerSide.Items.Count; i++)
+                    if (i != causeItem.ItemIndex) indices.Add(i);
+            }
+            else
+            {
+                for (int i = 0; i < ownerSide.Items.Count; i++) indices.Add(i);
+            }
+
+            foreach (int ownerItemIndex in indices)
             {
                 var abilityOwner = ownerSide.Items[ownerItemIndex];
                 if (abilityOwner.Destroyed) continue;

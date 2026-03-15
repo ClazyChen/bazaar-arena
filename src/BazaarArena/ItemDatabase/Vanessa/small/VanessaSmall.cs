@@ -22,8 +22,10 @@ public static class VanessaSmall
         db.Register(HoningSteel.Template_S1());
         db.Register(Narwhal.Template());
         db.Register(Narwhal.Template_S1());
+        db.Register(Chum.Template());
         db.Register(Coral.Template());
         db.Register(IllusoRay.Template());
+        db.Register(Lighter.Template());
         db.Register(Shuriken.Template());
         db.Register(Bayonet.Template());
         db.Register(PetRock.Template());
@@ -39,10 +41,22 @@ public static class VanessaSmall
         db.Register(SeaShell.Template());
         db.Register(PopSnappers.Template());
         db.Register(Pearl.Template());
+        db.Register(Zoarcid.Template());
+        db.Register(Zoarcid.Template_S6());
+        db.Register(Zoarcid.Template_S4());
+        db.Register(Grapeshot.Template());
+        db.Register(TinyCutlass.Template());
+        db.Register(ShoeBlade.Template());
+        db.Register(ShoeBlade.Template_S1());
+        db.Register(Ambergris.Template());
+        db.Register(Switchblade.Template());
+        db.Register(Switchblade.Template_S1());
 
         db.DefaultMinTier = ItemTier.Silver;
         db.Register(BilgeWorm.Template_S10());
         db.Register(BilgeWorm.Template_S9());
         db.Register(ConcealedDagger.Template_S1());
+        db.Register(Grapeshot.Template_S1());
+
     }
 }

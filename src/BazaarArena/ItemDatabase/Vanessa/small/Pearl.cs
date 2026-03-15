@@ -19,10 +19,13 @@ public static class Pearl
             Charge = 1.0,
             Abilities =
             [
-                Ability.Shield,
+                Ability.Shield.Override(
+                    priority: AbilityPriority.Low
+                ),
                 Ability.Charge.Override(
                     condition: Condition.SameSide & Condition.WithTag(Tag.Aquatic) & Condition.DifferentFromSource,
-                    targetCondition: Condition.SameAsSource
+                    targetCondition: Condition.SameAsSource,
+                    priority: AbilityPriority.Low
                 ),
             ],
         };

@@ -59,12 +59,22 @@ public class ItemDatabase : IItemTemplateResolver
         return list;
     }
 
-    /// <summary>注册物品模板；会将当前 DefaultSize、DefaultMinTier、DefaultHero 写入模板后存入，并根据属性自动补充类型 Tag（护盾/伤害/灼烧等）。若存在 OverridableAttributes，将其默认值同步到模板对应 key，避免在模板上重复定义同一数值。</summary>
+    /// <summary>按尺寸返回 Price 默认值：小 [1,2,4,8]、中 [2,4,8,16]、大 [3,6,12,24]，供 Register 自动设置。</summary>
+    private static IntOrByTier GetDefaultPriceBySize(ItemSize size) => size switch
+    {
+        ItemSize.Small => [1, 2, 4, 8],
+        ItemSize.Medium => [2, 4, 8, 16],
+        ItemSize.Large => [3, 6, 12, 24],
+        _ => [1, 2, 4, 8],
+    };
+
+    /// <summary>注册物品模板；会将当前 DefaultSize、DefaultMinTier、DefaultHero 写入模板后存入，并根据属性自动补充类型 Tag（护盾/伤害/灼烧等）。若存在 OverridableAttributes，将其默认值同步到模板对应 key，避免在模板上重复定义同一数值。Price 在注册时按 DefaultSize 自动设置默认值。</summary>
     public void Register(ItemTemplate template)
     {
         template.Size = DefaultSize;
         template.MinTier = DefaultMinTier;
         template.Hero = DefaultHero;
+        template.SetIntOrByTierByKey(Key.Price, GetDefaultPriceBySize(DefaultSize));
         if (template.OverridableAttributes != null)
         {
             foreach (var kv in template.OverridableAttributes)

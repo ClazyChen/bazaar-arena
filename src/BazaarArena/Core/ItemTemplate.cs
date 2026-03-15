@@ -127,6 +127,8 @@ public class ItemTemplate
     private const string KeyLifeSteal = "LifeSteal";
     private const string KeyCustom_0 = "Custom_0";
     private const string KeyCustom_1 = "Custom_1";
+    private const string KeyCustom_2 = "Custom_2";
+    private const string KeyPrice = "Price";
     private const string KeyStashParameter = "StashParameter";
 
     /// <summary>战斗运行时变量键（由模拟器写入，与按等级属性无名称冲突）；可通过 GetInt/GetBool 一致解析。</summary>
@@ -313,6 +315,12 @@ public class ItemTemplate
 
     /// <summary>自定义变量 1（可单值或按等级），用于如宇宙炫羽/巨龙翼的「开始飞行」目标数等，与 TargetCountKey 配合避免与 ModifyAttributeTargetCount 冲突。</summary>
     public IntOrByTier Custom_1 { get => GetInt(KeyCustom_1, 0); set => SetIntOrByTier(KeyCustom_1, value.ToList()); }
+
+    /// <summary>自定义变量 2（可单值或按等级），可被 OverridableAttributes 覆盖，如龙涎香治疗公式中的乘数。</summary>
+    public IntOrByTier Custom_2 { get => GetInt(KeyCustom_2, 0); set => SetIntOrByTier(KeyCustom_2, value.ToList()); }
+
+    /// <summary>物品价值（可单值或按等级）；注册时按尺寸自动设置默认值（小 [1,2,4,8]、中 [2,4,8,16]、大 [3,6,12,24]），用于龙涎香等公式。</summary>
+    public IntOrByTier Price { get => GetInt(KeyPrice, 0); set => SetIntOrByTier(KeyPrice, value.ToList()); }
 
     /// <summary>储存箱等效参数（可单值或按等级），用于如废品场长枪的「卡组小型物品数 + StashParameter」公式。默认 0。</summary>
     public IntOrByTier StashParameter { get => GetInt(KeyStashParameter, 0); set => SetIntOrByTier(KeyStashParameter, value.ToList()); }
