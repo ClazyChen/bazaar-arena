@@ -233,6 +233,7 @@
 - **优先级**：效果末尾 (I)/(Hst)/(H)/(L)/(Lst) 分别对应 Immediate/Highest/High/Low/Lowest；无标注则 Medium，不需 Override priority。
 - **英文名**：用户会给出英文名（如 Honing Steel），**文件名**与**类名**取 PascalCase（如 `HoningSteel.cs`、类 `HoningSteel`），工厂方法 `Template()`、`Template_Sx()`。
 - **常用目标条件**：「己方最左侧/最右侧的武器」→ **Condition.LeftMost(Condition.WithTag(Tag.Weapon)) | Condition.RightMost(Condition.WithTag(Tag.Weapon))**（见 `Core/Condition.cs`）；「此物品右侧的武器」→ **Condition.RightOfSource & Condition.WithTag(Tag.Weapon)**；「使用其他某类物品时」须在 condition 中加 **Condition.DifferentFromSource**。
+- **效果文案与实现**：**▶** = 使用物品时的 Ability（UseItem）；**无 ▶ 但有触发短语**（如「造成暴击时」「使用其他水系物品时」）= 对应 trigger 的 Ability；**无 ▶ 且无触发条件** = 考虑光环（如「己方武器伤害 +X」用 Aura 而非 UseItem 的 AddAttribute）。**固定数值**（弹药 6、装填 2）用单值赋值（`AmmoCap = 6`、`Custom_0 = 2`），不写 `[6,6,6,6]`。**Desc** 中数值须用占位符正确引用（如 `{Custom_0}` 表示装填量）。
 - **归属**：由**所属**列决定——**公共**放 Common*；**英雄名**放 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;**，一物一文件。若表格无所属列（旧格式），则按表格或用户是否标明英雄判断；后续若确认为英雄专属须迁移。
 
 详见 **.cursor/rules/item-table-convention.mdc**。

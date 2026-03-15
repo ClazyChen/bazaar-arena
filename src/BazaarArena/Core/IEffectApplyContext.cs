@@ -71,6 +71,9 @@ public interface IEffectApplyContext
     /// <summary>对目标施加加速 hasteMs 毫秒。目标由 targetCondition 在双方所有物品中筛选（null 时默认己方、未摧毁且有冷却）；不放回随机选取至多 targetCount 个。</summary>
     void ApplyHaste(int hasteMs, int targetCount, Condition? targetCondition = null);
 
+    /// <summary>装填弹药：对满足 targetCondition 的己方未摧毁且为弹药物品的物品增加 amount 发剩余弹药（不超过容量）；不放回随机选取至多 targetCount 个。</summary>
+    void ApplyReload(int amount, int targetCount, Condition? targetCondition = null);
+
     /// <summary>修复已摧毁物品：目标由 targetCondition 与已摧毁组合（null 时默认己方）；不放回随机选取至多 targetCount 个，将其设为未摧毁并重置冷却已过时间。</summary>
     void ApplyRepair(int targetCount, Condition? targetCondition = null);
 

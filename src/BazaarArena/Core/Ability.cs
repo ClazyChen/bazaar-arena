@@ -5,6 +5,7 @@ public static class Ability
 {
     private static Condition WithCooldownTarget(Condition baseCondition) => baseCondition & Condition.NotDestroyed & Condition.HasCooldown;
     private static Condition WithNotDestroyedTarget(Condition baseCondition) => baseCondition & Condition.NotDestroyed;
+    private static Condition WithAmmoTarget(Condition baseCondition) => baseCondition & Condition.NotDestroyed & Condition.WithTag(Tag.Ammo);
 
     /// <summary>造成伤害（Effect.DamageApply）。默认触发器 UseItem；定制用 .Override(...)。</summary>
     public static AbilityDefinition Damage => new()
@@ -105,6 +106,19 @@ public static class Ability
         Priority = AbilityPriority.Medium,
         TargetCondition = WithCooldownTarget(Condition.SameSide),
         TargetCountKey = Key.HasteTargetCount,
+    };
+
+    /// <summary>装填弹药（Effect.ReloadApply）。默认触发器 UseItem；目标默认己方、未摧毁且为弹药物品；数值取自 ValueKey（默认 Custom_0）。定制用 .Override(...)。</summary>
+    public static AbilityDefinition Reload => new()
+    {
+        TriggerName = Trigger.UseItem,
+        Condition = Condition.SameAsSource,
+        ValueKey = Key.Custom_0,
+        ApplyCritMultiplier = false,
+        Apply = Effect.ReloadApply,
+        Priority = AbilityPriority.Medium,
+        TargetCondition = WithAmmoTarget(Condition.SameSide),
+        TargetCountKey = Key.ReloadTargetCount,
     };
 
     /// <summary>减速（Effect.SlowApply）。默认触发器 UseItem；目标默认敌方、未摧毁且有冷却；定制用 .Override(...)。</summary>

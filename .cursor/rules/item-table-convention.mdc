@@ -41,6 +41,19 @@ alwaysApply: false
 - **此物品左侧的武器**：紧邻左侧且为武器 → **Condition.LeftOfSource & Condition.WithTag(Tag.Weapon)**。
 - 「使用**其他**某类物品时」：须在 condition 中加 **Condition.DifferentFromSource**（触发者为「其他」物品），例如 `Condition.SameSide & Condition.WithTag(Tag.Weapon) & Condition.DifferentFromSource`。
 
+## 效果文案与实现对应
+
+解读表格「效果」列时，按以下规则决定实现为 **Ability** 还是 **光环（Aura）**：
+
+- **前面有 ▶**：表示「使用物品时」触发的主动效果 → 实现为 **Ability**（默认 `Trigger.UseItem`，如 `Ability.Damage`、`Ability.Shield`、`Ability.Slow`）。
+- **无 ▶ 但写明触发条件**（如「造成暴击时」「使用其他水系物品时」）：实现为**对应触发器的 Ability**，用 `Ability.xxx.Override(trigger: Trigger.Crit, ...)` 或 `condition: Condition.SameSide & Condition.WithTag(Tag.Aquatic)` 等。
+- **无 ▶ 且无任何触发条件**：应考虑实现为**光环**（如「己方武器伤害 +X」→ `AuraDefinition` 的 `AttributeName = Key.Damage`、`Condition = SameSide & WithTag(Tag.Weapon)`、`Value = Formula.Source(Key.Custom_0)`），而不是 UseItem 的 AddAttribute。
+
+**数值与 Desc**：
+
+- **固定数值**（如弹药 6、装填 2）：用**单值赋值**（如 `AmmoCap = 6`、`Custom_0 = 2`），不要写 `[6, 6, 6, 6]`；`IntOrByTier` 支持 `int` 隐式转换。
+- **Desc 占位符**：效果中涉及数值须用属性占位符正确引用（如「为此物品装填 2 发弹药」→ `装填 {Custom_0} 发弹药`），便于档位/数值变更时界面一致。
+
 ## 归属：由「所属」列决定
 
 - 表格第 2 列**所属**：填**英雄名**（如 Vanessa、海盗）或**公共**。**公共** → 放在 CommonSmall/CommonMedium/CommonLarge；**英雄名** → 放在 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;**（如 `Vanessa/small`），一物一文件，类名与**英文名**对应，在对应英雄的 RegisterAll 中设 `db.DefaultHero` 后注册。

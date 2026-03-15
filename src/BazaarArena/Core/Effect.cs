@@ -153,6 +153,15 @@ public static class Effect
         ctx.ApplyHaste(hasteMs, count, ctx.TargetCondition);
     };
 
+    /// <summary>装填弹药：根据 TargetCountKey（默认 ReloadTargetCount）与数值（默认 Custom_0）选取己方未摧毁且为弹药物品的物品增加剩余弹药（不超过容量）。</summary>
+    public static readonly Action<IEffectApplyContext> ReloadApply = ctx =>
+    {
+        int amount = ctx.GetResolvedValue(Key.Custom_0);
+        string countKey = ctx.TargetCountKey ?? Key.ReloadTargetCount;
+        int count = ctx.GetResolvedValue(countKey, defaultValue: 1);
+        ctx.ApplyReload(amount, count, ctx.TargetCondition);
+    };
+
     /// <summary>修复：根据 TargetCountKey（默认 RepairTargetCount）与能力 TargetCondition 选取己方已摧毁物品进行修复（实现内会与 Condition.Destroyed 组合）；默认 SameSide。</summary>
     public static readonly Action<IEffectApplyContext> RepairApply = ctx =>
     {

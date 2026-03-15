@@ -25,6 +25,20 @@ public static class VanessaSmall
         db.Register(Coral.Template());
         db.Register(IllusoRay.Template());
         db.Register(Shuriken.Template());
+        db.Register(Bayonet.Template());
+        db.Register(PetRock.Template());
+        db.Register(Revolver.Template());
+        db.Register(Revolver.Template_S1());
+        db.Register(Handaxe.Template());
+        db.Register(Grenade.Template());
+        db.Register(GrapplingHook.Template());
+        db.Register(GrapplingHook.Template_S1());
+        db.Register(Seaweed.Template());
+        db.Register(Bolas.Template());
+        db.Register(Bolas.Template_S1());
+        db.Register(SeaShell.Template());
+        db.Register(PopSnappers.Template());
+        db.Register(Pearl.Template());
 
         db.DefaultMinTier = ItemTier.Silver;
         db.Register(BilgeWorm.Template_S10());

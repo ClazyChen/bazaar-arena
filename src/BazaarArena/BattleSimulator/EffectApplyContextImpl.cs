@@ -239,6 +239,21 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }, Trigger.Haste);
     }
 
+    public void ApplyReload(int amount, int targetCount, Condition? targetCondition = null)
+    {
+        if (amount <= 0 || targetCount <= 0) return;
+        var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.WithTag(Tag.Ammo);
+        ApplyToTargetsBothSides(targetCount, cond, EffectLogName ?? "装填", amount, (side, index) =>
+        {
+            var t = side.Items[index];
+            var auraCtx = new BattleAuraContext(side, t, Opp);
+            int cap = t.Template.GetInt(Key.AmmoCap, t.Tier, 0, auraCtx);
+            int add = Math.Min(amount, Math.Max(0, cap - t.AmmoRemaining));
+            t.AmmoRemaining += add;
+            return t.Template.Name;
+        }, null);
+    }
+
     public void ApplyRepair(int targetCount, Condition? targetCondition = null)
     {
         if (targetCount <= 0) return;

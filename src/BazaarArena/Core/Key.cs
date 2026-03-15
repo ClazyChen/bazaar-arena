@@ -39,6 +39,8 @@ public static class Key
     public const string SlowTargetCount = nameof(ItemTemplate.SlowTargetCount);
     public const string Haste = nameof(ItemTemplate.Haste);
     public const string HasteTargetCount = nameof(ItemTemplate.HasteTargetCount);
+    /// <summary>装填弹药目标数量（默认 1）；效果层 GetResolvedValue(ReloadTargetCount, defaultValue: 1)。</summary>
+    public const string ReloadTargetCount = "ReloadTargetCount";
 
     // 修复 / 摧毁 / 吸血等
     public const string RepairTargetCount = nameof(ItemTemplate.RepairTargetCount);
