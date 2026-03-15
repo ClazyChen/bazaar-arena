@@ -14,7 +14,7 @@ alwaysApply: false
 |----|------|----------|
 | Name | 物品中文名 | `Name = "..."` |
 | **所属** | 所属英雄或公共（第 2 列） | **公共** → Common*；**Vanessa** 等 → ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;，一物一文件，RegisterAll 中设 `db.DefaultHero` 后注册 |
-| **版本** | 版本/赛季（**第 3 列**） | 数字如 5、1、12 → 对应 _S5、_S1 或无后缀（通常最新为无后缀）；多行同物不同版本则多套 Template_Sx() |
+| **版本** | 版本/赛季（**第 3 列**） | 数字如 5、1、12 → 对应 _S5、_S1 或无后缀。**表格第一行**对应**最新版**，名称**无后缀**（如「火药角」「鹦鹉皮特」），用 `Template()`、`Name = "中文名"`；后续行对应历史版本，用 `Template_Sx()`、`Name = "中文名_Sx"`。多行同物不同版本则多套工厂方法。 |
 | minTier | B/S/G/D | Bronze / Silver / Gold / Diamond，在 RegisterAll 中设 `db.DefaultMinTier` 后注册 |
 | Size | S/M/L | Small / Medium / Large，`db.DefaultSize` |
 | CD | 冷却秒数 | `Cooldown = 数值` 或 `Cooldown = [a, b, c, d]`（按档位） |
@@ -23,7 +23,7 @@ alwaysApply: false
 
 ## 优先级缩写
 
-效果行末尾括号为优先级时，对应关系如下；**无标注则使用默认 Medium**，不需写 `priority`。
+效果行末尾**仅当表格明确标注** (I)、(Hst)、(H)、(L)、(Lst) 时才在代码中写 `priority`；**未标注则一律视为 Medium**，**不要猜测**优先级，不要擅自加 `priority: AbilityPriority.Low` 等。
 
 | 标注 | 优先级 |
 |------|--------|
@@ -40,6 +40,8 @@ alwaysApply: false
 - **此物品右侧的武器**：紧邻右侧且为武器 → **Condition.RightOfSource & Condition.WithTag(Tag.Weapon)**。
 - **此物品左侧的武器**：紧邻左侧且为武器 → **Condition.LeftOfSource & Condition.WithTag(Tag.Weapon)**。
 - 「使用**其他**某类物品时」：须在 condition 中加 **Condition.DifferentFromSource**（触发者为「其他」物品），例如 `Condition.SameSide & Condition.WithTag(Tag.Weapon) & Condition.DifferentFromSource`。
+- **「此物品被加速时」/「此物品被减速时」**：用 `trigger: Trigger.Haste` / `Trigger.Slow`，且 **condition: Condition.SameAsInvokeTarget**（被加速/被减速的是本物品才触发），**targetCondition: Condition.SameAsSource**（效果施加给自身）。参考毒须鲶、皮皮虾。
+- **「每有一个相邻的…，此物品 +1 多重释放」**：多重释放 = 相邻数量，用 **Formula.Count(AdjacentToSource & ...)**，**不要**加 `Formula.Constant(1) +`。参考迷幻蝠鲼、鹦鹉皮特。
 
 ## 效果文案与实现对应
 

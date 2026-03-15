@@ -242,10 +242,12 @@
 当用户以**表格图片**形式提供物品需求时，列顺序为：**Name、所属、版本、minTier、Size、CD、TAG、效果**（第 2 列**所属**、第 3 列**版本**用于明确物品归属与赛季）。
 
 - **列映射**：Name → 中文名；**所属**（第 2 列）→ 英雄名（如 Vanessa）或**公共**；**版本**（第 3 列）→ 数字对应赛季，如 5 → _S5、12 → 无后缀或 _S12 视表格约定；minTier B/S/G/D；Size S/M/L；CD → Cooldown（秒）；TAG → Tags；效果 → Desc 与 Abilities/Auras。
-- **版本列**：表格**第三列**为版本号；同一物品多行若版本号不同则对应多个 Template_Sx() 或无后缀 Template()（通常数字最大/最新为无后缀）。
+- **版本列与第一行**：表格**第三列**为版本号。**表格第一行**对应**最新版本**，名称**无后缀**（如「火药角」「鹦鹉皮特」），实现为 `Template()`、`Name = "中文名"`；后续行对应历史版本，实现为 `Template_Sx()`、`Name = "中文名_Sx"`。勿将第一行误写成带 _Sx 的名称。
 - **效果文案与实现**：**▶** 以及文案中的「**提高**」「**造成**」等主动动词 = **使用物品时触发**的 Ability（UseItem），应实现为 Ability 而非被动光环。**无 ▶ 且无触发条件**的常驻加成（如「己方武器伤害 +X」）= 光环（Aura）。若误将「▶ 某类物品暴击率提高」写成光环，应改为 **Ability.AddAttribute(Key.CritRatePercent).Override(additionalTargetCondition: ..., priority: ...)**。
 - **局外成长**：表格中「购买此物品时获得 X」「购买时 Y」等**局外/商店**效果，对战模拟器不实现，仅在类注释中说明「局外成长忽略」。
-- **优先级**：效果末尾 (I)/(Hst)/(H)/(L)/(Lst) 分别对应 Immediate/Highest/High/Low/Lowest。
+- **优先级**：**仅当表格效果末尾明确标注** (I)/(Hst)/(H)/(L)/(Lst) 时在代码中写 `priority`；**未标注则视为 Medium**，不要猜测或擅自添加 priority。
+- **「此物品被加速/被减速时」**：`trigger: Trigger.Haste` / `Trigger.Slow`，**condition: Condition.SameAsInvokeTarget**（被加速/被减速的是本物品），**targetCondition: Condition.SameAsSource**（效果施加给自身）。参考毒须鲶、皮皮虾。
+- **「每有一个相邻的…，此物品 +1 多重释放」**：多重释放 = 相邻数量，用 **Formula.Count(...)**，**不要**写 `Formula.Constant(1) + Formula.Count(...)`。参考迷幻蝠鲼、鹦鹉皮特。
 - **英文名**：**文件名**与**类名**取英文名 PascalCase；工厂方法 `Template()`、`Template_Sx()`。
 - **常用目标条件**：「己方最左侧/最右侧的武器」→ **LeftMost/RightMost(WithTag(Weapon))**；「此物品右侧的武器」→ **RightOfSource & WithTag(Tag.Weapon)**；「使用其他某类物品时」须 **Condition.DifferentFromSource**。
 - **归属**：由**所属**列决定——**公共**放 Common*；**英雄名**放 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;**，一物一文件。

@@ -51,12 +51,22 @@ public static class VanessaSmall
         db.Register(Ambergris.Template());
         db.Register(Switchblade.Template());
         db.Register(Switchblade.Template_S1());
+        db.Register(Jellyfish.Template());
+        db.Register(PowderHorn.Template());
+        db.Register(PeskyPete.Template());
+        db.Register(Catfish.Template());
+        db.Register(MantisShrimp.Template());
+        db.Register(YetiCrab.Template());
 
         db.DefaultMinTier = ItemTier.Silver;
         db.Register(BilgeWorm.Template_S10());
         db.Register(BilgeWorm.Template_S9());
         db.Register(ConcealedDagger.Template_S1());
         db.Register(Grapeshot.Template_S1());
+        db.Register(PeskyPete.Template_S5());
+
+        db.DefaultMinTier = ItemTier.Gold;
+        db.Register(PeskyPete.Template_S1());
 
     }
 }
