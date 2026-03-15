@@ -12,9 +12,11 @@ public static class VanessaSmall
         db.DefaultHero = Hero.Vanessa;
         db.DefaultMinTier = ItemTier.Bronze;
         db.Register(BilgeWorm.Template());
+        db.Register(ConcealedDagger.Template());
 
         db.DefaultMinTier = ItemTier.Silver;
         db.Register(BilgeWorm.Template_S10());
         db.Register(BilgeWorm.Template_S9());
+        db.Register(ConcealedDagger.Template_S1());
     }
 }

@@ -195,6 +195,16 @@
 
 ---
 
+## 英雄/关卡专属物品与目录结构
+
+- **归属**：与特定英雄或关卡绑定的物品（如海盗 Vanessa 关卡专属）**不**放在 `CommonSmall.cs` / `CommonMedium.cs` / `CommonLarge.cs`，而放在 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;** 下，例如 `Vanessa/small`、`Vanessa/medium`。
+- **一物一文件**：每个物品单独一个源文件，文件名与类名对应英文名（如藏刃匕首 → `ConcealedDagger.cs`、类 `ConcealedDagger`）；同一物品的多赛季版本放在同一文件中。
+- **工厂方法命名**：**Template()** 表示当前/最新版本（无后缀或铜等基础档位），**Template_Sx()** 表示第 x 赛季版本（如 `Template_S1()`、`Template_S9()`），与物品显示名 `[名称]_Sx` 对应。
+- **注册**：每个英雄有对应的 **RegisterAll**（如 `VanessaSmall.RegisterAll(db)`），在其中设置 **db.DefaultHero**（如 `Hero.Vanessa`）、**db.DefaultSize**、按档位设置 **db.DefaultMinTier** 后连续 **db.Register(ClassName.Template())** / **db.Register(ClassName.Template_Sx())**。主程序/数据库初始化时需调用各英雄的 RegisterAll，使专属物品被写入数据库。
+- **与公共物品的区别**：Common* 使用 **Hero.Common**（由调用方在注册公共物品前设定），不设 DefaultHero 时通常为 Common；英雄专属物品在各自 RegisterAll 中显式设 **DefaultHero**，便于筛选与 UI 展示。
+
+---
+
 ## 运行时变量与字典（ItemTemplate / BattleSide）
 
 ### 设计目标
