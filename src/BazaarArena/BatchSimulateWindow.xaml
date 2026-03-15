@@ -22,7 +22,7 @@
         </StackPanel>
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,8">
             <TextBlock Text="模拟场次：" VerticalAlignment="Center" Margin="0,0,6,0"/>
-            <TextBox x:Name="RunsBox" Width="80" Padding="4" VerticalContentAlignment="Center" Text="100"/>
+            <TextBox x:Name="RunsBox" Width="80" Padding="4" VerticalContentAlignment="Center" Text="1000"/>
         </StackPanel>
         <Button Grid.Row="3" Content="开始批量模拟" Click="Run_Click" Padding="12,6" HorizontalAlignment="Left" Margin="0,0,0,12"/>
         <Border Grid.Row="4" BorderBrush="#ddd" BorderThickness="1" Padding="8" Background="#fafafa" Margin="0,0,0,8">

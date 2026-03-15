@@ -95,6 +95,7 @@ public class ItemDatabase : IItemTemplateResolver
             Desc = t.Desc,
             MinTier = t.MinTier,
             Size = t.Size,
+            Hero = t.Hero,
             Tags = [..t.Tags],
             Abilities = [.. t.Abilities.Select(a =>
             {

@@ -22,6 +22,8 @@ public partial class MainWindow
     private readonly ObservableCollection<SlotRowViewModel> _slotRows = [];
     private string? _currentDeckId;
     private IReadOnlyList<string> _itemNames = [];
+    /// <summary>按筛选条件过滤后的物品名称列表，绑定到物品池；未勾选任一选项的维度表示不限制。</summary>
+    private readonly ObservableCollection<string> _filteredItemNames = [];
     /// <summary>物品池 ToolTip 缓存（按 itemName），仅在即将显示时构建并缓存，避免 MouseEnter 卡顿。</summary>
     private readonly Dictionary<string, Border> _poolToolTipCache = [];
 
@@ -46,7 +48,8 @@ public partial class MainWindow
             PlayerLevelCombo.Items.Add(i);
         PlayerLevelCombo.SelectedIndex = 4; // 5 级
 
-        ItemPoolList.ItemsSource = _itemNames;
+        ItemPoolList.ItemsSource = _filteredItemNames;
+        RefreshItemPoolFilter();
 
         RefreshDeckList();
         var defaultPath = Path.Combine(App.DecksDirectory, "default.json");
@@ -80,6 +83,44 @@ public partial class MainWindow
     {
         var path = _deckManager.CurrentCollectionPath;
         Title = string.IsNullOrEmpty(path) ? "Bazaar Arena - 未命名" : $"Bazaar Arena - {Path.GetFileName(path)}";
+    }
+
+    private void ItemFilter_Changed(object sender, RoutedEventArgs e) => RefreshItemPoolFilter();
+
+    /// <summary>根据尺寸/最低档位/英雄单选框更新可拖入卡组的物品列表；选「全部」表示该维度不限制。</summary>
+    private void RefreshItemPoolFilter()
+    {
+        var sizeAllowed = new HashSet<ItemSize>();
+        if (FilterSizeAll?.IsChecked != true)
+        {
+            if (FilterSizeSmall?.IsChecked == true) sizeAllowed.Add(ItemSize.Small);
+            if (FilterSizeMedium?.IsChecked == true) sizeAllowed.Add(ItemSize.Medium);
+            if (FilterSizeLarge?.IsChecked == true) sizeAllowed.Add(ItemSize.Large);
+        }
+
+        var tierAllowed = new HashSet<ItemTier>();
+        if (FilterTierAll?.IsChecked != true)
+        {
+            if (FilterTierBronze?.IsChecked == true) tierAllowed.Add(ItemTier.Bronze);
+            if (FilterTierSilver?.IsChecked == true) tierAllowed.Add(ItemTier.Silver);
+            if (FilterTierGold?.IsChecked == true) tierAllowed.Add(ItemTier.Gold);
+            if (FilterTierDiamond?.IsChecked == true) tierAllowed.Add(ItemTier.Diamond);
+        }
+
+        var heroAllowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (FilterHeroAll?.IsChecked != true && FilterHeroCommon?.IsChecked == true)
+            heroAllowed.Add(Hero.Common);
+
+        _filteredItemNames.Clear();
+        foreach (var name in _itemNames)
+        {
+            var t = _itemDatabase.GetTemplate(name);
+            if (t == null) continue;
+            if (sizeAllowed.Count > 0 && !sizeAllowed.Contains(t.Size)) continue;
+            if (tierAllowed.Count > 0 && !tierAllowed.Contains(t.MinTier)) continue;
+            if (heroAllowed.Count > 0 && !heroAllowed.Contains(t.Hero ?? Hero.Common)) continue;
+            _filteredItemNames.Add(name);
+        }
     }
 
     private void DeckGridInner_SizeChanged(object sender, SizeChangedEventArgs e)

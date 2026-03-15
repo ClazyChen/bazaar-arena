@@ -103,6 +103,15 @@ public class Condition
     public static Condition NotWithTag(string tag) => new(ctx =>
         ctx.Item == null || !(ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? new HashSet<string>(ctx.Item.Template.Tags ?? [])).Contains(tag));
 
+    /// <summary>被评估对象具备可暴击的六类数值之一（护盾/伤害/灼烧/剧毒/治疗/再生）；用于 AddAttribute/ReduceAttribute 暴击率时的隐含目标条件。</summary>
+    public static Condition HasAnyCrittableTag { get; } = new(ctx =>
+    {
+        if (ctx.Item == null) return false;
+        var tags = ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? new HashSet<string>(ctx.Item.Template.Tags ?? []);
+        return tags.Contains(Tag.Damage) || tags.Contains(Tag.Burn) || tags.Contains(Tag.Poison)
+            || tags.Contains(Tag.Heal) || tags.Contains(Tag.Shield) || tags.Contains(Tag.Regen);
+    });
+
     /// <summary>被评估对象模板带指定标签（仅读 Template.Tags，不含光环授予）；Item 为 null 时为 false。用于避免光环递归（如弹药物品用 Tag.Ammo）。</summary>
     public static Condition WithTemplateTag(string tag) => new(ctx =>
         ctx.Item != null && ctx.Item.Template.Tags != null && ctx.Item.Template.Tags.Contains(tag));

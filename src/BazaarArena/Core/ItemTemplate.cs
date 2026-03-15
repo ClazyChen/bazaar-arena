@@ -61,8 +61,9 @@ public readonly struct IntOrByTier : IEnumerable<int>
         return new IntOrByTier(list);
     }
 
+    /// <summary>单值隐式转换：显式构造含一元素的列表，保证 ToList() 非空，避免 ChargeTargetCount = 10 等写入空列表导致读回默认值 1。</summary>
     public static implicit operator IntOrByTier(int single) =>
-        new([single]);
+        new IntOrByTier(new List<int> { single });
 
     public static implicit operator IntOrByTier(int[] byTier) =>
         new([..byTier]);
@@ -93,6 +94,8 @@ public class ItemTemplate
     public string Desc { get; set; } = "";
     public ItemTier MinTier { get; set; }
     public ItemSize Size { get; set; }
+    /// <summary>所属英雄标识，如 Hero.Common；默认 Common，后续可扩展其他英雄。</summary>
+    public string Hero { get; set; } = global::BazaarArena.Core.Hero.Common;
     public List<string> Tags { get; set; } = [];
 
     /// <summary>按等级区分的扩展属性：键为字段名，值为按 ItemTier 顺序（Bronze=0, Silver=1, Gold=2, Diamond=3）的列表；单值存为长度为 1 的列表。</summary>

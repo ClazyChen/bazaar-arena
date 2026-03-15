@@ -173,9 +173,16 @@
   3. **实现 `IEnumerable<int>` 并暴露 `GetEnumerator()`**：否则编译器报 CS9188「没有元素类型」。编译器通过枚举器推断集合的元素类型，非泛型自定义类型必须提供此信息。
 - **依赖**：`CollectionBuilderAttribute` 在 .NET 9+ 的 `System.Runtime.CompilerServices` 中；若目标框架低于 .NET 9，需自行声明同名 attribute。
 
+### IntOrByTier 单值隐式转换（ChargeTargetCount 等多目标数量）
+
+- **现象**：物品定义中写 `ChargeTargetCount = 10`、`FreezeTargetCount = 2` 等单值赋值时，若隐式转换 `int → IntOrByTier` 产生的实例内部 `_values` 为空或未正确初始化，则 `ToList()` 返回空列表，写入 `_intsByTier` 后 `GetInt(key, tier, defaultValue)` 会因 `list.Count == 0` 返回默认值（如 1），导致效果层只对 1 个目标生效（如魔杖只充能 1 件）。
+- **根因**：`implicit operator IntOrByTier(int single) => new([single])` 依赖集合表达式 `[single]`，在部分运行时/编译器路径下可能得到未正确填充的实例，进而 `_values` 为 null，`ToList()` 为 `[]`。
+- **正确做法**：单值隐式转换改为显式构造**含一元素的列表**再传入私有构造，保证 `_values` 非 null、`ToList()` 恒为非空，例如 `new IntOrByTier(new List<int> { single })`。这样 `ChargeTargetCount = 10` 等写法无需在物品工厂内再写 `SetInt` 补丁即可正确写入并随克隆带到战斗。
+- **读路径**：`GetInt` 对 `list.Count == 1` 直接返回 `list[0]`，与 tier/MinTier 无关，金/钻档位读取无问题；问题仅在写路径单值→列表的可靠性。
+
 ### 小结
 
-按等级属性用单字典 + 列表长度区分单值/多值；初始器用 IntOrByTier 统一写法；对外用字符串 key、默认值 0 简化逻辑。需要 `X = [a,b,c]` 时用 CollectionBuilder + IEnumerable 让自定义类型支持集合表达式。
+按等级属性用单字典 + 列表长度区分单值/多值；初始器用 IntOrByTier 统一写法；对外用字符串 key、默认值 0 简化逻辑。需要 `X = [a,b,c]` 时用 CollectionBuilder + IEnumerable 让自定义类型支持集合表达式。**单值赋值**（如 `ChargeTargetCount = 10`）依赖 `IntOrByTier` 的隐式转换，实现上须保证单值→非空列表，避免读回默认值 1。
 
 ---
 

@@ -1,5 +1,13 @@
 # 变更记录
 
+## IntOrByTier 单值隐式转换与魔杖等多目标充能
+
+- **IntOrByTier 单值隐式转换**：修复 `implicit operator IntOrByTier(int single)` 使用 `new([single])` 时在部分路径下可能产生 `_values` 为空、`ToList()` 返回空列表的问题。改为显式 `new IntOrByTier(new List<int> { single })`，保证单值赋值（如 `ChargeTargetCount = 10`）写入的列表非空，战斗克隆后 `GetResolvedValue(ChargeTargetCount, defaultValue: 1)` 能正确取到 10。
+- **魔杖等多目标充能**：魔杖「为其他非武器物品充能」设计为 `ChargeTargetCount = 10`，此前因上述空列表导致只对 1 件充能；修复后恢复为直接 `return new ItemTemplate { ... ChargeTargetCount = 10 ... }` 写法即可生效，无需 SetInt 补丁。
+- **文档与规则**：**docs/implementation-notes.md** 新增「IntOrByTier 单值隐式转换（ChargeTargetCount 等多目标数量）」；**.cursor/rules/project-conventions.mdc** 补充 IntOrByTier 单值赋值约定。
+
+---
+
 ## 弹药消耗触发器、InvokeTarget 单目标施加、能力队列节流与冷却缩短联动
 
 - **Trigger.Ammo 与 Condition.AmmoDepleted**：新增 **Trigger.Ammo**（「弹药消耗」），在步骤 7 每次 `AmmoRemaining--` 后调用；默认 Condition 为 SameSide。「仅耗尽当次」用 **additionalCondition: Condition.AmmoDepleted**（Item 满足 AmmoCap>0 且 AmmoRemaining==0）。新增 **Condition.HasAmmoCap** 用于「弹药物品」筛选。**左侧**仅相邻用 **LeftOfSource**，所有严格左侧用 **StrictlyLeftOfSource**（同理右侧）。生体融合臂：Trigger.Ammo + AmmoDepleted 造成伤害；左侧相邻弹药物品光环 +100% 暴击率、+1 最大弹药。

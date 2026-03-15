@@ -277,6 +277,8 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     {
         if (value <= 0 || targetCondition == null) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed;
+        if (attributeName == Key.CritRatePercent)
+            cond &= Condition.HasAnyCrittableTag;
         string logName = EffectLogName ?? (AttributeLogNames.Get(attributeName) + "提高");
         if (maxTargetCount > 0)
         {
@@ -324,6 +326,8 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     {
         if (value <= 0 || targetCondition == null) return;
         var cond = (targetCondition ?? Condition.DifferentSide) & Condition.NotDestroyed;
+        if (attributeName == Key.CritRatePercent)
+            cond = cond & Condition.HasAnyCrittableTag;
         string logName = effectLogName ?? (AttributeLogNames.Get(attributeName) + "降低");
         int take = maxTargetCount > 0 ? maxTargetCount : 100;
         var targets = GetTargetsFromBothSides(take, cond);
