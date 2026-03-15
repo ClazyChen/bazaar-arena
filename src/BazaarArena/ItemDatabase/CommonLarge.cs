@@ -85,10 +85,7 @@ public static class CommonLarge
             Cooldown = 11.0,
             Damage = 0,
             Custom_0 = [15, 30, 60, 100],
-            StashParameter = [1, 2, 3, 4],
-            OverridableAttributes = new Dictionary<string, IntOrByTier> { 
-                [Key.StashParameter] = [1, 2, 3, 4] 
-            },
+            OverridableAttributes = new Dictionary<string, IntOrByTier> { [Key.StashParameter] = [1, 2, 3, 4] },
             Abilities =
             [
                 Ability.Damage,

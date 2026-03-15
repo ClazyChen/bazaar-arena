@@ -216,6 +216,9 @@ public class ItemTemplate
     private void SetIntOrByTier(string key, IEnumerable<int> values) =>
         _intsByTier[key] = values.ToList();
 
+    /// <summary>按 key 设置 IntOrByTier，供 Register 从 OverridableAttributes 同步默认值到模板时使用。</summary>
+    public void SetIntOrByTierByKey(string key, IntOrByTier value) => SetIntOrByTier(key, value.ToList());
+
     /// <summary>按等级设置字段值，用于克隆/序列化。</summary>
     public void SetIntsByTier(IEnumerable<KeyValuePair<string, List<int>>> pairs)
     {

@@ -357,7 +357,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
                 wi.CooldownElapsedMs = 0;
             }
         }
-        if (targetNames.Count > 0)
+        if (targetNames.Count > 0 && !string.IsNullOrEmpty(logName))
             LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
     }
 

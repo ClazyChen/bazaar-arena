@@ -14,10 +14,12 @@ alwaysApply: false
 - **nextAbilityQueue**：本帧延后（未到 250ms）、未消耗完 Pending 的条目写回此处；**本帧施放产生的新能力也只加入此处**（见下）。
 - **唯一允许「next → current」的位置**：**仅步骤 9**。在步骤 8 开头、循环前或任何其他地方做「把 next 移入 current」都是错误。
 
-## 施放队列（castQueue）触发的能力
+## 施放队列（castQueue）触发的能力与步骤 7 顺序
 
-- 步骤 7 中，由 castQueue 触发的「使用物品」能力，**必须加入 nextAbilityQueue**，不能加入 currentAbilityQueue。仅调用一次 `InvokeTrigger(Trigger.UseItem, ...)`；「其他物品使用则触发」通过能力 Condition = `And(DifferentFromSource, SameSide)[ + 额外条件 ]` 表达。
-- 这样这些能力会在下一帧经步骤 9 进入 current，再在下一帧的步骤 8 被处理，即「本帧施放、下一帧生效」。
+- 步骤 7 对每件施放物品的**顺序**：先读 **Multicast**，再 **InvokeTrigger(Trigger.UseItem, ..., executeImmediate: 委托)**，再若有弹药则 **AmmoRemaining = max(0, AmmoRemaining - 1)**，再 OnCast，最后若有弹药则 **InvokeTrigger(Trigger.Ammo, ...)**。弹药扣减必须在 UseItem 之后，以便「使用一次消耗全部弹药」类物品先用 Immediate 能力减到 0，且 multicast 按满弹计算。
+- 步骤 7 调用 `InvokeTrigger(Trigger.UseItem, ...)` 时传入 **executeImmediate** 委托：匹配到的 **Immediate** 能力**不入队**，当场执行（委托内调用 ExecuteOneEffect）；非 Immediate 能力仍加入 nextAbilityQueue。
+- 由 castQueue 触发的非 Immediate「使用物品」能力，**必须加入 nextAbilityQueue**。仅调用一次 `InvokeTrigger(Trigger.UseItem, ...)`；「其他物品使用则触发」通过能力 Condition = `And(DifferentFromSource, SameSide)[ + 额外条件 ]` 表达。
+- 这样非 Immediate 能力会在下一帧经步骤 9 进入 current，再在下一帧的步骤 8 被处理，即「本帧施放、下一帧生效」。
 
 ## 步骤 8 执行过程中引发的新能力
 
@@ -29,7 +31,7 @@ alwaysApply: false
 
 - 所有触发器均通过**统一**的 `InvokeTrigger(triggerName, causeItem, context, ...)` 调用（causeItem 为引起触发的物品引用，BattleStart 传 null）：遍历双方所有物品，构建 `ConditionContext`（MySide、EnemySide、Source=能力持有者、Item=causeItem，Item 可为 null 如 BattleStart）后调用 `condition.Evaluate(ctx)` 判断是否触发；详见 `docs/implementation-notes.md`「ConditionContext 重构与触发器统一」。若能力有 `InvokeTargetCondition` 且 context 提供 `InvokeTargetItem`（Slow/Freeze/Destroy 每目标一次），则再以 Source=能力持有者、Item=该目标物品构建上下文求值，不通过则不入队。**只有 Immediate 优先级入 currentAbilityQueue，其余入 nextAbilityQueue**（与步骤 7 施放触发的规则一致）。
 - **战斗开始**：步骤 1 只调用 `InvokeTrigger(Trigger.BattleStart, null, null, ...)` 入队，不直接执行；执行在步骤 8（或下一帧步骤 8）进行。
-- **UseItem / Freeze / Slow / Haste / Crit / Destroy / Burn / Poison / Shield / Ammo / BattleStart**：生成/克隆能力时 `EnsureTriggerCondition` 补 Condition：`UseItem` 且 Condition 为 null → `Condition.SameAsSource`；**Ammo**（弹药消耗）默认 `Condition.SameSide`，可用 **additionalCondition: Condition.AmmoDepleted** 限定「仅耗尽当次」；其余触发器（Freeze/Slow/Haste/Crit/Destroy/Burn/Poison/Shield）默认 `Condition.SameSide`；BattleStart → Always。步骤 7 在 `AmmoRemaining--` 后若 ammoCap > 0 则调用 `InvokeTrigger(Trigger.Ammo, item, ...)`。**Freeze/Slow/Destroy** 的触发来源：`EffectApplyContextImpl` 不持有回调，而是向模拟器传入的 **EffectAppliedTriggerQueue** 追加 `(TriggerName, SideIndex, ItemIndex)`；`ability.Apply(ctx)` 返回后模拟器统一遍历该队列、按目标解析 `BattleItemState` 并调用 `InvokeTrigger`，Destroy 时在调用后再设 `target.Destroyed = true`。**Freeze/Slow** 为任意物品施加时触发（默认 SameSide 表现为己方）；**Destroy** 与 Slow 同构：Condition 判定施加者，InvokeTargetCondition 判定被摧毁物品，context 传 `InvokeTargetItem`。**Crit** 为任意物品造成暴击时触发；暴击按物品按帧统一判定：步骤 8 循环中，可暴击能力若本帧已为该物品判定过（`item.CritTimeMs == timeMs`）则复用结果；否则掷骰并写入物品状态，**若判定为暴击则在此处、ExecuteOneEffect 之前**调用一次 `InvokeTrigger(Trigger.Crit, item, null, ...)`。ExecuteOneEffect 内不再调用 Crit 触发。
+- **UseItem / Freeze / Slow / Haste / Crit / Destroy / Burn / Poison / Shield / Ammo / BattleStart**：生成/克隆能力时 `EnsureTriggerCondition` 补 Condition：`UseItem` 且 Condition 为 null → `Condition.SameAsSource`；**Ammo**（弹药消耗）默认 `Condition.SameSide`，可用 **additionalCondition: Condition.AmmoDepleted** 限定「仅耗尽当次」；其余触发器（Freeze/Slow/Haste/Crit/Destroy/Burn/Poison/Shield）默认 `Condition.SameSide`；BattleStart → Always。步骤 7 在 `AmmoRemaining = max(0, AmmoRemaining - 1)` 之后若 ammoCap > 0 则调用 `InvokeTrigger(Trigger.Ammo, item, ...)`。**Freeze/Slow/Destroy** 的触发来源：`EffectApplyContextImpl` 不持有回调，而是向模拟器传入的 **EffectAppliedTriggerQueue** 追加 `(TriggerName, SideIndex, ItemIndex)`；`ability.Apply(ctx)` 返回后模拟器统一遍历该队列、按目标解析 `BattleItemState` 并调用 `InvokeTrigger`，Destroy 时在调用后再设 `target.Destroyed = true`。**Freeze/Slow** 为任意物品施加时触发（默认 SameSide 表现为己方）；**Destroy** 与 Slow 同构：Condition 判定施加者，InvokeTargetCondition 判定被摧毁物品，context 传 `InvokeTargetItem`。**Crit** 为任意物品造成暴击时触发；暴击按物品按帧统一判定：步骤 8 循环中，可暴击能力若本帧已为该物品判定过（`item.CritTimeMs == timeMs`）则复用结果；否则掷骰并写入物品状态，**若判定为暴击则在此处、ExecuteOneEffect 之前**调用一次 `InvokeTrigger(Trigger.Crit, item, null, ...)`。ExecuteOneEffect 内不再调用 Crit 触发。
 - **条件语义**：评估时 **Source=能力持有者**、**Item=被评估对象**（Condition 时=引起触发的物品，InvokeTargetCondition 时=触发器指向的物品，TargetCondition 时=候选目标）。`Condition` = 引起触发的物品（Item）需满足；`InvokeTargetCondition` = 触发器所指向的物品（Item）需满足；`TargetCondition` = 候选目标（Item）需满足。
 - **PendingCount 合并顺序（AddOrMergeAbility）**：
   1. 当 **InvokeTargetItem** 非空（context 提供 invokeTargetSideIndex + invokeTargetItemIndex）时**不合并**，直接新建条目并写入 `InvokeTargetSideIndex`/`InvokeTargetItemIndex`，效果应对该单一目标施加（见 docs/implementation-notes.md「InvokeTarget 与 SameAsInvokeTarget」）。

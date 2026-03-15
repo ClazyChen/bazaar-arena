@@ -59,12 +59,17 @@ public class ItemDatabase : IItemTemplateResolver
         return list;
     }
 
-    /// <summary>注册物品模板；会将当前 DefaultSize、DefaultMinTier、DefaultHero 写入模板后存入，并根据属性自动补充类型 Tag（护盾/伤害/灼烧等）。</summary>
+    /// <summary>注册物品模板；会将当前 DefaultSize、DefaultMinTier、DefaultHero 写入模板后存入，并根据属性自动补充类型 Tag（护盾/伤害/灼烧等）。若存在 OverridableAttributes，将其默认值同步到模板对应 key，避免在模板上重复定义同一数值。</summary>
     public void Register(ItemTemplate template)
     {
         template.Size = DefaultSize;
         template.MinTier = DefaultMinTier;
         template.Hero = DefaultHero;
+        if (template.OverridableAttributes != null)
+        {
+            foreach (var kv in template.OverridableAttributes)
+                template.SetIntOrByTierByKey(kv.Key, kv.Value);
+        }
         EnsureTypeTags(template);
         _templates[template.Name] = template;
     }

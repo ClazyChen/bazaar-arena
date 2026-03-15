@@ -20,6 +20,11 @@ public static class VanessaSmall
         db.Register(HoningSteel.Template());
         db.Register(HoningSteel.Template_S9());
         db.Register(HoningSteel.Template_S1());
+        db.Register(Narwhal.Template());
+        db.Register(Narwhal.Template_S1());
+        db.Register(Coral.Template());
+        db.Register(IllusoRay.Template());
+        db.Register(Shuriken.Template());
 
         db.DefaultMinTier = ItemTier.Silver;
         db.Register(BilgeWorm.Template_S10());

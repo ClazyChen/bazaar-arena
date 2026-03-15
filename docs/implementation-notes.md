@@ -106,7 +106,7 @@
 
 ## 弹药消耗触发器（Trigger.Ammo）与 Condition.AmmoDepleted
 
-- **设计**：不在「弹药耗尽」时单独设触发器，而是**每次弹药消耗**时触发 **Trigger.Ammo**（步骤 7 中 `AmmoRemaining--` 后立即 `InvokeTrigger(Trigger.Ammo, item, ...)`）。来源（causeItem）= 消耗弹药的那个物品。默认 Condition 为 SameSide。
+- **设计**：不在「弹药耗尽」时单独设触发器，而是**每次弹药消耗**时触发 **Trigger.Ammo**（步骤 7 中在 InvokeTrigger(UseItem) 之后执行 `AmmoRemaining = max(0, AmmoRemaining - 1)`，再调用 `InvokeTrigger(Trigger.Ammo, item, ...)`）。来源（causeItem）= 消耗弹药的那个物品。默认 Condition 为 SameSide。步骤 7 顺序详见「步骤 7 施放顺序、Immediate 当场执行与效果日志抑制」。
 - **「仅耗尽当次」**：用 **additionalCondition: Condition.AmmoDepleted** 限定。`Condition.AmmoDepleted` = **WithTemplateTag(Tag.Ammo)** 且 AmmoRemaining == 0（引起触发的物品模板带 Tag.Ammo 且刚扣完一发后为 0；用 WithTemplateTag 避免光环递归）。弹药物品由注册时 AmmoCap > 0 自动获得 Tag.Ammo。例如生体融合臂：`Ability.Damage.Override(trigger: Trigger.Ammo, additionalCondition: Condition.AmmoDepleted, targetCondition: Condition.DifferentSide)`。
 - **弹药物品筛选**：用 **Condition.WithTag(Tag.Ammo)**（如光环「此物品左侧的弹药物品 +1 最大弹药」用 `Condition.LeftOfSource & Condition.WithTag(Tag.Ammo)`）。**左侧**若指**相邻左侧**用 **LeftOfSource**，若指**所有严格左侧**用 **StrictlyLeftOfSource**。
 - **Key.AmmoRemaining**：运行时剩余弹药存于物品模板字典（与 `ItemTemplate.KeyAmmoRemaining` 一致），供 Condition 与公式使用。
@@ -114,6 +114,26 @@
 ### 经验：Override 换 trigger 且只传 additionalCondition 时须用新 trigger 的默认条件
 
 若能力由 **Ability.xxx**（默认 UseItem + SameAsSource）出发，只改 **trigger** 并只传 **additionalCondition**（如 `Override(trigger: Trigger.Ammo, additionalCondition: Condition.AmmoDepleted)`），合并时 **baseCond** 必须用**新 trigger 的默认条件**（如 Ammo → SameSide），而不能用原能力上的 **Condition**（SameAsSource）。否则会得到 (SameAsSource & AmmoDepleted)，语义变成「仅当**能力持有者本人**弹药耗尽时」才触发；设计意图多为「己方**任意**弹药物品耗尽时」即 (SameSide & AmmoDepleted)。实现上在 **AbilityDefinition.Override** 中：`baseCond = condition ?? (originalTrigger != TriggerName ? defaultCond : Condition ?? defaultCond)`，保证换 trigger 且未显式传 condition 时用 defaultCond。克隆能力时无需再对 Triggers[0] 做 SyncPrimaryTriggerEntryFromTopLevel 覆盖，源模板已正确。
+
+---
+
+## 步骤 7 施放顺序、Immediate 当场执行与效果日志抑制
+
+### 步骤 7 顺序与弹药消耗
+
+- **顺序**：对 castQueue 中每件物品依次执行：**先**读取 Multicast（此时 AmmoRemaining 尚未扣减，满弹物品的 multicast 正确）、**再**调用 `InvokeTrigger(Trigger.UseItem, ..., executeImmediate: 委托)`、**再**若有弹药则 `AmmoRemaining = Math.Max(0, AmmoRemaining - 1)`、**再**`logSink.OnCast(...)`、**最后**若有弹药则 `InvokeTrigger(Trigger.Ammo, ...)`。
+- **原因**：「使用一次消耗全部弹药」类物品（如手里剑）需在 UseItem 触发时用 **Immediate** 能力（ReduceAttribute AmmoRemaining by AmmoCap）把弹药减到 0，且多重释放应按**使用瞬间的满弹**计算；若先执行 `AmmoRemaining--` 再 InvokeTrigger，则 multicast 会少 1 且语义不符。故弹药扣减必须放在 InvokeTrigger(UseItem) **之后**，且扣减为 `max(0, AmmoRemaining - 1)` 保证不低于 0。
+
+### Immediate 能力当场执行（不入队）
+
+- **InvokeTrigger** 支持可选参数 **executeImmediate**（`Action<BattleItemState, int, AbilityDefinition>?`）。仅在步骤 7 调用 `InvokeTrigger(Trigger.UseItem, ...)` 时传入该委托。
+- **语义**：当某能力匹配 UseItem 且 **Priority == Immediate** 时，**不入队**（不调用 AddOrMergeAbility），改为**当场**调用 `executeImmediate(owner, abilityIndex, ability)`；委托内构造 `AbilityQueueEntry` 并调用 **ExecuteOneEffect**（isCrit: false），效果立即生效（如手里剑的 ReduceAttribute 将 AmmoRemaining 减到 0）。非 Immediate 能力仍照常入 nextAbilityQueue。
+- **用途**：手里剑等「使用一次消耗全部弹药」：Immediate 的 ReduceAttribute(Key.AmmoRemaining, amountKey: Key.AmmoCap)、targetCondition: SameAsSource 在 UseItem 触发时立刻执行，再执行 `AmmoRemaining = max(0, -1)` 保持为 0，最后 InvokeTrigger(Ammo)。
+
+### 效果日志抑制
+
+- **AddAttribute/ReduceAttribute** 的 GUI 日志名由 **EffectLogName**（Override 的 effectLogName）或默认「属性中文名+提高/降低」决定。
+- **不显示某条效果日志**：在该能力上 **Override(effectLogName: "")**；实现层 **ReduceAttributeToSide**（及 AddAttribute 的对应路径）在 `logName` 为空时**不调用** `LogSink.OnEffect`（即 `if (targetNames.Count > 0 && !string.IsNullOrEmpty(logName)) LogSink.OnEffect(...)`）。例如手里剑「消耗全部弹药」的 ReduceAttribute 设 `effectLogName: ""`，战斗日志中不显示「剩余弹药降低」。
 
 ---
 
@@ -207,15 +227,31 @@
 
 ## 从表格添加物品的约定
 
-当用户以**表格图片**形式提供物品需求（列：Name、版本、minTier、Size、CD、TAG、效果）时：
+当用户以**表格图片**形式提供物品需求时，列顺序为：**Name、所属、版本、minTier、Size、CD、TAG、效果**（第 2 列**所属**用于明确物品归属）。
 
-- **列映射**：Name → 中文名；版本第一行无后缀（当前版本）、其他行 _Sx；minTier B/S/G/D → Bronze/Silver/Gold/Diamond；Size S/M/L → Small/Medium/Large；CD → Cooldown（秒）；TAG → Tags；效果 → Desc（多条用分号隔开）与 Abilities/Auras。
+- **列映射**：Name → 中文名；**所属** → 英雄名（如 Vanessa）或**公共**，决定放在 Hero/size 一物一文件还是在 Common*；版本第一行无后缀（当前版本）、其他行 _Sx；minTier B/S/G/D → Bronze/Silver/Gold/Diamond；Size S/M/L → Small/Medium/Large；CD → Cooldown（秒）；TAG → Tags；效果 → Desc（多条用分号隔开）与 Abilities/Auras。
 - **优先级**：效果末尾 (I)/(Hst)/(H)/(L)/(Lst) 分别对应 Immediate/Highest/High/Low/Lowest；无标注则 Medium，不需 Override priority。
 - **英文名**：用户会给出英文名（如 Honing Steel），**文件名**与**类名**取 PascalCase（如 `HoningSteel.cs`、类 `HoningSteel`），工厂方法 `Template()`、`Template_Sx()`。
 - **常用目标条件**：「己方最左侧/最右侧的武器」→ **Condition.LeftMost(Condition.WithTag(Tag.Weapon)) | Condition.RightMost(Condition.WithTag(Tag.Weapon))**（见 `Core/Condition.cs`）；「此物品右侧的武器」→ **Condition.RightOfSource & Condition.WithTag(Tag.Weapon)**；「使用其他某类物品时」须在 condition 中加 **Condition.DifferentFromSource**。
-- **归属**：表格或用户明确为海盗/某英雄时，放在 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;**，一物一文件；未标注时可为 Common*，后续若确认为英雄专属须迁移。
+- **归属**：由**所属**列决定——**公共**放 Common*；**英雄名**放 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;**，一物一文件。若表格无所属列（旧格式），则按表格或用户是否标明英雄判断；后续若确认为英雄专属须迁移。
 
 详见 **.cursor/rules/item-table-convention.mdc**。
+
+---
+
+## OverridableAttributes 与 Aura Condition 约定
+
+### OverridableAttributes 不重复定义
+
+- **约定**：需要卡组内可覆盖属性时，**仅在 OverridableAttributes 中写一次默认值**（如 `OverridableAttributes = new Dictionary<string, IntOrByTier> { [Key.Custom_1] = [5, 10, 15, 20] }`），**不要在模板上再写一遍**同名属性（如不再写 `Custom_1 = [5, 10, 15, 20]`）。
+- **实现**：`ItemDatabase.Register` 在写入 Size/MinTier/Hero 之后、`EnsureTypeTags` 之前，会遍历 `template.OverridableAttributes`，对每个 key 调用 `template.SetIntOrByTierByKey(kv.Key, kv.Value)`，将默认值同步到模板内部字典，供战斗内公式（如 `Formula.Source(Key.Custom_1)`）与 Desc 占位符使用。
+- **效果**：物品定义中只需维护一处默认值，GUI 的「覆盖属性」对话框与战斗内读取均一致。
+
+### AuraDefinition Condition 默认 SameAsSource
+
+- **约定**：当光环作用目标为**来源物品自身**时（即 `Condition.SameAsSource`），**不要显式写** `Condition = Condition.SameAsSource`。
+- **实现**：`AuraDefinition.Condition` 的默认值即为 `Condition.SameAsSource`（见 `Core/AuraDefinition.cs`），显式写出会造成冗余且易在修改时漏改。
+- **示例**：珊瑚的治疗加成光环只需写 `AttributeName = Key.Heal`、`Value = Formula.Source(Key.Custom_0) * Formula.Source(Key.Custom_1)`，无需写 `Condition = Condition.SameAsSource`。
 
 ---
 

@@ -6,13 +6,14 @@ alwaysApply: false
 
 # 从表格添加物品的约定
 
-用户可能以**表格图片**形式提供物品需求（列：Name、版本、minTier、Size、CD、TAG、效果）。按以下方式解读与实现。
+用户可能以**表格图片**形式提供物品需求。列顺序为：**Name、所属、版本、minTier、Size、CD、TAG、效果**（其中**所属**为第 2 列，用于明确物品归属）。按以下方式解读与实现。
 
 ## 列与代码映射
 
 | 列 | 含义 | 代码对应 |
 |----|------|----------|
 | Name | 物品中文名 | `Name = "..."` |
+| **所属** | 所属英雄或公共 | **公共** → CommonSmall/CommonMedium/CommonLarge，在对应 Common* 的 RegisterAll 中注册；**Vanessa**（或其它英雄名）→ ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;，一物一文件，在对应英雄的 RegisterAll 中设 `db.DefaultHero` 后注册 |
 | 版本 | 第一行为当前版本（无后缀）；其他行如 9X、1X 等对应赛季后缀 _S9、_S1 | 无后缀→`Template()`；_Sx→`Template_Sx()`，显示名 `[名称]_Sx` |
 | minTier | B/S/G/D | Bronze / Silver / Gold / Diamond，在 RegisterAll 中设 `db.DefaultMinTier` 后注册 |
 | Size | S/M/L | Small / Medium / Large，`db.DefaultSize` |
@@ -40,10 +41,10 @@ alwaysApply: false
 - **此物品左侧的武器**：紧邻左侧且为武器 → **Condition.LeftOfSource & Condition.WithTag(Tag.Weapon)**。
 - 「使用**其他**某类物品时」：须在 condition 中加 **Condition.DifferentFromSource**（触发者为「其他」物品），例如 `Condition.SameSide & Condition.WithTag(Tag.Weapon) & Condition.DifferentFromSource`。
 
-## 归属：英雄专属 vs 公共
+## 归属：由「所属」列决定
 
-- 表格或用户**明确为海盗/某英雄**时，物品放在 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;**（如 `Vanessa/small`），一物一文件，类名与**英文名**对应（用户会给出英文名，如 Honing Steel → `HoningSteel.cs`、`HoningSteel`），在对应英雄的 RegisterAll 中注册。
-- 未标注英雄时，可按公共物品放在 CommonSmall/CommonMedium/CommonLarge；若后续确认为英雄专属，应迁移到英雄目录并删除 Common* 中的定义与注册。
+- 表格第 2 列**所属**：填**英雄名**（如 Vanessa、海盗）或**公共**。**公共** → 放在 CommonSmall/CommonMedium/CommonLarge；**英雄名** → 放在 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;**（如 `Vanessa/small`），一物一文件，类名与**英文名**对应，在对应英雄的 RegisterAll 中设 `db.DefaultHero` 后注册。
+- 若表格未含所属列（旧格式），则按表格或用户是否明确为某英雄判断；若后续确认为英雄专属，应迁移到英雄目录并删除 Common* 中的定义与注册。
 
 ## 英文名
 

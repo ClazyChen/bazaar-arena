@@ -122,11 +122,16 @@ public class BattleSimulator
                 {
                     var side = item.SideIndex == 0 ? side0 : side1;
                     int ammoCap = side.GetItemInt(item.ItemIndex, Key.AmmoCap, 0);
-                    if (ammoCap > 0)
-                        item.AmmoRemaining--;
-                    logSink.OnCast(item, item.Template.Name, timeMs, ammoCap > 0 ? item.AmmoRemaining : null);
                     int multicast = side.GetItemInt(item.ItemIndex, Key.Multicast, 1);
-                    InvokeTrigger(Trigger.UseItem, item, new TriggerInvokeContext { Multicast = multicast, UsedTemplate = item.Template }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                    InvokeTrigger(Trigger.UseItem, item, new TriggerInvokeContext { Multicast = multicast, UsedTemplate = item.Template }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue,
+                        executeImmediate: (owner, abilityIdx, ability) =>
+                        {
+                            var entry = new AbilityQueueEntry { Owner = owner, AbilityIndex = abilityIdx, PendingCount = 1 };
+                            ExecuteOneEffect(owner, ability, entry, false, 200, side0, side1, timeMs, logSink, castQueue, currentAbilityQueue, nextAbilityQueue);
+                        });
+                    if (ammoCap > 0)
+                        item.AmmoRemaining = Math.Max(0, item.AmmoRemaining - 1);
+                    logSink.OnCast(item, item.Template.Name, timeMs, ammoCap > 0 ? item.AmmoRemaining : null);
                     if (ammoCap > 0)
                         InvokeTrigger(Trigger.Ammo, item, null, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
                 }
@@ -397,9 +402,10 @@ public class BattleSimulator
             next.Add(newEntry);
     }
 
-    /// <summary>统一触发器调用：给定触发器名、引起触发的物品与上下文，遍历双方所有物品；条件匹配的能力入队（Immediate→current，其余→next）。Condition 评估时 Item=引起触发的物品、Source=能力持有者。</summary>
+    /// <summary>统一触发器调用：给定触发器名、引起触发的物品与上下文，遍历双方所有物品；条件匹配的能力入队（Immediate→current，其余→next）。若传入 executeImmediate，则 Immediate 能力不入队、当场执行。Condition 评估时 Item=引起触发的物品、Source=能力持有者。</summary>
     private static void InvokeTrigger(string triggerName, BattleItemState? causeItem, TriggerInvokeContext? context, int timeMs,
-        BattleSide side0, BattleSide side1, List<AbilityQueueEntry> current, List<AbilityQueueEntry> next)
+        BattleSide side0, BattleSide side1, List<AbilityQueueEntry> current, List<AbilityQueueEntry> next,
+        Action<BattleItemState, int, AbilityDefinition>? executeImmediate = null)
     {
         int pendingCount = (triggerName == Trigger.UseItem || triggerName == Trigger.Freeze || triggerName == Trigger.Slow || triggerName == Trigger.Haste || triggerName == Trigger.Burn || triggerName == Trigger.Poison) && context?.Multicast is int m ? m : 1;
         Func<BattleItemState, IReadOnlySet<string>> getEffectiveTags = item => EffectiveTagHelper.GetEffectiveTags(side0, side1, item);
@@ -452,6 +458,11 @@ public class BattleSimulator
                                 };
                                 if (!ab.InvokeTargetCondition.Evaluate(invokeTargetCtx)) continue;
                             }
+                            if (ab.Priority == AbilityPriority.Immediate && executeImmediate != null)
+                            {
+                                executeImmediate(abilityOwner, a, ab);
+                                continue;
+                            }
                             AddOrMergeAbility(abilityOwner, a, ab, pendingCount, current, next, context?.InvokeTargetItem?.SideIndex, context?.InvokeTargetItem?.ItemIndex);
                             continue;
                         }
@@ -498,6 +509,11 @@ public class BattleSimulator
                         }
 
                         if (!matched) continue;
+                        if (ab.Priority == AbilityPriority.Immediate && executeImmediate != null)
+                        {
+                            executeImmediate(abilityOwner, a, ab);
+                            continue;
+                        }
                         AddOrMergeAbility(abilityOwner, a, ab, pendingCount, current, next, context?.InvokeTargetItem?.SideIndex, context?.InvokeTargetItem?.ItemIndex);
                 }
             }

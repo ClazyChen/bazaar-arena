@@ -28,7 +28,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 - **结构**：`Auras` 为 `List<AuraDefinition>`。每条含：
   - **AttributeName**：作用的属性名，用 **Key.CritRatePercent**、**Key.Damage** 等。
-  - **Condition**：对该目标生效的条件，默认 `Condition.SameAsSource`；可用 `Condition.AdjacentToSource`、`Condition.WithTag(Tag.Weapon)` 等。
+  - **Condition**：对该目标生效的条件，**默认 SameAsSource**；仅当**非** SameAsSource 时才显式写（如 `Condition.AdjacentToSource`、`Condition.WithTag(Tag.Weapon)`）。**不要**写 `Condition = Condition.SameAsSource`（冗余，AuraDefinition 默认即为此）。
   - **SourceCondition**：光环提供者需满足的条件（如 `Condition.InFlight`、`Condition.OnlyCompanion`），评估时 Item=Source=提供者。
   - **Value**：`Formula?`，由 `Formula.Evaluate` 计算。如 `Formula.Source(Key.Custom_0)`、`Formula.Opp(BattleSide.KeyPoison)`、`Formula.Source(Key.Custom_0) * Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Friend))`。`FixedValueKey` / `FixedValueFormula` / `PercentValueKey` 已废弃，统一为 **Value + Percent**。
   - **Percent**：`bool`，默认 false。为 true 时公式结果为百分比加成（+N% 加算），如利爪暴击伤害 +100%。
@@ -36,8 +36,8 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 ### 可复写属性与其它
 
-- **OverridableAttributes**：`Dictionary<string, IntOrByTier>?`，卡组内可复写属性及按 tier 默认值。键用 **Key.StashParameter** 等，如 `OverridableAttributes = new Dictionary<string, IntOrByTier> { [Key.StashParameter] = [1,2,3,4] }`。
-- **StashParameter**：`IntOrByTier`，用于如储物箱「小型物品数 + StashParameter」类公式。
+- **OverridableAttributes**：`Dictionary<string, IntOrByTier>?`，卡组内可复写属性及按 tier 默认值。键用 **Key.Custom_1**、**Key.StashParameter** 等。**约定：仅在此处写一次默认值**，不要在模板上再写同名属性（如只写 `OverridableAttributes = { [Key.Custom_1] = [5, 10, 15, 20] }`，不写 `Custom_1 = [5, 10, 15, 20]`）；**Register** 会将 OverridableAttributes 的默认值同步到模板，供战斗内公式与 Desc 使用。详见 `docs/implementation-notes.md`「OverridableAttributes 与 Aura Condition 约定」。
+- **StashParameter**：用于如储物箱「小型物品数 + StashParameter」类公式时，默认值只写在 **OverridableAttributes** 中即可。
 - **弹药**：`AmmoCap`（0 表示无弹药）；使用后扣减 `AmmoRemaining`，日志可显示剩余弹药。
 - **战斗内模板**：每场战斗每个槽位用卡组 template 克隆；`BattleItemState.Template` 即该克隆，可直接修改（如 `Template.Damage = Template.Damage.Add(delta)`）。
 
