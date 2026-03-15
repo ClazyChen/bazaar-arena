@@ -112,7 +112,7 @@ public class BattleSimulator
                 sandstormNextTickMs = timeMs + sandstormIntervalMs;
             }
 
-            // 7-8. 施放队列产生的能力加入 nextAbilityQueue（下一帧才处理）；步骤 8 只处理 currentAbilityQueue；延后/未消耗的入 nextAbilityQueue；仅步骤 11 将 nextAbilityQueue 移入 currentAbilityQueue
+            // 7-8. 施放队列产生的能力加入 nextAbilityQueue（下一帧才处理）；步骤 8 只处理 currentAbilityQueue；延后/未消耗的入 nextAbilityQueue；仅步骤 9 将 nextAbilityQueue 移入 currentAbilityQueue
             do
             {
                 var toProcess = new List<BattleItemState>(castQueue);
@@ -181,12 +181,12 @@ public class BattleSimulator
                 }
             } while (castQueue.Count > 0);
 
-            // 11. 能力队列更新到下一帧（移入 currentAbilityQueue，供下一帧步骤 8 处理）
+            // 9. 能力队列更新到下一帧（移入 currentAbilityQueue，供下一帧步骤 8 处理）
             currentAbilityQueue.Clear();
             foreach (var e in nextAbilityQueue) currentAbilityQueue.Add(e);
             nextAbilityQueue.Clear();
 
-            // 9. 胜负判定（先输出本帧结算后的最终生命，再通知结果）
+            // 10. 胜负判定（先输出本帧结算后的最终生命，再通知结果）
             bool dead0 = side0.Hp <= 0;
             bool dead1 = side1.Hp <= 0;
             if (dead0 && dead1)
@@ -208,7 +208,7 @@ public class BattleSimulator
                 return 1;
             }
 
-            // 10. 沙尘暴 120s 结束判平局
+            // 11. 沙尘暴 120s 结束判平局
             if (timeMs >= SandstormEndMs)
             {
                 logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);

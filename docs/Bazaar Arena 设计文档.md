@@ -79,10 +79,10 @@
   * 4. 若为 1000ms 倍数：剧毒结算、生命再生结算。
   * 5. 若为 500ms 倍数：灼烧结算。
   * 6. 若在沙尘暴时间窗内且到达下次 tick：沙尘暴伤害与间隔更新。
-  * 7-8. **循环**（do-while，至少执行一次，直到施放队列清空）：**步骤 7（循环内）**：遍历本轮施放队列，以**触发器调用**方式（如「使用物品」「使用其他物品」）遍历双方卡组寻找可触发能力；新能力加入队列时 **PendingCount 通用合并**：先在 currentAbilityQueue 中查找同 (阵营,物品,能力)，有则只加 PendingCount，否则再查 nextAbilityQueue，都没有则新条目加入 **nextAbilityQueue**（仅优先级为 Immediate 的才加入 currentAbilityQueue），**下一帧**才由步骤 11 移入 current 并在步骤 8 处理。**步骤 8（循环内）**：**只处理 currentAbilityQueue**（250ms 间隔、优先级），执行能力效果；执行过程中若引发新能力（如后续扩展的触发器），同样通过上述规则入队：**只有 Immediate 入 currentAbilityQueue，其余一律入 nextAbilityQueue**；未到 250ms 或未用完的 Pending 写入 **nextAbilityQueue**；若某效果使某物品充能满（如充能效果），则将该物品加入施放队列并重置冷却，循环继续，从而同一帧内完成「充能满 → 立刻施放」。
-  * 11. **能力队列更新到下一帧**（**仅此处**将 nextAbilityQueue 移入 currentAbilityQueue）：将 nextAbilityQueue（含未到 250ms 的延后项与未用完的多重触发）移入 currentAbilityQueue，供下一帧步骤 8 处理。
-  * 9. 胜负判定：若双方生命值归零则平局，若一方归零则对方获胜。
-  * 10. 若沙尘暴 120s 结束：判平局。
+  * 7-8. **循环**（do-while，至少执行一次，直到施放队列清空）：**步骤 7（循环内）**：遍历本轮施放队列，以**触发器调用**方式（如「使用物品」「使用其他物品」）遍历双方卡组寻找可触发能力；新能力加入队列时 **PendingCount 通用合并**：先在 currentAbilityQueue 中查找同 (阵营,物品,能力)，有则只加 PendingCount，否则再查 nextAbilityQueue，都没有则新条目加入 **nextAbilityQueue**（仅优先级为 Immediate 的才加入 currentAbilityQueue），**下一帧**才由步骤 9 移入 current 并在步骤 8 处理。**步骤 8（循环内）**：**只处理 currentAbilityQueue**（250ms 间隔、优先级），执行能力效果；执行过程中若引发新能力（如后续扩展的触发器），同样通过上述规则入队：**只有 Immediate 入 currentAbilityQueue，其余一律入 nextAbilityQueue**；未到 250ms 或未用完的 Pending 写入 **nextAbilityQueue**；若某效果使某物品充能满（如充能效果），则将该物品加入施放队列并重置冷却，循环继续，从而同一帧内完成「充能满 → 立刻施放」。
+  * 9. **能力队列更新到下一帧**（**仅此处**将 nextAbilityQueue 移入 currentAbilityQueue）：将 nextAbilityQueue（含未到 250ms 的延后项与未用完的多重触发）移入 currentAbilityQueue，供下一帧步骤 8 处理。
+  * 10. 胜负判定：若双方生命值归零则平局，若一方归零则对方获胜。
+  * 11. 若沙尘暴 120s 结束：判平局。
   * 计算属性时会插入光环结算。能力效果按上述能力队列与 250ms 间隔在当帧或后续帧结算。
 * 弹药（ammo）是一项基本机制。如果一个物品具有非默认（0）的弹药上限，则该物品的使用需要依赖于弹药。
   
@@ -160,7 +160,7 @@
 
 * 循环变量为时间（毫秒），从 0 开始，每帧前进 50。
 * 施放队列：当前帧中等待施放的物品的队列。
-* 能力队列采用双队列：**currentAbilityQueue**（本帧步骤 8 唯一处理）、**nextAbilityQueue**（延后项与未用完的多重触发）；**仅步骤 11** 将 next 移入 current。
+* 能力队列采用双队列：**currentAbilityQueue**（本帧步骤 8 唯一处理）、**nextAbilityQueue**（延后项与未用完的多重触发）；**仅步骤 9** 将 next 移入 current。
 
 每帧流程（与 BattleSimulator 注释编号一致）：
 
@@ -173,10 +173,9 @@
 7. **循环**（do-while，直到施放队列清空）：
    * **步骤 7**：遍历本轮施放队列中的物品；消耗弹药（若依赖弹药）；以**统一触发器调用**（传入来源物品与上下文）将「使用物品」「使用其他物品」等可触发能力加入能力队列。新能力合并规则：先查 current 再查 next，同 (阵营,物品,能力) 则只加 PendingCount；都没有则新条目加入 **nextAbilityQueue**（仅 Immediate 加入 currentAbilityQueue），即本帧施放的效果在下一帧才进入 current 并在步骤 8 执行。
    * **步骤 8**：**只处理 currentAbilityQueue**。若某能力未到触发间隔（250ms）或 Pending 未用完，则写回 nextAbilityQueue；否则执行该能力一次效果（暴击判定、效果队列中一次），PendingCount 减 1，未用完则写回 next。执行效果时可能引发新能力（如充能满），新能力按上述规则入队（仅 Immediate 入 current）；若充能满则将该物品加入施放队列并重置冷却，循环继续。
-8. **能力队列更新到下一帧**（**仅此处**将 next 移入 current）：nextAbilityQueue 全部移入 currentAbilityQueue，供下一帧步骤 8 处理。
-9. 根据双方当前生命值判定胜负：双方均≤0 则平局，一方≤0 则对方获胜。
-10. 若沙尘暴 120s 结束且胜负未分：判平局。
-11. 若胜负未分，进入下一帧。
+9. **能力队列更新到下一帧**（**仅此处**将 next 移入 current）：nextAbilityQueue 全部移入 currentAbilityQueue，供下一帧步骤 8 处理。
+10. 根据双方当前生命值判定胜负：双方均≤0 则平局，一方≤0 则对方获胜。
+11. 若沙尘暴 120s 结束且胜负未分：判平局。若胜负未分则进入下一帧。
 
 ## 卡组规则
 

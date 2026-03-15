@@ -20,9 +20,9 @@
 ### 正确做法
 
 - **步骤（8）**：只遍历并处理**当前帧**的 `currentAbilityQueue`（即上一帧末已经移入的条目）。
-- **步骤（8）结算完成后**：再将 `nextAbilityQueue` 整体移入 `currentAbilityQueue`，清空 `nextAbilityQueue`，供下一轮循环使用。
+- **步骤（9）**：步骤（8）结算完成后，将 `nextAbilityQueue` 整体移入 `currentAbilityQueue`，清空 `nextAbilityQueue`，供下一轮循环使用。
 
-这样步骤（7）本帧加入的条目会留在 `nextAbilityQueue`，直到本帧结束才被移入 `currentAbilityQueue`，在下一帧的步骤（8）才被处理。
+这样步骤（7）本帧加入的条目会留在 `nextAbilityQueue`，直到本帧结束才在步骤（9）被移入 `currentAbilityQueue`，在下一帧的步骤（8）才被处理。
 
 ### 小结
 
@@ -34,7 +34,7 @@
    步骤 7 中，施放队列产生的能力仅通过一次 `InvokeTrigger(Trigger.UseItem, ...)` 加入 **nextAbilityQueue**，不能加入 currentAbilityQueue。「其他物品使用则触发」类能力用 `Trigger.UseItem` + `Condition = And(DifferentFromSource, SameSide)[ + 额外条件 ]` 表达。若误入 current，本帧步骤 8 就会处理，变成「本帧施放、本帧生效」，违反「上一帧留下的能力在本帧结算」的约定。
 
 2. **步骤 8 只处理 currentAbilityQueue**  
-   步骤 8 遍历、消耗的必须是 **currentAbilityQueue**（拷贝后清空 current，再逐条处理）；未到 250ms 或 PendingCount 未用完的写回 **nextAbilityQueue**。**只有步骤 11** 才能把 nextAbilityQueue 移入 currentAbilityQueue；在步骤 8 开头或循环前做「next → current」都是错误的。
+   步骤 8 遍历、消耗的必须是 **currentAbilityQueue**（拷贝后清空 current，再逐条处理）；未到 250ms 或 PendingCount 未用完的写回 **nextAbilityQueue**。**只有步骤 9** 才能把 nextAbilityQueue 移入 currentAbilityQueue；在步骤 8 开头或循环前做「next → current」都是错误的。
 
 3. **步骤 8 执行过程中引发的新能力**  
    ExecuteOneEffect 执行效果时可能触发新能力（如后续扩展的触发器）。这些新能力入队规则：**仅优先级为 Immediate 的加入 currentAbilityQueue**（本帧继续被步骤 8 处理），**其余一律加入 nextAbilityQueue**。因此 ExecuteOneEffect 需要接收 current/next 两个队列参数，供未来触发器调用使用。
@@ -44,7 +44,7 @@
    - **PendingCount 为通用机制**：新能力入队时，**先查 currentAbilityQueue** 是否存在同 (Owner, AbilityIndex) 且无 InvokeTarget 的条目，有则只加 PendingCount；**再查 nextAbilityQueue** 同上；**都没有**才新建条目。当 context 提供 InvokeTargetItem 时**不合并**，直接新建条目（该条目带 InvokeTargetSideIndex/InvokeTargetItemIndex）。250ms 节流状态存于物品（GetLastTriggerMs/SetLastTriggerMs），见「能力队列 250ms 节流状态与冷却缩短联动」。
 
 5. **总结**  
-   修改能力队列逻辑时务必对照：cast/使用物品 → 只入 next；步骤 8 只消费 current；next → current 仅步骤 11；新触发能力先合并 PendingCount（current 再 next），再按优先级决定入 current 或 next。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。
+   修改能力队列逻辑时务必对照：cast/使用物品 → 只入 next；步骤 8 只消费 current；next → current 仅步骤 9；新触发能力先合并 PendingCount（current 再 next），再按优先级决定入 current 或 next。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。
 
 ---
 

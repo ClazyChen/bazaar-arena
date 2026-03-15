@@ -10,14 +10,14 @@ alwaysApply: false
 
 ## 双队列语义
 
-- **currentAbilityQueue**：本帧步骤 8 **唯一**处理的对象；内容来自上一帧步骤 11 从 next 移入的条目。
+- **currentAbilityQueue**：本帧步骤 8 **唯一**处理的对象；内容来自上一帧步骤 9 从 next 移入的条目。
 - **nextAbilityQueue**：本帧延后（未到 250ms）、未消耗完 Pending 的条目写回此处；**本帧施放产生的新能力也只加入此处**（见下）。
-- **唯一允许「next → current」的位置**：**仅步骤 11**。在步骤 8 开头、循环前或任何其他地方做「把 next 移入 current」都是错误。
+- **唯一允许「next → current」的位置**：**仅步骤 9**。在步骤 8 开头、循环前或任何其他地方做「把 next 移入 current」都是错误。
 
 ## 施放队列（castQueue）触发的能力
 
 - 步骤 7 中，由 castQueue 触发的「使用物品」能力，**必须加入 nextAbilityQueue**，不能加入 currentAbilityQueue。仅调用一次 `InvokeTrigger(Trigger.UseItem, ...)`；「其他物品使用则触发」通过能力 Condition = `And(DifferentFromSource, SameSide)[ + 额外条件 ]` 表达。
-- 这样这些能力会在下一帧经步骤 11 进入 current，再在下一帧的步骤 8 被处理，即「本帧施放、下一帧生效」。
+- 这样这些能力会在下一帧经步骤 9 进入 current，再在下一帧的步骤 8 被处理，即「本帧施放、下一帧生效」。
 
 ## 步骤 8 执行过程中引发的新能力
 
@@ -49,5 +49,5 @@ alwaysApply: false
 
 ## 设计文档对照
 
-- 实现与 `docs/Bazaar Arena 设计文档.md` 中「每一帧的结算顺序」步骤 7、8、11 一致。
+- 实现与 `docs/Bazaar Arena 设计文档.md` 中「每一帧的结算顺序」步骤 7、8、9 一致。
 - 更多错误案例与修正经验见 `docs/implementation-notes.md` 中「对战模拟器：能力队列的帧边界」「能力优先级与步骤 8 执行顺序」等节。
