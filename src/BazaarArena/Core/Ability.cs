@@ -72,6 +72,17 @@ public static class Ability
         Priority = AbilityPriority.Medium,
     };
 
+    /// <summary>获取金币（Effect.GainGoldApply）。默认触发器 UseItem；数值来自模板的 Gold，不参与暴击。</summary>
+    public static AbilityDefinition GainGold => new()
+    {
+        TriggerName = Trigger.UseItem,
+        Condition = Condition.SameAsSource,
+        ValueKey = Key.Gold,
+        ApplyCritMultiplier = false,
+        Apply = Effect.GainGoldApply,
+        Priority = AbilityPriority.Medium,
+    };
+
     /// <summary>充能（Effect.ChargeApply）。默认触发器 UseItem；目标默认己方、未摧毁且有冷却；定制用 .Override(...)。</summary>
     public static AbilityDefinition Charge => new()
     {

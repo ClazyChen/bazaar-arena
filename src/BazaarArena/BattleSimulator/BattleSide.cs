@@ -2,7 +2,7 @@ using BazaarArena.Core;
 
 namespace BazaarArena.BattleSimulator;
 
-/// <summary>单方玩家战斗状态：生命、护盾、灼烧、剧毒、生命再生与物品列表。数值字段存于字典，可通过名字访问。</summary>
+/// <summary>单方玩家战斗状态：生命、护盾、灼烧、剧毒、生命再生、金币与物品列表。数值字段存于字典，可通过名字访问。</summary>
 public class BattleSide
 {
     /// <summary>阵营/生命/护盾等数值键，用于按名解析（如公式、日志）。</summary>
@@ -13,6 +13,8 @@ public class BattleSide
     public const string KeyBurn = "Burn";
     public const string KeyPoison = "Poison";
     public const string KeyRegen = "Regen";
+    /// <summary>金币数量，默认 0；后续可能影响战斗或结算。</summary>
+    public const string KeyGold = "Gold";
 
     private readonly Dictionary<string, int> _values = [];
 
@@ -31,6 +33,8 @@ public class BattleSide
     public int Burn { get => GetInt(KeyBurn, 0); set => SetInt(KeyBurn, value); }
     public int Poison { get => GetInt(KeyPoison, 0); set => SetInt(KeyPoison, value); }
     public int Regen { get => GetInt(KeyRegen, 0); set => SetInt(KeyRegen, value); }
+    /// <summary>本侧金币数量，默认 0。</summary>
+    public int Gold { get => GetInt(KeyGold, 0); set => SetInt(KeyGold, value); }
 
     public List<BattleItemState> Items { get; set; } = [];
 

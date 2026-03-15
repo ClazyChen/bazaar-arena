@@ -182,4 +182,40 @@ public class Condition
         }
         return count == 1;
     });
+
+    /// <summary>被评估对象是己方满足 inner 条件的物品中 ItemIndex 最小的那一件（左端）。用于「己方最左侧的武器」等。遍历时跳过已摧毁。</summary>
+    public static Condition LeftMost(Condition inner) => new(ctx =>
+    {
+        if (ctx.Item == null || ctx.Item.SideIndex != ctx.Source.SideIndex) return false;
+        if (ctx.Item.Destroyed) return false;
+        if (!inner.Evaluate(ctx)) return false;
+        int minIdx = int.MaxValue;
+        for (int i = 0; i < ctx.MySide.Items.Count; i++)
+        {
+            var it = ctx.MySide.Items[i];
+            if (it.Destroyed) continue;
+            var subCtx = ctx with { Item = it };
+            if (inner.Evaluate(subCtx))
+                minIdx = Math.Min(minIdx, i);
+        }
+        return minIdx != int.MaxValue && ctx.Item.ItemIndex == minIdx;
+    });
+
+    /// <summary>被评估对象是己方满足 inner 条件的物品中 ItemIndex 最大的那一件（右端）。用于「己方最右侧的武器」等。遍历时跳过已摧毁。</summary>
+    public static Condition RightMost(Condition inner) => new(ctx =>
+    {
+        if (ctx.Item == null || ctx.Item.SideIndex != ctx.Source.SideIndex) return false;
+        if (ctx.Item.Destroyed) return false;
+        if (!inner.Evaluate(ctx)) return false;
+        int maxIdx = -1;
+        for (int i = 0; i < ctx.MySide.Items.Count; i++)
+        {
+            var it = ctx.MySide.Items[i];
+            if (it.Destroyed) continue;
+            var subCtx = ctx with { Item = it };
+            if (inner.Evaluate(subCtx))
+                maxIdx = Math.Max(maxIdx, i);
+        }
+        return maxIdx >= 0 && ctx.Item.ItemIndex == maxIdx;
+    });
 }

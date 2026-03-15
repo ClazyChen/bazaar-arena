@@ -12,17 +12,21 @@ public static class ConcealedDagger
         return new ItemTemplate
         {
             Name = "藏刃匕首",
-            Desc = "▶ 造成 {Damage} 伤害；▶ 加速 {HasteTargetCount} 件物品 {HasteSeconds} 秒",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 加速 {HasteTargetCount} 件物品 {HasteSeconds} 秒；战斗开始时，获得 {Gold} 金币",
             Tags = [Tag.Weapon],
             Cooldown = 4.0,
             Damage = [10, 20, 30, 40],
             Haste = [1.0, 2.0, 3.0, 4.0],
+            Gold = 1,
             Abilities =
             [
                 Ability.Damage,
                 Ability.Haste.Override(
                     priority: AbilityPriority.High
                 ),
+                Ability.GainGold.Override(
+                    trigger: Trigger.BattleStart
+                )
             ],
         };
     }
@@ -33,13 +37,15 @@ public static class ConcealedDagger
         return new ItemTemplate
         {
             Name = "藏刃匕首_S1",
-            Desc = "▶ 造成 {Damage} 伤害",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 获得 {Gold} 金币",
             Tags = [Tag.Weapon],
             Cooldown = 9.0,
             Damage = [30, 40, 50],
+            Gold = [1, 2, 3],
             Abilities =
             [
                 Ability.Damage,
+                Ability.GainGold
             ],
         };
     }

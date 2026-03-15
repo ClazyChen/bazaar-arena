@@ -11,6 +11,7 @@ public static class AttributeLogNames
         [Key.Burn] = "灼烧",
         [Key.Poison] = "剧毒",
         [Key.CritRatePercent] = "暴击率",
+        [Key.Gold] = "金币",
         [Key.InFlight] = "飞行",
         [Key.FreezeRemainingMs] = "冻结",
         [Key.CooldownMs] = "冷却时间",
@@ -86,6 +87,14 @@ public static class Effect
         int value = ctx.GetResolvedValue(KeyRegen, applyCritMultiplier: true);
         ctx.AddRegenToCaster(value);
         ctx.LogEffect("生命再生", value, showCrit: ctx.IsCrit);
+    };
+
+    /// <summary>获取金币：数值来自模板的 Gold；为己方增加金币，不参与暴击。</summary>
+    public static readonly Action<IEffectApplyContext> GainGoldApply = ctx =>
+    {
+        int value = ctx.GetResolvedValue(Key.Gold, applyCritMultiplier: false);
+        ctx.AddGoldToCaster(value);
+        ctx.LogEffect("金币", value, showCrit: false);
     };
 
     /// <summary>充能：根据 TargetCountKey（默认 ChargeTargetCount）与 Charge（毫秒）选取满足能力 TargetCondition 的己方物品施加充能（默认未摧毁且有冷却）；不参与暴击。</summary>

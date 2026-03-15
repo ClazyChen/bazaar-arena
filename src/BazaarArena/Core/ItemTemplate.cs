@@ -111,6 +111,7 @@ public class ItemTemplate
     private const string KeyPoison = "Poison";
     private const string KeyHeal = "Heal";
     private const string KeyShield = "Shield";
+    private const string KeyGold = "Gold";
     private const string KeyCharge = "Charge";
     private const string KeyChargeTargetCount = "ChargeTargetCount";
     private const string KeyFreeze = "Freeze";
@@ -261,6 +262,9 @@ public class ItemTemplate
 
     /// <summary>护盾值（可单值或按等级）。</summary>
     public IntOrByTier Shield { get => GetInt(KeyShield, 0); set => SetIntOrByTier(KeyShield, value.ToList()); }
+
+    /// <summary>获取金币数量（可单值或按等级）；用于 Ability.GainGold。</summary>
+    public IntOrByTier Gold { get => GetInt(KeyGold, 0); set => SetIntOrByTier(KeyGold, value.ToList()); }
 
     /// <summary>充能时间（秒，可单值或按等级）。Charge = 2.0 或 Charge = [1.0, 2.0]；内部存为毫秒。</summary>
     public SecondsOrByTier Charge { get => SecondsOrByTier.FromMilliseconds(GetIntOrByTier(KeyCharge).ToList()); set => SetIntOrByTier(KeyCharge, value.ToMilliseconds()); }

@@ -53,6 +53,9 @@ public interface IEffectApplyContext
     /// <summary>为己方增加生命再生。</summary>
     void AddRegenToCaster(int value);
 
+    /// <summary>为己方增加金币。</summary>
+    void AddGoldToCaster(int value);
+
     /// <summary>为施放者物品充能（毫秒）；fullAndShouldCast 表示是否已满且应加入施放队列。</summary>
     void ChargeCasterItem(int chargeMs, out bool fullAndShouldCast);
 

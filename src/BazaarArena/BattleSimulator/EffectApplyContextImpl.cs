@@ -50,6 +50,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     }
 
     public void AddRegenToCaster(int value) => Side.Regen += value;
+    public void AddGoldToCaster(int value) => Side.Gold += value;
 
     public void ChargeCasterItem(int chargeMs, out bool fullAndShouldCast)
     {

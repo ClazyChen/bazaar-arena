@@ -205,6 +205,20 @@
 
 ---
 
+## 从表格添加物品的约定
+
+当用户以**表格图片**形式提供物品需求（列：Name、版本、minTier、Size、CD、TAG、效果）时：
+
+- **列映射**：Name → 中文名；版本第一行无后缀（当前版本）、其他行 _Sx；minTier B/S/G/D → Bronze/Silver/Gold/Diamond；Size S/M/L → Small/Medium/Large；CD → Cooldown（秒）；TAG → Tags；效果 → Desc（多条用分号隔开）与 Abilities/Auras。
+- **优先级**：效果末尾 (I)/(Hst)/(H)/(L)/(Lst) 分别对应 Immediate/Highest/High/Low/Lowest；无标注则 Medium，不需 Override priority。
+- **英文名**：用户会给出英文名（如 Honing Steel），**文件名**与**类名**取 PascalCase（如 `HoningSteel.cs`、类 `HoningSteel`），工厂方法 `Template()`、`Template_Sx()`。
+- **常用目标条件**：「己方最左侧/最右侧的武器」→ **Condition.LeftMost(Condition.WithTag(Tag.Weapon)) | Condition.RightMost(Condition.WithTag(Tag.Weapon))**（见 `Core/Condition.cs`）；「此物品右侧的武器」→ **Condition.RightOfSource & Condition.WithTag(Tag.Weapon)**；「使用其他某类物品时」须在 condition 中加 **Condition.DifferentFromSource**。
+- **归属**：表格或用户明确为海盗/某英雄时，放在 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;**，一物一文件；未标注时可为 Common*，后续若确认为英雄专属须迁移。
+
+详见 **.cursor/rules/item-table-convention.mdc**。
+
+---
+
 ## 运行时变量与字典（ItemTemplate / BattleSide）
 
 ### 设计目标
