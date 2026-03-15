@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using BazaarArena.Core;
 
 namespace BazaarArena.ItemDatabase;
@@ -13,6 +14,9 @@ public class ItemDatabase : IItemTemplateResolver
     /// <summary>注册时用于填充模板的默认最低档位；在 RegisterAll 中按批次设置（如 Bronze 注册完再设为 Silver）。</summary>
     public ItemTier DefaultMinTier { get; set; } = ItemTier.Bronze;
 
+    /// <summary>注册时用于填充模板的默认英雄；在 RegisterAll 中按批次设置，避免同一文件中反复定义。</summary>
+    public string DefaultHero { get; set; } = Hero.Common;
+
     public ItemTemplate? GetTemplate(string name) =>
         _templates.TryGetValue(name, out var t) ? t : null;
 
@@ -20,11 +24,47 @@ public class ItemDatabase : IItemTemplateResolver
     public IReadOnlyList<string> GetAllNames() =>
         _templates.Keys.OrderBy(x => x, StringComparer.Ordinal).ToList();
 
-    /// <summary>注册物品模板；会将当前 DefaultSize、DefaultMinTier 写入模板后存入，并根据属性自动补充类型 Tag（护盾/伤害/灼烧等）。</summary>
+    /// <summary>去掉末尾 _S\d+ 得到基名；无后缀则返回原名。多版本约定：无后缀=最新，_Sx=第 x 赛季。</summary>
+    public static string GetBaseName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return name ?? "";
+        var m = Regex.Match(name.Trim(), @"^(.+)_S(\d+)$");
+        return m.Success ? m.Groups[1].Value : name.Trim();
+    }
+
+    /// <summary>名称匹配 _S\d+$ 视为历史版本。</summary>
+    public static bool IsHistoricalVersion(string name) =>
+        !string.IsNullOrWhiteSpace(name) && Regex.IsMatch(name.Trim(), @"_S\d+$");
+
+    /// <summary>获取仅“最新版本”的名称列表（不含 _Sx 后缀），供 GUI 默认物品池使用。</summary>
+    public IReadOnlyList<string> GetLatestOnlyNames() =>
+        _templates.Keys.Where(n => !IsHistoricalVersion(n)).OrderBy(x => x, StringComparer.Ordinal).ToList();
+
+    /// <summary>该基名对应的所有版本名，顺序：无后缀（若存在）在前，其余按 _S 后数字降序（S10 在 S7 前）。</summary>
+    public IReadOnlyList<string> GetVersionCycle(string baseName)
+    {
+        if (string.IsNullOrWhiteSpace(baseName)) return [];
+        var baseTrim = baseName.Trim();
+        var withBase = _templates.ContainsKey(baseTrim);
+        var historical = _templates.Keys
+            .Where(k => k.StartsWith(baseTrim + "_S", StringComparison.Ordinal) && Regex.IsMatch(k, @"_S\d+$"))
+            .Select(k => (Name: k, Num: int.Parse(Regex.Match(k, @"_S(\d+)$").Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture)))
+            .OrderByDescending(x => x.Num)
+            .Select(x => x.Name)
+            .ToList();
+        if (!withBase && historical.Count == 0) return [];
+        var list = new List<string>();
+        if (withBase) list.Add(baseTrim);
+        list.AddRange(historical);
+        return list;
+    }
+
+    /// <summary>注册物品模板；会将当前 DefaultSize、DefaultMinTier、DefaultHero 写入模板后存入，并根据属性自动补充类型 Tag（护盾/伤害/灼烧等）。</summary>
     public void Register(ItemTemplate template)
     {
         template.Size = DefaultSize;
         template.MinTier = DefaultMinTier;
+        template.Hero = DefaultHero;
         EnsureTypeTags(template);
         _templates[template.Name] = template;
     }

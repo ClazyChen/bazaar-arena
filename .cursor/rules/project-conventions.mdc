@@ -21,6 +21,8 @@ alwaysApply: true
 
 - **Ability 多触发与 Ability.Also**：当同一条效果语义需要在多个触发器/条件下生效、且数值、目标与优先级完全一致并需要共享 250ms 触发间隔时，优先使用一条能力 + 多次 **ability.Also(...)**（如 `Ability.Damage.Override(...).Also(trigger: Trigger.BattleStart, condition: ...)`），而不是复制多条几乎相同的能力定义；`Also` 的参数顺序与缩进风格与 `Override` 保持一致（先 trigger，再 condition/additionalCondition，再 invokeTargetCondition/sourceCondition），不修改 Priority/TargetCondition/ValueKey 等共享属性。
 
+- **物品多版本命名**：同一物品可有多个版本注册；**无后缀**表示最新版本，**`[物品名]_Sx`** 表示第 x 赛季版本（如 `獠牙_S10`）。历史版本同样用**基名**（去掉 `_Sx`）定位显示图片（`pictures/png/<基名>.png`）。GUI 默认物品池只显示最新版本（`GetLatestOnlyNames()`）；可选物品区与卡组内**右键**可循环切换版本（最新→较高赛季→较低赛季→最新），左键可将当前显示的版本拖入卡组；左键点击其他位置且未拖拽入卡组时，池中已切换到历史版本的项会重置为显示最新版本。详见 `docs/implementation-notes.md`「多版本物品与 GUI 版本切换」。
+
 - **与游戏对齐的物品与测试物品**：`ItemDatabase/CommonSmall.cs`、`CommonMedium.cs`、`CommonLarge.cs` 中已有物品用于对齐当前版本的 The Bazaar，不得为调试/实验随意修改数值、文案或能力行为；如需验证新机制（如 Ability 多触发），应在 `ItemDatabase` 下新建独立文件定义测试物品，并在对应 `RegisterAll` 中**临时**注册，测试通过后移除这些注册语句，避免测试物品进入正式卡组。
 
 - **对战模拟器能力队列**：修改 `BattleSimulator` 中能力队列、施放队列或触发器逻辑时，必须遵守 **.cursor/rules/battle-simulator-ability-queue.mdc**（仅步骤 9 做 next→current、cast 触发的能力入 next、步骤 8 只处理 current、新能力按优先级入 current/next、PendingCount 先 current 再 next）。

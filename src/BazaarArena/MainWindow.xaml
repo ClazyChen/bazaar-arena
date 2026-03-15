@@ -50,7 +50,8 @@
                            TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24" FontSize="14"/>
                 <Grid x:Name="EditorPanel" Visibility="Collapsed" Margin="16"
                       DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
-                      AllowDrop="True" DragOver="EditorArea_DragOver" Drop="EditorArea_Drop">
+                      AllowDrop="True" DragOver="EditorArea_DragOver" Drop="EditorArea_Drop"
+                      PreviewMouseLeftButtonUp="EditorPanel_PreviewMouseLeftButtonUp">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -186,15 +187,16 @@
                                 <DataTemplate>
                                     <Border MinWidth="64" Width="96" Margin="0,0,8,8" Padding="4" Background="#2a2a2a" BorderBrush="#555" BorderThickness="1" CornerRadius="4"
                                             Cursor="Hand" PreviewMouseLeftButtonDown="ItemPoolTile_PreviewMouseLeftButtonDown"
+                                            PreviewMouseRightButtonDown="ItemPoolTile_PreviewMouseRightButtonDown"
                                             ToolTipService.InitialShowDelay="400" ToolTipService.ToolTipOpening="ItemPoolTile_ToolTipOpening">
                                         <Border.ToolTip>
                                             <ToolTip/>
                                         </Border.ToolTip>
                                         <StackPanel>
                                             <Border Height="48" Margin="0,0,0,4" Background="#333" CornerRadius="2">
-                                                <Image Source="{Binding Converter={StaticResource ItemNameToImage}}" Stretch="Uniform" Height="48"/>
+                                                <Image Source="{Binding DisplayName, Converter={StaticResource ItemNameToImage}}" Stretch="Uniform" Height="48"/>
                                             </Border>
-                                            <TextBlock Text="{Binding}" FontSize="11" Foreground="#eee" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                            <TextBlock Text="{Binding DisplayName}" FontSize="11" Foreground="#eee" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"/>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>

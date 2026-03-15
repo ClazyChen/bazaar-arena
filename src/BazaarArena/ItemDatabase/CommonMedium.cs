@@ -761,6 +761,7 @@ public static class CommonMedium
     public static void RegisterAll(ItemDatabase db)
     {
         db.DefaultSize = ItemSize.Medium;
+        db.DefaultHero = Hero.Common;
         db.DefaultMinTier = ItemTier.Bronze;
         db.Register(SpikedBuckler());
         db.Register(ImprovisedBludgeon());

@@ -663,6 +663,33 @@
 
 ---
 
+## 多版本物品与 GUI 版本切换
+
+### 命名与数据约定
+
+- **最新版本**：模板名不带后缀（如 `獠牙`），注册在数据库中。
+- **历史版本**：模板名 `[物品名]_Sx`（如 `獠牙_S10`、`獠牙_S7`），x 为赛季号；同一基名可有多条，通过多次 `Register` 不同名称的模板即可。`GetAllNames()` 仍返回全部名称，不影响现有调用方。
+- **图片**：所有版本（含 `_Sx`）均用**基名**（去掉 `_Sx` 后缀）定位图片，即 `pictures/png/<基名>.png`。`ItemImageHelper.GetBaseNameForImage` 与 `ItemDatabase.GetBaseName` 规则一致。
+- **版本循环顺序**：最新 → 较高赛季 → 较低赛季 → 最新（例如最新、S10、S7 → 最新→S10→S7→最新）。
+
+### ItemDatabase API
+
+- **GetBaseName(string name)**：去掉末尾 `_S\d+` 得到基名；无后缀则返回原名。
+- **IsHistoricalVersion(string name)**：匹配 `_S\d+$` 视为历史版本。
+- **GetLatestOnlyNames()**：返回所有非历史版本名称，供 GUI 默认物品池使用（筛选后再按尺寸/档位/英雄过滤）。
+- **GetVersionCycle(string baseName)**：返回该基名对应的所有模板名，顺序为无后缀（若存在）在前，其余按 `_S` 后数字降序；单版本时返回单元素列表。
+
+### GUI 行为
+
+- **物品池**：绑定到 `ItemPoolEntryViewModel`（BaseName + DisplayName）。默认 DisplayName = BaseName；右键循环 DisplayName 到下一版本，左键拖拽 payload 为 DisplayName（可历史版本）；左键点击任何其他位置且未发生「从池拖入卡组」的 Drop 时，将所有池项 DisplayName 重置为 BaseName（通过 `_poolDropInThisGesture` 在 `DeckGrid_Drop` 收到来自池的 Text 时置 true，`EditorPanel_PreviewMouseLeftButtonUp` 中若为 false 则重置并清标志）。
+- **卡组内**：右键物品 Border 循环 `row.ItemName` 到下一版本，循环后调用 `ApplyOverridableDefaultsForTier` 与 `UpdateSlotSummary`。卡组保存/加载仍用 `DeckSlotEntry.ItemName`，历史版本名会写入 JSON；对战解析用 `entry.ItemName` 查库即可。
+
+### 经验小结
+
+- 新增多版本时只需按命名规则 Register，无需改 Deck/模拟器结构。GUI 默认只显示最新、池与卡组支持右键循环，图片统一用基名可避免重复资源。
+
+---
+
 ## 开发与提交
 
 - **Git 提交信息**：须符合 **.cursor/rules/git-commit-format.mdc**。格式为 `<type>(<scope>): <subject>`，主题用中文、句末无句号；type 取 `feat` / `fix` / `refactor` / `docs` / `chore`，scope 可选（如 `gui`、`sim`、`item-db`）。提交前可在 `docs/changelog.md` 中补充分条说明。

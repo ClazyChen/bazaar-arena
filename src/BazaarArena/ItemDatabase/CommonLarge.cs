@@ -208,6 +208,7 @@ public static class CommonLarge
     public static void RegisterAll(ItemDatabase db)
     {
         db.DefaultSize = ItemSize.Large;
+        db.DefaultHero = Hero.Common;
         db.DefaultMinTier = ItemTier.Bronze;
         db.Register(TemporaryShelter());
         db.Register(HarkuvianLauncher());

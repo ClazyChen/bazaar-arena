@@ -22,10 +22,13 @@ public partial class MainWindow
     private readonly ObservableCollection<SlotRowViewModel> _slotRows = [];
     private string? _currentDeckId;
     private IReadOnlyList<string> _itemNames = [];
-    /// <summary>按筛选条件过滤后的物品名称列表，绑定到物品池；未勾选任一选项的维度表示不限制。</summary>
-    private readonly ObservableCollection<string> _filteredItemNames = [];
+    /// <summary>按筛选条件过滤后的物品池项（默认仅最新版本），绑定到物品池。</summary>
+    private readonly ObservableCollection<ItemPoolEntryViewModel> _filteredItemPoolEntries = [];
     /// <summary>物品池 ToolTip 缓存（按 itemName），仅在即将显示时构建并缓存，避免 MouseEnter 卡顿。</summary>
     private readonly Dictionary<string, Border> _poolToolTipCache = [];
+
+    /// <summary>本手势中是否发生了从物品池拖拽并成功放入卡组；用于左键未拖拽时重置池显示。</summary>
+    private bool _poolDropInThisGesture;
 
     /// <summary>卡组表格第二行中每个物品的显示项（起始列、跨列、视图模型）。</summary>
     public ObservableCollection<DeckSlotDisplayItem> DeckSlotDisplays { get; } = [];
@@ -48,7 +51,7 @@ public partial class MainWindow
             PlayerLevelCombo.Items.Add(i);
         PlayerLevelCombo.SelectedIndex = 4; // 5 级
 
-        ItemPoolList.ItemsSource = _filteredItemNames;
+        ItemPoolList.ItemsSource = _filteredItemPoolEntries;
         RefreshItemPoolFilter();
 
         RefreshDeckList();
@@ -111,15 +114,16 @@ public partial class MainWindow
         if (FilterHeroAll?.IsChecked != true && FilterHeroCommon?.IsChecked == true)
             heroAllowed.Add(Hero.Common);
 
-        _filteredItemNames.Clear();
-        foreach (var name in _itemNames)
+        _filteredItemPoolEntries.Clear();
+        var latestNames = _itemDatabase.GetLatestOnlyNames();
+        foreach (var name in latestNames)
         {
             var t = _itemDatabase.GetTemplate(name);
             if (t == null) continue;
             if (sizeAllowed.Count > 0 && !sizeAllowed.Contains(t.Size)) continue;
             if (tierAllowed.Count > 0 && !tierAllowed.Contains(t.MinTier)) continue;
             if (heroAllowed.Count > 0 && !heroAllowed.Contains(t.Hero ?? Hero.Common)) continue;
-            _filteredItemNames.Add(name);
+            _filteredItemPoolEntries.Add(new ItemPoolEntryViewModel(name, name));
         }
     }
 
@@ -497,6 +501,7 @@ public partial class MainWindow
                 },
             };
             border.PreviewMouseLeftButtonDown += DeckItem_PreviewMouseLeftButtonDown;
+            border.PreviewMouseRightButtonDown += DeckItem_PreviewMouseRightButtonDown;
             var tt = new ToolTip();
             tt.Opened += DeckSlot_ToolTipOpened;
             border.ToolTip = tt;
@@ -561,8 +566,9 @@ public partial class MainWindow
     /// <summary>物品池 ToolTip 即将显示时再构建（或从缓存取），避免 MouseEnter 卡顿。</summary>
     private void ItemPoolTile_ToolTipOpening(object sender, ToolTipEventArgs e)
     {
-        if (sender is not FrameworkElement el || el.DataContext is not string itemName) return;
+        if (sender is not FrameworkElement el || el.DataContext is not ItemPoolEntryViewModel entry) return;
         if (el.ToolTip is not ToolTip tt) return;
+        var itemName = entry.DisplayName;
         if (_poolToolTipCache.TryGetValue(itemName, out var cached))
         {
             tt.Content = cached;
@@ -662,11 +668,46 @@ public partial class MainWindow
         DragDrop.DoDragDrop(border, data, DragDropEffects.Move);
     }
 
+    /// <summary>卡组内物品右键：循环到下一版本（最新→S10→S7→最新）。</summary>
+    private void DeckItem_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not Border border || border.Tag is not SlotRowViewModel row) return;
+        var baseName = ItemDatabase.ItemDatabase.GetBaseName(row.ItemName);
+        var cycle = _itemDatabase.GetVersionCycle(baseName);
+        if (cycle.Count <= 1) return;
+        int idx = -1;
+        for (int i = 0; i < cycle.Count; i++)
+        {
+            if (string.Equals(cycle[i], row.ItemName, StringComparison.Ordinal)) { idx = i; break; }
+        }
+        if (idx < 0) return;
+        row.ItemName = cycle[(idx + 1) % cycle.Count];
+        ApplyOverridableDefaultsForTier(row, row.Tier);
+        UpdateSlotSummary();
+        e.Handled = true;
+    }
+
     private void ItemPoolTile_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (sender is not FrameworkElement el || el.DataContext is not string itemName) return;
-        var data = new DataObject(DataFormats.Text, itemName);
+        if (sender is not FrameworkElement el || el.DataContext is not ItemPoolEntryViewModel entry) return;
+        var data = new DataObject(DataFormats.Text, entry.DisplayName);
         DragDrop.DoDragDrop(el, data, DragDropEffects.Copy);
+    }
+
+    /// <summary>物品池右键：循环到下一版本（最新→S10→S7→最新）。</summary>
+    private void ItemPoolTile_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement el || el.DataContext is not ItemPoolEntryViewModel entry) return;
+        var cycle = _itemDatabase.GetVersionCycle(entry.BaseName);
+        if (cycle.Count <= 1) return;
+        int idx = -1;
+        for (int i = 0; i < cycle.Count; i++)
+        {
+            if (string.Equals(cycle[i], entry.DisplayName, StringComparison.Ordinal)) { idx = i; break; }
+        }
+        if (idx < 0) return;
+        entry.DisplayName = cycle[(idx + 1) % cycle.Count];
+        e.Handled = true;
     }
 
     /// <summary>拖拽卡组内物品到编辑区非卡组区域（如物品池、空白处）时视为移除。</summary>
@@ -729,9 +770,23 @@ public partial class MainWindow
         {
             var template = _itemDatabase.GetTemplate(itemName);
             if (template != null && Deck.TierAllowedForLevel(template.MinTier, level))
+            {
                 TryInsertItemAt(itemName, template.MinTier, logicalSlot);
+                _poolDropInThisGesture = true;
+            }
             e.Handled = true;
         }
+    }
+
+    /// <summary>左键抬起时若未发生从池子拖入卡组，则重置物品池显示为最新版本。</summary>
+    private void EditorPanel_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_poolDropInThisGesture)
+        {
+            foreach (var entry in _filteredItemPoolEntries)
+                entry.DisplayName = entry.BaseName;
+        }
+        _poolDropInThisGesture = false;
     }
 
     /// <summary>尝试将物品加入卡组（如槽位或等级不允许则返回 false）。</summary>

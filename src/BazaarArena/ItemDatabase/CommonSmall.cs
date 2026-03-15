@@ -664,7 +664,7 @@ public static class CommonSmall
     public static void RegisterAll(ItemDatabase db)
     {
         db.DefaultSize = ItemSize.Small;
-
+        db.DefaultHero = Hero.Common;
         db.DefaultMinTier = ItemTier.Bronze;
         db.Register(Fang());
         db.Register(LavaCore());

@@ -1,5 +1,6 @@
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using BazaarArena.ItemDatabase;
 
 namespace BazaarArena;
 
@@ -24,12 +25,17 @@ public static class ItemImageHelper
         return _picturesDir;
     }
 
-    /// <summary>根据物品名称返回图像路径，不存在则返回 null。</summary>
+    /// <summary>历史版本（_Sx）用基名定位图片，与 ItemDatabase 约定一致。</summary>
+    public static string GetBaseNameForImage(string itemName) =>
+        ItemDatabase.ItemDatabase.GetBaseName(itemName);
+
+    /// <summary>根据物品名称返回图像路径，不存在则返回 null。历史版本用基名查图。</summary>
     public static string? GetImagePath(string itemName)
     {
         if (string.IsNullOrWhiteSpace(itemName)) return null;
+        var nameForPath = GetBaseNameForImage(itemName);
         var dir = GetPicturesPngDir();
-        var path = Path.Combine(dir, itemName.Trim() + ".png");
+        var path = Path.Combine(dir, nameForPath + ".png");
         return File.Exists(path) ? path : null;
     }
 
