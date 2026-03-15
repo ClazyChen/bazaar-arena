@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "decks": [
+    { "id": "mg_zoot_flute_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "祖特笛", "tier": 2 }] } },
+    { "id": "mg_zoot_flute_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mg_void_ray_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "虚空射线", "tier": 2 }] } },
+    { "id": "mg_void_ray_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mg_warp_drive_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "曲速引擎", "tier": 2 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "mg_warp_drive_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mg_biomerge_arm_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "生体融合臂", "tier": 2 },
+      { "itemName": "分解射线", "tier": 2 }
+    ] } },
+    { "id": "mg_biomerge_arm_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mg_disintegration_ray_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "分解射线", "tier": 2 }] } },
+    { "id": "mg_disintegration_ray_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "mg_mortal_coil_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "獠牙", "tier": 0 },
+      { "itemName": "凡躯之缚", "tier": 2 }
+    ] } },
+    { "id": "mg_mortal_coil_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "md_tinfoil_hat_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "锡箔帽", "tier": 3 }] } },
+    { "id": "md_tinfoil_hat_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "md_void_disruptor_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "虚空干扰器", "tier": 3 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "md_void_disruptor_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "md_void_shield_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "虚空护盾", "tier": 3 }] } },
+    { "id": "md_void_shield_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+  ]
+}

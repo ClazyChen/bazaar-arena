@@ -38,6 +38,8 @@ public static class Tag
     public const string Shield = "护盾";
     /// <summary>伤害。</summary>
     public const string Damage = "伤害";
+    /// <summary>弹药（由注册时 AmmoCap &gt; 0 自动添加）。</summary>
+    public const string Ammo = "弹药";
     /// <summary>灼烧。</summary>
     public const string Burn = "灼烧";
     /// <summary>剧毒。</summary>

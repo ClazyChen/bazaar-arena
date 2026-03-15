@@ -589,11 +589,11 @@ public static class CommonMedium
 
     /// <summary>生体融合臂（Biomerge Arm）：中 金 武器 工具；弹药消耗且耗尽时造成 100 » 200 伤害；此物品相邻左侧的弹药物品暴击率 +100%、最大弹药量 +1。</summary>
     public static ItemTemplate BiomergeArm()
-    {
+    {  
         return new ItemTemplate
         {
             Name = "生体融合臂",
-            Desc = "▶ 弹药耗尽时造成 {Damage} 伤害；此物品左侧的弹药物品暴击率 +100%；此物品左侧的弹药物品最大弹药量 +1",
+            Desc = "己方物品弹药耗尽时，造成 {Damage} 伤害；此物品左侧的弹药物品暴击率 +100%；此物品左侧的弹药物品最大弹药量 +1",
             Tags = [Tag.Weapon, Tag.Tool],
             Damage = [100, 200],
             Abilities =
@@ -609,14 +609,14 @@ public static class CommonMedium
                 new AuraDefinition
                 {
                     AttributeName = Key.CritRatePercent,
-                    Condition = Condition.LeftOfSource & Condition.HasAmmoCap,
+                    Condition = Condition.LeftOfSource & Condition.WithTag(Tag.Ammo),
                     Value = Formula.Constant(100),
                     Percent = true,
                 },
                 new AuraDefinition
                 {
                     AttributeName = Key.AmmoCap,
-                    Condition = Condition.LeftOfSource & Condition.HasAmmoCap,
+                    Condition = Condition.LeftOfSource & Condition.WithTag(Tag.Ammo),
                     Value = Formula.Constant(1),
                 },
             ],

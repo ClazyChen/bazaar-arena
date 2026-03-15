@@ -107,8 +107,8 @@
 ## 弹药消耗触发器（Trigger.Ammo）与 Condition.AmmoDepleted
 
 - **设计**：不在「弹药耗尽」时单独设触发器，而是**每次弹药消耗**时触发 **Trigger.Ammo**（步骤 7 中 `AmmoRemaining--` 后立即 `InvokeTrigger(Trigger.Ammo, item, ...)`）。来源（causeItem）= 消耗弹药的那个物品。默认 Condition 为 SameSide。
-- **「仅耗尽当次」**：用 **additionalCondition: Condition.AmmoDepleted** 限定。`Condition.AmmoDepleted` 表示被评估对象（Item，即引起触发的物品）满足 AmmoCap > 0 且 AmmoRemaining == 0（刚扣完一发后为 0）。例如生体融合臂：`Ability.Damage.Override(trigger: Trigger.Ammo, additionalCondition: Condition.AmmoDepleted, targetCondition: Condition.DifferentSide)`，即「己方某物品消耗弹药且当次耗尽时，对该物品所在侧无关、对敌方造成伤害」。
-- **Condition.HasAmmoCap**：被评估对象有 AmmoCap > 0，用于「弹药物品」筛选（如光环「此物品左侧的弹药物品 +1 最大弹药」用 `Condition.LeftOfSource & Condition.HasAmmoCap`）。**左侧**若指**相邻左侧**用 **LeftOfSource**，若指**所有严格左侧**用 **StrictlyLeftOfSource**。
+- **「仅耗尽当次」**：用 **additionalCondition: Condition.AmmoDepleted** 限定。`Condition.AmmoDepleted` = **WithTemplateTag(Tag.Ammo)** 且 AmmoRemaining == 0（引起触发的物品模板带 Tag.Ammo 且刚扣完一发后为 0；用 WithTemplateTag 避免光环递归）。弹药物品由注册时 AmmoCap > 0 自动获得 Tag.Ammo。例如生体融合臂：`Ability.Damage.Override(trigger: Trigger.Ammo, additionalCondition: Condition.AmmoDepleted, targetCondition: Condition.DifferentSide)`。
+- **弹药物品筛选**：用 **Condition.WithTag(Tag.Ammo)**（如光环「此物品左侧的弹药物品 +1 最大弹药」用 `Condition.LeftOfSource & Condition.WithTag(Tag.Ammo)`）。**左侧**若指**相邻左侧**用 **LeftOfSource**，若指**所有严格左侧**用 **StrictlyLeftOfSource**。
 - **Key.AmmoRemaining**：运行时剩余弹药存于物品模板字典（与 `ItemTemplate.KeyAmmoRemaining` 一致），供 Condition 与公式使用。
 
 ---

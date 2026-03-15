@@ -103,6 +103,10 @@ public class Condition
     public static Condition NotWithTag(string tag) => new(ctx =>
         ctx.Item == null || !(ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? new HashSet<string>(ctx.Item.Template.Tags ?? [])).Contains(tag));
 
+    /// <summary>被评估对象模板带指定标签（仅读 Template.Tags，不含光环授予）；Item 为 null 时为 false。用于避免光环递归（如弹药物品用 Tag.Ammo）。</summary>
+    public static Condition WithTemplateTag(string tag) => new(ctx =>
+        ctx.Item != null && ctx.Item.Template.Tags != null && ctx.Item.Template.Tags.Contains(tag));
+
     /// <summary>两个条件的与（也可用 a &amp;&amp; b）。</summary>
     public static Condition And(Condition a, Condition b) => new(ctx => a.Evaluate(ctx) && b.Evaluate(ctx));
 
@@ -130,11 +134,8 @@ public class Condition
     /// <summary>被评估对象有冷却时间（CooldownMs &gt; 0）；Item 为 null 时为 false。用于目标选取（充能/冻结/减速/加速等）。</summary>
     public static Condition HasCooldown { get; } = new(ctx => ctx.Item != null && ctx.MySide.GetItemInt(ctx.Item.ItemIndex, "CooldownMs", 0) > 0);
 
-    /// <summary>被评估对象有弹药上限（AmmoCap &gt; 0）；Item 为 null 时为 false。用于「弹药物品」等条件。</summary>
-    public static Condition HasAmmoCap { get; } = new(ctx => ctx.Item != null && ctx.MySide.GetItemInt(ctx.Item.ItemIndex, Key.AmmoCap, 0) > 0);
-
-    /// <summary>被评估对象弹药已耗尽（AmmoCap &gt; 0 且 AmmoRemaining = 0）；Item 为 null 时为 false。用于 Trigger.Ammo 的 additionalCondition，仅在「消耗后耗尽」当次生效。</summary>
-    public static Condition AmmoDepleted { get; } = new(ctx => ctx.Item != null && ctx.MySide.GetItemInt(ctx.Item.ItemIndex, Key.AmmoCap, 0) > 0 && ctx.Item.AmmoRemaining == 0);
+    /// <summary>被评估对象弹药已耗尽（模板带 Tag.Ammo 且 AmmoRemaining = 0）；Item 为 null 时为 false。用于 Trigger.Ammo 的 additionalCondition；用 WithTemplateTag 避免光环递归。弹药物品由注册时 AmmoCap &gt; 0 自动获得 Tag.Ammo。</summary>
+    public static Condition AmmoDepleted { get; } = WithTemplateTag(Tag.Ammo) & new Condition(ctx => ctx.Item != null && ctx.Item.AmmoRemaining == 0);
 
     /// <summary>被评估对象处于冻结状态（FreezeRemainingMs &gt; 0）；Item 为 null 时为 false。用于解除冻结目标选取。</summary>
     public static Condition IsFrozen { get; } = new(ctx => ctx.Item != null && ctx.Item.FreezeRemainingMs > 0);

@@ -146,6 +146,63 @@ public static class CommonLarge
         };
     }
 
+    /// <summary>以太能量导体（Ethergy Conduit）：大 金 遗物；触发剧毒或使用遗物时，己方物品暴击率 +2% » +4%（限本场战斗）（使用遗物时优先级 Medium，触发剧毒且来源不是遗物时优先级 Low）；造成暴击时，为己方遗物充能 1 秒（Low）。</summary>
+    public static ItemTemplate EthergyConduit()
+    {
+        return new ItemTemplate
+        {
+            Name = "以太能量导体",
+            Desc = "触发剧毒或使用遗物时，己方物品暴击率 {+Custom_0%}（限本场战斗）；造成暴击时，为己方遗物充能 {ChargeSeconds} 秒",
+            Tags = [Tag.Relic],
+            Cooldown = 0,
+            Custom_0 = [2, 4],
+            Charge = 1.0,
+            Abilities =
+            [
+                Ability.AddAttribute(Key.CritRatePercent).Override(
+                    trigger: Trigger.UseItem,
+                    condition: Condition.SameSide & Condition.WithTag(Tag.Relic),
+                    priority: AbilityPriority.Medium
+                ),
+                Ability.AddAttribute(Key.CritRatePercent).Override(
+                    trigger: Trigger.Poison,
+                    condition: Condition.NotWithTag(Tag.Relic),
+                    priority: AbilityPriority.Low
+                ),
+                Ability.Charge.Override(
+                    trigger: Trigger.Crit,
+                    additionalTargetCondition: Condition.WithTag(Tag.Relic),
+                    priority: AbilityPriority.Low
+                ),
+            ],
+        };
+    }
+
+    /// <summary>焰形剑（Flamberge）：9s 钻 大 武器；▶ 造成 200 伤害；此物品能造成四倍暴击伤害（光环：自身暴击伤害 +300%）。</summary>
+    public static ItemTemplate Flamberge()
+    {
+        return new ItemTemplate
+        {
+            Name = "焰形剑",
+            Desc = "▶ 造成 {Damage} 伤害；此物品能造成四倍暴击伤害",
+            Tags = [Tag.Weapon],
+            Cooldown = 9.0,
+            Damage = 200,
+            Abilities =
+            [
+                Ability.Damage,
+            ],
+            Auras =
+            [
+                new AuraDefinition
+                {
+                    AttributeName = Key.CritDamagePercent,
+                    Value = Formula.Constant(300),
+                    Percent = true,
+                },
+            ],
+        };
+    }
 
     /// <summary>注册所有公共大型物品到数据库。</summary>
     public static void RegisterAll(ItemDatabase db)
@@ -161,5 +218,11 @@ public static class CommonLarge
         db.DefaultMinTier = ItemTier.Silver;
         db.Register(JunkyardCatapult());
         db.Register(ColossalPopsicle());
+
+        db.DefaultMinTier = ItemTier.Gold;
+        db.Register(EthergyConduit());
+
+        db.DefaultMinTier = ItemTier.Diamond;
+        db.Register(Flamberge());
     }
 }

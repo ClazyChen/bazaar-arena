@@ -41,6 +41,7 @@ public class ItemDatabase : IItemTemplateResolver
         if (HasAnyTierPositive(template, Key.Poison)) TryAddTag(template, Tag.Poison);
         if (HasAnyTierPositive(template, Key.Heal)) TryAddTag(template, Tag.Heal);
         if (HasAnyTierPositive(template, Key.Shield)) TryAddTag(template, Tag.Shield);
+        if (HasAnyTierPositive(template, Key.AmmoCap)) TryAddTag(template, Tag.Ammo);
         if (HasAnyTierPositive(template, "Regen")) TryAddTag(template, Tag.Regen);
 
         foreach (var aura in template.Auras ?? [])

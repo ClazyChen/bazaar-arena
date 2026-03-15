@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "decks": [
+    { "id": "ls_junkyard_catapult_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "废品场弹射机", "tier": 1 }] } },
+    { "id": "ls_junkyard_catapult_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ls_colossal_popsicle_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "巨型冰棒", "tier": 1 }] } },
+    { "id": "ls_colossal_popsicle_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "lg_ethergy_conduit_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "以太能量导体", "tier": 2 },
+      { "itemName": "驯化蜘蛛", "tier": 0 }
+    ] } },
+    { "id": "lg_ethergy_conduit_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ld_flamberge_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "焰形剑", "tier": 3 }] } },
+    { "id": "ld_flamberge_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+  ]
+}
