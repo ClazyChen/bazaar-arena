@@ -16,6 +16,7 @@ globs: "**/ItemDatabase/**","**/Core/Ability*.cs"
 ## 简化原则
 
 - **只覆盖需要改变的参数**：与默认值相同的参数不必写（例如 ReduceAttribute 默认 Priority 为 Medium，若仍为 Medium 则不要写 `priority: AbilityPriority.Medium`）。
+- **换 trigger 且只传 additionalCondition 时**：合并条件会用**新 trigger 的默认**作 base（如 UseItem→Ammo 时用 SameSide），不会沿用原能力的 Condition（如 SameAsSource）。因此「己方弹药物品耗尽时」写 `Override(trigger: Trigger.Ammo, additionalCondition: Condition.AmmoDepleted, ...)` 即可；「此物品弹药耗尽时」才需显式 `condition: Condition.SameAsSource`。详见 `docs/implementation-notes.md`「弹药消耗触发器」经验。
 - 当能力的**默认 TargetCondition** 已是 `Condition.SameSide`（如 AddAttribute、Charge、Haste）或 `Condition.DifferentSide`（如 ReduceAttribute、Slow、Freeze）时，若只需在默认上**追加**条件，应使用 **additionalTargetCondition** 而非重写 **targetCondition**，以保持简洁并与默认语义一致。
 
 - 示例：目标为「己方且飞行」→ 写 `additionalTargetCondition: Condition.InFlight`，勿写 `targetCondition: Condition.SameSide & Condition.InFlight`。

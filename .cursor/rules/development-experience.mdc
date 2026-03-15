@@ -53,6 +53,7 @@ globs: "**/*.cs","**/*.xaml","**/docs/**"
 
 ## 修改与扩展时注意
 
+- **Override 换 trigger 且只传 additionalCondition**：合并条件以**新 trigger 的默认**为 base，不沿用原能力 Condition；否则会误成「仅能力持有者」触发（如 Ammo 误用 SameAsSource）。见 `docs/implementation-notes.md`「弹药消耗触发器」、**.cursor/rules/ability-override-format.mdc**。
 - 新增窗口或对话框时记得设置 `Owner`，并在需要时在 Loaded 中聚焦输入控件。
 - 修改战斗结算顺序或能力队列移动时机时，对照设计文档的帧顺序与 `implementation-notes.md` 的帧边界说明。
 - 卡组集相关逻辑集中在 DeckManager 与 MainWindow 的保存/另存为/删除/重命名/上移下移/新建卡组集中，保持“有路径则写回，无路径则弹窗”的一致性；卡组列表顺序由 DeckManager 的 `_order` 维护，与 JSON 中 `decks` 数组一致。

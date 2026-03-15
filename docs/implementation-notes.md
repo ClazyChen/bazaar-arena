@@ -111,6 +111,10 @@
 - **弹药物品筛选**：用 **Condition.WithTag(Tag.Ammo)**（如光环「此物品左侧的弹药物品 +1 最大弹药」用 `Condition.LeftOfSource & Condition.WithTag(Tag.Ammo)`）。**左侧**若指**相邻左侧**用 **LeftOfSource**，若指**所有严格左侧**用 **StrictlyLeftOfSource**。
 - **Key.AmmoRemaining**：运行时剩余弹药存于物品模板字典（与 `ItemTemplate.KeyAmmoRemaining` 一致），供 Condition 与公式使用。
 
+### 经验：Override 换 trigger 且只传 additionalCondition 时须用新 trigger 的默认条件
+
+若能力由 **Ability.xxx**（默认 UseItem + SameAsSource）出发，只改 **trigger** 并只传 **additionalCondition**（如 `Override(trigger: Trigger.Ammo, additionalCondition: Condition.AmmoDepleted)`），合并时 **baseCond** 必须用**新 trigger 的默认条件**（如 Ammo → SameSide），而不能用原能力上的 **Condition**（SameAsSource）。否则会得到 (SameAsSource & AmmoDepleted)，语义变成「仅当**能力持有者本人**弹药耗尽时」才触发；设计意图多为「己方**任意**弹药物品耗尽时」即 (SameSide & AmmoDepleted)。实现上在 **AbilityDefinition.Override** 中：`baseCond = condition ?? (originalTrigger != TriggerName ? defaultCond : Condition ?? defaultCond)`，保证换 trigger 且未显式传 condition 时用 defaultCond。克隆能力时无需再对 Triggers[0] 做 SyncPrimaryTriggerEntryFromTopLevel 覆盖，源模板已正确。
+
 ---
 
 ## InvokeTarget 与 SameAsInvokeTarget（单目标施加）

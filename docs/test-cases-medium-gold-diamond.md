@@ -28,7 +28,7 @@
 
 - **卡组**：P1 `mg_biomerge_arm_p1`（生体融合臂 金 + 分解射线 金），P2 `mg_biomerge_arm_p2`（獠牙 铜）
 - **预期**：日志中出现「生体融合臂」「伤害」（己方弹药物品弹药耗尽时触发生体融合臂造成伤害）
-- **说明**：生体融合臂放左侧、分解射线放右侧，避免光环给分解射线 +1 弹药。当前 AmmoDepleted（WithTemplateTag(Tag.Ammo) 且 AmmoRemaining==0）在 InvokeTrigger 求值未通过，用例未通过测试，根因待查。
+- **说明**：生体融合臂放左侧、分解射线放右侧，避免光环给分解射线 +1 弹药。
 
 ### 5. 分解射线（Disintegration Ray）
 

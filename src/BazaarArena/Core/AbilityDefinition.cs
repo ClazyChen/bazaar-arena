@@ -124,7 +124,8 @@ public class AbilityDefinition
             if (condition != null || TriggerName != Trigger.UseItem)
                 UseSelf = false;
             var defaultCond = TriggerName == Trigger.UseItem ? Condition.SameAsSource : Condition.SameSide;
-            var baseCond = condition ?? Condition ?? defaultCond;
+            // 仅传 additionalCondition 且改了 trigger 时，用新 trigger 的默认条件作 base，不用旧 trigger 的 Condition（如 UseItem 的 SameAsSource）
+            var baseCond = condition ?? (originalTrigger != TriggerName ? defaultCond : Condition ?? defaultCond);
             Condition = additionalCondition != null ? (baseCond & additionalCondition) : baseCond;
         }
         else if (trigger != null && originalTrigger != TriggerName)
