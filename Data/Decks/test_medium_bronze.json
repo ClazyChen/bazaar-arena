@@ -51,6 +51,54 @@
     { "id": "mb_junkyard_repairbot_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
 
     { "id": "vanessa_mb_volcanic_vents_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "海底热泉", "tier": 0 }] } },
-    { "id": "vanessa_mb_volcanic_vents_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+    { "id": "vanessa_mb_volcanic_vents_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_fishing_net_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "渔网", "tier": 0 }] } },
+    { "id": "vanessa_mb_fishing_net_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_life_preserver_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "救生圈", "tier": 0 }] } },
+    { "id": "vanessa_mb_life_preserver_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_double_barrel_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "双管霰弹枪", "tier": 0 }] } },
+    { "id": "vanessa_mb_double_barrel_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_cutlass_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "弯刀", "tier": 0 }] } },
+    { "id": "vanessa_mb_cutlass_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_barrel_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "水桶", "tier": 0 }, { "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "vanessa_mb_barrel_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_rifle_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "步枪", "tier": 0 }] } },
+    { "id": "vanessa_mb_rifle_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_katana_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "武士刀", "tier": 0 }] } },
+    { "id": "vanessa_mb_katana_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_langxian_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "狼筅", "tier": 0 }] } },
+    { "id": "vanessa_mb_langxian_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_beach_ball_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "沙滩充气球", "tier": 0 }, { "itemName": "救生圈", "tier": 0 }] } },
+    { "id": "vanessa_mb_beach_ball_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_fishing_rod_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "钓鱼竿", "tier": 0 }, { "itemName": "救生圈", "tier": 0 }] } },
+    { "id": "vanessa_mb_fishing_rod_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_shovel_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "铲子", "tier": 0 }] } },
+    { "id": "vanessa_mb_shovel_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_star_chart_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "星图", "tier": 0 }, { "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "vanessa_mb_star_chart_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_cannon_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "火炮", "tier": 0 }] } },
+    { "id": "vanessa_mb_cannon_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_wetware_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "湿件战服", "tier": 0 }, { "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "vanessa_mb_wetware_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_coral_armor_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "珊瑚护甲", "tier": 0 }] } },
+    { "id": "vanessa_mb_coral_armor_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_shark_claws_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "鲨齿爪", "tier": 0 }] } },
+    { "id": "vanessa_mb_shark_claws_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
   ]
 }

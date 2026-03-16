@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 海盗中型铜物品测试：仅海底热泉（多重释放 3）一个用例，用于验证多重释放生效。
+# 海盗中型铜物品测试：覆盖 Vanessa 中型铜（最新版）全部物品。
 # 用法：在仓库根目录执行 python scripts/run_item_tests_vanessa_medium_bronze.py
 
 import json
@@ -12,15 +12,36 @@ DECK_JSON = os.path.join(REPO_ROOT, "Data", "Decks", "test_medium_bronze.json")
 LOG_DIR = os.path.join(REPO_ROOT, "Logs", "item_tests")
 CLI_PROJECT = os.path.join(REPO_ROOT, "src", "BazaarArena.Cli", "BazaarArena.Cli.csproj")
 
-# 海底热泉：多重释放 3，每次使用应打出 3 次灼烧效果
 VANESSA_MEDIUM_BRONZE_TESTS = [
+    {"name": "渔网_fishing_net", "deck1": "vanessa_mb_fishing_net_p1", "deck2": "vanessa_mb_fishing_net_p2", "log_contains": ["渔网", "减速"]},
+    {"name": "救生圈_life_preserver", "deck1": "vanessa_mb_life_preserver_p1", "deck2": "vanessa_mb_life_preserver_p2", "log_contains": ["救生圈", "护盾"]},
     {
-        "name": "海底热泉_volcanic_vents",
-        "deck1": "vanessa_mb_volcanic_vents_p1",
-        "deck2": "vanessa_mb_volcanic_vents_p2",
-        "log_contains": ["海底热泉", "灼烧"],
-        "log_min_count": {"[海底热泉] 灼烧": 3},
+        "name": "双管霰弹枪_double_barrel",
+        "deck1": "vanessa_mb_double_barrel_p1",
+        "deck2": "vanessa_mb_double_barrel_p2",
+        "log_contains": ["双管霰弹枪", "伤害"],
+        "log_min_count": {"[双管霰弹枪] 伤害": 2},
     },
+    {
+        "name": "弯刀_cutlass",
+        "deck1": "vanessa_mb_cutlass_p1",
+        "deck2": "vanessa_mb_cutlass_p2",
+        "log_contains": ["弯刀", "伤害"],
+        "log_min_count": {"[弯刀] 伤害": 2},
+    },
+    {"name": "水桶_barrel", "deck1": "vanessa_mb_barrel_p1", "deck2": "vanessa_mb_barrel_p2", "log_contains": ["水桶", "护盾"]},
+    {"name": "步枪_rifle", "deck1": "vanessa_mb_rifle_p1", "deck2": "vanessa_mb_rifle_p2", "log_contains": ["步枪", "伤害"]},
+    {"name": "武士刀_katana", "deck1": "vanessa_mb_katana_p1", "deck2": "vanessa_mb_katana_p2", "log_contains": ["武士刀", "伤害"]},
+    {"name": "狼筅_langxian", "deck1": "vanessa_mb_langxian_p1", "deck2": "vanessa_mb_langxian_p2", "log_contains": ["狼筅", "伤害"]},
+    {"name": "沙滩充气球_beach_ball", "deck1": "vanessa_mb_beach_ball_p1", "deck2": "vanessa_mb_beach_ball_p2", "log_contains": ["沙滩充气球", "加速"]},
+    {"name": "钓鱼竿_fishing_rod", "deck1": "vanessa_mb_fishing_rod_p1", "deck2": "vanessa_mb_fishing_rod_p2", "log_contains": ["钓鱼竿", "加速"]},
+    {"name": "铲子_shovel", "deck1": "vanessa_mb_shovel_p1", "deck2": "vanessa_mb_shovel_p2", "log_contains": ["铲子", "伤害"]},
+    {"name": "星图_star_chart", "deck1": "vanessa_mb_star_chart_p1", "deck2": "vanessa_mb_star_chart_p2", "log_contains": ["獠牙", "伤害"]},
+    {"name": "火炮_cannon", "deck1": "vanessa_mb_cannon_p1", "deck2": "vanessa_mb_cannon_p2", "log_contains": ["火炮", "伤害", "灼烧"]},
+    {"name": "海底热泉_volcanic_vents", "deck1": "vanessa_mb_volcanic_vents_p1", "deck2": "vanessa_mb_volcanic_vents_p2", "log_contains": ["海底热泉", "灼烧"], "log_min_count": {"[海底热泉] 灼烧": 3}},
+    {"name": "湿件战服_wetware", "deck1": "vanessa_mb_wetware_p1", "deck2": "vanessa_mb_wetware_p2", "log_contains": ["湿件战服", "护盾"]},
+    {"name": "珊瑚护甲_coral_armor", "deck1": "vanessa_mb_coral_armor_p1", "deck2": "vanessa_mb_coral_armor_p2", "log_contains": ["珊瑚护甲", "护盾"]},
+    {"name": "鲨齿爪_shark_claws", "deck1": "vanessa_mb_shark_claws_p1", "deck2": "vanessa_mb_shark_claws_p2", "log_contains": ["鲨齿爪", "伤害"]},
 ]
 
 
@@ -78,7 +99,7 @@ def main() -> int:
             for sub, min_count in (t.get("log_min_count") or {}).items():
                 if log_content.count(sub) < min_count:
                     failed.append(
-                        (name, f"日志中 {sub!r} 出现次数 {log_content.count(sub)} < {min_count}（预期多重释放 {min_count} 次）", log_content[:2000])
+                        (name, f"日志中 {sub!r} 出现次数 {log_content.count(sub)} < {min_count}（预期至少 {min_count} 次）", log_content[:2000])
                     )
                     break
             else:
