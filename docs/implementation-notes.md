@@ -251,18 +251,20 @@
 
 ## 从表格添加物品的约定
 
-当用户以**表格图片**形式提供物品需求时，列顺序为：**Name、所属、版本、minTier、Size、CD、TAG、效果**（第 2 列**所属**、第 3 列**版本**用于明确物品归属与赛季）。
+当用户以**表格图片**形式提供物品需求时，列顺序为：**中文名、英文名、所属、版本、minTier、Size、CD、TAG、效果**（第 2 列**英文名**，后续不再单独给出、从表格读取；第 3 列**所属**、第 4 列**版本**用于明确物品归属与赛季）。
 
-- **列映射**：Name → 中文名；**所属**（第 2 列）→ 英雄名（如 Vanessa）或**公共**；**版本**（第 3 列）→ 数字对应赛季，如 5 → _S5、12 → 无后缀或 _S12 视表格约定；minTier B/S/G/D；Size S/M/L；CD → Cooldown（秒）；TAG → Tags；效果 → Desc 与 Abilities/Auras。
-- **版本列与第一行**：表格**第三列**为版本号。**表格第一行**对应**最新版本**，名称**无后缀**（如「火药角」「鹦鹉皮特」），实现为 `Template()`、`Name = "中文名"`；后续行对应历史版本，实现为 `Template_Sx()`、`Name = "中文名_Sx"`。勿将第一行误写成带 _Sx 的名称。
+- **列映射**：第 1 列 → 中文名（Name）；第 2 列**英文名** → 文件名与类名 PascalCase（后续不再由用户单独提供）；**所属**（第 3 列）→ 英雄名（如 Vanessa）或**公共**；**版本**（第 4 列）→ 数字对应赛季，如 5 → _S5、12 → 无后缀或 _S12 视表格约定；minTier B/S/G/D；Size S/M/L；CD → Cooldown（秒）；TAG → Tags；效果 → Desc 与 Abilities/Auras。
+- **版本列与第一行**：表格**第 4 列**为版本号。**表格第一行**对应**最新版本**，名称**无后缀**（如「海底热泉」「鹦鹉皮特」），实现为 `Template()`、`Name = "中文名"`；后续行对应历史版本，实现为 `Template_Sx()`、`Name = "中文名_Sx"`。勿将第一行误写成带 _Sx 的名称。
 - **效果文案与实现**：**▶** 以及文案中的「**提高**」「**造成**」等主动动词 = **使用物品时触发**的 Ability（UseItem），应实现为 Ability 而非被动光环。**无 ▶ 且无触发条件**的常驻加成（如「己方武器伤害 +X」）= 光环（Aura）。若误将「▶ 某类物品暴击率提高」写成光环，应改为 **Ability.AddAttribute(Key.CritRatePercent).Override(additionalTargetCondition: ..., priority: ...)**。
 - **局外成长**：表格中「购买此物品时获得 X」「购买时 Y」等**局外/商店**效果，对战模拟器不实现，仅在类注释中说明「局外成长忽略」。若效果为「某条件下此物品的某属性提高 X/Y/Z/W（局外成长）」，可用**光环 + OverridableAttributes** 描述，见下节。
 - **优先级**：**仅当表格效果末尾明确标注** (I)/(Hst)/(H)/(L)/(Lst) 时在代码中写 `priority`；**未标注则视为 Medium**，不要猜测或擅自添加 priority。
 - **「此物品被加速/被减速时」**：`trigger: Trigger.Haste` / `Trigger.Slow`，**condition: Condition.SameAsInvokeTarget**（被加速/被减速的是本物品），**targetCondition: Condition.SameAsSource**（效果施加给自身）。参考毒须鲶、皮皮虾。
 - **「每有一个相邻的…，此物品 +1 多重释放」**：多重释放 = 相邻数量，用 **Formula.Count(...)**，**不要**写 `Formula.Constant(1) + Formula.Count(...)`。参考迷幻蝠鲼、鹦鹉皮特。
-- **英文名**：**文件名**与**类名**取英文名 PascalCase；工厂方法 `Template()`、`Template_Sx()`。
+- **英文名**：从表格**第 2 列**读取，后续不再单独给出；**文件名**与**类名**取该列英文名 PascalCase；工厂方法 `Template()`、`Template_Sx()`。
 - **常用目标条件**：「己方最左侧/最右侧的武器」→ **LeftMost/RightMost(WithTag(Weapon))**；「此物品右侧的武器」→ **RightOfSource & WithTag(Tag.Weapon)**；「使用其他某类物品时」须 **Condition.DifferentFromSource**。
 - **归属**：由**所属**列决定——**公共**放 Common*；**英雄名**放 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;**，一物一文件。
+
+**经验小结**：（1）表格列顺序固定为**中文名、英文名、所属、版本、minTier、Size、CD、TAG、效果**，英文名从第 2 列读取，不再单独提供。（2）局外成长「购买某类物品时此物品某属性提高 X/Y/Z/W」统一用**基础值 + 光环(Custom_0×Custom_1) + OverridableAttributes(Custom_1 默认 5/10/15/20)**，治疗型参考珊瑚、护盾型参考珊瑚护甲。
 
 详见 **.cursor/rules/item-table-convention.mdc**。
 
@@ -295,20 +297,21 @@
 - **实现**：`ItemDatabase.Register` 在写入 Size/MinTier/Hero 之后、`EnsureTypeTags` 之前，会遍历 `template.OverridableAttributes`，对每个 key 调用 `template.SetIntOrByTierByKey(kv.Key, kv.Value)`，将默认值同步到模板内部字典，供战斗内公式（如 `Formula.Source(Key.Custom_1)`）与 Desc 占位符使用。
 - **效果**：物品定义中只需维护一处默认值，GUI 的「覆盖属性」对话框与战斗内读取均一致。
 
-### 局外成长与光环公式（狼筅、珊瑚）
+### 局外成长与光环公式（狼筅、珊瑚、珊瑚护甲）
 
 - **适用场景**：表格效果为「某局外条件（如购买水系、赢得战斗）时，此物品的某属性提高 X/Y/Z/W」，对战模拟器**不实现**局外触发逻辑，但可用**光环公式 + OverridableAttributes** 在战斗内正确读出「当前成长后的数值」，并由卡组 Overrides 或外部逻辑在局外更新可覆盖变量。
 - **写法要点**：
-  1. **文案数值（档位/档位列表）**：写在模板上，如 `Custom_0 = [40, 60, 80, 100]`，用于 Desc 占位符 `{Custom_0}` 与公式中的「每档数值」。
-  2. **局外变量**：**仅**写在 **OverridableAttributes** 中，如 `[Key.Custom_1] = [4, 8, 12, 16]`（赢得战斗次数阈值）或 `[Key.Custom_1] = [5, 10, 15, 20]`（已购买数量）；局外逻辑在适当时机更新卡组槽位的 `Overrides[Key.Custom_1]`。
-  3. **光环**：用公式将两者结合，如 `Value = Formula.Source(Key.Custom_0) * Formula.Source(Key.Custom_1)`，使战斗内读该属性时 = Custom_0 × Custom_1（按档位与覆盖值）。
-- **参考**：**珊瑚**（治疗 = 基础 20 + Custom_0×Custom_1，Custom_0 为每次购买提高量，Custom_1 可覆盖表示已购买水系数量）；**狼筅**（伤害提高 = Custom_0×Custom_1，Custom_0 为 40 » 60 » 80 » 100，Custom_1 可覆盖，默认赢得战斗次数阈值 4/8/12/16）。
+  1. **基础数值**（若有）：如护盾/治疗有固定基础，在模板上写 `Shield = 50` 或 `Heal = 20`；使用时的总值 = 基础 + 光环加成。
+  2. **文案数值（档位/档位列表）**：写在模板上，如 `Custom_0 = [10, 20, 30, 40]`（每次购买提高量）或 `[40, 60, 80, 100]`，用于 Desc 占位符 `{Custom_0}` 与公式中的「每档数值」。
+  3. **局外变量**：**仅**写在 **OverridableAttributes** 中，如 `[Key.Custom_1] = [4, 8, 12, 16]`（赢得战斗次数阈值）或 **`[Key.Custom_1] = [5, 10, 15, 20]`**（已购买数量，**常用默认**）；局外逻辑在适当时机更新卡组槽位的 `Overrides[Key.Custom_1]`。
+  4. **光环**：用公式将两者结合，如 `Value = Formula.Source(Key.Custom_0) * Formula.Source(Key.Custom_1)`；若还有基础值，则能力用模板基础、光环对该属性做**加法**（如护盾 = 50 + Custom_0×Custom_1）。
+- **参考**：**珊瑚**（治疗 = 基础 20 + Custom_0×Custom_1，Custom_0 每次购买提高量，Custom_1 已购买水系数量，默认 5/10/15/20）；**珊瑚护甲**（护盾 = 基础 50 + Custom_0×Custom_1，同上模式，Custom_0 = 10 » 20 » 30 » 40）；**狼筅**（伤害提高 = Custom_0×Custom_1，Custom_0 为 40 » 60 » 80 » 100，Custom_1 可覆盖，默认赢得战斗次数阈值 4/8/12/16）。
 
 ### AuraDefinition Condition 默认 SameAsSource
 
 - **约定**：当光环作用目标为**来源物品自身**时（即 `Condition.SameAsSource`），**不要显式写** `Condition = Condition.SameAsSource`。
 - **实现**：`AuraDefinition.Condition` 的默认值即为 `Condition.SameAsSource`（见 `Core/AuraDefinition.cs`），显式写出会造成冗余且易在修改时漏改。
-- **示例**：珊瑚的治疗加成光环只需写 `AttributeName = Key.Heal`、`Value = Formula.Source(Key.Custom_0) * Formula.Source(Key.Custom_1)`，无需写 `Condition = Condition.SameAsSource`。
+- **示例**：珊瑚的治疗加成光环只需写 `AttributeName = Key.Heal`、`Value = Formula.Source(Key.Custom_0) * Formula.Source(Key.Custom_1)`，无需写 `Condition = Condition.SameAsSource`。护盾型（珊瑚护甲）同理，`AttributeName = Key.Shield`，基础护盾写在模板 `Shield = 50`。
 
 ---
 

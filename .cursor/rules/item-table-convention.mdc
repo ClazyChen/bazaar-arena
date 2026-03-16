@@ -6,20 +6,21 @@ alwaysApply: false
 
 # 从表格添加物品的约定
 
-用户可能以**表格图片**形式提供物品需求。列顺序为：**Name、所属、版本、minTier、Size、CD、TAG、效果**（其中**所属**为第 2 列，用于明确物品归属）。按以下方式解读与实现。
+用户可能以**表格图片**形式提供物品需求。列顺序为：**中文名、英文名、所属、版本、minTier、Size、CD、TAG、效果**。**英文名为第 2 列**；后续用户不再单独给出物品英文名，一律从表格第 2 列读取。按以下方式解读与实现。
 
 ## 列与代码映射
 
 | 列 | 含义 | 代码对应 |
 |----|------|----------|
-| Name | 物品中文名 | `Name = "..."` |
-| **所属** | 所属英雄或公共（第 2 列） | **公共** → Common*；**Vanessa** 等 → ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;，一物一文件，RegisterAll 中设 `db.DefaultHero` 后注册 |
-| **版本** | 版本/赛季（**第 3 列**） | 数字如 5、1、12 → 对应 _S5、_S1 或无后缀。**表格第一行**对应**最新版**，名称**无后缀**（如「火药角」「鹦鹉皮特」），用 `Template()`、`Name = "中文名"`；后续行对应历史版本，用 `Template_Sx()`、`Name = "中文名_Sx"`。多行同物不同版本则多套工厂方法。 |
-| minTier | B/S/G/D | Bronze / Silver / Gold / Diamond，在 RegisterAll 中设 `db.DefaultMinTier` 后注册 |
-| Size | S/M/L | Small / Medium / Large，`db.DefaultSize` |
-| CD | 冷却秒数 | `Cooldown = 数值` 或 `Cooldown = [a, b, c, d]`（按档位） |
-| TAG | 标签 | `Tags = [Tag.工具]` 等（多标签用逗号分隔） |
-| 效果 | 物品描述与能力 | 对应 `Desc`；多条效果在 Desc 中用分号隔开。实现为 Abilities / Auras |
+| 中文名 | 物品中文名（第 1 列） | `Name = "..."` |
+| **英文名** | 物品英文名（**第 2 列**） | **文件名**与**类名**取 PascalCase（去空格），如 `VolcanicVents.cs`、`VolcanicVents`；后续不再由用户单独提供，从本列读取。 |
+| **所属** | 所属英雄或公共（第 3 列） | **公共** → Common*；**Vanessa** 等 → ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;，一物一文件，RegisterAll 中设 `db.DefaultHero` 后注册 |
+| **版本** | 版本/赛季（**第 4 列**） | 数字如 5、1、12 或 B 等 → 对应 _S5、_S1 或无后缀。**表格第一行**对应**最新版**，名称**无后缀**（如「海底热泉」「鹦鹉皮特」），用 `Template()`、`Name = "中文名"`；后续行对应历史版本，用 `Template_Sx()`、`Name = "中文名_Sx"`。多行同物不同版本则多套工厂方法。 |
+| minTier | 第 5 列，B/S/G/D 或数字 | Bronze / Silver / Gold / Diamond，在 RegisterAll 中设 `db.DefaultMinTier` 后注册 |
+| Size | 第 6 列，S/M/L | Small / Medium / Large，`db.DefaultSize` |
+| CD | 第 7 列，冷却秒数 | `Cooldown = 数值` 或 `Cooldown = [a, b, c, d]`（按档位） |
+| TAG | 第 8 列，标签 | `Tags = [Tag.工具]` 等（多标签用逗号分隔） |
+| 效果 | 第 9 列，物品描述与能力 | 对应 `Desc`；多条效果在 Desc 中用分号隔开。实现为 Abilities / Auras |
 
 ## 优先级缩写
 
@@ -50,7 +51,7 @@ alwaysApply: false
 - **前面有 ▶** 或文案含「**提高**」「**造成**」等主动动词：表示**使用物品时**触发的主动效果 → 实现为 **Ability**（默认 `Trigger.UseItem`），如 `Ability.Damage`、`Ability.Shield`。**只有文案明确写「战斗开始时」**才用 `Trigger.BattleStart`；▶ 不表示战斗开始。勿误写成被动光环。
 - **无 ▶ 但写明触发条件**（如「造成暴击时」「使用其他水系物品时」）：实现为**对应触发器的 Ability**，用 `Override(trigger: ...)` 或 `condition: SameSide & WithTag(...)` 等。
 - **无 ▶ 且无任何触发条件**：实现为**光环**（如「己方武器伤害 +X」→ `AuraDefinition`），而不是 UseItem 的 AddAttribute。
-- **「购买此物品时获得 X」等局外/商店效果**：对战模拟器**不实现**局外触发逻辑，仅在类注释中注明「局外成长忽略」。若效果为「某局外条件时此物品某属性提高 X/Y/Z/W」，可用**光环（Formula.Source(Custom_0)×Formula.Source(Custom_1)）+ OverridableAttributes（Custom_1 局外可覆盖）** 描述，战斗内数值由公式与卡组 Overrides 决定；参考 **狼筅**、**珊瑚**（见 `docs/implementation-notes.md`「局外成长与光环公式」）。
+- **「购买此物品时获得 X」等局外/商店效果**：对战模拟器**不实现**局外触发逻辑，仅在类注释中注明「局外成长忽略」。若效果为「某局外条件时此物品某属性提高 X/Y/Z/W」，可用**基础数值 + 光环（Formula.Source(Custom_0)×Formula.Source(Custom_1)）+ OverridableAttributes（Custom_1 局外可覆盖，默认常用 5/10/15/20）** 描述，战斗内数值由公式与卡组 Overrides 决定；参考 **珊瑚**（治疗）、**珊瑚护甲**（护盾）、**狼筅**（见 `docs/implementation-notes.md`「局外成长与光环公式」）。
 
 **数值与 Desc**：
 
@@ -59,9 +60,9 @@ alwaysApply: false
 
 ## 归属：由「所属」列决定
 
-- 表格第 2 列**所属**：填**英雄名**（如 Vanessa、海盗）或**公共**。**公共** → 放在 CommonSmall/CommonMedium/CommonLarge；**英雄名** → 放在 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;**（如 `Vanessa/small`），一物一文件，类名与**英文名**对应，在对应英雄的 RegisterAll 中设 `db.DefaultHero` 后注册。
+- 表格第 3 列**所属**：填**英雄名**（如 Vanessa、海盗）或**公共**。**公共** → 放在 CommonSmall/CommonMedium/CommonLarge；**英雄名** → 放在 **ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;**（如 `Vanessa/small`），一物一文件，类名与**第 2 列英文名**对应（PascalCase，去空格），在对应英雄的 RegisterAll 中设 `db.DefaultHero` 后注册。
 - 若表格未含所属列（旧格式），则按表格或用户是否明确为某英雄判断；若后续确认为英雄专属，应迁移到英雄目录并删除 Common* 中的定义与注册。
 
 ## 英文名
 
-用户会给出物品英文名（如 Honing Steel、Concealed Dagger）。**文件名**与**类名**据此取 PascalCase（去空格），如 `HoningSteel.cs`、`ConcealedDagger.cs`；工厂方法为 `Template()`、`Template_S1()` 等。
+**后续不再由用户单独给出物品英文名**，一律从表格**第 2 列（英文名）**读取。**文件名**与**类名**据此取 PascalCase（去空格），如 `VolcanicVents.cs`、`VolcanicVents`；工厂方法为 `Template()`、`Template_S1()` 等。

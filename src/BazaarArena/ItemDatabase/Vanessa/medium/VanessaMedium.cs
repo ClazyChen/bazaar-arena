@@ -29,5 +29,7 @@ public static class VanessaMedium
         db.Register(SharkClaws.Template_S2());
         db.DefaultMinTier = ItemTier.Silver;
         db.Register(Wetware.Template());
+        db.Register(VolcanicVents.Template());
+        db.Register(CoralArmor.Template());
     }
 }
