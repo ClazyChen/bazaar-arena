@@ -250,6 +250,16 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             int cap = t.Template.GetInt(Key.AmmoCap, t.Tier, 0, auraCtx);
             int add = Math.Min(amount, Math.Max(0, cap - t.AmmoRemaining));
             t.AmmoRemaining += add;
+            // 装填后若充能已满且现有子弹，与充能满时一致：加入施放队列并清零已过冷却
+            if (side == Side && ChargeInducedCastQueue != null)
+            {
+                int cooldownMs = side.GetItemInt(index, "CooldownMs", 0);
+                if (cooldownMs > 0 && t.CooldownElapsedMs >= cooldownMs && (cap <= 0 || t.AmmoRemaining > 0))
+                {
+                    ChargeInducedCastQueue.Add(t);
+                    t.CooldownElapsedMs = 0;
+                }
+            }
             return t.Template.Name;
         }, null);
     }
