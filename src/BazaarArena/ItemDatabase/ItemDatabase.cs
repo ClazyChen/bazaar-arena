@@ -201,6 +201,7 @@ public class ItemDatabase : IItemTemplateResolver
         if (triggerName == Trigger.Shield) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.BattleStart) return condition ?? Condition.Always;
         if (triggerName == Trigger.Ammo) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.AboutToLose) return condition ?? Condition.SameSide;
         return condition;
     }
 }

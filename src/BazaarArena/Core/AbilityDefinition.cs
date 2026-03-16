@@ -166,6 +166,8 @@ public class AbilityDefinition
             defaultCond = Condition.SameSide;
         else if (trigger == Trigger.BattleStart)
             defaultCond = Condition.Always;
+        else if (trigger == Trigger.AboutToLose)
+            defaultCond = Condition.SameSide;
 
         var baseCond = condition ?? defaultCond;
         Condition? mergedCondition;

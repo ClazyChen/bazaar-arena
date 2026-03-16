@@ -15,6 +15,8 @@ public class BattleSide
     public const string KeyRegen = "Regen";
     /// <summary>金币数量，默认 0；后续可能影响战斗或结算。</summary>
     public const string KeyGold = "Gold";
+    /// <summary>本场战斗是否已触发过「即将落败」（0 未触发，1 已触发）；用于救生圈等「即将首次落败时」效果。</summary>
+    public const string KeyAboutToLoseTriggered = "AboutToLoseTriggered";
 
     private readonly Dictionary<string, int> _values = [];
 

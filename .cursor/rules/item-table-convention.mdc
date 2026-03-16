@@ -47,7 +47,7 @@ alwaysApply: false
 
 解读表格「效果」列时，按以下规则决定实现为 **Ability** 还是 **光环（Aura）**：
 
-- **前面有 ▶** 或文案含「**提高**」「**造成**」等主动动词：表示**使用物品时**触发的主动效果 → 实现为 **Ability**（默认 `Trigger.UseItem`），如 `Ability.Damage`、`Ability.AddAttribute(Key.CritRatePercent).Override(...)`。勿误写成被动光环。
+- **前面有 ▶** 或文案含「**提高**」「**造成**」等主动动词：表示**使用物品时**触发的主动效果 → 实现为 **Ability**（默认 `Trigger.UseItem`），如 `Ability.Damage`、`Ability.Shield`。**只有文案明确写「战斗开始时」**才用 `Trigger.BattleStart`；▶ 不表示战斗开始。勿误写成被动光环。
 - **无 ▶ 但写明触发条件**（如「造成暴击时」「使用其他水系物品时」）：实现为**对应触发器的 Ability**，用 `Override(trigger: ...)` 或 `condition: SameSide & WithTag(...)` 等。
 - **无 ▶ 且无任何触发条件**：实现为**光环**（如「己方武器伤害 +X」→ `AuraDefinition`），而不是 UseItem 的 AddAttribute。
 - **「购买此物品时获得 X」等局外/商店效果**：对战模拟器**不实现**，仅在类注释中注明「局外成长忽略」。

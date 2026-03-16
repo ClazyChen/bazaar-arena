@@ -11,6 +11,9 @@ public static class VanessaMedium
         db.DefaultSize = ItemSize.Medium;
         db.DefaultHero = Hero.Vanessa;
         db.DefaultMinTier = ItemTier.Bronze;
-        // db.Register(...);
+        db.Register(FishingNet.Template());
+        db.Register(FishingNet.Template_S7());
+        db.Register(FishingNet.Template_S1());
+        db.Register(LifePreserver.Template());
     }
 }

@@ -191,9 +191,28 @@ public class BattleSimulator
             foreach (var e in nextAbilityQueue) currentAbilityQueue.Add(e);
             nextAbilityQueue.Clear();
 
-            // 10. 胜负判定（先输出本帧结算后的最终生命，再通知结果）
+            // 10. 胜负判定（先输出本帧结算后的最终生命，再通知结果）。即将落败时触发 AboutToLose（Hp≤0 即触发），「首次」由物品 Custom_0 保证（参考靴里剑），仅执行 Immediate 能力后重判。
             bool dead0 = side0.Hp <= 0;
             bool dead1 = side1.Hp <= 0;
+            var aboutToLoseCurrent = new List<AbilityQueueEntry>();
+            var aboutToLoseNext = new List<AbilityQueueEntry>();
+            if (dead0)
+                InvokeTrigger(Trigger.AboutToLose, null, null, timeMs, side0, side1, aboutToLoseCurrent, aboutToLoseNext, null, 0);
+            if (dead1)
+                InvokeTrigger(Trigger.AboutToLose, null, null, timeMs, side0, side1, aboutToLoseCurrent, aboutToLoseNext, null, 1);
+            while (aboutToLoseCurrent.Count > 0)
+            {
+                var toProcess = aboutToLoseCurrent.OrderBy(e => (int)e.Owner.Template.Abilities[e.AbilityIndex].Priority).ToList();
+                aboutToLoseCurrent.Clear();
+                foreach (var entry in toProcess)
+                {
+                    var item = entry.Owner;
+                    var ability = item.Template.Abilities[entry.AbilityIndex];
+                    ExecuteOneEffect(item, ability, entry, false, 200, side0, side1, timeMs, logSink, null, aboutToLoseCurrent, aboutToLoseNext);
+                }
+            }
+            dead0 = side0.Hp <= 0;
+            dead1 = side1.Hp <= 0;
             if (dead0 && dead1)
             {
                 logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);
@@ -306,6 +325,7 @@ public class BattleSimulator
         if (triggerName == Trigger.Burn) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.BattleStart) return condition ?? Condition.Always;
         if (triggerName == Trigger.Ammo) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.AboutToLose) return condition ?? Condition.SameSide;
         return condition;
     }
 
@@ -402,18 +422,20 @@ public class BattleSimulator
             next.Add(newEntry);
     }
 
-    /// <summary>统一触发器调用：给定触发器名、引起触发的物品与上下文，遍历双方所有物品；条件匹配的能力入队（Immediate→current，其余→next）。若传入 executeImmediate，则 Immediate 能力不入队、当场执行。Condition 评估时 Item=引起触发的物品、Source=能力持有者。遍历次序：若有 causeItem，则先检查 causeItem 所在侧且先检查 causeItem 该件，再检查同侧其余物品，再检查另一侧；无 causeItem 时按侧 0、侧 1 与物品下标顺序。</summary>
+    /// <summary>统一触发器调用：给定触发器名、引起触发的物品与上下文，遍历双方所有物品；条件匹配的能力入队（Immediate→current，其余→next）。若传入 executeImmediate，则 Immediate 能力不入队、当场执行。onlyForSideIndex 非空时仅遍历该侧（用于即将落败等仅对单侧触发）。</summary>
     private static void InvokeTrigger(string triggerName, BattleItemState? causeItem, TriggerInvokeContext? context, int timeMs,
         BattleSide side0, BattleSide side1, List<AbilityQueueEntry> current, List<AbilityQueueEntry> next,
-        Action<BattleItemState, int, AbilityDefinition>? executeImmediate = null)
+        Action<BattleItemState, int, AbilityDefinition>? executeImmediate = null, int? onlyForSideIndex = null)
     {
         int pendingCount = (triggerName == Trigger.UseItem || triggerName == Trigger.Freeze || triggerName == Trigger.Slow || triggerName == Trigger.Haste || triggerName == Trigger.Burn || triggerName == Trigger.Poison) && context?.Multicast is int m ? m : 1;
         Func<BattleItemState, IReadOnlySet<string>> getEffectiveTags = item => EffectiveTagHelper.GetEffectiveTags(side0, side1, item);
 
-        // 规定次序：有 causeItem 时先处理 causeItem 所在侧，且该侧先处理 causeItem 再处理其余；无 causeItem 时按 (0, side0), (1, side1) 顺序。
-        var sideOrder = causeItem != null && !causeItem.Destroyed
-            ? new[] { (causeItem.SideIndex, causeItem.SideIndex == 0 ? side0 : side1), (1 - causeItem.SideIndex, causeItem.SideIndex == 0 ? side1 : side0) }
-            : new[] { (0, side0), (1, side1) };
+        // 规定次序：onlyForSideIndex 指定时仅该侧；有 causeItem 时先处理 causeItem 所在侧；无 causeItem 时按 (0, side0), (1, side1) 顺序。
+        var sideOrder = onlyForSideIndex is int ofs
+            ? new[] { (ofs, ofs == 0 ? side0 : side1) }
+            : causeItem != null && !causeItem.Destroyed
+                ? new[] { (causeItem.SideIndex, causeItem.SideIndex == 0 ? side0 : side1), (1 - causeItem.SideIndex, causeItem.SideIndex == 0 ? side1 : side0) }
+                : new[] { (0, side0), (1, side1) };
 
         foreach (var (ownerSideIndex, ownerSide) in sideOrder)
         {

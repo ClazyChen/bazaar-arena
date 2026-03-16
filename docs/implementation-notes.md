@@ -79,13 +79,25 @@
 - **顶层字段与主触发条目**：`TriggerName` / `Condition` / `SourceCondition` / `InvokeTargetCondition` 仍作为「主触发条目」存在，`AbilityDefinition.Override(...)` 修改这些字段时会同步更新 `Triggers[0]`；旧代码在不显式使用 `Triggers` 时行为保持不变。
 - **AbilityDefinition.Also(...)**：在已构造好的能力上追加一套新的触发条件：
   - 签名为 `ability.Also(trigger, condition?, additionalCondition?, sourceCondition?, invokeTargetCondition?)`，返回 `this` 以便链式调用。
-  - `trigger` 的默认 Condition 与 `EnsureTriggerCondition` 一致：UseItem → SameAsSource，Freeze/Slow/Haste/Crit/Destroy/Burn/Poison/Shield/Ammo → SameSide，BattleStart → Always；若传入 `condition`/`additionalCondition` 则在此默认上做与运算。
+  - `trigger` 的默认 Condition 与 `EnsureTriggerCondition` 一致：UseItem → SameAsSource，Freeze/Slow/Haste/Crit/Destroy/Burn/Poison/Shield/Ammo/AboutToLose → SameSide，BattleStart → Always；若传入 `condition`/`additionalCondition` 则在此默认上做与运算。
   - `sourceCondition` / `invokeTargetCondition` 为空时沿用当前 ability 顶层对应字段。
   - `InvokeTrigger` 评估时会遍历该 ability 的所有 TriggerEntry，只要有一条条目匹配当前 triggerName 且通过条件，即视为这条 ability 命中一次并入队。
 - **使用场景与约定**：
   - 当**同一条效果语义**需要在多个触发器或条件下生效、且数值/目标/优先级完全一致、需要共享 250ms 节流时，优先使用一条能力 + 多次 `Also(...)`（避免复制多条几乎相同的能力定义）。
   - 当不同触发下的效果语义或数值明显不同（例如「战斗开始加盾」和「使用时造成伤害」），仍然使用多条独立 AbilityDefinition，而不是混在一条里用多套触发条件。
   - 与对齐当前游戏版本的正式物品定义保持一致时，**不要为了使用 Also 调整原有物品行为**；如需验证多触发逻辑，应在独立的测试物品中尝试，见「物品与测试物品的约定」一节。
+
+### 即将落败（AboutToLose）与「首次」由物品 Custom_0 保证
+
+- **触发器**：`Trigger.AboutToLose`（即将落败）在步骤 10 胜负判定前触发；默认 Condition 为 `SameSide`（仅该方物品能力生效）。参考靴里剑：「首次」**不在触发器名中写 First**，用**物品状态**（Custom_0）区分是否已触发。
+- **「首次」**：与靴里剑一致，用 **Condition.SourceCustom0IsZero** + 生效后 **AddAttribute(Key.Custom_0).Override(..., value: 1, effectLogName: "")** 置 1，每件物品每场最多生效一次。步骤 10 中当某方 `Hp <= 0` 即对该方调用 `InvokeTrigger(Trigger.AboutToLose, null, null, ..., onlyForSideIndex: 该侧)`；仅 **Immediate** 能力入队并在本帧内执行（如救生圈治疗），执行完后重算 Hp 再判胜负。
+- **InvokeTrigger** 支持可选参数 **onlyForSideIndex**（0 或 1）：指定时只遍历该侧物品，用于 AboutToLose 等单侧触发。
+
+### 表格效果与 Override 条件书写经验（救生圈等）
+
+- **▶ 与战斗开始**：表格中 **▶** 表示**使用物品时**触发的主动效果，应实现为默认 `Trigger.UseItem` 的能力（如 `Ability.Shield`）；**只有文案明确写「战斗开始时」**才使用 `Trigger.BattleStart`。勿因效果为「获得护盾」等而误用 BattleStart。
+- **「首次」实现**：与靴里剑一致，用**物品状态**（如 Custom_0）表达「首次」——触发器名不包含 First；条件用 **SourceCustom0IsZero**，生效后同 trigger 下 **AddAttribute(Key.Custom_0).Override(..., value: 1, effectLogName: "")** 置 1。
+- **condition 与 additionalCondition**：Override 时**不可同时指定**二者。目标条件在默认上追加时只写 **additionalCondition**；不包含默认或需替换时只写 **condition** 并用 `&` 组合。详见 **.cursor/rules/ability-override-format.mdc**。
 
 ---
 

@@ -639,8 +639,7 @@ public static class CommonMedium
                 Ability.Damage,
                 Ability.Destroy.Override(
                     trigger: Trigger.Ammo,
-                    condition: Condition.SameAsSource,
-                    additionalCondition: Condition.AmmoDepleted,
+                    condition: Condition.SameAsSource & Condition.AmmoDepleted,
                     targetCondition: Condition.DifferentSide,
                     priority: AbilityPriority.Highest
                 ),
