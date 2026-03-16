@@ -303,10 +303,14 @@ public class BattleSimulator
                 Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), Value = a.Value, Percent = a.Percent }).ToList(),
             };
             clone.SetIntsByTier(t.GetIntsByTierSnapshot());
-            if (entry.Overrides != null)
+            // 仅对模板声明为可复写的属性应用 Overrides，避免卡组中多出的键（或旧版序列化）覆盖 Multicast、AmmoCap、Damage 等模板字段导致效果失效
+            if (entry.Overrides != null && t.OverridableAttributes != null)
             {
                 foreach (var kv in entry.Overrides)
-                    clone.SetInt(kv.Key, kv.Value);
+                {
+                    if (t.OverridableAttributes.ContainsKey(kv.Key))
+                        clone.SetInt(kv.Key, kv.Value);
+                }
             }
             side.Items.Add(new BattleItemState(clone, entry.Tier));
         }
@@ -396,7 +400,7 @@ public class BattleSimulator
             {
                 Owner = owner,
                 AbilityIndex = abilityIdx,
-                PendingCount = 1,
+                PendingCount = pendingCount,
                 InvokeTargetSideIndex = si,
                 InvokeTargetItemIndex = ii,
             };

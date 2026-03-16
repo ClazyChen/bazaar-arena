@@ -31,7 +31,7 @@ public static class LifePreserver
                     targetCondition: Condition.SameAsSource,
                     value: 1,
                     effectLogName: "",
-                    priority: AbilityPriority.Lowest
+                    priority: AbilityPriority.Immediate
                 ),
             ],
         };

@@ -48,6 +48,9 @@
       { "itemName": "獠牙", "tier": 0 },
       { "itemName": "废品场维修机器人", "tier": 0 }
     ] } },
-    { "id": "mb_junkyard_repairbot_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+    { "id": "mb_junkyard_repairbot_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vanessa_mb_volcanic_vents_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "海底热泉", "tier": 0 }] } },
+    { "id": "vanessa_mb_volcanic_vents_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
   ]
 }

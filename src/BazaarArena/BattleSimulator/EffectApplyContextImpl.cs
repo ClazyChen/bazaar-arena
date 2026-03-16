@@ -283,7 +283,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             var name = perItem(wi, i);
             if (name != null) targetNames.Add(name);
         }
-        if (targetNames.Count > 0)
+        if (targetNames.Count > 0 && !string.IsNullOrEmpty(logEffectName))
         {
             string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
             LogEffect(logEffectName, logValue, extraSuffix, showCrit: false);
@@ -311,7 +311,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
                 else if (attributeName == Key.InFlight) { wi.InFlight = value != 0; targetNames.Add(wi.Template.Name); }
                 else { wi.Template.SetInt(attributeName, wi.Template.GetInt(attributeName, wi.Tier, 0) + value); targetNames.Add(wi.Template.Name); }
             }
-            if (targetNames.Count > 0)
+            if (targetNames.Count > 0 && !string.IsNullOrEmpty(logName))
                 LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
             return;
         }

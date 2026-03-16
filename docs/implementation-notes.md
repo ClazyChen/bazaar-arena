@@ -145,7 +145,7 @@
 ### 效果日志抑制
 
 - **AddAttribute/ReduceAttribute** 的 GUI 日志名由 **EffectLogName**（Override 的 effectLogName）或默认「属性中文名+提高/降低」决定。
-- **不显示某条效果日志**：在该能力上 **Override(effectLogName: "")**；实现层 **ReduceAttributeToSide**（及 AddAttribute 的对应路径）在 `logName` 为空时**不调用** `LogSink.OnEffect`（即 `if (targetNames.Count > 0 && !string.IsNullOrEmpty(logName)) LogSink.OnEffect(...)`）。例如手里剑「消耗全部弹药」的 ReduceAttribute 设 `effectLogName: ""`，战斗日志中不显示「剩余弹药降低」。
+- **不显示某条效果日志**：在该能力上 **Override(effectLogName: "")**；实现层在 **logName / logEffectName 为空时不调用** `LogSink.OnEffect`：**ReduceAttributeToSide** 与 **AddAttributeToCasterSide** 的 `if (targetNames.Count > 0 && !string.IsNullOrEmpty(logName))` 再打日志；**ApplyToSideWithCondition** 同样在 `!string.IsNullOrEmpty(logEffectName)` 时才调用 LogEffect。例如手里剑「消耗全部弹药」、救生圈「Custom_0 置 1」设 `effectLogName: ""`，战斗日志中不显示该行。
 
 ---
 
@@ -168,6 +168,11 @@
 - **约定**：步骤 7 调用 `InvokeTrigger(Trigger.UseItem, item, context)` 时，**context 中传入 InvokeTargetItem = item**（被使用的那件物品），以便「当其他物品被使用时、对**被使用的那件物品**施加效果」类能力能正确选目标。
 - **实现**：`new TriggerInvokeContext { Multicast = ..., UsedTemplate = ..., InvokeTargetItem = item }`。能力侧用 **additionalTargetCondition: Condition.SameAsInvokeTarget** 将 AddAttribute 等效果限定为「仅对触发时被使用的那件物品」施加（如弹簧刀：使用相邻武器时，使**该武器**伤害提高）。
 - **与遍历次序的关系**：先检查 cause 物品再其他，再配合 InvokeTargetItem，可保证「被使用物品」自身能力先入队，且「对被使用物品施加」的条目带 InvokeTargetSideIndex/InvokeTargetItemIndex 正确入队。
+
+### AddOrMergeAbility 带 InvokeTarget 时 PendingCount 必须用传入值
+
+- **错误**：当 context 提供 InvokeTargetItem 时，新建条目**不合并**；若新建时把 **PendingCount 写死为 1**，会丢失 UseItem 的 **Multicast**，导致「多重释放：3」等物品每次使用只生效 1 次（如海底热泉只打 1 次灼烧）。
+- **正确**：新建带 InvokeTargetSideIndex/InvokeTargetItemIndex 的条目时，**PendingCount = pendingCount**（即 context.Multicast），与无 InvokeTarget 分支一致。
 
 ---
 
@@ -364,6 +369,7 @@
 
 - **IntOrByTier**：增加 `Add(int delta)`，对每个 tier 的值加 delta 并返回新的 IntOrByTier；空列表时返回 `[delta, delta, delta, delta]`。用于「本场战斗内增加某数值」类效果（如举重手套给武器加伤害）。
 - **战斗内模板**：`BuildSide` 时每个卡组槽位从 resolver 取 template 后**克隆**一份（新 ItemTemplate + SetIntsByTier），再创建 `BattleItemState(clone, tier)`。因此 `BattleItemState.Template` 为当局专用，可直接修改，例如 `wi.Template.Damage = wi.Template.Damage.Add(value)`，无需额外 DamageBonus 字段。
+- **卡组 Overrides 仅应用 OverridableAttributes 内键**：应用 `entry.Overrides` 时，**只对模板的 `OverridableAttributes` 中存在的 key** 执行 `clone.SetInt(kv.Key, kv.Value)`；若对 Overrides 全量应用，卡组中多出的键（旧版序列化、GUI 默认值等）会覆盖克隆上的 Multicast、AmmoCap、Damage 等，导致多重释放/弹药/伤害失效（如海底热泉多重释放 3 只生效 1 次）。见 BattleSimulator.BuildSide。
 - **Damage 的 getter**：若需对 Damage 做「整体加 delta」并写回，模板的 Damage 属性 get 需返回**完整按等级列表**（如通过 GetIntOrByTier），否则 get 只返回单值会丢失其他 tier。
 
 ### 效果数值与 Apply 委托（当前约定）
