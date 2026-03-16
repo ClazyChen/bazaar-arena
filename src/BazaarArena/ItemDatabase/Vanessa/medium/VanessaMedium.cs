@@ -23,6 +23,12 @@ public static class VanessaMedium
         db.Register(Rifle.Template_S1());
         db.Register(Katana.Template());
         db.Register(Langxian.Template());
+        db.Register(BeachBall.Template());
+        db.Register(FishingRod.Template());
+        db.Register(Shovel.Template_S1());
+        db.Register(Shovel.Template());
+        db.Register(StarChart.Template());
+        db.Register(Cannon.Template());
         db.DefaultMinTier = ItemTier.Silver;
         db.Register(SharkClaws.Template());
         db.DefaultMinTier = ItemTier.Bronze;

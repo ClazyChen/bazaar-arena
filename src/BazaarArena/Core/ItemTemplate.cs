@@ -188,21 +188,23 @@ public class ItemTemplate
         return list[listIndex];
     }
 
-    /// <summary>根据字段名与等级读取，若有光环上下文则先取基础值再叠加光环：最终值 = (基础 + Σ固定) × (1 + Σ百分比/100)。冷却时间（CooldownMs）有光环时至少为 1 秒。</summary>
+    /// <summary>根据字段名与等级读取，若有光环上下文则先取基础值再叠加光环：最终值 = (基础 + Σ固定) × (1 + Σ百分比/100)。冷却时间（CooldownMs）有光环时：先按 PercentCooldownReduction 做百分比缩减，再叠加 CooldownMs 的固定/百分比光环，至少为 1 秒。</summary>
     public int GetInt(string key, ItemTier tier, int defaultValue, IAuraContext? context)
     {
         int baseVal = GetInt(key, tier, defaultValue);
         if (context == null)
             return baseVal;
-        context.GetAuraModifiers(key, out int fixedSum, out int percentSum);
-        int result = (int)Math.Round((baseVal + fixedSum) * (1 + percentSum / 100.0));
-        if (key == KeyCooldownMs && result > 0)
+        if (key == KeyCooldownMs && baseVal > 0)
         {
             context.GetAuraModifiers(Key.PercentCooldownReduction, out int redFix, out int redPct);
             int totalRed = Math.Min(99, redFix + redPct);
-            result = result * (100 - totalRed) / 100;
-            return Math.Max(1000, result);
+            int afterReduction = baseVal * (100 - totalRed) / 100;
+            context.GetAuraModifiers(key, out int cdFixed, out int cdPercent);
+            int cdResult = (int)Math.Round((afterReduction + cdFixed) * (1 + cdPercent / 100.0));
+            return Math.Max(1000, cdResult);
         }
+        context.GetAuraModifiers(key, out int fixedSum, out int percentSum);
+        int result = (int)Math.Round((baseVal + fixedSum) * (1 + percentSum / 100.0));
         return result;
     }
 

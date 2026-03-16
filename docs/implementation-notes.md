@@ -254,7 +254,8 @@
 当用户以**表格图片**形式提供物品需求时，列顺序为：**中文名、英文名、所属、版本、minTier、Size、CD、TAG、效果**（第 2 列**英文名**，后续不再单独给出、从表格读取；第 3 列**所属**、第 4 列**版本**用于明确物品归属与赛季）。
 
 - **列映射**：第 1 列 → 中文名（Name）；第 2 列**英文名** → 文件名与类名 PascalCase（后续不再由用户单独提供）；**所属**（第 3 列）→ 英雄名（如 Vanessa）或**公共**；**版本**（第 4 列）→ 数字对应赛季，如 5 → _S5、12 → 无后缀或 _S12 视表格约定；minTier B/S/G/D；Size S/M/L；CD → Cooldown（秒）；TAG → Tags；效果 → Desc 与 Abilities/Auras。
-- **版本列与第一行**：表格**第 4 列**为版本号。**表格第一行**对应**最新版本**，名称**无后缀**（如「海底热泉」「鹦鹉皮特」），实现为 `Template()`、`Name = "中文名"`；后续行对应历史版本，实现为 `Template_Sx()`、`Name = "中文名_Sx"`。勿将第一行误写成带 _Sx 的名称。
+- **版本列与第一行**：表格**第 4 列**为**版本号（数字）**。**表格第一行**对应**最新版本**，名称**无后缀**，实现为 `Template()`、`Name = "中文名"`；同物多行时后续行为历史版本，按该列数字实现为 `Template_Sx()`、`Name = "中文名_Sx"`。勿将第一行误写成带 _Sx 的名称。
+- **版本号与 minTier 区分**：**第 4 列数字**表示**版本号**（用于 _Sx 命名），**第 5 列字母 B/S/G/D** 表示**minTier**（Bronze/Silver/Gold/Diamond）。勿将数字列当作 minTier 使用；档位仅由 B/S/G/D 列决定，在 RegisterAll 中设 `db.DefaultMinTier` 后注册。
 - **效果文案与实现**：**▶** 以及文案中的「**提高**」「**造成**」等主动动词 = **使用物品时触发**的 Ability（UseItem），应实现为 Ability 而非被动光环。**无 ▶ 且无触发条件**的常驻加成（如「己方武器伤害 +X」）= 光环（Aura）。若误将「▶ 某类物品暴击率提高」写成光环，应改为 **Ability.AddAttribute(Key.CritRatePercent).Override(additionalTargetCondition: ..., priority: ...)**。
 - **局外成长**：表格中「购买此物品时获得 X」「购买时 Y」等**局外/商店**效果，对战模拟器不实现，仅在类注释中说明「局外成长忽略」。若效果为「某条件下此物品的某属性提高 X/Y/Z/W（局外成长）」，可用**光环 + OverridableAttributes** 描述，见下节。
 - **优先级**：**仅当表格效果末尾明确标注** (I)/(Hst)/(H)/(L)/(Lst) 时在代码中写 `priority`；**未标注则视为 Medium**，不要猜测或擅自添加 priority。
@@ -267,6 +268,14 @@
 **经验小结**：（1）表格列顺序固定为**中文名、英文名、所属、版本、minTier、Size、CD、TAG、效果**，英文名从第 2 列读取，不再单独提供。（2）局外成长「购买某类物品时此物品某属性提高 X/Y/Z/W」统一用**基础值 + 光环(Custom_0×Custom_1) + OverridableAttributes(Custom_1 默认 5/10/15/20)**，治疗型参考珊瑚、护盾型参考珊瑚护甲。
 
 详见 **.cursor/rules/item-table-convention.mdc**。
+
+### 表格多物品实现经验（加速、暴击率、冷却、价值公式）
+
+- **加速目标**：加速目标必须 HasCooldown 已在 ApplyHaste 内保证。只需在默认目标上追加「某类物品」时，用 **additionalTargetCondition**（如水系或玩具：`Condition.WithTag(Tag.Aquatic) | Condition.WithTag(Tag.Toy)`），勿重写 targetCondition，以保留默认 SameSide + NotDestroyed + HasCooldown。
+- **暴击率光环**：暴击率描述的「%」由展示层自带，Aura 的 **CritRatePercent** 不设 `Percent = true`，仅 `Value = Formula.Source(Key.Custom_0)` 等即可。
+- **冷却与光环顺序**：使用光环读取 **CooldownMs** 时，约定**先**按 **PercentCooldownReduction** 做百分比缩减，**再**叠加 **CooldownMs** 本身的固定/百分比光环；实现见 `ItemTemplate.GetInt(key, tier, defaultValue, context)` 中 `key == Key.CooldownMs` 分支。
+- **价值×倍数护盾（温馨海湾型）**：护盾 = 有效价值 × 倍数，且「出售时价值提高」影响战斗内计算时，将 **Custom_1**（如已出售数量，OverridableAttributes 默认 10/20/40/80）与每次提高量 **Custom_2**（如 1/1/1/2）加入光环公式：`Value = (Formula.Source(Key.Price) + Formula.Source(Key.Custom_1) * Formula.Source(Key.Custom_2)) * Formula.Source(Key.Custom_0)`。出售逻辑局外不实现，Desc 保留。
+- **标签与表格**：表格 TAG 列若写「水系、地产」，代码用 `Tag.Aquatic`、`Tag.Property`（如温馨海湾）；以表格为准，勿与同物其他版本或俗称混用。
 
 ---
 

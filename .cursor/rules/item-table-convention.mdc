@@ -15,11 +15,11 @@ alwaysApply: false
 | 中文名 | 物品中文名（第 1 列） | `Name = "..."` |
 | **英文名** | 物品英文名（**第 2 列**） | **文件名**与**类名**取 PascalCase（去空格），如 `VolcanicVents.cs`、`VolcanicVents`；后续不再由用户单独提供，从本列读取。 |
 | **所属** | 所属英雄或公共（第 3 列） | **公共** → Common*；**Vanessa** 等 → ItemDatabase/&lt;英雄名&gt;/&lt;尺寸&gt;，一物一文件，RegisterAll 中设 `db.DefaultHero` 后注册 |
-| **版本** | 版本/赛季（**第 4 列**） | 数字如 5、1、12 或 B 等 → 对应 _S5、_S1 或无后缀。**表格第一行**对应**最新版**，名称**无后缀**（如「海底热泉」「鹦鹉皮特」），用 `Template()`、`Name = "中文名"`；后续行对应历史版本，用 `Template_Sx()`、`Name = "中文名_Sx"`。多行同物不同版本则多套工厂方法。 |
-| minTier | 第 5 列，B/S/G/D 或数字 | Bronze / Silver / Gold / Diamond，在 RegisterAll 中设 `db.DefaultMinTier` 后注册 |
+| **版本** | **版本号**（**第 4 列，数字**） | 数字如 5、1、12 表示版本号 → 历史版用 `Template_Sx()`、`Name = "中文名_Sx"`（如 _S5、_S1）。**表格第一行**对应**最新版**，名称**无后缀**，用 `Template()`、`Name = "中文名"`；同物多行时其余行为历史版，按该列数字取 _Sx。 |
+| **minTier** | **档位**（**第 5 列，B/S/G/D**） | **仅字母列**表示档位：B=Bronze、S=Silver、G=Gold、D=Diamond。在 RegisterAll 中设 `db.DefaultMinTier` 后注册。**勿将第 4 列数字当作 minTier**。 |
 | Size | 第 6 列，S/M/L | Small / Medium / Large，`db.DefaultSize` |
 | CD | 第 7 列，冷却秒数 | `Cooldown = 数值` 或 `Cooldown = [a, b, c, d]`（按档位） |
-| TAG | 第 8 列，标签 | `Tags = [Tag.工具]` 等（多标签用逗号分隔） |
+| TAG | 第 8 列，标签 | `Tags = [Tag.工具]` 等（多标签用逗号分隔）；以表格为准，如「水系、地产」→ `Tag.Aquatic`、`Tag.Property`。 |
 | 效果 | 第 9 列，物品描述与能力 | 对应 `Desc`；多条效果在 Desc 中用分号隔开。实现为 Abilities / Auras |
 
 ## 优先级缩写

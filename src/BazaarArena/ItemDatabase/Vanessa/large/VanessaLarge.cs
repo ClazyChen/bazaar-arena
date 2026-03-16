@@ -11,6 +11,6 @@ public static class VanessaLarge
         db.DefaultSize = ItemSize.Large;
         db.DefaultHero = Hero.Vanessa;
         db.DefaultMinTier = ItemTier.Bronze;
-        // db.Register(...);
+        db.Register(Cove.Template());
     }
 }
