@@ -15,5 +15,19 @@ public static class VanessaMedium
         db.Register(FishingNet.Template_S7());
         db.Register(FishingNet.Template_S1());
         db.Register(LifePreserver.Template());
+        db.Register(DoubleBarrel.Template());
+        db.Register(Cutlass.Template());
+        db.Register(Barrel.Template());
+        db.Register(Barrel.Template_S1());
+        db.Register(Rifle.Template());
+        db.Register(Rifle.Template_S1());
+        db.Register(Katana.Template());
+        db.Register(Langxian.Template());
+        db.DefaultMinTier = ItemTier.Silver;
+        db.Register(SharkClaws.Template());
+        db.DefaultMinTier = ItemTier.Bronze;
+        db.Register(SharkClaws.Template_S2());
+        db.DefaultMinTier = ItemTier.Silver;
+        db.Register(Wetware.Template());
     }
 }

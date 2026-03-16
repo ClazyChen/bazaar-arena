@@ -183,6 +183,26 @@ public class Condition
         return count == 1;
     });
 
+    /// <summary>被评估对象（Item）是己方唯一有冷却时间的武器：同侧未摧毁、带 Tag.Weapon 且 CooldownMs &gt; 0 的物品恰有一个且为该 Item。用于「若此为唯一有冷却的武器则装填弹药」等。计数时使用有效标签（含光环授予）。</summary>
+    public static Condition OnlyWeaponWithCooldown { get; } = new(ctx =>
+    {
+        if (ctx.Item == null || ctx.Item.Destroyed) return false;
+        var itemTags = ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? new HashSet<string>(ctx.Item.Template.Tags ?? []);
+        if (!itemTags.Contains(Tag.Weapon)) return false;
+        if (ctx.MySide.GetItemInt(ctx.Item.ItemIndex, "CooldownMs", 0) <= 0) return false;
+        int count = 0;
+        for (int j = 0; j < ctx.MySide.Items.Count; j++)
+        {
+            var it = ctx.MySide.Items[j];
+            if (it.Destroyed) continue;
+            var t = ctx.GetEffectiveTagsForItem?.Invoke(it) ?? new HashSet<string>(it.Template.Tags ?? []);
+            if (!t.Contains(Tag.Weapon)) continue;
+            if (ctx.MySide.GetItemInt(it.ItemIndex, "CooldownMs", 0) <= 0) continue;
+            count++;
+        }
+        return count == 1;
+    });
+
     /// <summary>能力持有者（Source）的 Custom_0 为 0；用于「首次使用前」暴击率加成等（如靴里剑首次使用 +100% 暴击率）。</summary>
     public static Condition SourceCustom0IsZero { get; } = new(ctx =>
         ctx.MySide.GetItemInt(ctx.Source.ItemIndex, Key.Custom_0, 0) == 0);

@@ -256,7 +256,7 @@
 - **列映射**：Name → 中文名；**所属**（第 2 列）→ 英雄名（如 Vanessa）或**公共**；**版本**（第 3 列）→ 数字对应赛季，如 5 → _S5、12 → 无后缀或 _S12 视表格约定；minTier B/S/G/D；Size S/M/L；CD → Cooldown（秒）；TAG → Tags；效果 → Desc 与 Abilities/Auras。
 - **版本列与第一行**：表格**第三列**为版本号。**表格第一行**对应**最新版本**，名称**无后缀**（如「火药角」「鹦鹉皮特」），实现为 `Template()`、`Name = "中文名"`；后续行对应历史版本，实现为 `Template_Sx()`、`Name = "中文名_Sx"`。勿将第一行误写成带 _Sx 的名称。
 - **效果文案与实现**：**▶** 以及文案中的「**提高**」「**造成**」等主动动词 = **使用物品时触发**的 Ability（UseItem），应实现为 Ability 而非被动光环。**无 ▶ 且无触发条件**的常驻加成（如「己方武器伤害 +X」）= 光环（Aura）。若误将「▶ 某类物品暴击率提高」写成光环，应改为 **Ability.AddAttribute(Key.CritRatePercent).Override(additionalTargetCondition: ..., priority: ...)**。
-- **局外成长**：表格中「购买此物品时获得 X」「购买时 Y」等**局外/商店**效果，对战模拟器不实现，仅在类注释中说明「局外成长忽略」。
+- **局外成长**：表格中「购买此物品时获得 X」「购买时 Y」等**局外/商店**效果，对战模拟器不实现，仅在类注释中说明「局外成长忽略」。若效果为「某条件下此物品的某属性提高 X/Y/Z/W（局外成长）」，可用**光环 + OverridableAttributes** 描述，见下节。
 - **优先级**：**仅当表格效果末尾明确标注** (I)/(Hst)/(H)/(L)/(Lst) 时在代码中写 `priority`；**未标注则视为 Medium**，不要猜测或擅自添加 priority。
 - **「此物品被加速/被减速时」**：`trigger: Trigger.Haste` / `Trigger.Slow`，**condition: Condition.SameAsInvokeTarget**（被加速/被减速的是本物品），**targetCondition: Condition.SameAsSource**（效果施加给自身）。参考毒须鲶、皮皮虾。
 - **「每有一个相邻的…，此物品 +1 多重释放」**：多重释放 = 相邻数量，用 **Formula.Count(...)**，**不要**写 `Formula.Constant(1) + Formula.Count(...)`。参考迷幻蝠鲼、鹦鹉皮特。
@@ -294,6 +294,15 @@
 - **约定**：需要卡组内可覆盖属性时，**仅在 OverridableAttributes 中写一次默认值**（如 `OverridableAttributes = new Dictionary<string, IntOrByTier> { [Key.Custom_1] = [5, 10, 15, 20] }`），**不要在模板上再写一遍**同名属性（如不再写 `Custom_1 = [5, 10, 15, 20]`）。
 - **实现**：`ItemDatabase.Register` 在写入 Size/MinTier/Hero 之后、`EnsureTypeTags` 之前，会遍历 `template.OverridableAttributes`，对每个 key 调用 `template.SetIntOrByTierByKey(kv.Key, kv.Value)`，将默认值同步到模板内部字典，供战斗内公式（如 `Formula.Source(Key.Custom_1)`）与 Desc 占位符使用。
 - **效果**：物品定义中只需维护一处默认值，GUI 的「覆盖属性」对话框与战斗内读取均一致。
+
+### 局外成长与光环公式（狼筅、珊瑚）
+
+- **适用场景**：表格效果为「某局外条件（如购买水系、赢得战斗）时，此物品的某属性提高 X/Y/Z/W」，对战模拟器**不实现**局外触发逻辑，但可用**光环公式 + OverridableAttributes** 在战斗内正确读出「当前成长后的数值」，并由卡组 Overrides 或外部逻辑在局外更新可覆盖变量。
+- **写法要点**：
+  1. **文案数值（档位/档位列表）**：写在模板上，如 `Custom_0 = [40, 60, 80, 100]`，用于 Desc 占位符 `{Custom_0}` 与公式中的「每档数值」。
+  2. **局外变量**：**仅**写在 **OverridableAttributes** 中，如 `[Key.Custom_1] = [4, 8, 12, 16]`（赢得战斗次数阈值）或 `[Key.Custom_1] = [5, 10, 15, 20]`（已购买数量）；局外逻辑在适当时机更新卡组槽位的 `Overrides[Key.Custom_1]`。
+  3. **光环**：用公式将两者结合，如 `Value = Formula.Source(Key.Custom_0) * Formula.Source(Key.Custom_1)`，使战斗内读该属性时 = Custom_0 × Custom_1（按档位与覆盖值）。
+- **参考**：**珊瑚**（治疗 = 基础 20 + Custom_0×Custom_1，Custom_0 为每次购买提高量，Custom_1 可覆盖表示已购买水系数量）；**狼筅**（伤害提高 = Custom_0×Custom_1，Custom_0 为 40 » 60 » 80 » 100，Custom_1 可覆盖，默认赢得战斗次数阈值 4/8/12/16）。
 
 ### AuraDefinition Condition 默认 SameAsSource
 
