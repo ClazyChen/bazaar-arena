@@ -93,10 +93,42 @@ public static class DeckGen
     /// exploreMix=0 表示完全加权；1 表示完全均匀。
     /// </summary>
     public static DeckRep? RandomDeckWeighted(IReadOnlyList<int> shape, ItemPool pool, Priors priors, Random rng, double exploreMix)
+        => RandomDeckWeightedSynergy(
+            shape,
+            pool,
+            priors,
+            db: null,
+            rng,
+            exploreMix,
+            pairLambda: 0.0,
+            mechanicLambda: 0.0,
+            config: new Config(),
+            totalGames: 0);
+
+    /// <summary>
+    /// 协同加权随机生成：在单物品权重之上叠加“与已选物品集合”的协同加成（物品对 + 机制标签对）。
+    /// </summary>
+    public static DeckRep? RandomDeckWeightedSynergy(
+        IReadOnlyList<int> shape,
+        ItemPool pool,
+        Priors priors,
+        IItemTemplateResolver? db,
+        Random rng,
+        double exploreMix,
+        double pairLambda,
+        double mechanicLambda,
+        Config config,
+        int totalGames)
     {
         exploreMix = Math.Clamp(exploreMix, 0.0, 1.0);
         if (!pool.CanBuildNoDuplicate(shape))
             return null;
+
+        var t = AnnealT(config, totalGames);
+        var randMix = Math.Clamp(config.CandidateRandomMixMin, 0.0, 1.0);
+        var itemMix = Lerp(Math.Clamp(config.CandidateItemOnlyMixStart, 0.0, 1.0), Math.Clamp(config.CandidateItemOnlyMixEnd, 0.0, 1.0), t);
+        if (randMix + itemMix > 1.0)
+            itemMix = Math.Max(0.0, 1.0 - randMix);
 
         var used = new HashSet<string>(StringComparer.Ordinal);
         var names = new List<string>(shape.Count);
@@ -108,13 +140,26 @@ public static class DeckGen
                 return null;
 
             string pick;
-            if (rng.NextDouble() < exploreMix)
+            var roll = rng.NextDouble();
+            if (roll < randMix || roll < exploreMix)
             {
                 pick = candidates[rng.Next(candidates.Count)];
             }
             else
             {
-                var weights = candidates.Select(n => priors.ItemWeight(size, n)).ToList();
+                bool itemOnly = roll < randMix + itemMix;
+                var weights = candidates.Select(n =>
+                    CandidateWeight(
+                        size,
+                        n,
+                        names,
+                        priors,
+                        db,
+                        pairLambda,
+                        mechanicLambda,
+                        config,
+                        t,
+                        itemOnly)).ToList();
                 pick = candidates[WeightedPick.PickIndex(weights, rng)];
             }
 
@@ -124,4 +169,156 @@ public static class DeckGen
 
         return new DeckRep(shape, names);
     }
+
+    /// <summary>
+    /// anchored 起点：强制包含 anchor 物品（无重复），并在其余槽位使用协同加权抽样。
+    /// anchor 的槽位位置在所有同尺寸槽位中随机选取。
+    /// </summary>
+    public static DeckRep? RandomDeckWeightedSynergyAnchored(
+        IReadOnlyList<int> shape,
+        ItemPool pool,
+        Priors priors,
+        IItemTemplateResolver db,
+        Random rng,
+        double exploreMix,
+        double pairLambda,
+        double mechanicLambda,
+        string anchorItemName,
+        Config config,
+        int totalGames)
+    {
+        if (string.IsNullOrEmpty(anchorItemName)) return null;
+        if (!pool.CanBuildNoDuplicate(shape)) return null;
+
+        var anchorTemplate = db.GetTemplate(anchorItemName);
+        if (anchorTemplate == null) return null;
+        int anchorSize = anchorTemplate.Size switch
+        {
+            ItemSize.Small => 1,
+            ItemSize.Medium => 2,
+            ItemSize.Large => 3,
+            _ => 0,
+        };
+        if (anchorSize == 0) return null;
+
+        var positions = new List<int>();
+        for (int i = 0; i < shape.Count; i++)
+            if (shape[i] == anchorSize) positions.Add(i);
+        if (positions.Count == 0) return null;
+
+        int anchorPos = positions[rng.Next(positions.Count)];
+
+        var used = new HashSet<string>(StringComparer.Ordinal) { anchorItemName };
+        var names = new List<string>(shape.Count);
+        for (int i = 0; i < shape.Count; i++) names.Add("");
+        names[anchorPos] = anchorItemName;
+
+        // 按槽位填充；候选权重会自动把 anchor 作为已选集合的一部分，从而偏向其拍档
+        var selected = new List<string> { anchorItemName };
+        var t = AnnealT(config, totalGames);
+        var randMix = Math.Clamp(config.CandidateRandomMixMin, 0.0, 1.0);
+        var itemMix = Lerp(Math.Clamp(config.CandidateItemOnlyMixStart, 0.0, 1.0), Math.Clamp(config.CandidateItemOnlyMixEnd, 0.0, 1.0), t);
+        if (randMix + itemMix > 1.0)
+            itemMix = Math.Max(0.0, 1.0 - randMix);
+
+        for (int i = 0; i < shape.Count; i++)
+        {
+            if (i == anchorPos) continue;
+            int size = shape[i];
+            var candidates = pool.NamesForSize(size).Where(n => !used.Contains(n)).ToList();
+            if (candidates.Count == 0) return null;
+
+            string pick;
+            var roll = rng.NextDouble();
+            if (roll < randMix || roll < Math.Clamp(exploreMix, 0.0, 1.0))
+            {
+                pick = candidates[rng.Next(candidates.Count)];
+            }
+            else
+            {
+                bool itemOnly = roll < randMix + itemMix;
+                var weights = candidates.Select(n =>
+                    CandidateWeight(
+                        size,
+                        n,
+                        selected,
+                        priors,
+                        db,
+                        pairLambda,
+                        mechanicLambda,
+                        config,
+                        t,
+                        itemOnly)).ToList();
+                pick = candidates[WeightedPick.PickIndex(weights, rng)];
+            }
+
+            used.Add(pick);
+            names[i] = pick;
+            selected.Add(pick);
+        }
+
+        return new DeckRep(shape, names);
+    }
+
+    private static double CandidateWeight(
+        int size,
+        string candidate,
+        IReadOnlyList<string> selected,
+        Priors priors,
+        IItemTemplateResolver? db,
+        double pairLambda,
+        double mechanicLambda,
+        Config config,
+        double annealT,
+        bool itemOnly)
+    {
+        double itemW = priors.ItemWeight(size, candidate);
+        if (itemOnly)
+            return Math.Max(1e-6, itemW);
+
+        double w = itemW;
+
+        if (selected.Count == 0 || (pairLambda <= 0 && mechanicLambda <= 0))
+            return Math.Max(1e-6, w);
+
+        var clip = Math.Max(1.0, config.PriorsSignalClip);
+        var pairEff = Math.Max(0.0, pairLambda * (0.3 + 0.7 * annealT));
+        var mechEff = Math.Max(0.0, mechanicLambda * (1.2 - 0.7 * annealT));
+
+        if (pairLambda > 0)
+        {
+            double sum = 0;
+            foreach (var other in selected)
+                sum += priors.PairWeight(candidate, other);
+            w += pairEff * (sum / clip);
+        }
+
+        if (mechanicLambda > 0 && db != null)
+        {
+            var mechsC = MechanicTagger.GetMechanics(candidate, db);
+            if (mechsC.Count > 0)
+            {
+                double sum = 0;
+                foreach (var other in selected)
+                {
+                    var mechsO = MechanicTagger.GetMechanics(other, db);
+                    if (mechsO.Count == 0) continue;
+                    foreach (var mc in mechsC)
+                        foreach (var mo in mechsO)
+                            sum += priors.MechanicPairWeight(mc, mo);
+                }
+                w += mechEff * (sum / clip);
+            }
+        }
+
+        return Math.Max(1e-6, w);
+    }
+
+    private static double AnnealT(Config config, int totalGames)
+    {
+        var denom = Math.Max(1, config.PriorsAnnealGames);
+        return Math.Clamp(totalGames / (double)denom, 0.0, 1.0);
+    }
+
+    private static double Lerp(double a, double b, double t) => a + (b - a) * Math.Clamp(t, 0.0, 1.0);
 }

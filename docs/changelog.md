@@ -1,5 +1,15 @@
 # 变更记录
 
+## 类型 Tag 与机制 Tag 统一、协同先验（Synergy Prior）
+
+- **EnsureTypeTags 改为按 Apply 打标**：类型 Tag（Damage/Burn/Poison/Heal/Shield/Regen）不再根据模板数值属性，改为根据 **Ability.Apply** 与 `Effect.*Apply` 对应关系打标；SameAsSource 光环仍按 AttributeName 补六类 Tag。
+- **Tag.Crit / Tag.Cooldown**：具备六类可暴击 Tag 之一且存在 UseItem+UseSelf+ApplyCritMultiplier 能力时打 Tag.Crit；任意档位 CooldownMs>0 时打 Tag.Cooldown。
+- **机制 Tag**：按 Apply 打 Tag.Charge、Freeze、Slow、Haste、Reload、Repair、Destroy、StopFlying；StartFlying 通过 EffectLogName=="开始飞行" 识别。AddAttribute/ReduceAttribute、GainGold 不参与自动打标。
+- **协同先验**：ItemTemplate 新增 **UpstreamRequirements**、**DownstreamRequirements**、**NeighborPreference**（`List<SynergyClause>?`，OR of ANDs）。子句为若干 Tag 的 AND，可带 **SynergyDirection**（Left/Right）表示相对己方方向。书写统一用 **Synergy.And(tags)** 与 **Synergy.And(direction, tags)**。示例：珍珠上游 Aquatic+Cooldown、刺刀上游 Left+Weapon、火药角下游 Right+Ammo、迷幻蝠鲼邻居 Friend OR Ray、弹簧刀邻居 Weapon。
+- **文档与规则**：implementation-notes 更新「物品类型 Tag 与机制 Tag」、新增「协同先验（Synergy Prior）」；project-conventions.mdc 补充 EnsureTypeTags 与协同先验字段约定；新增 .cursor/rules/synergy-prior.mdc；ItemUiHelper 隐藏 Tag.Crit/Cooldown 与机制 Tag。
+
+---
+
 ## Vanessa 物品与 InvokeTrigger 次序、Price/龙涎香/首次使用、表格约定
 
 - **InvokeTrigger 遍历次序**：调用触发器时**先检查引起触发的物品（causeItem）上的能力**，再检查同侧其余、再检查另一侧；无 cause 时仍按 side0→side1、下标顺序。保证 UseItem 时先处理「被使用物品」自身能力再处理「其他物品被使用时」类能力。

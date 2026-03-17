@@ -28,6 +28,11 @@ public static class IllusoRay
                     Value = Formula.Count(Condition.AdjacentToSource & (Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Ray))),
                 },
             ],
+            NeighborPreference =
+            [
+                Synergy.And(Tag.Friend),
+                Synergy.And(Tag.Ray),
+            ],
         };
     }
 }

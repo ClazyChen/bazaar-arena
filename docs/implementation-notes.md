@@ -743,16 +743,41 @@
 
 ---
 
-## 物品类型 Tag（护盾/伤害/灼烧等）
+## 物品类型 Tag 与机制 Tag（EnsureTypeTags）
 
-- **Tag 常量**：`Core/Tag.cs` 提供 `Tag.Shield`、`Tag.Damage`、`Tag.Burn`、`Tag.Poison`、`Tag.Heal`、`Tag.Regen`，用于判断物品是否为护盾/伤害/灼烧等类型及是否可暴击。
-- **注册时自动补充**：`ItemDatabase.Register` 在写入模板前调用 `EnsureTypeTags`：① 若模板任一档位下某属性（Damage、Burn、Poison、Heal、Shield、Regen）> 0，则向模板的 `Tags` 加入对应类型 Tag；② 若模板有光环且条件为 **SameAsSource**（作用目标为自身），则按光环的 **AttributeName** 若为上述六类属性之一也补充对应 Tag（如 Damage 为 0 但由光环提供伤害的废品场长枪仍会得到 Tag.Damage）。无需在物品定义里手写。
-- **判断时使用 Tag**：模拟器判断「是否可暴击」用 `ItemHasAnyCrittableField(item)`，内部看 `item.Template.Tags` 是否含上述六类 Tag 之一；裂盾等效果用 `Condition.WithTag(Tag.Shield)`，内部看 `ctx.Item.Template.Tags.Contains(Tag.Shield)`。类型由 Tag 决定，不受战斗内数值修改（如裂盾减 Shield）影响。
+- **类型 Tag**：`Core/Tag.cs` 提供 `Tag.Shield`、`Tag.Damage`、`Tag.Burn`、`Tag.Poison`、`Tag.Heal`、`Tag.Regen`，用于判断物品类型及是否可暴击。
+- **注册时自动补充**：`ItemDatabase.Register` 在写入模板前调用 **EnsureTypeTags**，规则如下（**不**再根据模板数值属性直接打标）：
+  1. **按 Ability.Apply 打类型 Tag**：遍历 `template.Abilities`，根据 `a.Apply` 与 `Effect.*Apply` 对应关系打 Tag（DamageApply→Tag.Damage、BurnApply→Tag.Burn、PoisonApply/PoisonSelfApply→Tag.Poison、HealApply→Tag.Heal、ShieldApply→Tag.Shield、RegenApply→Tag.Regen）。
+  2. **SameAsSource 光环补充**：若模板有光环且条件为 **SameAsSource**，按光环 **AttributeName** 若为上述六类之一也补充对应 Tag（如废品场长枪 Damage=0 由光环提供仍得 Tag.Damage）。
+  3. **Tag.Crit**：若模板已具备六类可暴击 Tag 之一，且存在至少一条能力满足 `TriggerName == Trigger.UseItem`、`UseSelf == true`、`ApplyCritMultiplier == true`，则打 `Tag.Crit`。
+  4. **Tag.Cooldown**：若任意档位 `CooldownMs > 0`，则打 `Tag.Cooldown`。
+  5. **机制 Tag**：根据 `a.Apply` 打 `Tag.Charge`、`Tag.Freeze`、`Tag.Slow`、`Tag.Haste`、`Tag.Reload`、`Tag.Repair`、`Tag.Destroy`、`Tag.StopFlying`；StartFlying 通过 `EffectLogName == "开始飞行"` 识别并打 `Tag.StartFlying`。AddAttribute/ReduceAttribute、GainGold 不参与自动打标。
+  6. **保留**：Size→Small/Medium/Large、`AmmoCap > 0`→Tag.Ammo。
+- **判断时使用 Tag**：模拟器判断「是否可暴击」用 `ItemHasAnyCrittableField(item)`（看六类 Tag）；裂盾等用 `Condition.WithTag(Tag.Shield)`。类型由 Tag 决定，不受战斗内数值修改影响。
 
 ### 经验总结
 
-- **为何用 Tag 不用快照**：战斗内会修改模板数值（如裂盾减 Shield），若用当前数值判断「是否护盾/可暴击」会误判；用注册时写入的 Tag 则类型稳定。
-- **为何要按光环补 Tag**：部分物品模板上某属性为 0，实际数值完全由光环提供（如废品场长枪 Damage=0、光环 SameAsSource + AttributeName=Damage）；仅看属性会漏打 Tag，导致可暴击等逻辑错误。只对 **Condition == SameAsSource** 的光环按 **AttributeName** 补 Tag，避免把「给相邻武器加伤」等光环误当作自身类型。
+- **为何用 Apply 而非数值打类型 Tag**：统一以「实际效果类型」为准，与 MechanicTagger 语义一致；避免仅改数值未改能力时类型漂移。
+- **为何要按光环补 Tag**：部分物品某属性为 0、完全由光环提供，仅看 Apply 会漏打，故 SameAsSource + AttributeName 仍补六类 Tag。
+- **UI**：`ItemUiHelper` 的 `hiddenAutoTags` 包含六类类型 Tag 与 `Tag.Crit`、`Tag.Cooldown`，以及机制 Tag（Charge/Freeze/Slow/Haste/Reload/Repair/Destroy/StartFlying/StopFlying），展示时隐藏以免冗余。
+
+---
+
+## 协同先验（Synergy Prior）：上游/下游/邻居
+
+用于优质卡组探测等场景的「配合图」与队形启发式：物品可声明**上游**（谁触发我）、**下游**（我影响谁）、**邻居偏好**（希望相邻是什么），便于候选生成与重排打分。
+
+- **数据结构**：`ItemTemplate` 上有三个可选字段（均为 `List<SynergyClause>?`，OR  of ANDs）：
+  - **UpstreamRequirements**：能触发该物品的「上游」需满足的 Tag 条件（可带方向，如刺刀「左侧武器」）。
+  - **DownstreamRequirements**：该物品效果目标的「下游」需满足的 Tag 条件（可带方向，如火药角「右侧弹药」）。
+  - **NeighborPreference**：希望相邻位置存在的 Tag（OR 子句，如迷幻蝠鲼「伙伴或射线」）。
+- **SynergyClause**：一个子句 = 若干 Tag 的 **AND**；`Direction`（Any/Left/Right）表示「相对己方物品的方向」，对上游、下游均有意义（上游=触发者在左/右，下游=目标在左/右）。
+- **书写 API**：统一用 **Synergy.And(...)** 构造子句，避免隐式或运算符歧义：
+  - `Synergy.And(Tag.A, Tag.B)`：无方向 AND。
+  - `Synergy.And(SynergyDirection.Left, Tag.Weapon)`：带方向（如刺刀上游、火药角下游）。
+  - 单 Tag 子句：`Synergy.And(Tag.Friend)`；OR 由列表字面量表达，如 `[ Synergy.And(Tag.Friend), Synergy.And(Tag.Ray) ]`。
+- **语义区分**：**上游/下游**表达「是否会发生/能影响谁」的依赖（配合图）；**NeighborPreference** 表达队形偏好（重排启发式）。例如刺刀「使用此物品左侧的武器时」→ 上游 `Synergy.And(SynergyDirection.Left, Tag.Weapon)`；珍珠「使用其他水系且带冷却物品时充能」→ 上游 `Synergy.And(Tag.Aquatic, Tag.Cooldown)`。
+- **克隆**：`ItemDatabase.CloneTemplate` 会浅拷贝上述三个列表。详见 `Core/SynergyPrior.cs`、`Core/Synergy.cs`。
 
 ---
 

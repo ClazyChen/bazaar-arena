@@ -48,4 +48,30 @@ public static class Tag
     public const string Heal = "治疗";
     /// <summary>生命再生。</summary>
     public const string Regen = "再生";
+
+    /// <summary>可暴击（由注册时根据 UseItem+UseSelf+ApplyCritMultiplier 与六类效果 Tag 自动添加）。</summary>
+    public const string Crit = "暴击";
+
+    /// <summary>有冷却（由注册时 CooldownMs &gt; 0 自动添加）。</summary>
+    public const string Cooldown = "冷却";
+
+    // 机制标签：用于协同先验与搜索启发式（由注册时根据 Ability.Apply 自动添加）
+    /// <summary>充能。</summary>
+    public const string Charge = "充能";
+    /// <summary>冻结。</summary>
+    public const string Freeze = "冻结";
+    /// <summary>减速。</summary>
+    public const string Slow = "减速";
+    /// <summary>加速。</summary>
+    public const string Haste = "加速";
+    /// <summary>装填。</summary>
+    public const string Reload = "装填";
+    /// <summary>修复。</summary>
+    public const string Repair = "修复";
+    /// <summary>摧毁。</summary>
+    public const string Destroy = "摧毁";
+    /// <summary>开始飞行。</summary>
+    public const string StartFlying = "开始飞行";
+    /// <summary>结束飞行。</summary>
+    public const string StopFlying = "结束飞行";
 }

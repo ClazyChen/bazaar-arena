@@ -42,6 +42,18 @@ internal static class ItemUiHelper
             Tag.Burn,
             Tag.Poison,
             Tag.Regen,
+            Tag.Crit,
+            Tag.Cooldown,
+            Tag.Charge,
+            Tag.Freeze,
+            Tag.Slow,
+            Tag.Haste,
+            Tag.Reload,
+            Tag.Repair,
+            Tag.Destroy,
+            Tag.StartFlying,
+            Tag.StopFlying,
+            Tag.Ammo,
         };
 
         var parts = new List<string> { template.Size.GetDisplayName() };

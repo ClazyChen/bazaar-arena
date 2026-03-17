@@ -7,6 +7,8 @@ namespace BazaarArena.QualityDeckFinder;
 /// <summary>单次爬山（组合空间）：组合邻域采样 + 首次改进 + MAB；对每个邻居先选代表排列再评估外战 ELO。</summary>
 public static class HillClimb
 {
+    public delegate List<string> OpponentSelector(bool isNewDeck, double? deckElo, int m);
+
     /// <summary>
     /// 从起始组合（以代表排列表示）出发爬山，直到无改进或达到步数上限。
     /// 返回 (最终组合签名, 最终代表排列, 是否局部最优)。
@@ -19,37 +21,55 @@ public static class HillClimb
         ItemPool pool,
         SimulatorClass simulator,
         IItemTemplateResolver db,
-        Random? rng = null)
+        Random? rng = null,
+        string? anchorItemName = null,
+        int? maxClimbStepsOverride = null,
+        int? neighborSampleSizeOverride = null,
+        int? mabBudgetPerStepOverride = null,
+        OpponentSelector? opponentSelectorOverride = null)
     {
         rng ??= Random.Shared;
+        var opponentSelector = opponentSelectorOverride
+            ?? ((isNewDeck, deckElo, m) => EloSystem.SelectOpponentSignatures(state, config, isNewDeck, deckElo, m, rng));
+
         var currentComboSig = startComboSig;
         var currentRep = startRepresentative;
         var currentElo = state.Pool.TryGetValue(currentComboSig, out var e) ? e.Elo : config.InitialElo;
         int steps = 0;
 
-        while (steps < config.MaxClimbSteps)
+        int maxSteps = maxClimbStepsOverride ?? config.MaxClimbSteps;
+        int neighborSample = neighborSampleSizeOverride ?? config.NeighborSampleSize;
+        int mabBudget = mabBudgetPerStepOverride ?? config.MabBudgetPerStep;
+
+        while (steps < maxSteps)
         {
             var neighbors = Neighborhood.SampleComboNeighborsWeighted(
                 currentRep,
                 pool,
                 state.Priors,
+                db,
                 rng,
-                config.NeighborSampleSize,
-                config.ExploreMix);
+                neighborSample,
+                config.ExploreMix,
+                pairLambda: config.SynergyPairLambda,
+                mechanicLambda: config.SynergyMechanicLambda,
+                anchorItemName: anchorItemName,
+                config: config,
+                totalGames: state.TotalGames);
             if (neighbors.Count == 0) return (currentComboSig, currentRep, true);
 
             (string comboSig, DeckRep rep)? next = null;
             double nextElo = 0;
 
-            if (neighbors.Count <= config.MabBudgetPerStep * 2)
+            if (neighbors.Count <= mabBudget * 2)
             {
-                next = FirstImprovement(currentComboSig, currentRep, currentElo, neighbors, state, config, pool, simulator, db, rng);
+                next = FirstImprovement(currentComboSig, currentRep, currentElo, neighbors, state, config, pool, simulator, db, rng, opponentSelector);
                 if (next != null)
                     nextElo = state.Pool.TryGetValue(next.Value.comboSig, out var ne) ? ne.Elo : config.InitialElo;
             }
             else
             {
-                (next, nextElo) = MabFirstImprovement(currentComboSig, currentRep, currentElo, neighbors, state, config, pool, simulator, db, rng);
+                (next, nextElo) = MabFirstImprovement(currentComboSig, currentRep, currentElo, neighbors, state, config, pool, simulator, db, rng, mabBudget, opponentSelector);
             }
 
             if (next == null || nextElo <= currentElo)
@@ -81,7 +101,8 @@ public static class HillClimb
         ItemPool pool,
         SimulatorClass simulator,
         IItemTemplateResolver db,
-        Random rng)
+        Random rng,
+        OpponentSelector opponentSelector)
     {
         var ordered = neighbors.OrderBy(_ => rng.Next()).ToList();
         foreach (var n in ordered)
@@ -101,7 +122,7 @@ public static class HillClimb
             var elo = state.Pool.TryGetValue(comboSig, out var ee) ? ee.Elo : double.NaN;
             if (double.IsNaN(elo))
             {
-                var opps = EloSystem.SelectOpponentSignatures(state, config, isNewDeck: true, null, Math.Max(1, config.GamesPerEval));
+                var opps = opponentSelector(isNewDeck: true, deckElo: null, m: Math.Max(1, config.GamesPerEval));
                 elo = EloSystem.RunGamesAndUpdateElo(comboSig, rep, opps, state, config, simulator, db);
             }
             if (elo > currentElo)
@@ -121,7 +142,9 @@ public static class HillClimb
         ItemPool pool,
         SimulatorClass simulator,
         IItemTemplateResolver db,
-        Random rng)
+        Random rng,
+        int mabBudgetPerStep,
+        OpponentSelector opponentSelector)
     {
         var n = neighbors.Count;
         var lastElo = new double[n];
@@ -131,7 +154,7 @@ public static class HillClimb
         var C = 2.0;
         int totalEvals = 0;
 
-        for (int b = 0; b < config.MabBudgetPerStep; b++)
+        for (int b = 0; b < mabBudgetPerStep; b++)
         {
             int bestIdx = -1;
             double bestUcb = double.MinValue;
@@ -154,7 +177,7 @@ public static class HillClimb
                 var ensured = RepresentativeSelector.EnsureRepresentative(comboSig, neighbor.seedRepresentative, state, config, pool, simulator, db, rng);
                 rep = ensured.Representative;
             }
-            var opps = EloSystem.SelectOpponentSignatures(state, config, false, currentElo, Math.Max(1, config.GamesPerEval));
+            var opps = opponentSelector(isNewDeck: false, deckElo: currentElo, m: Math.Max(1, config.GamesPerEval));
             var elo = EloSystem.RunGamesAndUpdateElo(comboSig, rep, opps, state, config, simulator, db);
             lastElo[bestIdx] = elo;
             count[bestIdx]++;

@@ -51,9 +51,15 @@ public static class EloSystem
         newEloB = eloB + k * (actualB - expB);
     }
 
-    /// <summary>为卡组 D 选取对手签名列表：新卡组从段 0 起往高段抽直到够 M 个；否则从 D 所在段及上一段抽，最多 M 个。</summary>
-    public static List<string> SelectOpponentSignatures(OptimizerState state, Config config, bool isNewDeck, double? deckElo, int M)
+    /// <summary>
+    /// 为卡组 D 选取对手签名列表：
+    /// - 新卡组：从段 0 起往高段抽直到够 M 个
+    /// - 非新卡组：从 D 所在段往低段抽直到够 M 个
+    /// 段内会随机打散，以避免固定遍历顺序带来的偏差。
+    /// </summary>
+    public static List<string> SelectOpponentSignatures(OptimizerState state, Config config, bool isNewDeck, double? deckElo, int M, Random? rng = null)
     {
+        rng ??= Random.Shared;
         var segmentIndex = isNewDeck ? 0 : state.SegmentIndex(deckElo ?? config.InitialElo);
         var candidates = new List<string>();
         int maxSeg;
@@ -66,7 +72,12 @@ public static class EloSystem
             for (int s = 0; s <= maxSeg && candidates.Count < M; s++)
             {
                 var inSeg = state.SignaturesInSegment(s);
-                foreach (var sig in inSeg) { candidates.Add(sig); if (candidates.Count >= M) break; }
+                // 段内随机化：避免枚举顺序偏差
+                foreach (var sig in inSeg.OrderBy(_ => rng.Next()))
+                {
+                    candidates.Add(sig);
+                    if (candidates.Count >= M) break;
+                }
             }
         }
         else
@@ -74,10 +85,84 @@ public static class EloSystem
             for (int s = segmentIndex; s >= 0 && candidates.Count < M; s--)
             {
                 var inSeg = state.SignaturesInSegment(s);
-                foreach (var sig in inSeg) { candidates.Add(sig); if (candidates.Count >= M) break; }
+                foreach (var sig in inSeg.OrderBy(_ => rng.Next()))
+                {
+                    candidates.Add(sig);
+                    if (candidates.Count >= M) break;
+                }
             }
         }
-        return candidates;
+        return candidates.Distinct(StringComparer.Ordinal).Take(M).ToList();
+    }
+
+    /// <summary>
+    /// 冲刺阶段：按段位权重抽样对手（seg/seg-1/seg+1）。
+    /// 若某段为空会自动跳过并回退到其它段；总数不足时再向低段补齐。
+    /// </summary>
+    public static List<string> SelectOpponentSignaturesForSprint(OptimizerState state, Config config, double deckElo, int M, Random? rng = null)
+    {
+        rng ??= Random.Shared;
+        M = Math.Max(0, M);
+        if (M == 0) return [];
+
+        int seg = state.SegmentIndex(deckElo);
+        var weights = new List<(int seg, double w)>
+        {
+            (seg, config.FastLaneSprintOppWeightSeg),
+            (seg - 1, config.FastLaneSprintOppWeightPrev),
+            (seg + 1, config.FastLaneSprintOppWeightNext),
+        };
+        weights = weights.Where(x => x.seg >= 0 && x.w > 0).ToList();
+        if (weights.Count == 0)
+        {
+            // 权重异常时回退到普通抽样
+            return SelectOpponentSignatures(state, config, isNewDeck: false, deckElo, M, rng);
+        }
+
+        // 段内候选池（打乱后按序取）
+        var pools = new Dictionary<int, List<string>>();
+        foreach (var (s, _) in weights)
+        {
+            if (pools.ContainsKey(s)) continue;
+            var list = state.SignaturesInSegment(s);
+            pools[s] = list.OrderBy(_ => rng.Next()).ToList();
+        }
+
+        var picked = new List<string>(M);
+        double totalW = weights.Sum(x => x.w);
+        int guard = 0;
+        while (picked.Count < M && guard++ < M * 20)
+        {
+            // 只在仍有候选的段里抽
+            var active = weights.Where(x => pools.TryGetValue(x.seg, out var p) && p.Count > 0).ToList();
+            if (active.Count == 0) break;
+
+            var r = rng.NextDouble() * active.Sum(x => x.w);
+            int chosenSeg = active[0].seg;
+            double acc = 0;
+            foreach (var (s, w) in active)
+            {
+                acc += w;
+                if (r <= acc) { chosenSeg = s; break; }
+            }
+
+            var sig = pools[chosenSeg][0];
+            pools[chosenSeg].RemoveAt(0);
+            if (!picked.Contains(sig))
+                picked.Add(sig);
+        }
+
+        if (picked.Count >= M) return picked.Take(M).ToList();
+
+        // 不足时：向低段补齐（更稳）
+        var fallback = SelectOpponentSignatures(state, config, isNewDeck: false, deckElo, M * 2, rng);
+        foreach (var sig in fallback)
+        {
+            if (picked.Count >= M) break;
+            if (!picked.Contains(sig))
+                picked.Add(sig);
+        }
+        return picked.Take(M).ToList();
     }
 
     /// <summary>运行若干场对战：组合代表 repD 与 opponents 中随机对手的代表对战，更新双方组合的 ELO；返回 D 的更新后 ELO。</summary>
@@ -97,6 +182,7 @@ public static class EloSystem
         var k = config.EloK;
         var gamesPerOpp = Math.Max(1, config.GamesPerEval / Math.Max(1, opponentSignatures.Count));
         double currentEloD = state.Pool.TryGetValue(comboSigD, out var entryD) ? entryD.Elo : config.InitialElo;
+        int gamesPlayedByD = 0;
 
         foreach (var oppSig in opponentSignatures)
         {
@@ -121,10 +207,77 @@ public static class EloSystem
                 state.Pool[oppSig] = oppEntry with { Elo = eloOpp, GameCount = oppEntry.GameCount + 1 };
                 oppEntry = state.Pool[oppSig];
                 state.IncrementTotalGames();
+                gamesPlayedByD++;
+
+                // 记录对局（D 视角）：winner=0 表示 D 胜；1 表示 D 负；-1 平局
+                state.RecordMatch(comboSigD, currentEloD, eloOpp, winner);
             }
         }
 
-        TryAddToPool(state, config, comboSigD, repD, currentEloD);
+        TryAddToPool(state, config, comboSigD, repD, currentEloD, gamesPlayedDelta: gamesPlayedByD);
+        return currentEloD;
+    }
+
+    /// <summary>
+    /// 按总预算复测若干局：将 totalGamesBudget 尽量均匀分配到 opponents 上；更新双方 ELO 并返回 D 的更新后 ELO。
+    /// 用于“池内复测/联赛”，避免复用 GamesPerEval 的语义。
+    /// </summary>
+    public static double RunGamesAndUpdateEloBudget(
+        string comboSigD,
+        DeckRep repD,
+        IReadOnlyList<string> opponentSignatures,
+        int totalGamesBudget,
+        OptimizerState state,
+        Config config,
+        SimulatorClass simulator,
+        IItemTemplateResolver db,
+        Random? rng = null)
+    {
+        rng ??= Random.Shared;
+        totalGamesBudget = Math.Max(0, totalGamesBudget);
+        if (opponentSignatures.Count == 0 || totalGamesBudget == 0)
+            return state.Pool.TryGetValue(comboSigD, out var e) ? e.Elo : config.InitialElo;
+
+        var silentSink = new SilentBattleLogSink();
+        var k = config.EloK;
+        double currentEloD = state.Pool.TryGetValue(comboSigD, out var entryD) ? entryD.Elo : config.InitialElo;
+        int gamesPlayedByD = 0;
+
+        var opps = opponentSignatures.Distinct(StringComparer.Ordinal).ToList();
+        int oppCount = Math.Max(1, opps.Count);
+        int gamesPerOpp = (int)Math.Ceiling(totalGamesBudget / (double)oppCount);
+
+        foreach (var oppSig in opps)
+        {
+            if (gamesPlayedByD >= totalGamesBudget) break;
+            if (!state.Pool.TryGetValue(oppSig, out var oppEntry)) continue;
+            var repOpp = oppEntry.Representative;
+            var deckDO = repD.ToDeck(db);
+            var deckOppO = repOpp.ToDeck(db);
+            double eloOpp = oppEntry.Elo;
+
+            for (int g = 0; g < gamesPerOpp && gamesPlayedByD < totalGamesBudget; g++)
+            {
+                int swap = rng.Next(2);
+                Deck dA, dB;
+                double eloA, eloB;
+                if (swap == 0) { dA = deckDO; dB = deckOppO; eloA = currentEloD; eloB = eloOpp; }
+                else { dA = deckOppO; dB = deckDO; eloA = eloOpp; eloB = currentEloD; }
+
+                int winner = simulator.Run(dA, dB, db, silentSink, BattleLogLevel.None);
+                if (winner >= 0 && swap == 1) winner = 1 - winner;
+                UpdateElo(currentEloD, eloOpp, winner, k, out currentEloD, out eloOpp);
+
+                state.Pool[oppSig] = oppEntry with { Elo = eloOpp, GameCount = oppEntry.GameCount + 1 };
+                oppEntry = state.Pool[oppSig];
+                state.IncrementTotalGames();
+                gamesPlayedByD++;
+
+                state.RecordMatch(comboSigD, currentEloD, eloOpp, winner);
+            }
+        }
+
+        TryAddToPool(state, config, comboSigD, repD, currentEloD, gamesPlayedDelta: gamesPlayedByD);
         return currentEloD;
     }
 
@@ -136,7 +289,8 @@ public static class EloSystem
         DeckRep representative,
         double elo,
         bool isLocalOptimum = false,
-        bool isConfirmed = false)
+        bool isConfirmed = false,
+        int gamesPlayedDelta = 0)
     {
         lock (state.PoolSync)
         {
@@ -148,8 +302,9 @@ public static class EloSystem
                 {
                     Representative = representative,
                     Elo = elo,
-                    IsLocalOptimum = isLocalOptimum,
+                    IsLocalOptimum = existing.IsLocalOptimum || isLocalOptimum,
                     IsConfirmed = existing.IsConfirmed || isConfirmed,
+                    GameCount = existing.GameCount + Math.Max(0, gamesPlayedDelta),
                 };
                 return;
             }
@@ -177,8 +332,66 @@ public static class EloSystem
                 else
                     return;
             }
-            state.Pool[comboSig] = new ComboEntry(comboSig, representative, elo, isLocalOptimum, isConfirmed, 0);
+            state.Pool[comboSig] = new ComboEntry(comboSig, representative, elo, isLocalOptimum, isConfirmed, Math.Max(0, gamesPlayedDelta));
         }
+    }
+
+    /// <summary>
+    /// 复测对手抽样：以 deckElo 所在段为中心，从 seg/seg-1/seg+1 混合抽取；不足时向低段补齐。
+    /// </summary>
+    public static List<string> SelectOpponentSignaturesForRerate(OptimizerState state, Config config, double deckElo, int M, Random? rng = null)
+    {
+        rng ??= Random.Shared;
+        M = Math.Max(0, M);
+        if (M == 0) return [];
+
+        int seg = state.SegmentIndex(deckElo);
+        var weights = new List<(int seg, double w)>
+        {
+            (seg, 0.55),
+            (seg - 1, 0.25),
+            (seg + 1, 0.20),
+        }.Where(x => x.seg >= 0 && x.w > 0).ToList();
+
+        var pools = new Dictionary<int, List<string>>();
+        foreach (var (s, _) in weights)
+        {
+            if (pools.ContainsKey(s)) continue;
+            pools[s] = state.SignaturesInSegment(s).OrderBy(_ => rng.Next()).ToList();
+        }
+
+        var picked = new List<string>(M);
+        int guard = 0;
+        while (picked.Count < M && guard++ < M * 20)
+        {
+            var active = weights.Where(x => pools.TryGetValue(x.seg, out var p) && p.Count > 0).ToList();
+            if (active.Count == 0) break;
+
+            var r = rng.NextDouble() * active.Sum(x => x.w);
+            int chosenSeg = active[0].seg;
+            double acc = 0;
+            foreach (var (s, w) in active)
+            {
+                acc += w;
+                if (r <= acc) { chosenSeg = s; break; }
+            }
+
+            var sig = pools[chosenSeg][0];
+            pools[chosenSeg].RemoveAt(0);
+            if (!picked.Contains(sig))
+                picked.Add(sig);
+        }
+
+        if (picked.Count >= M) return picked.Take(M).ToList();
+
+        var fallback = SelectOpponentSignatures(state, config, isNewDeck: false, deckElo, M * 2, rng);
+        foreach (var sig in fallback)
+        {
+            if (picked.Count >= M) break;
+            if (!picked.Contains(sig))
+                picked.Add(sig);
+        }
+        return picked.Take(M).ToList();
     }
 
     private sealed class SilentBattleLogSink : IBattleLogSink

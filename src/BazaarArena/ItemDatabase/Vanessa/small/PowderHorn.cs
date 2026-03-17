@@ -23,6 +23,10 @@ public static class PowderHorn
                     priority: AbilityPriority.Lowest
                 ),
             ],
+            DownstreamRequirements =
+            [
+                Synergy.And(SynergyDirection.Right, Tag.Ammo),
+            ],
         };
     }
 }

@@ -30,6 +30,7 @@ cd src/BazaarArena.QualityDeckFinder/bin/Debug/net10.0-windows
 
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
+| `--config <路径>` | 从 JSON 配置文件读取参数作为基准（命令行会覆盖同名字段） | 无 |
 | `--resume <路径>` | 从指定状态文件恢复并继续优化 | 无（冷启动） |
 | `--state <路径>` | 周期性保存/恢复时使用的状态文件路径 | `quality_deck_state.json` |
 | `--top-interval <n>` | 每完成 n 次爬山输出一次 Top10 | 10 |
@@ -40,16 +41,42 @@ cd src/BazaarArena.QualityDeckFinder/bin/Debug/net10.0-windows
 | `--restarts-per-shape <n>` | 每种形状的随机重启次数（当前实现中主循环为无限，此参数预留） | 5 |
 | `--neighbor-sample <n>` | 邻域采样时每步最多评估的邻居数 | 80 |
 | `--mab-budget <n>` | MAB 模式下每步最多评估的邻居数 | 30 |
+| `--inner-wars <n>` | 内战：每次比较的对局数（更快探索建议 3~5） | 3 |
+| `--inner-budget <n>` | 内战：组合内部筛选预算（尝试多少次随机交换候选） | 30 |
+| `--inner-select-top <n>` | 内战：筛选后保留的候选数（Top-K） | 3 |
+| `--inner-select-wars <n>` | 内战：候选排序时每个 match 的对局数 | 2 |
+| `--confirm-opponents <n>` | 外战确认：抽取多少个强对手签名（来自所在段及更低段） | 8 |
+| `--confirm-games <n>` | 外战确认：每个对手对局数 | 1 |
+| `--explore-mix <x>` | 探索混合比例：1=完全均匀探索，0=完全按先验加权 | 0.30 |
+| `--prior-ema <x>` | 先验 EMA 平滑系数 | 0.08 |
+| `--synergy-pair <x>` | 物品对协同加权系数（0 表示不使用） | 0.35 |
+| `--synergy-mech <x>` | 机制标签协同加权系数（0 表示不使用） | 0.12 |
+| `--priors-clip <x>` | Priors 学习信号裁剪上限：\(|signal|\) 最大值（signal=elo-baseline） | 200 |
+| `--priors-unconfirmed <x>` | 未确认样本更新 Priors 的倍率（0~1） | 0.25 |
+| `--priors-full-games <n>` | 达到该对局数后视为“可信度满”，不再按对局数降权 | 30 |
+| `--priors-anneal-games <n>` | Priors 退火尺度：总对局数达到该值后从“机制主导”逐步过渡到“组合主导” | 5000 |
+| `--cand-rand-min <x>` | 候选生成：最低随机比例（防止塌缩） | 0.15 |
+| `--cand-item-start <x>` | 候选生成：单物品强度模式比例（早期） | 0.60 |
+| `--cand-item-end <x>` | 候选生成：单物品强度模式比例（后期） | 0.15 |
 | `--segment-expand-step <n>` | 分段自动扩展步长：池内最高 ELO 超过当前最高段下界超过此值时追加新边界 | 200 |
 | `--segment-expand-max-bounds <n>` | 分段边界数量上限（段数=上限+1），防止无限扩展 | 10 |
 | `--inject-interval <n>` | 每完成 n 次爬山执行一次随机卡组注入；0 表示禁用 | 20 |
 | `--inject-count <n>` | 每次注入最多尝试加入的随机卡组数量 | 1 |
+| `--rerate-interval <n>` | 池内随机复测：每 N 次爬山触发一次；0 表示禁用 | 0 |
+| `--rerate-batch <n>` | 池内随机复测：每次复测多少个组合 | 6 |
+| `--rerate-games <n>` | 池内随机复测：每个组合复测预算（对局数） | 6 |
+| `--anchored-mix <x>` | anchored（固定物品）搜索占比：以该概率选择一个锚点物品，并强制卡组包含它 | 0.50 |
+| `--anchored-report <n>` | 报告中输出多少个物品的“最强拍档卡组” | 12 |
+| `--workers <n>` | 并行 worker 数量；0 表示仅主线程运行 | 0 |
 
 示例：
 
 ```bash
 # 冷启动，每 5 次爬山输出 Top10，每 15 次保存状态
 dotnet run --project src/BazaarArena.QualityDeckFinder/BazaarArena.QualityDeckFinder.csproj -- --top-interval 5 --save-interval 15
+
+# 使用 JSON 配置作为基准（推荐），命令行参数将覆盖 JSON 中的同名字段
+dotnet run --project src/BazaarArena.QualityDeckFinder/BazaarArena.QualityDeckFinder.csproj -- --config quality_deck_config.json --top-interval 5
 
 # 从已保存的状态继续优化
 dotnet run --project src/BazaarArena.QualityDeckFinder/BazaarArena.QualityDeckFinder.csproj -- --resume quality_deck_state.json
@@ -59,6 +86,12 @@ dotnet run --project src/BazaarArena.QualityDeckFinder/BazaarArena.QualityDeckFi
 ```
 
 ---
+
+## JSON 配置文件（--config）
+
+`--config` 支持用一个 JSON 文件一次性配置大部分参数（见仓库根目录的 `quality_deck_config.json` 示例）。程序会先加载 JSON，再解析命令行参数覆盖同名字段。
+
+- `Fast lane`（孵化/冲刺）相关阈值与预算目前仅在配置文件里提供字段（命令行未做逐项开关），建议通过 `quality_deck_config.json` 调参。
 
 ## 输出说明
 
@@ -84,6 +117,32 @@ dotnet run --project src/BazaarArena.QualityDeckFinder/BazaarArena.QualityDeckFi
 - 总重启次数、总爬山次数、总对局数等
 
 可用于断点续跑或事后分析。
+
+---
+
+## Fast lane：新卡组“孵化/冲刺”快速上升通道
+
+在默认爬山策略下，新卡组往往需要较多步数才能完成内部优化；在此之前，强行把它丢去打高段强对手通常只会“信息量很低的连败”。为此探测器支持 **Fast lane**：
+
+- **触发（信号A）**：新卡组完成初评后，若 `elo - InitialElo >= FastLaneEloDeltaThreshold`（默认 **80**），立刻进入孵化。
+- **孵化（Incubate）**：提高爬山预算（步数/邻域采样/MAB），优先把组合内部结构优化出来；对手抽样仍以当前段及更低段为主。
+- **进入冲刺（Sprint）**：孵化后若在“当前段/上一段对手”上 **最近 N 局胜率达到阈值**（默认 `N=12`、`>=0.65`），进入冲刺。
+- **冲刺**：进一步提高爬山预算，并在对手抽样中加入少量 `seg+1`（默认权重 `seg:0.60, seg-1:0.30, seg+1:0.10`），用于更快校准与上段。
+- **回退**：冲刺阶段若窗口胜率明显下滑（默认 `<0.55`），会回退到孵化阶段，避免误判导致资源浪费。
+
+运行时控制台会输出类似日志：
+
+```text
+【FastLane】触发孵化 Δ=96.0 sig=...
+【FastLane】进入冲刺 winrate=0.667 games=12 sig=...
+【FastLane】冲刺回退 winrate=0.500 games=12 sig=...
+```
+
+### 调参建议
+
+- **更容易孵化（更激进）**：降低 `FastLaneEloDeltaThreshold` 或提高孵化预算。
+- **更少误触发（更保守）**：提高 `FastLaneEloDeltaThreshold`，或增大 `FastLaneWinrateWindowGames`（窗口更稳但更慢）。
+- **冲刺更快**：提高 `FastLaneSprint*` 预算，或略增加 `FastLaneSprintOppWeightNext`；但过高可能导致强对手过多，ELO 波动变大。
 
 ---
 

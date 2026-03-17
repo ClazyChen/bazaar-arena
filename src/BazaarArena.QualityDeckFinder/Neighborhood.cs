@@ -63,11 +63,27 @@ public static class Neighborhood
         DeckRep representative,
         ItemPool pool,
         Priors priors,
+        BazaarArena.ItemDatabase.IItemTemplateResolver? db,
         Random rng,
         int sampleSize,
-        double exploreMix)
+        double exploreMix,
+        double pairLambda = 0.0,
+        double mechanicLambda = 0.0,
+        string? anchorItemName = null,
+        Config? config = null,
+        int totalGames = 0)
     {
         exploreMix = Math.Clamp(exploreMix, 0.0, 1.0);
+        config ??= new Config();
+        var t = Math.Clamp(totalGames / (double)Math.Max(1, config.PriorsAnnealGames), 0.0, 1.0);
+        var clip = Math.Max(1.0, config.PriorsSignalClip);
+        var itemOnlyMix = Math.Clamp(
+            config.CandidateItemOnlyMixStart + (config.CandidateItemOnlyMixEnd - config.CandidateItemOnlyMixStart) * t,
+            0.0,
+            1.0);
+        var pairEff = Math.Max(0.0, pairLambda * (0.3 + 0.7 * t));
+        var mechEff = Math.Max(0.0, mechanicLambda * (1.2 - 0.7 * t));
+
         var shape = representative.Shape;
         var names = representative.ItemNames.ToList();
         var used = new HashSet<string>(representative.ItemNames, StringComparer.Ordinal);
@@ -79,6 +95,8 @@ public static class Neighborhood
         {
             var size = shape[slot];
             var current = names[slot];
+            if (!string.IsNullOrEmpty(anchorItemName) && current == anchorItemName)
+                continue;
             foreach (var name in pool.NamesForSize(size))
             {
                 if (name == current) continue;
@@ -87,8 +105,45 @@ public static class Neighborhood
                 var seed = new DeckRep(shape, next);
                 var comboSig = ComboSignature.FromDeckRep(seed);
 
-                // 权重仅用“新引入物品”的先验（足够区分替换候选，且成本很低）
-                var w = priors.ItemWeight(size, name);
+                // 权重：新引入物品的单物品权重 + 与“其余物品集合”的协同加成（物品对 + 机制对）
+                double itemW = priors.ItemWeight(size, name);
+                double comboW = itemW;
+                if (pairLambda > 0 || (mechanicLambda > 0 && db != null))
+                {
+                    // 注意：被替换的 current 不应参与协同计算
+                    double pairSum = 0;
+                    if (pairLambda > 0)
+                    {
+                        foreach (var other in names)
+                        {
+                            if (other == current) continue;
+                            pairSum += priors.PairWeight(name, other);
+                        }
+                        comboW += pairEff * (pairSum / clip);
+                    }
+
+                    if (mechanicLambda > 0 && db != null)
+                    {
+                        var mechsNew = MechanicTagger.GetMechanics(name, db);
+                        if (mechsNew.Count > 0)
+                        {
+                            double mechSum = 0;
+                            foreach (var other in names)
+                            {
+                                if (other == current) continue;
+                                var mechsOther = MechanicTagger.GetMechanics(other, db);
+                                if (mechsOther.Count == 0) continue;
+                                foreach (var mn in mechsNew)
+                                    foreach (var mo in mechsOther)
+                                        mechSum += priors.MechanicPairWeight(mn, mo);
+                            }
+                            comboW += mechEff * (mechSum / clip);
+                        }
+                    }
+                }
+
+                // 与单物品模式做混合（退火）：早期更接近 itemW，后期更接近 comboW。
+                var w = Math.Max(1e-6, (1.0 - itemOnlyMix) * comboW + itemOnlyMix * itemW);
                 if (!best.TryGetValue(comboSig, out var ex) || w > ex.w)
                     best[comboSig] = (seed, w);
             }

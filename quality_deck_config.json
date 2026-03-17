@@ -20,15 +20,52 @@
   "InnerBudget": 30,
   "InnerSelectTop": 3,
   "InnerSelectWars": 2,
-  "ConfirmOpponents": 8,
+  "ConfirmOpponents": 2,
   "ConfirmGamesPerOpponent": 1,
 
-  "ExploreMix": 0.30,
-  "PriorEmaAlpha": 0.08,
+  "ExploreMix": 0.40,
+  "PriorEmaAlpha": 0.04,
+  "SynergyPairLambda": 0.25,
+  "SynergyMechanicLambda": 0.10,
+
+  "PriorsSignalClip": 200,
+  "PriorsUnconfirmedMultiplier": 0.20,
+  "PriorsMinGamesForFullWeight": 40,
+  "PriorsAnnealGames": 10000,
+
+  "CandidateRandomMixMin": 0.20,
+  "CandidateItemOnlyMixStart": 0.60,
+  "CandidateItemOnlyMixEnd": 0.20,
 
   "Workers": 14,
 
-  "InjectInterval": 1,
-  "InjectCount": 1
+  "InjectInterval": 10,
+  "InjectCount": 1,
+
+  "RerateIntervalClimbs": 20,
+  "RerateBatchSize": 4,
+  "RerateGamesPerDeck": 8,
+
+  "FastLaneEnabled": true,
+  "FastLaneEloDeltaThreshold": 80,
+
+  "FastLaneIncubateMaxClimbSteps": 1200,
+  "FastLaneIncubateNeighborSampleSize": 140,
+  "FastLaneIncubateMabBudgetPerStep": 80,
+
+  "FastLaneWinrateWindowGames": 12,
+  "FastLaneWinrateThreshold": 0.65,
+  "FastLaneSprintFallbackThreshold": 0.55,
+
+  "FastLaneSprintMaxClimbSteps": 1800,
+  "FastLaneSprintNeighborSampleSize": 180,
+  "FastLaneSprintMabBudgetPerStep": 120,
+
+  "FastLaneSprintOppWeightSeg": 0.60,
+  "FastLaneSprintOppWeightPrev": 0.30,
+  "FastLaneSprintOppWeightNext": 0.10,
+
+  "AnchoredMix": 0.20,
+  "AnchoredReportCount": 10
 }
 

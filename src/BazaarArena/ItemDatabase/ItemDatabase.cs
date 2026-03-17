@@ -84,20 +84,34 @@ public class ItemDatabase : IItemTemplateResolver
         _templates[template.Name] = template;
     }
 
-    /// <summary>根据模板数值属性为任一档位 &gt; 0 时自动加入对应类型 Tag；若属性为 0 但存在作用目标为自身（SameAsSource）的光环且光环 AttributeName 为类型属性，也补充对应 Tag。供 Condition 与可暴击判定使用。</summary>
+    /// <summary>根据 Ability Apply 类型、SameAsSource 光环、可暴击与冷却自动补充类型 Tag 与 Crit/Cooldown。供 Condition 与可暴击判定使用。</summary>
     private static void EnsureTypeTags(ItemTemplate template)
     {
         if (template.Size == ItemSize.Small) TryAddTag(template, Tag.Small);
         else if (template.Size == ItemSize.Medium) TryAddTag(template, Tag.Medium);
         else if (template.Size == ItemSize.Large) TryAddTag(template, Tag.Large);
 
-        if (HasAnyTierPositive(template, Key.Damage)) TryAddTag(template, Tag.Damage);
-        if (HasAnyTierPositive(template, Key.Burn)) TryAddTag(template, Tag.Burn);
-        if (HasAnyTierPositive(template, Key.Poison)) TryAddTag(template, Tag.Poison);
-        if (HasAnyTierPositive(template, Key.Heal)) TryAddTag(template, Tag.Heal);
-        if (HasAnyTierPositive(template, Key.Shield)) TryAddTag(template, Tag.Shield);
         if (HasAnyTierPositive(template, Key.AmmoCap)) TryAddTag(template, Tag.Ammo);
-        if (HasAnyTierPositive(template, "Regen")) TryAddTag(template, Tag.Regen);
+
+        // 类型/机制 Tag：由 Ability 的 Apply 类型决定（与 MechanicTagger 规则一致）
+        foreach (var a in template.Abilities ?? [])
+        {
+            if (a.Apply == Effect.DamageApply) TryAddTag(template, Tag.Damage);
+            else if (a.Apply == Effect.BurnApply) TryAddTag(template, Tag.Burn);
+            else if (a.Apply == Effect.PoisonApply || a.Apply == Effect.PoisonSelfApply) TryAddTag(template, Tag.Poison);
+            else if (a.Apply == Effect.HealApply) TryAddTag(template, Tag.Heal);
+            else if (a.Apply == Effect.ShieldApply) TryAddTag(template, Tag.Shield);
+            else if (a.Apply == Effect.RegenApply) TryAddTag(template, Tag.Regen);
+            else if (a.Apply == Effect.ChargeApply) TryAddTag(template, Tag.Charge);
+            else if (a.Apply == Effect.FreezeApply) TryAddTag(template, Tag.Freeze);
+            else if (a.Apply == Effect.SlowApply) TryAddTag(template, Tag.Slow);
+            else if (a.Apply == Effect.HasteApply) TryAddTag(template, Tag.Haste);
+            else if (a.Apply == Effect.ReloadApply) TryAddTag(template, Tag.Reload);
+            else if (a.Apply == Effect.RepairApply) TryAddTag(template, Tag.Repair);
+            else if (a.Apply == Effect.DestroyApply) TryAddTag(template, Tag.Destroy);
+            else if (a.Apply == Effect.StopFlyingApply) TryAddTag(template, Tag.StopFlying);
+            else if (a.EffectLogName == "开始飞行") TryAddTag(template, Tag.StartFlying);
+        }
 
         foreach (var aura in template.Auras ?? [])
         {
@@ -105,6 +119,35 @@ public class ItemDatabase : IItemTemplateResolver
             var tag = AttributeNameToTypeTag(aura.AttributeName);
             if (tag != null) TryAddTag(template, tag);
         }
+
+        // Tag.Crit：具备六类可暴击 Tag 之一且至少一条 UseItem+UseSelf+ApplyCritMultiplier 能力
+        if (HasAnyCrittableTag(template) && HasUseItemSelfCritAbility(template))
+            TryAddTag(template, Tag.Crit);
+
+        if (HasAnyTierPositive(template, Key.CooldownMs)) TryAddTag(template, Tag.Cooldown);
+    }
+
+    private static bool HasAnyCrittableTag(ItemTemplate template)
+    {
+        var tags = template.Tags;
+        if (tags == null) return false;
+        return tags.Contains(Tag.Damage) || tags.Contains(Tag.Burn) || tags.Contains(Tag.Poison)
+            || tags.Contains(Tag.Heal) || tags.Contains(Tag.Shield) || tags.Contains(Tag.Regen);
+    }
+
+    private static bool HasUseItemSelfCritAbility(ItemTemplate template)
+    {
+        foreach (var a in template.Abilities ?? [])
+        {
+            if (a.Apply == null || !a.ApplyCritMultiplier || !a.UseSelf) continue;
+            if (a.TriggerName == Trigger.UseItem) return true;
+            if (a.Triggers != null)
+            {
+                foreach (var e in a.Triggers)
+                    if (e.TriggerName == Trigger.UseItem) return true;
+            }
+        }
+        return false;
     }
 
     /// <summary>将光环 AttributeName 映射为类型 Tag；非类型属性返回 null。</summary>
@@ -182,6 +225,9 @@ public class ItemDatabase : IItemTemplateResolver
             })],
             Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), Value = a.Value, Percent = a.Percent }).ToList(),
             OverridableAttributes = t.OverridableAttributes != null ? new Dictionary<string, IntOrByTier>(t.OverridableAttributes) : null,
+            UpstreamRequirements = t.UpstreamRequirements != null ? new List<SynergyClause>(t.UpstreamRequirements) : null,
+            DownstreamRequirements = t.DownstreamRequirements != null ? new List<SynergyClause>(t.DownstreamRequirements) : null,
+            NeighborPreference = t.NeighborPreference != null ? new List<SynergyClause>(t.NeighborPreference) : null,
         };
         clone.SetIntsByTier(t.GetIntsByTierSnapshot());
         return clone;
