@@ -68,7 +68,6 @@ public static class Neighborhood
         int sampleSize,
         double exploreMix,
         double pairLambda = 0.0,
-        double mechanicLambda = 0.0,
         string? anchorItemName = null,
         Config? config = null,
         int totalGames = 0)
@@ -82,7 +81,6 @@ public static class Neighborhood
             0.0,
             1.0);
         var pairEff = Math.Max(0.0, pairLambda * (0.3 + 0.7 * t));
-        var mechEff = Math.Max(0.0, mechanicLambda * (1.2 - 0.7 * t));
 
         var shape = representative.Shape;
         var names = representative.ItemNames.ToList();
@@ -105,41 +103,24 @@ public static class Neighborhood
                 var seed = new DeckRep(shape, next);
                 var comboSig = ComboSignature.FromDeckRep(seed);
 
-                // 权重：新引入物品的单物品权重 + 与“其余物品集合”的协同加成（物品对 + 机制对）
+                // 权重：单物品权重 + 物品对协同 + 声明协同先验得分
                 double itemW = priors.ItemWeight(size, name);
                 double comboW = itemW;
-                if (pairLambda > 0 || (mechanicLambda > 0 && db != null))
+                if (pairLambda > 0)
                 {
-                    // 注意：被替换的 current 不应参与协同计算
                     double pairSum = 0;
-                    if (pairLambda > 0)
+                    foreach (var other in names)
                     {
-                        foreach (var other in names)
-                        {
-                            if (other == current) continue;
-                            pairSum += priors.PairWeight(name, other);
-                        }
-                        comboW += pairEff * (pairSum / clip);
+                        if (other == current) continue;
+                        pairSum += priors.PairWeight(name, other);
                     }
-
-                    if (mechanicLambda > 0 && db != null)
-                    {
-                        var mechsNew = MechanicTagger.GetMechanics(name, db);
-                        if (mechsNew.Count > 0)
-                        {
-                            double mechSum = 0;
-                            foreach (var other in names)
-                            {
-                                if (other == current) continue;
-                                var mechsOther = MechanicTagger.GetMechanics(other, db);
-                                if (mechsOther.Count == 0) continue;
-                                foreach (var mn in mechsNew)
-                                    foreach (var mo in mechsOther)
-                                        mechSum += priors.MechanicPairWeight(mn, mo);
-                            }
-                            comboW += mechEff * (mechSum / clip);
-                        }
-                    }
+                    comboW += pairEff * (pairSum / clip);
+                }
+                if (db != null)
+                {
+                    var templateX = db.GetTemplate(name);
+                    var synergyScore = SynergyScorer.Score(templateX, representative, slot, db);
+                    comboW += Math.Max(0, synergyScore);
                 }
 
                 // 与单物品模式做混合（退火）：早期更接近 itemW，后期更接近 comboW。

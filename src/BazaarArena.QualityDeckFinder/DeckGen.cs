@@ -101,12 +101,11 @@ public static class DeckGen
             rng,
             exploreMix,
             pairLambda: 0.0,
-            mechanicLambda: 0.0,
             config: new Config(),
             totalGames: 0);
 
     /// <summary>
-    /// 协同加权随机生成：在单物品权重之上叠加“与已选物品集合”的协同加成（物品对 + 机制标签对）。
+    /// 协同加权随机生成：在单物品权重之上叠加“与已选物品集合”的协同加成（物品对）。
     /// </summary>
     public static DeckRep? RandomDeckWeightedSynergy(
         IReadOnlyList<int> shape,
@@ -116,7 +115,6 @@ public static class DeckGen
         Random rng,
         double exploreMix,
         double pairLambda,
-        double mechanicLambda,
         Config config,
         int totalGames)
     {
@@ -156,7 +154,6 @@ public static class DeckGen
                         priors,
                         db,
                         pairLambda,
-                        mechanicLambda,
                         config,
                         t,
                         itemOnly)).ToList();
@@ -182,7 +179,6 @@ public static class DeckGen
         Random rng,
         double exploreMix,
         double pairLambda,
-        double mechanicLambda,
         string anchorItemName,
         Config config,
         int totalGames)
@@ -245,7 +241,6 @@ public static class DeckGen
                         priors,
                         db,
                         pairLambda,
-                        mechanicLambda,
                         config,
                         t,
                         itemOnly)).ToList();
@@ -267,7 +262,6 @@ public static class DeckGen
         Priors priors,
         IItemTemplateResolver? db,
         double pairLambda,
-        double mechanicLambda,
         Config config,
         double annealT,
         bool itemOnly)
@@ -278,38 +272,19 @@ public static class DeckGen
 
         double w = itemW;
 
-        if (selected.Count == 0 || (pairLambda <= 0 && mechanicLambda <= 0))
+        if (selected.Count == 0 || pairLambda <= 0)
             return Math.Max(1e-6, w);
 
         var clip = Math.Max(1.0, config.PriorsSignalClip);
         var pairEff = Math.Max(0.0, pairLambda * (0.3 + 0.7 * annealT));
-        var mechEff = Math.Max(0.0, mechanicLambda * (1.2 - 0.7 * annealT));
 
-        if (pairLambda > 0)
-        {
-            double sum = 0;
-            foreach (var other in selected)
-                sum += priors.PairWeight(candidate, other);
-            w += pairEff * (sum / clip);
-        }
+        double sum = 0;
+        foreach (var other in selected)
+            sum += priors.PairWeight(candidate, other);
+        w += pairEff * (sum / clip);
 
-        if (mechanicLambda > 0 && db != null)
-        {
-            var mechsC = MechanicTagger.GetMechanics(candidate, db);
-            if (mechsC.Count > 0)
-            {
-                double sum = 0;
-                foreach (var other in selected)
-                {
-                    var mechsO = MechanicTagger.GetMechanics(other, db);
-                    if (mechsO.Count == 0) continue;
-                    foreach (var mc in mechsC)
-                        foreach (var mo in mechsO)
-                            sum += priors.MechanicPairWeight(mc, mo);
-                }
-                w += mechEff * (sum / clip);
-            }
-        }
+        if (db != null)
+            w += SynergyScorer.ScoreForBuilding(selected, selected.Count, candidate, db);
 
         return Math.Max(1e-6, w);
     }

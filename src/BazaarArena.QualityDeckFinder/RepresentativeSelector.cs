@@ -46,7 +46,7 @@ public static class RepresentativeSelector
             internalGames += warsPerCompare;
 
             // 偏保守：只在 challenger 明显更强时替换 current，避免被随机性抖动带偏
-            if (winsB > winsA)
+            if (winsB > winsA || (winsB == winsA && SynergyScorer.DeckOrderScore(challenger, db) > SynergyScorer.DeckOrderScore(current, db)))
             {
                 current = challenger;
                 candidates.Add(challenger);
@@ -159,12 +159,14 @@ public static class RepresentativeSelector
             var total = winsA + winsB + draws;
             var kingScore = total <= 0 ? 0.5 : (winsA + 0.5 * draws) / total;
             winRates[ch.Signature()] = 1.0 - kingScore;
-            if (winsB > winsA) king = ch;
+            if (winsB > winsA || (winsB == winsA && SynergyScorer.DeckOrderScore(ch, db) > SynergyScorer.DeckOrderScore(king, db)))
+                king = ch;
         }
 
-        // 取 topK：这里用“对 king 的胜率”做近似排序（快探索场景足够）
+        // 取 topK：按对 king 的胜率排序，平局时用协同顺序得分 tie-break
         var ordered = uniq
             .OrderByDescending(c => c.Signature() == king.Signature() ? 1.0 : winRates.GetValueOrDefault(c.Signature(), 0.0))
+            .ThenByDescending(c => SynergyScorer.DeckOrderScore(c, db))
             .Take(topK)
             .ToList();
         if (!ordered.Any(c => c.Signature() == king.Signature()))

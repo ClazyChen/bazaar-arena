@@ -14,8 +14,26 @@ public sealed class OptimizerState
     /// <summary>池中所有组合：comboSignature -> ComboEntry。</summary>
     public ConcurrentDictionary<string, ComboEntry> Pool { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>组合最近对局统计与 fast lane 阶段（用于孵化/冲刺判定）。</summary>
+    /// <summary>锚定玩家当前卡组：key = "itemName|shapeIndex"，value = comboSig。</summary>
+    public ConcurrentDictionary<string, string> AnchoredPlayerComboSig { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>强度玩家当前卡组列表（每项为一个 comboSig）。仅主线程/赛季步骤内修改。</summary>
+    public List<string> StrengthPlayerComboSigs { get; } = new();
+
+    /// <summary>每个强度玩家上次改进的赛季（与 StrengthPlayerComboSigs 一一对应）；用于放弃判定。</summary>
+    public List<int> StrengthLastImprovedSeason { get; } = new();
+
+    /// <summary>每个锚定玩家（key）上次改进的赛季；用于放弃判定。</summary>
+    public Dictionary<string, int> AnchoredLastImprovedSeason { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>当前赛季编号（用于报告与断点续跑）。</summary>
+    public int CurrentSeason { get; set; }
+
+    /// <summary>组合最近对局统计（可选，用于后续分析）。</summary>
     public ConcurrentDictionary<string, ComboStats> StatsByComboSig { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>锚定玩家 key：itemName + "|" + shapeIndex。</summary>
+    public static string AnchoredKey(string itemName, int shapeIndex) => $"{itemName}|{shapeIndex}";
 
     private int _totalRestarts;
     private int _totalClimbs;
@@ -39,17 +57,8 @@ public sealed class OptimizerState
         Priors.EmaAlpha = config.PriorEmaAlpha;
     }
 
-    public enum FastLaneStage
-    {
-        None = 0,
-        Incubate = 1,
-        Sprint = 2,
-    }
-
     public sealed class ComboStats
     {
-        public FastLaneStage Stage { get; set; } = FastLaneStage.None;
-
         /// <summary>仅保留最近若干条对局记录（ring buffer 简化实现）。</summary>
         public List<MatchRecord> Recent { get; } = new();
 
@@ -75,42 +84,10 @@ public sealed class OptimizerState
         lock (stats.Sync)
         {
             stats.Recent.Add(new MatchRecord(selfSeg, oppSeg, outcome));
-            // 保留一个稍大的窗口，避免阈值边缘时抖动；同时限制内存
-            int cap = Math.Max(50, Math.Max(10, Config.FastLaneWinrateWindowGames) * 4);
+            const int cap = 50;
             if (stats.Recent.Count > cap)
                 stats.Recent.RemoveRange(0, stats.Recent.Count - cap);
         }
-    }
-
-    /// <summary>计算最近窗口胜率：仅统计对手段位属于 (seg 或 seg-1) 的对局。</summary>
-    public (double winRate, int games) RecentWinRateInSegAndPrev(string comboSig, double currentElo)
-    {
-        if (!StatsByComboSig.TryGetValue(comboSig, out var stats))
-            return (0, 0);
-
-        int seg = SegmentIndex(currentElo);
-        int window = Math.Max(1, Config.FastLaneWinrateWindowGames);
-
-        int wins = 0, draws = 0, losses = 0;
-        int counted = 0;
-        lock (stats.Sync)
-        {
-            for (int i = stats.Recent.Count - 1; i >= 0 && counted < window; i--)
-            {
-                var r = stats.Recent[i];
-                if (r.OpponentSegmentAtTime != seg && r.OpponentSegmentAtTime != seg - 1)
-                    continue;
-
-                if (r.Outcome > 0) wins++;
-                else if (r.Outcome == 0) draws++;
-                else losses++;
-                counted++;
-            }
-        }
-
-        var total = wins + draws + losses;
-        if (total <= 0) return (0, 0);
-        return ((wins + 0.5 * draws) / total, total);
     }
 
     public int SegmentIndex(double elo)

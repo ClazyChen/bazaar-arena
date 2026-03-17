@@ -17,9 +17,6 @@ public sealed class Priors
     /// <summary>物品对协同权重（无序对）：key = "A|B"（按 Ordinal 排序）。</summary>
     public Dictionary<string, double> PairWeights { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>机制标签对协同权重（无序对）：key = "TagA|TagB"（按 Ordinal 排序）。</summary>
-    public Dictionary<string, double> MechanicPairWeights { get; } = new(StringComparer.Ordinal);
-
     public double EmaAlpha { get; set; } = 0.08;
 
     public void ObserveCombo(
@@ -42,7 +39,6 @@ public sealed class Priors
             return;
 
         var itemNames = representative.ItemNames.ToList();
-        var mechanicsByItem = new List<IReadOnlyList<string>>(itemNames.Count);
 
         foreach (var name in itemNames)
         {
@@ -58,37 +54,15 @@ public sealed class Priors
             if (size == 0) continue;
             var key = $"{size}:{name}";
             UpdateEma(ItemWeights, key, signal, effectiveAlpha);
-
-            mechanicsByItem.Add(MechanicTagger.GetMechanics(name, db));
         }
 
         // 物品对协同：组合内任意两件物品共同出现即记忆（无序）。
-        // 这里用 signal（可正可负）以支持后续复测带来的纠偏。
         for (int i = 0; i < itemNames.Count; i++)
         {
             for (int j = i + 1; j < itemNames.Count; j++)
             {
                 var pairKey = MakePairKey(itemNames[i], itemNames[j]);
                 UpdateEma(PairWeights, pairKey, signal, effectiveAlpha);
-            }
-        }
-
-        // 机制标签对协同：对每对物品的机制集合做笛卡尔积更新（无序）。
-        for (int i = 0; i < mechanicsByItem.Count; i++)
-        {
-            for (int j = i + 1; j < mechanicsByItem.Count; j++)
-            {
-                var a = mechanicsByItem[i];
-                var b = mechanicsByItem[j];
-                if (a.Count == 0 || b.Count == 0) continue;
-                foreach (var ma in a)
-                {
-                    foreach (var mb in b)
-                    {
-                        var key = MakePairKey(ma, mb);
-                        UpdateEma(MechanicPairWeights, key, signal, effectiveAlpha);
-                    }
-                }
             }
         }
     }
@@ -113,14 +87,7 @@ public sealed class Priors
     public double PairWeight(string a, string b)
     {
         var key = MakePairKey(a, b);
-        // Pair/Mechanic 作为“可正可负”的加成项使用；缺失视为 0。
         return PairWeights.TryGetValue(key, out var w) ? w : 0.0;
-    }
-
-    public double MechanicPairWeight(string a, string b)
-    {
-        var key = MakePairKey(a, b);
-        return MechanicPairWeights.TryGetValue(key, out var w) ? w : 0.0;
     }
 
     private static string MakePairKey(string a, string b)

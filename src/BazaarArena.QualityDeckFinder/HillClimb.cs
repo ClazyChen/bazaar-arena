@@ -52,7 +52,6 @@ public static class HillClimb
                 neighborSample,
                 config.ExploreMix,
                 pairLambda: config.SynergyPairLambda,
-                mechanicLambda: config.SynergyMechanicLambda,
                 anchorItemName: anchorItemName,
                 config: config,
                 totalGames: state.TotalGames);

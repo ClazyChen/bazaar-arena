@@ -7,7 +7,7 @@ namespace BazaarArena.QualityDeckFinder;
 
 public static class StatePersistence
 {
-    private const int Version = 5;
+    private const int Version = 6;
     private static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = false,
@@ -45,6 +45,11 @@ public static class StatePersistence
                 MaxElo = maxElo,
                 MinElo = minElo,
             },
+            CurrentSeason = state.CurrentSeason,
+            AnchoredPlayers = state.AnchoredPlayerComboSig.Select(kv => new AnchoredPlayerDto { Key = kv.Key, ComboSig = kv.Value }).ToList(),
+            StrengthPlayerComboSigs = state.StrengthPlayerComboSigs.ToList(),
+            StrengthLastImprovedSeason = state.StrengthLastImprovedSeason.ToList(),
+            AnchoredLastImprovedSeason = state.AnchoredLastImprovedSeason.ToDictionary(kv => kv.Key, kv => kv.Value),
             ConfigSnapshot = new ConfigSnapshotDto
             {
                 TopInterval = state.Config.TopInterval,
@@ -65,14 +70,11 @@ public static class StatePersistence
                 ExploreMix = state.Config.ExploreMix,
                 PriorEmaAlpha = state.Config.PriorEmaAlpha,
                 SynergyPairLambda = state.Config.SynergyPairLambda,
-                SynergyMechanicLambda = state.Config.SynergyMechanicLambda,
                 AnchoredMix = state.Config.AnchoredMix,
                 AnchoredReportCount = state.Config.AnchoredReportCount,
                 InjectInterval = state.Config.InjectInterval,
                 InjectCount = state.Config.InjectCount,
                 Workers = state.Config.Workers,
-                FastLaneEnabled = state.Config.FastLaneEnabled,
-                FastLaneEloDeltaThreshold = state.Config.FastLaneEloDeltaThreshold,
                 PriorsSignalClip = state.Config.PriorsSignalClip,
                 PriorsUnconfirmedMultiplier = state.Config.PriorsUnconfirmedMultiplier,
                 PriorsMinGamesForFullWeight = state.Config.PriorsMinGamesForFullWeight,
@@ -80,9 +82,6 @@ public static class StatePersistence
                 CandidateRandomMixMin = state.Config.CandidateRandomMixMin,
                 CandidateItemOnlyMixStart = state.Config.CandidateItemOnlyMixStart,
                 CandidateItemOnlyMixEnd = state.Config.CandidateItemOnlyMixEnd,
-                RerateIntervalClimbs = state.Config.RerateIntervalClimbs,
-                RerateBatchSize = state.Config.RerateBatchSize,
-                RerateGamesPerDeck = state.Config.RerateGamesPerDeck,
             },
             Priors = new PriorsDto
             {
@@ -90,7 +89,6 @@ public static class StatePersistence
                 ShapeCountWeights = state.Priors.ShapeCountWeights.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.Ordinal),
                 ItemWeights = state.Priors.ItemWeights.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.Ordinal),
                 PairWeights = state.Priors.PairWeights.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.Ordinal),
-                MechanicPairWeights = state.Priors.MechanicPairWeights.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.Ordinal),
             },
             Combos = state.Pool.Select(kv => new ComboDto
             {
@@ -105,7 +103,6 @@ public static class StatePersistence
             ComboStats = state.StatsByComboSig.Select(kv => new ComboStatsDto
             {
                 ComboSig = kv.Key,
-                Stage = (int)kv.Value.Stage,
                 Recent = kv.Value.Recent.Select(r => new MatchRecordDto
                 {
                     SelfSegmentAtTime = r.SelfSegmentAtTime,
@@ -134,7 +131,7 @@ public static class StatePersistence
 
             var boundsList = dto.SegmentBounds != null && dto.SegmentBounds.Count > 0
                 ? new List<double>(dto.SegmentBounds)
-                : new List<double> { 1400, 1600, 1800 };
+                : new List<double> { 1600, 1800, 2000, 2200 };
             Config cfg;
             if (config != null)
             {
@@ -154,6 +151,35 @@ public static class StatePersistence
             state.TotalClimbs = dto.TotalClimbs;
             state.TotalGames = dto.TotalGames;
             state.RngSeed = dto.RngSeed;
+            state.CurrentSeason = dto.CurrentSeason;
+
+            if (dto.AnchoredPlayers != null)
+            {
+                state.AnchoredPlayerComboSig.Clear();
+                foreach (var a in dto.AnchoredPlayers)
+                {
+                    if (!string.IsNullOrEmpty(a.Key) && !string.IsNullOrEmpty(a.ComboSig))
+                        state.AnchoredPlayerComboSig[a.Key] = a.ComboSig;
+                }
+            }
+            if (dto.StrengthPlayerComboSigs != null)
+            {
+                state.StrengthPlayerComboSigs.Clear();
+                state.StrengthPlayerComboSigs.AddRange(dto.StrengthPlayerComboSigs.Where(s => !string.IsNullOrEmpty(s)));
+            }
+            if (dto.StrengthLastImprovedSeason != null)
+            {
+                state.StrengthLastImprovedSeason.Clear();
+                state.StrengthLastImprovedSeason.AddRange(dto.StrengthLastImprovedSeason);
+            }
+            if (dto.AnchoredLastImprovedSeason != null)
+            {
+                state.AnchoredLastImprovedSeason.Clear();
+                foreach (var kv in dto.AnchoredLastImprovedSeason)
+                    state.AnchoredLastImprovedSeason[kv.Key] = kv.Value;
+            }
+            while (state.StrengthLastImprovedSeason.Count < state.StrengthPlayerComboSigs.Count)
+                state.StrengthLastImprovedSeason.Add(0);
 
             if (dto.Priors != null)
             {
@@ -173,11 +199,6 @@ public static class StatePersistence
                     foreach (var kv in dto.Priors.PairWeights)
                         state.Priors.PairWeights[kv.Key] = kv.Value;
                 }
-                if (dto.Priors.MechanicPairWeights != null)
-                {
-                    foreach (var kv in dto.Priors.MechanicPairWeights)
-                        state.Priors.MechanicPairWeights[kv.Key] = kv.Value;
-                }
             }
 
             foreach (var c in dto.Combos)
@@ -190,16 +211,12 @@ public static class StatePersistence
                 state.Pool[c.ComboSig] = new ComboEntry(c.ComboSig, rep, c.Elo, c.IsLocalOptimum, c.IsConfirmed, c.GameCount);
             }
 
-            // fast lane 统计（v3 起）
             if (dto.ComboStats != null)
             {
                 foreach (var s in dto.ComboStats)
                 {
                     if (string.IsNullOrEmpty(s.ComboSig)) continue;
                     var stats = new OptimizerState.ComboStats();
-                    stats.Stage = Enum.IsDefined(typeof(OptimizerState.FastLaneStage), s.Stage)
-                        ? (OptimizerState.FastLaneStage)s.Stage
-                        : OptimizerState.FastLaneStage.None;
                     if (s.Recent != null)
                     {
                         foreach (var r in s.Recent)
@@ -230,11 +247,22 @@ public static class StatePersistence
         public int TotalClimbs { get; set; }
         public int TotalGames { get; set; }
         public int? RngSeed { get; set; }
+        public int CurrentSeason { get; set; }
+        public List<AnchoredPlayerDto>? AnchoredPlayers { get; set; }
+        public List<string>? StrengthPlayerComboSigs { get; set; }
+        public List<int>? StrengthLastImprovedSeason { get; set; }
+        public Dictionary<string, int>? AnchoredLastImprovedSeason { get; set; }
         public SummaryDto? Summary { get; set; }
         public ConfigSnapshotDto? ConfigSnapshot { get; set; }
         public PriorsDto? Priors { get; set; }
         public List<ComboDto>? Combos { get; set; }
         public List<ComboStatsDto>? ComboStats { get; set; }
+    }
+
+    private class AnchoredPlayerDto
+    {
+        public string? Key { get; set; }
+        public string? ComboSig { get; set; }
     }
 
     private class SummaryDto
@@ -266,14 +294,11 @@ public static class StatePersistence
         public double ExploreMix { get; set; }
         public double PriorEmaAlpha { get; set; }
         public double SynergyPairLambda { get; set; }
-        public double SynergyMechanicLambda { get; set; }
         public double AnchoredMix { get; set; }
         public int AnchoredReportCount { get; set; }
         public int InjectInterval { get; set; }
         public int InjectCount { get; set; }
         public int Workers { get; set; }
-        public bool FastLaneEnabled { get; set; }
-        public double FastLaneEloDeltaThreshold { get; set; }
         public double PriorsSignalClip { get; set; }
         public double PriorsUnconfirmedMultiplier { get; set; }
         public int PriorsMinGamesForFullWeight { get; set; }
@@ -281,9 +306,6 @@ public static class StatePersistence
         public double CandidateRandomMixMin { get; set; }
         public double CandidateItemOnlyMixStart { get; set; }
         public double CandidateItemOnlyMixEnd { get; set; }
-        public int RerateIntervalClimbs { get; set; }
-        public int RerateBatchSize { get; set; }
-        public int RerateGamesPerDeck { get; set; }
     }
 
     private class PriorsDto
@@ -292,7 +314,6 @@ public static class StatePersistence
         public Dictionary<string, double>? ShapeCountWeights { get; set; }
         public Dictionary<string, double>? ItemWeights { get; set; }
         public Dictionary<string, double>? PairWeights { get; set; }
-        public Dictionary<string, double>? MechanicPairWeights { get; set; }
     }
 
     private class ComboDto
@@ -309,7 +330,6 @@ public static class StatePersistence
     private class ComboStatsDto
     {
         public string? ComboSig { get; set; }
-        public int Stage { get; set; }
         public List<MatchRecordDto>? Recent { get; set; }
     }
 
