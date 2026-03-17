@@ -778,6 +778,7 @@
   - 单 Tag 子句：`Synergy.And(Tag.Friend)`；OR 由列表字面量表达，如 `[ Synergy.And(Tag.Friend), Synergy.And(Tag.Ray) ]`。
 - **语义区分**：**上游/下游**表达「是否会发生/能影响谁」的依赖（配合图）；**NeighborPreference** 表达队形偏好（重排启发式）。例如刺刀「使用此物品左侧的武器时」→ 上游 `Synergy.And(SynergyDirection.Left, Tag.Weapon)`；珍珠「使用其他水系且带冷却物品时充能」→ 上游 `Synergy.And(Tag.Aquatic, Tag.Cooldown)`。
 - **克隆**：`ItemDatabase.CloneTemplate` 会浅拷贝上述三个列表。详见 `Core/SynergyPrior.cs`、`Core/Synergy.cs`。
+- **海盗物品一览**：海盗（Vanessa）关卡物品的上下游、邻居约束及完整 tags（含显式与隐性）见 **docs/vanessa-synergy-prior.txt**。
 
 ---
 

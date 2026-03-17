@@ -29,6 +29,10 @@ public static class SeaShell
                     Value = Formula.Source(Key.Custom_0) * Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Aquatic)),
                 },
             ],
+            NeighborPreference =
+            [
+                Synergy.And(Tag.Aquatic),
+            ],
         };
     }
 }

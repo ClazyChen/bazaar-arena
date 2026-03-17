@@ -25,6 +25,12 @@ public static class Barrel
                     priority: AbilityPriority.High
                 ),
             ],
+            NeighborPreference =
+            [
+                Synergy.And(Tag.Weapon),
+                Synergy.And(Tag.Tool),
+                Synergy.And(Tag.Aquatic),
+            ],
         };
     }
 
@@ -47,6 +53,12 @@ public static class Barrel
                     targetCondition: Condition.SameAsSource,
                     priority: AbilityPriority.High
                 ),
+            ],
+            NeighborPreference =
+            [
+                Synergy.And(Tag.Weapon),
+                Synergy.And(Tag.Tool),
+                Synergy.And(Tag.Aquatic),
             ],
         };
     }

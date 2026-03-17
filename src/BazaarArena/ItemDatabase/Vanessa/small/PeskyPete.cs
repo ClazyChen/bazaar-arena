@@ -28,6 +28,11 @@ public static class PeskyPete
                     Value = Formula.Count(AdjacentFriendOrProperty),
                 },
             ],
+            NeighborPreference =
+            [
+                Synergy.And(Tag.Friend),
+                Synergy.And(Tag.Property),
+            ],
         };
     }
 
@@ -49,6 +54,11 @@ public static class PeskyPete
                     AttributeName = Key.Multicast,
                     Value = Formula.Count(AdjacentFriendOrProperty),
                 },
+            ],
+            NeighborPreference =
+            [
+                Synergy.And(Tag.Friend),
+                Synergy.And(Tag.Property),
             ],
         };
     }
@@ -77,6 +87,11 @@ public static class PeskyPete
                     AttributeName = Key.Burn,
                     Value = Formula.Source(Key.Custom_0) * Formula.Count(AdjacentFriendOrProperty),
                 },
+            ],
+            NeighborPreference =
+            [
+                Synergy.And(Tag.Friend),
+                Synergy.And(Tag.Property),
             ],
         };
     }

@@ -31,6 +31,10 @@ public static class Zoarcid
                     priority: AbilityPriority.Low
                 ),
             ],
+            UpstreamRequirements =
+            [
+                Synergy.And(Tag.Burn),
+            ],
         };
     }
 
@@ -59,6 +63,10 @@ public static class Zoarcid
                     priority: AbilityPriority.Low
                 ),
             ],
+            UpstreamRequirements =
+            [
+                Synergy.And(Tag.Burn),
+            ],
         };
     }
 
@@ -86,6 +94,10 @@ public static class Zoarcid
                     targetCondition: Condition.SameAsSource,
                     priority: AbilityPriority.Low
                 ),
+            ],
+            UpstreamRequirements =
+            [
+                Synergy.And(Tag.Burn),
             ],
         };
     }

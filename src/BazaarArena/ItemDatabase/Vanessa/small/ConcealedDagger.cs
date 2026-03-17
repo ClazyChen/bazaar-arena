@@ -28,6 +28,10 @@ public static class ConcealedDagger
                     trigger: Trigger.BattleStart
                 )
             ],
+            DownstreamRequirements =
+            [
+                Synergy.And(Tag.Cooldown),
+            ],
         };
     }
 

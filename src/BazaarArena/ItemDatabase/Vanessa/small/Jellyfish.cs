@@ -26,6 +26,14 @@ public static class Jellyfish
                     targetCondition: Condition.SameAsSource
                 ),
             ],
+            UpstreamRequirements =
+            [
+                Synergy.And(Tag.Aquatic),
+            ],
+            NeighborPreference =
+            [
+                Synergy.And(Tag.Aquatic),
+            ],
         };
     }
 }

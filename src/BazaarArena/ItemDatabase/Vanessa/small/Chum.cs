@@ -23,6 +23,10 @@ public static class Chum
                     priority: AbilityPriority.High
                 ),
             ],
+            DownstreamRequirements =
+            [
+                Synergy.And(Tag.Aquatic),
+            ],
         };
     }
 }

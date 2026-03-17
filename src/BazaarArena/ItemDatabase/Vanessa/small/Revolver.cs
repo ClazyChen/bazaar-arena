@@ -46,6 +46,10 @@ public static class Revolver
                     priority: AbilityPriority.Low
                 ),
             ],
+            UpstreamRequirements =
+            [
+                Synergy.And(Tag.Crit),
+            ],
         };
     }
 }

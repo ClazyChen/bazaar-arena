@@ -30,6 +30,10 @@ public static class Handaxe
                     Value = Formula.Source(Key.Custom_0),
                 },
             ],
+            DownstreamRequirements =
+            [
+                Synergy.And(Tag.Weapon),
+            ],
         };
     }
 }

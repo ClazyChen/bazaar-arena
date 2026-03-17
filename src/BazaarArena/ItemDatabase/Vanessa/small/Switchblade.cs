@@ -53,6 +53,10 @@ public static class Switchblade
                     valueKey: Key.Custom_0
                 ),
             ],
+            NeighborPreference =
+            [
+                Synergy.And(Tag.Weapon),
+            ],
         };
     }
 }

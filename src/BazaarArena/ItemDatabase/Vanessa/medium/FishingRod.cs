@@ -22,6 +22,10 @@ public static class FishingRod
                     priority: AbilityPriority.High
                 ),
             ],
+            DownstreamRequirements =
+            [
+                Synergy.And(SynergyDirection.Right, Tag.Aquatic),
+            ],
         };
     }
 }

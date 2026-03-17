@@ -25,6 +25,11 @@ public static class Piranha
                     targetCondition: Condition.SameAsSource
                 ),
             ],
+            UpstreamRequirements =
+            [
+                Synergy.And(Tag.Friend),
+                Synergy.And(Tag.Food),
+            ],
         };
     }
 
