@@ -24,15 +24,30 @@ public sealed class DeckRep
         return shapeId + "|" + string.Join(",", ItemNames);
     }
 
-    /// <summary>转为 BattleSimulator 使用的 Deck（PlayerLevel=2，铜级，无 Overrides）。</summary>
-    public Deck ToDeck()
+    /// <summary>转为 BattleSimulator 使用的 Deck（PlayerLevel=2，铜级）。若物品存在 OverridableAttributes，则 Overrides 设为 Bronze 档默认值的一半（模拟 2 级时局外成长较低）。</summary>
+    public Deck ToDeck(IItemTemplateResolver db)
     {
-        var slots = ItemNames.Select(name => new DeckSlotEntry
+        var slots = new List<DeckSlotEntry>();
+        foreach (var name in ItemNames)
         {
-            ItemName = name,
-            Tier = ItemTier.Bronze,
-            Overrides = null,
-        }).ToList();
+            var template = db.GetTemplate(name);
+            Dictionary<string, int>? overrides = null;
+            if (template?.OverridableAttributes != null)
+            {
+                overrides = new Dictionary<string, int>();
+                foreach (var kv in template.OverridableAttributes)
+                {
+                    int bronzeVal = template.GetInt(kv.Key, ItemTier.Bronze, 0);
+                    overrides[kv.Key] = bronzeVal / 2;
+                }
+            }
+            slots.Add(new DeckSlotEntry
+            {
+                ItemName = name,
+                Tier = ItemTier.Bronze,
+                Overrides = overrides,
+            });
+        }
         return new Deck
         {
             PlayerLevel = 2,
@@ -70,6 +85,43 @@ public static class DeckGen
             used.Add(pick);
             names.Add(pick);
         }
+        return new DeckRep(shape, names);
+    }
+
+    /// <summary>
+    /// 加权随机生成：以 priors 的物品权重引导抽样，并与均匀探索按 exploreMix 混合。
+    /// exploreMix=0 表示完全加权；1 表示完全均匀。
+    /// </summary>
+    public static DeckRep? RandomDeckWeighted(IReadOnlyList<int> shape, ItemPool pool, Priors priors, Random rng, double exploreMix)
+    {
+        exploreMix = Math.Clamp(exploreMix, 0.0, 1.0);
+        if (!pool.CanBuildNoDuplicate(shape))
+            return null;
+
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        var names = new List<string>(shape.Count);
+        for (int i = 0; i < shape.Count; i++)
+        {
+            var size = shape[i];
+            var candidates = pool.NamesForSize(size).Where(n => !used.Contains(n)).ToList();
+            if (candidates.Count == 0)
+                return null;
+
+            string pick;
+            if (rng.NextDouble() < exploreMix)
+            {
+                pick = candidates[rng.Next(candidates.Count)];
+            }
+            else
+            {
+                var weights = candidates.Select(n => priors.ItemWeight(size, n)).ToList();
+                pick = candidates[WeightedPick.PickIndex(weights, rng)];
+            }
+
+            used.Add(pick);
+            names.Add(pick);
+        }
+
         return new DeckRep(shape, names);
     }
 }

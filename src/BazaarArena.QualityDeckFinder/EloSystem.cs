@@ -5,9 +5,33 @@ using SimulatorClass = BazaarArena.BattleSimulator.BattleSimulator;
 
 namespace BazaarArena.QualityDeckFinder;
 
-/// <summary>ELO 更新、按段抽样对手、新卡组先打段 0、入池时按段踢出最低（若满）。</summary>
+/// <summary>ELO 更新、按段抽样对手、新卡组先打段 0、入池时若段满则按与同段相似度踢出最冗余者以保护多样性。</summary>
 public static class EloSystem
 {
+    /// <summary>两张组合（以代表排列取物品集合）物品集合的 Jaccard 相似度（0~1），用于跨形状比较。</summary>
+    private static double Similarity(DeckRep aRep, DeckRep bRep)
+    {
+        var setA = new HashSet<string>(aRep.ItemNames, StringComparer.Ordinal);
+        var setB = new HashSet<string>(bRep.ItemNames, StringComparer.Ordinal);
+        int cap = setA.Intersect(setB).Count();
+        int cup = setA.Union(setB).Count();
+        return cup == 0 ? 0 : (double)cap / cup;
+    }
+
+    /// <summary>某卡组在该段内的冗余度：与段内其余卡组相似度之和；越高表示与同段越重复。</summary>
+    private static double RedundancyInSegment(string sig, IReadOnlyList<string> segmentSigs, OptimizerState state)
+    {
+        if (!state.Pool.TryGetValue(sig, out var entry)) return 0;
+        var rep = entry.Representative;
+        double sum = 0;
+        foreach (var other in segmentSigs)
+        {
+            if (other == sig) continue;
+            if (!state.Pool.TryGetValue(other, out var otherEntry)) continue;
+            sum += Similarity(rep, otherEntry.Representative);
+        }
+        return sum;
+    }
     /// <summary>计算 ELO 期望得分：己方 eloA 对 己方 eloB 的期望得分（0~1）。</summary>
     public static double ExpectedScore(double eloA, double eloB)
     {
@@ -32,7 +56,11 @@ public static class EloSystem
     {
         var segmentIndex = isNewDeck ? 0 : state.SegmentIndex(deckElo ?? config.InitialElo);
         var candidates = new List<string>();
-        var maxSeg = config.SegmentBounds.Count;
+        int maxSeg;
+        lock (config.SegmentBoundsLock)
+        {
+            maxSeg = config.SegmentBounds.Count;
+        }
         if (isNewDeck)
         {
             for (int s = 0; s <= maxSeg && candidates.Count < M; s++)
@@ -52,9 +80,10 @@ public static class EloSystem
         return candidates;
     }
 
-    /// <summary>运行若干场对战：D 与 opponents 中随机对手对战，更新 D 与对手的 ELO；返回 D 的更新后 ELO。</summary>
+    /// <summary>运行若干场对战：组合代表 repD 与 opponents 中随机对手的代表对战，更新双方组合的 ELO；返回 D 的更新后 ELO。</summary>
     public static double RunGamesAndUpdateElo(
-        DeckRep deckD,
+        string comboSigD,
+        DeckRep repD,
         IReadOnlyList<string> opponentSignatures,
         OptimizerState state,
         Config config,
@@ -62,19 +91,19 @@ public static class EloSystem
         IItemTemplateResolver db)
     {
         if (opponentSignatures.Count == 0)
-            return state.Pool.TryGetValue(deckD.Signature(), out var e) ? e.Elo : config.InitialElo;
+            return state.Pool.TryGetValue(comboSigD, out var e) ? e.Elo : config.InitialElo;
 
         var silentSink = new SilentBattleLogSink();
         var k = config.EloK;
         var gamesPerOpp = Math.Max(1, config.GamesPerEval / Math.Max(1, opponentSignatures.Count));
-        double currentEloD = state.Pool.TryGetValue(deckD.Signature(), out var entryD) ? entryD.Elo : config.InitialElo;
+        double currentEloD = state.Pool.TryGetValue(comboSigD, out var entryD) ? entryD.Elo : config.InitialElo;
 
         foreach (var oppSig in opponentSignatures)
         {
             if (!state.Pool.TryGetValue(oppSig, out var oppEntry)) continue;
-            var deckOpp = oppEntry.Deck;
-            var deckDO = deckD.ToDeck();
-            var deckOppO = deckOpp.ToDeck();
+            var repOpp = oppEntry.Representative;
+            var deckDO = repD.ToDeck(db);
+            var deckOppO = repOpp.ToDeck(db);
             double eloOpp = oppEntry.Elo;
 
             for (int g = 0; g < gamesPerOpp; g++)
@@ -89,45 +118,67 @@ public static class EloSystem
                 if (winner >= 0 && swap == 1) winner = 1 - winner;
                 UpdateElo(currentEloD, eloOpp, winner, k, out currentEloD, out eloOpp);
 
-                state.Pool[oppSig] = new DeckEntry(oppEntry.Deck, eloOpp, oppEntry.IsLocalOptimum, oppEntry.GameCount + 1);
+                state.Pool[oppSig] = oppEntry with { Elo = eloOpp, GameCount = oppEntry.GameCount + 1 };
                 oppEntry = state.Pool[oppSig];
-                state.TotalGames++;
+                state.IncrementTotalGames();
             }
         }
 
-        TryAddToPool(state, config, deckD, currentEloD);
+        TryAddToPool(state, config, comboSigD, repD, currentEloD);
         return currentEloD;
     }
 
-    /// <summary>将卡组加入池：按 ELO 归段，若段满则踢出该段 ELO 最低的一个。</summary>
-    public static void TryAddToPool(OptimizerState state, Config config, DeckRep deck, double elo, bool isLocalOptimum = false)
+    /// <summary>将组合加入池：按 ELO 归段，若段满则踢出该段内与同段最相似（最冗余）且 ELO 低于新组合的一张，以保护多样性。</summary>
+    public static void TryAddToPool(
+        OptimizerState state,
+        Config config,
+        string comboSig,
+        DeckRep representative,
+        double elo,
+        bool isLocalOptimum = false,
+        bool isConfirmed = false)
     {
-        var sig = deck.Signature();
-        var segmentIndex = state.SegmentIndex(elo);
-        var inSegment = state.SignaturesInSegment(segmentIndex);
-        if (state.Pool.TryGetValue(sig, out var existing))
+        lock (state.PoolSync)
         {
-            state.Pool[sig] = new DeckEntry(existing.Deck, elo, isLocalOptimum, existing.GameCount);
-            return;
-        }
-        if (inSegment.Count >= config.SegmentCap)
-        {
-            string? lowestSig = null;
-            double lowestElo = double.MaxValue;
-            foreach (var s in inSegment)
+            var segmentIndex = state.SegmentIndex(elo);
+            var inSegment = state.SignaturesInSegment(segmentIndex);
+            if (state.Pool.TryGetValue(comboSig, out var existing))
             {
-                if (state.Pool.TryGetValue(s, out var e) && e.Elo < lowestElo)
+                state.Pool[comboSig] = existing with
                 {
-                    lowestElo = e.Elo;
-                    lowestSig = s;
-                }
-            }
-            if (lowestSig != null && elo > lowestElo)
-                state.Pool.Remove(lowestSig);
-            else if (lowestSig == null || elo <= lowestElo)
+                    Representative = representative,
+                    Elo = elo,
+                    IsLocalOptimum = isLocalOptimum,
+                    IsConfirmed = existing.IsConfirmed || isConfirmed,
+                };
                 return;
+            }
+            if (inSegment.Count >= config.SegmentCap)
+            {
+                var candidates = inSegment.Where(s => state.Pool.TryGetValue(s, out var e) && e.Elo < elo).ToList();
+                if (candidates.Count == 0)
+                    return;
+                string? kickSig = null;
+                double bestRedundancy = double.MinValue;
+                double kickElo = double.MaxValue;
+                foreach (var s in candidates)
+                {
+                    var redundancy = RedundancyInSegment(s, inSegment, state);
+                    var candidateElo = state.Pool[s].Elo;
+                    if (redundancy > bestRedundancy || (redundancy == bestRedundancy && candidateElo < kickElo))
+                    {
+                        bestRedundancy = redundancy;
+                        kickSig = s;
+                        kickElo = candidateElo;
+                    }
+                }
+                if (kickSig != null)
+                    state.Pool.TryRemove(kickSig, out _);
+                else
+                    return;
+            }
+            state.Pool[comboSig] = new ComboEntry(comboSig, representative, elo, isLocalOptimum, isConfirmed, 0);
         }
-        state.Pool[sig] = new DeckEntry(deck, elo, isLocalOptimum, 0);
     }
 
     private sealed class SilentBattleLogSink : IBattleLogSink

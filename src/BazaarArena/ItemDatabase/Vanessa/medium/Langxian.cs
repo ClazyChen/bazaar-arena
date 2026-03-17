@@ -18,7 +18,7 @@ public static class Langxian
             Custom_0 = [40, 60, 80, 100],
             OverridableAttributes = new Dictionary<string, IntOrByTier>
             {
-                [Key.Custom_1] = [4, 8, 12, 16],
+                [Key.Custom_1] = [3, 6, 9, 12],
             },
             Abilities =
             [

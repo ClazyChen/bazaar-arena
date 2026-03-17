@@ -29,4 +29,19 @@ public static class Shapes
             throw new ArgumentOutOfRangeException(nameof(index));
         return All[index];
     }
+
+    /// <summary>对指定尺寸组成做 Fisher-Yates 随机排列，返回新列表；同一组成可对应多种槽位顺序（如 4小+1中 的中型可在任意位置）。</summary>
+    public static IReadOnlyList<int> GetRandomPermutation(int shapeIndex, Random rng)
+    {
+        if (shapeIndex < 0 || shapeIndex >= All.Count)
+            throw new ArgumentOutOfRangeException(nameof(shapeIndex));
+        var template = All[shapeIndex];
+        var list = new List<int>(template);
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            (list[i], list[j]) = (list[j], list[i]);
+        }
+        return list;
+    }
 }

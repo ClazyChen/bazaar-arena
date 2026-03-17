@@ -1,0 +1,34 @@
+{
+  "StatePath": "quality_deck_state.json",
+  "TopInterval": 5,
+  "SaveInterval": 10,
+
+  "SegmentCap": 50,
+  "SegmentBounds": [1400, 1600, 1800],
+  "SegmentExpandStep": 200,
+  "SegmentExpandMaxBounds": 10,
+
+  "InitialElo": 1500,
+  "EloK": 32,
+  "GamesPerEval": 5,
+
+  "MaxClimbSteps": 500,
+  "NeighborSampleSize": 80,
+  "MabBudgetPerStep": 30,
+
+  "InnerWars": 3,
+  "InnerBudget": 30,
+  "InnerSelectTop": 3,
+  "InnerSelectWars": 2,
+  "ConfirmOpponents": 8,
+  "ConfirmGamesPerOpponent": 1,
+
+  "ExploreMix": 0.30,
+  "PriorEmaAlpha": 0.08,
+
+  "Workers": 14,
+
+  "InjectInterval": 1,
+  "InjectCount": 1
+}
+

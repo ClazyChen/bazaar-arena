@@ -29,7 +29,7 @@ VANESSA_MEDIUM_BRONZE_TESTS = [
         "log_contains": ["弯刀", "伤害"],
         "log_min_count": {"[弯刀] 伤害": 2},
     },
-    {"name": "水桶_barrel", "deck1": "vanessa_mb_barrel_p1", "deck2": "vanessa_mb_barrel_p2", "log_contains": ["水桶", "护盾"]},
+    {"name": "木桶_barrel", "deck1": "vanessa_mb_barrel_p1", "deck2": "vanessa_mb_barrel_p2", "log_contains": ["木桶", "护盾"]},
     {"name": "步枪_rifle", "deck1": "vanessa_mb_rifle_p1", "deck2": "vanessa_mb_rifle_p2", "log_contains": ["步枪", "伤害"]},
     {"name": "武士刀_katana", "deck1": "vanessa_mb_katana_p1", "deck2": "vanessa_mb_katana_p2", "log_contains": ["武士刀", "伤害"]},
     {"name": "狼筅_langxian", "deck1": "vanessa_mb_langxian_p1", "deck2": "vanessa_mb_langxian_p2", "log_contains": ["狼筅", "伤害"]},

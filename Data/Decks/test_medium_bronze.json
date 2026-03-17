@@ -65,7 +65,7 @@
     { "id": "vanessa_mb_cutlass_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "弯刀", "tier": 0 }] } },
     { "id": "vanessa_mb_cutlass_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
 
-    { "id": "vanessa_mb_barrel_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "水桶", "tier": 0 }, { "itemName": "獠牙", "tier": 0 }] } },
+    { "id": "vanessa_mb_barrel_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "木桶", "tier": 0 }, { "itemName": "獠牙", "tier": 0 }] } },
     { "id": "vanessa_mb_barrel_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
 
     { "id": "vanessa_mb_rifle_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "步枪", "tier": 0 }] } },
