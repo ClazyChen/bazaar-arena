@@ -44,3 +44,9 @@ Desktop.ini
 
 # Raw images
 pictures/webp/
+
+# QualityDeckFinder (本地运行状态/断点文件)
+quality_deck_state.json
+my_state.json
+quality_deck_state.*.json
+quality_deck_config.local.json
