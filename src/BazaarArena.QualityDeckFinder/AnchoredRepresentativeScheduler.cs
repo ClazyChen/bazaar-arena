@@ -52,7 +52,7 @@ public static class AnchoredRepresentativeScheduler
                 foreach (var key in keys)
                 {
                     if (!state.AnchoredPlayerComboSig.TryGetValue(key, out var comboSig) ||
-                        !state.Pool.TryGetValue(comboSig, out var entry))
+                        !state.VirtualPlayerPool.TryGetValue(comboSig, out var entry))
                     {
                         weights.Add(1.0);
                         continue;

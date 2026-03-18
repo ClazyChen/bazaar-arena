@@ -8,6 +8,13 @@ namespace BazaarArena.QualityDeckFinder;
 /// <summary>ELO 更新、按段抽样对手、新卡组先打段 0、入池时若段满则按与同段相似度踢出最冗余者以保护多样性。</summary>
 public static class EloSystem
 {
+    private static int GetCumulativeGameCount(OptimizerState state, string comboSig)
+    {
+        int v = state.VirtualPlayerPool.TryGetValue(comboSig, out var ve) ? ve.GameCount : 0;
+        int h = state.HistoryPool.TryGetValue(comboSig, out var he) ? he.GameCount : 0;
+        return Math.Max(v, h);
+    }
+
     /// <summary>两张组合（以代表排列取物品集合）物品集合的 Jaccard 相似度（0~1），用于跨形状比较。</summary>
     private static double Similarity(DeckRep aRep, DeckRep bRep)
     {
@@ -21,13 +28,13 @@ public static class EloSystem
     /// <summary>某卡组在该段内的冗余度：与段内其余卡组相似度之和；越高表示与同段越重复。</summary>
     private static double RedundancyInSegment(string sig, IReadOnlyList<string> segmentSigs, OptimizerState state)
     {
-        if (!state.Pool.TryGetValue(sig, out var entry)) return 0;
+        if (!state.HistoryPool.TryGetValue(sig, out var entry)) return 0;
         var rep = entry.Representative;
         double sum = 0;
         foreach (var other in segmentSigs)
         {
             if (other == sig) continue;
-            if (!state.Pool.TryGetValue(other, out var otherEntry)) continue;
+            if (!state.HistoryPool.TryGetValue(other, out var otherEntry)) continue;
             sum += Similarity(rep, otherEntry.Representative);
         }
         return sum;
@@ -70,7 +77,7 @@ public static class EloSystem
 
         void AddFromSegment(int s)
         {
-            var inSeg = state.SignaturesInSegment(s);
+            var inSeg = state.SignaturesInSegment(state.HistoryPool, s);
             foreach (var sig in inSeg.OrderBy(_ => rng.Next()))
             {
                 if (excludeComboSig != null && string.Equals(sig, excludeComboSig, StringComparison.Ordinal)) continue;
@@ -99,6 +106,84 @@ public static class EloSystem
         return candidates.Distinct(StringComparer.Ordinal).Take(M).ToList();
     }
 
+    /// <summary>
+    /// 为本赛季匹配赛选取对手签名列表：候选来自「历史池 + 本赛季参赛虚拟玩家（activeComboSigs）」的并集。
+    /// </summary>
+    public static List<string> SelectOpponentSignaturesForSeason(
+        OptimizerState state,
+        Config config,
+        IReadOnlyCollection<string> activeComboSigs,
+        bool isNewDeck,
+        double? deckElo,
+        int M,
+        Random? rng = null,
+        string? excludeComboSig = null,
+        bool useSegmentNeighborhood = false)
+    {
+        rng ??= Random.Shared;
+        M = Math.Max(0, M);
+        if (M == 0) return [];
+
+        var segmentIndex = isNewDeck ? 0 : state.SegmentIndex(deckElo ?? config.InitialElo);
+        int maxSeg;
+        lock (config.SegmentBoundsLock)
+        {
+            maxSeg = config.SegmentBounds.Count;
+        }
+
+        // 建一个按段位分桶的并集快照（只包含可查到条目的签名）
+        var segBuckets = new List<List<string>>(maxSeg + 1);
+        for (int i = 0; i <= maxSeg; i++) segBuckets.Add(new List<string>());
+
+        void AddSig(string sig)
+        {
+            if (excludeComboSig != null && string.Equals(sig, excludeComboSig, StringComparison.Ordinal))
+                return;
+            if (!state.TryGetEntry(sig, out var e))
+                return;
+            int seg = state.SegmentIndex(e.Elo);
+            if (seg < 0) seg = 0;
+            if (seg > maxSeg) seg = maxSeg;
+            segBuckets[seg].Add(sig);
+        }
+
+        // 历史池 + 活跃参赛玩家并集
+        foreach (var sig in state.HistoryPool.Keys)
+            AddSig(sig);
+        foreach (var sig in activeComboSigs)
+            AddSig(sig);
+
+        IEnumerable<int> SegmentOrder()
+        {
+            if (isNewDeck)
+            {
+                for (int s = 0; s <= maxSeg; s++) yield return s;
+                yield break;
+            }
+            if (useSegmentNeighborhood)
+            {
+                var lo = Math.Max(0, segmentIndex - 1);
+                var hi = Math.Min(maxSeg, segmentIndex + 1);
+                for (int s = lo; s <= hi; s++) yield return s;
+                yield break;
+            }
+            for (int s = segmentIndex; s >= 0; s--) yield return s;
+        }
+
+        var picked = new List<string>(M);
+        foreach (var s in SegmentOrder())
+        {
+            foreach (var sig in segBuckets[s].OrderBy(_ => rng.Next()))
+            {
+                picked.Add(sig);
+                if (picked.Count >= M) break;
+            }
+            if (picked.Count >= M) break;
+        }
+
+        return picked.Distinct(StringComparer.Ordinal).Take(M).ToList();
+    }
+
     /// <summary>运行若干场对战：组合代表 repD 与 opponents 中随机对手的代表对战，更新双方组合的 ELO；返回 D 的更新后 ELO。</summary>
     public static double RunGamesAndUpdateElo(
         string comboSigD,
@@ -110,17 +195,17 @@ public static class EloSystem
         IItemTemplateResolver db)
     {
         if (opponentSignatures.Count == 0)
-            return state.Pool.TryGetValue(comboSigD, out var e) ? e.Elo : config.InitialElo;
+            return state.TryGetEntry(comboSigD, out var e) ? e.Elo : config.InitialElo;
 
         var silentSink = new SilentBattleLogSink();
         var k = config.EloK;
         var gamesPerOpp = Math.Max(1, config.GamesPerEval / Math.Max(1, opponentSignatures.Count));
-        double currentEloD = state.Pool.TryGetValue(comboSigD, out var entryD) ? entryD.Elo : config.InitialElo;
+        double currentEloD = state.TryGetEntry(comboSigD, out var entryD) ? entryD.Elo : config.InitialElo;
         int gamesPlayedByD = 0;
 
         foreach (var oppSig in opponentSignatures)
         {
-            if (!state.Pool.TryGetValue(oppSig, out var oppEntry)) continue;
+            if (!state.TryGetEntry(oppSig, out var oppEntry)) continue;
             var repOpp = oppEntry.Representative;
             var deckDO = repD.ToDeck(db);
             var deckOppO = repOpp.ToDeck(db);
@@ -138,8 +223,12 @@ public static class EloSystem
                 if (winner >= 0 && swap == 1) winner = 1 - winner;
                 UpdateElo(currentEloD, eloOpp, winner, k, out currentEloD, out eloOpp);
 
-                state.Pool[oppSig] = oppEntry with { Elo = eloOpp, GameCount = oppEntry.GameCount + 1 };
-                oppEntry = state.Pool[oppSig];
+                // 对手可能来自历史池或虚拟玩家池：分别更新存在的池条目
+                if (state.HistoryPool.TryGetValue(oppSig, out var hOpp))
+                    state.HistoryPool[oppSig] = hOpp with { Elo = eloOpp, GameCount = hOpp.GameCount + 1 };
+                if (state.VirtualPlayerPool.TryGetValue(oppSig, out var vOpp))
+                    state.VirtualPlayerPool[oppSig] = vOpp with { Elo = eloOpp, GameCount = vOpp.GameCount + 1 };
+                // 继续使用刚才的 oppEntry 仅用于代表与 eloOpp
                 state.IncrementTotalGames();
                 gamesPlayedByD++;
 
@@ -148,7 +237,10 @@ public static class EloSystem
             }
         }
 
-        TryAddToPool(state, config, comboSigD, repD, currentEloD, gamesPlayedDelta: gamesPlayedByD);
+        // D 的最新 elo 写回虚拟玩家池；并尝试写入历史池（受分段上限限制）
+        int baseGames = GetCumulativeGameCount(state, comboSigD);
+        state.VirtualPlayerPool[comboSigD] = new ComboEntry(comboSigD, repD, currentEloD, false, false, baseGames + gamesPlayedByD);
+        TryAddToHistoryPool(state, config, comboSigD, repD, currentEloD, gamesPlayedDelta: gamesPlayedByD);
         return currentEloD;
     }
 
@@ -170,11 +262,11 @@ public static class EloSystem
         rng ??= Random.Shared;
         totalGamesBudget = Math.Max(0, totalGamesBudget);
         if (opponentSignatures.Count == 0 || totalGamesBudget == 0)
-            return state.Pool.TryGetValue(comboSigD, out var e) ? e.Elo : config.InitialElo;
+            return state.TryGetEntry(comboSigD, out var e) ? e.Elo : config.InitialElo;
 
         var silentSink = new SilentBattleLogSink();
         var k = config.EloK;
-        double currentEloD = state.Pool.TryGetValue(comboSigD, out var entryD) ? entryD.Elo : config.InitialElo;
+        double currentEloD = state.TryGetEntry(comboSigD, out var entryD) ? entryD.Elo : config.InitialElo;
         int gamesPlayedByD = 0;
 
         var opps = opponentSignatures.Distinct(StringComparer.Ordinal).ToList();
@@ -184,7 +276,7 @@ public static class EloSystem
         foreach (var oppSig in opps)
         {
             if (gamesPlayedByD >= totalGamesBudget) break;
-            if (!state.Pool.TryGetValue(oppSig, out var oppEntry)) continue;
+            if (!state.TryGetEntry(oppSig, out var oppEntry)) continue;
             var repOpp = oppEntry.Representative;
             var deckDO = repD.ToDeck(db);
             var deckOppO = repOpp.ToDeck(db);
@@ -202,8 +294,10 @@ public static class EloSystem
                 if (winner >= 0 && swap == 1) winner = 1 - winner;
                 UpdateElo(currentEloD, eloOpp, winner, k, out currentEloD, out eloOpp);
 
-                state.Pool[oppSig] = oppEntry with { Elo = eloOpp, GameCount = oppEntry.GameCount + 1 };
-                oppEntry = state.Pool[oppSig];
+                if (state.HistoryPool.TryGetValue(oppSig, out var hOpp))
+                    state.HistoryPool[oppSig] = hOpp with { Elo = eloOpp, GameCount = hOpp.GameCount + 1 };
+                if (state.VirtualPlayerPool.TryGetValue(oppSig, out var vOpp))
+                    state.VirtualPlayerPool[oppSig] = vOpp with { Elo = eloOpp, GameCount = vOpp.GameCount + 1 };
                 state.IncrementTotalGames();
                 gamesPlayedByD++;
 
@@ -211,12 +305,14 @@ public static class EloSystem
             }
         }
 
-        TryAddToPool(state, config, comboSigD, repD, currentEloD, gamesPlayedDelta: gamesPlayedByD);
+        int baseGames = GetCumulativeGameCount(state, comboSigD);
+        state.VirtualPlayerPool[comboSigD] = new ComboEntry(comboSigD, repD, currentEloD, false, false, baseGames + gamesPlayedByD);
+        TryAddToHistoryPool(state, config, comboSigD, repD, currentEloD, gamesPlayedDelta: gamesPlayedByD);
         return currentEloD;
     }
 
-    /// <summary>将组合加入池：按 ELO 归段，若段满则踢出该段内与同段最相似（最冗余）且 ELO 低于新组合的一张，以保护多样性。</summary>
-    public static void TryAddToPool(
+    /// <summary>将组合加入历史池：按 ELO 归段，若段满则踢出该段内与同段最相似（最冗余）且 ELO 低于新组合的一张，以保护多样性。</summary>
+    public static void TryAddToHistoryPool(
         OptimizerState state,
         Config config,
         string comboSig,
@@ -226,13 +322,13 @@ public static class EloSystem
         bool isConfirmed = false,
         int gamesPlayedDelta = 0)
     {
-        lock (state.PoolSync)
+        lock (state.HistoryPoolSync)
         {
             var segmentIndex = state.SegmentIndex(elo);
-            var inSegment = state.SignaturesInSegment(segmentIndex);
-            if (state.Pool.TryGetValue(comboSig, out var existing))
+            var inSegment = state.SignaturesInSegment(state.HistoryPool, segmentIndex);
+            if (state.HistoryPool.TryGetValue(comboSig, out var existing))
             {
-                state.Pool[comboSig] = existing with
+                state.HistoryPool[comboSig] = existing with
                 {
                     Representative = representative,
                     Elo = elo,
@@ -249,7 +345,7 @@ public static class EloSystem
                     protectedSigs.Add(sig);
                 foreach (var sig in state.StrengthPlayerComboSigs)
                     protectedSigs.Add(sig);
-                var candidates = inSegment.Where(s => state.Pool.TryGetValue(s, out var e) && e.Elo < elo && !protectedSigs.Contains(s)).ToList();
+                var candidates = inSegment.Where(s => state.HistoryPool.TryGetValue(s, out var e) && e.Elo < elo && !protectedSigs.Contains(s)).ToList();
                 if (candidates.Count == 0)
                     return;
                 string? kickSig = null;
@@ -258,7 +354,7 @@ public static class EloSystem
                 foreach (var s in candidates)
                 {
                     var redundancy = RedundancyInSegment(s, inSegment, state);
-                    var candidateElo = state.Pool[s].Elo;
+                    var candidateElo = state.HistoryPool[s].Elo;
                     if (redundancy > bestRedundancy || (redundancy == bestRedundancy && candidateElo < kickElo))
                     {
                         bestRedundancy = redundancy;
@@ -267,11 +363,11 @@ public static class EloSystem
                     }
                 }
                 if (kickSig != null)
-                    state.Pool.TryRemove(kickSig, out _);
+                    state.HistoryPool.TryRemove(kickSig, out _);
                 else
                     return;
             }
-            state.Pool[comboSig] = new ComboEntry(comboSig, representative, elo, isLocalOptimum, isConfirmed, Math.Max(0, gamesPlayedDelta));
+            state.HistoryPool[comboSig] = new ComboEntry(comboSig, representative, elo, isLocalOptimum, isConfirmed, Math.Max(0, gamesPlayedDelta));
         }
     }
 

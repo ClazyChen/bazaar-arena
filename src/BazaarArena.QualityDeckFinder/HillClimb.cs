@@ -34,7 +34,7 @@ public static class HillClimb
 
         var currentComboSig = startComboSig;
         var currentRep = startRepresentative;
-        var currentElo = state.Pool.TryGetValue(currentComboSig, out var e) ? e.Elo : config.InitialElo;
+        var currentElo = state.VirtualPlayerPool.TryGetValue(currentComboSig, out var e) ? e.Elo : config.InitialElo;
         int steps = 0;
 
         int maxSteps = maxClimbStepsOverride ?? config.MaxClimbSteps;
@@ -64,7 +64,7 @@ public static class HillClimb
             {
                 next = FirstImprovement(currentComboSig, currentRep, currentElo, neighbors, state, config, pool, simulator, db, rng, opponentSelector);
                 if (next != null)
-                    nextElo = state.Pool.TryGetValue(next.Value.comboSig, out var ne) ? ne.Elo : config.InitialElo;
+                    nextElo = state.TryGetEntry(next.Value.comboSig, out var ne) ? ne.Elo : config.InitialElo;
             }
             else
             {
@@ -73,10 +73,12 @@ public static class HillClimb
 
             if (next == null || nextElo <= currentElo)
             {
-                if (state.Pool.TryGetValue(currentComboSig, out var ce))
-                    state.Pool[currentComboSig] = ce with { Representative = currentRep, Elo = currentElo, IsLocalOptimum = true };
+                if (state.VirtualPlayerPool.TryGetValue(currentComboSig, out var ce))
+                    state.VirtualPlayerPool[currentComboSig] = ce with { Representative = currentRep, Elo = currentElo, IsLocalOptimum = true };
                 else
-                    EloSystem.TryAddToPool(state, config, currentComboSig, currentRep, currentElo, isLocalOptimum: true);
+                    state.VirtualPlayerPool[currentComboSig] = new ComboEntry(currentComboSig, currentRep, currentElo, true, false, 0);
+
+                EloSystem.TryAddToHistoryPool(state, config, currentComboSig, currentRep, currentElo, isLocalOptimum: true);
                 return (currentComboSig, currentRep, true);
             }
 
@@ -108,7 +110,7 @@ public static class HillClimb
         {
             var comboSig = n.comboSig;
             DeckRep rep;
-            if (state.Pool.TryGetValue(comboSig, out var ex))
+            if (state.TryGetEntry(comboSig, out var ex))
             {
                 rep = ex.Representative;
             }
@@ -118,7 +120,7 @@ public static class HillClimb
                 rep = ensured.Representative;
             }
 
-            var elo = state.Pool.TryGetValue(comboSig, out var ee) ? ee.Elo : double.NaN;
+            var elo = state.TryGetEntry(comboSig, out var ee) ? ee.Elo : double.NaN;
             if (double.IsNaN(elo))
             {
                 var opps = opponentSelector(isNewDeck: true, deckElo: null, m: Math.Max(1, config.GamesPerEval));
@@ -167,7 +169,7 @@ public static class HillClimb
             var neighbor = neighbors[bestIdx];
             var comboSig = neighbor.comboSig;
             DeckRep rep;
-            if (state.Pool.TryGetValue(comboSig, out var ex))
+            if (state.TryGetEntry(comboSig, out var ex))
             {
                 rep = ex.Representative;
             }
@@ -190,8 +192,8 @@ public static class HillClimb
             if (count[i] > 0 && lastElo[i] > currentElo)
             {
                 var comboSig = neighbors[i].comboSig;
-                var rep = state.Pool.TryGetValue(comboSig, out var ex) ? ex.Representative : neighbors[i].seedRepresentative;
-                var finalElo = state.Pool.TryGetValue(comboSig, out var ex2) ? ex2.Elo : lastElo[i];
+                var rep = state.TryGetEntry(comboSig, out var ex) ? ex.Representative : neighbors[i].seedRepresentative;
+                var finalElo = state.TryGetEntry(comboSig, out var ex2) ? ex2.Elo : lastElo[i];
                 return ((comboSig, rep), finalElo);
             }
         }

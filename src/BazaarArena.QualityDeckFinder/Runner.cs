@@ -8,14 +8,21 @@ namespace BazaarArena.QualityDeckFinder;
 /// <summary>主循环：虚拟赛季（代表选择 → 匹配赛 → 卡组优化 → 注入/放弃）＋周期性 Top10 与状态保存。</summary>
 public static class Runner
 {
+    private static int GetCumulativeGameCount(OptimizerState state, string comboSig)
+    {
+        int v = state.VirtualPlayerPool.TryGetValue(comboSig, out var ve) ? ve.GameCount : 0;
+        int h = state.HistoryPool.TryGetValue(comboSig, out var he) ? he.GameCount : 0;
+        return Math.Max(v, h);
+    }
+
     public static void Run(SimulatorClass simulator, IItemTemplateResolver db, ItemPool pool, OptimizerState state, Config config)
     {
         var rng = state.RngSeed.HasValue ? new Random(state.RngSeed.Value) : new Random();
 
-        if (state.Pool.Count == 0 || (state.AnchoredPlayerComboSig.Count == 0 && state.StrengthPlayerComboSigs.Count == 0))
+        if ((state.HistoryPool.Count == 0 && state.VirtualPlayerPool.Count == 0) || (state.AnchoredPlayerComboSig.Count == 0 && state.StrengthPlayerComboSigs.Count == 0))
         {
             SeedPoolWithVirtualPlayers(simulator, db, pool, state, config, rng);
-            Console.WriteLine($"[初始化完成] 池大小 {state.Pool.Count}，开始虚拟赛季循环。");
+            Console.WriteLine($"[初始化完成] 历史池 {state.HistoryPool.Count}，虚拟玩家池 {state.VirtualPlayerPool.Count}，开始虚拟赛季循环。");
         }
 
         if (config.Workers > 0)
@@ -126,11 +133,19 @@ public static class Runner
 
         Console.WriteLine($"[赛季 {state.CurrentSeason + 1}] 活跃玩家 {activeComboSigs.Count}，总对局 {state.TotalGames}，开始匹配赛...");
 
+        // 本季参赛池快照：仅包含本季活跃玩家，用于匹配与打印口径（不把非活跃虚拟玩家混入）
+        var seasonPool = new Dictionary<string, ComboEntry>(StringComparer.Ordinal);
+        foreach (var sig in activeComboSigs)
+        {
+            if (state.VirtualPlayerPool.TryGetValue(sig, out var e))
+                seasonPool[sig] = e;
+        }
+
         // 匹配赛：受 SeasonMatchCap / SeasonLossCap 限制；多 worker 时每轮并行跑局、单线程合并写池
         if (config.Workers > 0)
-            RunMatchPhaseParallel(activeComboSigs.ToList(), state, config, simulator, db, rng);
+            RunMatchPhaseParallel(seasonPool, state, config, simulator, db, rng);
         else
-            RunMatchPhaseSingle(activeComboSigs.ToList(), state, config, simulator, db, rng);
+            RunMatchPhaseSingle(seasonPool, state, config, simulator, db, rng);
 
         Console.WriteLine("  匹配赛结束。");
 
@@ -140,14 +155,16 @@ public static class Runner
         int idx = 0;
         foreach (var comboSig in state.StrengthPlayerComboSigs.ToList())
         {
-            if (!state.Pool.TryGetValue(comboSig, out var entry)) { idx++; continue; }
+            if (!state.VirtualPlayerPool.TryGetValue(comboSig, out var entry)) { idx++; continue; }
             var (newSig, newRep, isLocalOpt) = HillClimb.Run(comboSig, entry.Representative, state, config, pool, simulator, db, rng, anchorItemName: null);
             if (string.IsNullOrEmpty(newSig)) { idx++; continue; }
-            var newElo = state.Pool.TryGetValue(newSig, out var ne) ? ne.Elo : config.InitialElo;
+            var newElo = state.TryGetEntry(newSig, out var ne) ? ne.Elo : config.InitialElo;
             if (newSig != comboSig && newElo > entry.Elo)
             {
                 strengthIndicesToUpdate.Add((idx, newSig));
-                EloSystem.TryAddToPool(state, config, newSig, newRep, newElo, isLocalOptimum: isLocalOpt);
+                int baseGames = GetCumulativeGameCount(state, newSig);
+                state.VirtualPlayerPool[newSig] = new ComboEntry(newSig, newRep, newElo, isLocalOpt, false, baseGames);
+                EloSystem.TryAddToHistoryPool(state, config, newSig, newRep, newElo, isLocalOptimum: isLocalOpt);
             }
             idx++;
         }
@@ -166,16 +183,18 @@ public static class Runner
         {
             var key = representatives[itemName];
             if (!state.AnchoredPlayerComboSig.TryGetValue(key, out var comboSig)) continue;
-            if (!state.Pool.TryGetValue(comboSig, out var entry)) continue;
+            if (!state.VirtualPlayerPool.TryGetValue(comboSig, out var entry)) continue;
             var anchorItem = AnchoredRepresentativeScheduler.ItemNameFromKey(key);
             var (newSig, newRep, _) = HillClimb.Run(comboSig, entry.Representative, state, config, pool, simulator, db, rng, anchorItemName: anchorItem);
             if (string.IsNullOrEmpty(newSig)) continue;
-            var newElo = state.Pool.TryGetValue(newSig, out var ne) ? ne.Elo : config.InitialElo;
+            var newElo = state.TryGetEntry(newSig, out var ne) ? ne.Elo : config.InitialElo;
             if (newSig != comboSig && newElo > entry.Elo)
             {
                 state.AnchoredPlayerComboSig[key] = newSig;
                 state.AnchoredLastImprovedSeason[key] = state.CurrentSeason;
-                EloSystem.TryAddToPool(state, config, newSig, newRep, newElo);
+                int baseGames = GetCumulativeGameCount(state, newSig);
+                state.VirtualPlayerPool[newSig] = new ComboEntry(newSig, newRep, newElo, false, false, baseGames);
+                EloSystem.TryAddToHistoryPool(state, config, newSig, newRep, newElo);
             }
         }
         Console.WriteLine("    锚定代表优化完成。");
@@ -200,51 +219,80 @@ public static class Runner
             InjectStrengthPlayers(simulator, db, pool, state, config, rng);
     }
 
-    private static void PrintMatchPhasePoolInfo(OptimizerState state, Config config)
+    private static void PrintMatchPhasePoolInfo(OptimizerState state, Config config, IReadOnlyDictionary<string, ComboEntry> seasonPool)
     {
         int maxSeg;
         lock (config.SegmentBoundsLock)
         {
             maxSeg = config.SegmentBounds.Count;
         }
-        var segCounts = new List<int>();
+        var historySegCounts = new List<int>();
+        var seasonSegCounts = new List<int>();
+        var unionSegCounts = new List<int>();
+
+        // 赛季参赛池与并集：以“可查到条目的签名”为准；并集去重
+        var unionSigs = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var sig in state.HistoryPool.Keys)
+            unionSigs.Add(sig);
+        foreach (var sig in seasonPool.Keys)
+            unionSigs.Add(sig);
+
         for (int s = 0; s <= maxSeg; s++)
-            segCounts.Add(state.SignaturesInSegment(s).Count);
-        Console.WriteLine($"  匹配赛池：池大小 {state.Pool.Count}，各段人数 [{string.Join(", ", segCounts)}]");
+        {
+            historySegCounts.Add(state.SignaturesInSegment(state.HistoryPool, s).Count);
+
+            int seasonCount = 0;
+            foreach (var e in seasonPool.Values)
+                if (state.SegmentIndex(e.Elo) == s) seasonCount++;
+            seasonSegCounts.Add(seasonCount);
+
+            int unionCount = 0;
+            foreach (var sig in unionSigs)
+            {
+                if (!state.TryGetEntry(sig, out var e)) continue;
+                if (state.SegmentIndex(e.Elo) == s) unionCount++;
+            }
+            unionSegCounts.Add(unionCount);
+        }
+
+        Console.WriteLine($"  历史池：池大小 {state.HistoryPool.Count}，各段人数 [{string.Join(", ", historySegCounts)}]");
+        Console.WriteLine($"  本季参赛池：池大小 {seasonPool.Count}，各段人数 [{string.Join(", ", seasonSegCounts)}]");
+        Console.WriteLine($"  可匹配池(并集)：池大小 {unionSigs.Count}，各段人数 [{string.Join(", ", unionSegCounts)}]");
     }
 
     /// <summary>单线程匹配赛：逐玩家、逐批对局并立即更新池。</summary>
     private static void RunMatchPhaseSingle(
-        List<string> activeComboSigs,
+        IReadOnlyDictionary<string, ComboEntry> seasonPool,
         OptimizerState state,
         Config config,
         SimulatorClass simulator,
         IItemTemplateResolver db,
         Random rng)
     {
-        PrintMatchPhasePoolInfo(state, config);
+        PrintMatchPhasePoolInfo(state, config, seasonPool);
         const int progressInterval = 50;
         int processed = 0;
-        foreach (var comboSig in activeComboSigs)
+        var seasonSigs = seasonPool.Keys.ToList();
+        foreach (var comboSig in seasonSigs)
         {
             processed++;
             if (processed % progressInterval == 0)
-                Console.WriteLine($"  匹配赛：已处理 {processed}/{activeComboSigs.Count} 个活跃玩家，总对局 {state.TotalGames}");
-            if (!state.Pool.TryGetValue(comboSig, out var entry)) continue;
+                Console.WriteLine($"  匹配赛：已处理 {processed}/{seasonSigs.Count} 个活跃玩家，总对局 {state.TotalGames}");
+            if (!seasonPool.TryGetValue(comboSig, out var entry)) continue;
             var rep = entry.Representative;
             double elo = entry.Elo;
             int games = 0;
             int losses = 0;
             while (games < config.SeasonMatchCap && losses < config.SeasonLossCap)
             {
-                var opps = EloSystem.SelectOpponentSignatures(state, config, isNewDeck: false, elo, Math.Max(1, config.GamesPerEval), rng, excludeComboSig: comboSig, useSegmentNeighborhood: true);
+                var opps = EloSystem.SelectOpponentSignaturesForSeason(state, config, seasonSigs, isNewDeck: false, elo, Math.Max(1, config.GamesPerEval), rng, excludeComboSig: comboSig, useSegmentNeighborhood: true);
                 opps = opps.Take(Math.Max(1, config.GamesPerEval)).ToList();
                 if (opps.Count == 0) break;
                 var (newElo, gamesPlayed, lossDelta) = RunGamesAndCountLosses(comboSig, rep, opps, state, config, simulator, db);
                 elo = newElo;
                 games += gamesPlayed;
                 losses += lossDelta;
-                if (state.Pool.TryGetValue(comboSig, out var updated))
+                if (state.VirtualPlayerPool.TryGetValue(comboSig, out var updated))
                     rep = updated.Representative;
             }
         }
@@ -252,16 +300,17 @@ public static class Runner
 
     /// <summary>多 worker 匹配赛：每轮生成赛程、并行跑局、单线程按顺序合并写池。</summary>
     private static void RunMatchPhaseParallel(
-        List<string> activeComboSigs,
+        IReadOnlyDictionary<string, ComboEntry> seasonPool,
         OptimizerState state,
         Config config,
         SimulatorClass simulator,
         IItemTemplateResolver db,
         Random rng)
     {
-        PrintMatchPhasePoolInfo(state, config);
+        PrintMatchPhasePoolInfo(state, config, seasonPool);
+        var seasonSigs = seasonPool.Keys.ToList();
         var playerStats = new Dictionary<string, (int games, int losses)>(StringComparer.Ordinal);
-        foreach (var s in activeComboSigs)
+        foreach (var s in seasonSigs)
             playerStats[s] = (0, 0);
 
         int gamesAtSeasonStart = state.TotalGames;
@@ -269,14 +318,14 @@ public static class Runner
         while (true)
         {
             var schedule = new List<(string comboSigD, string oppSig)>();
-            foreach (var comboSig in activeComboSigs)
+            foreach (var comboSig in seasonSigs)
             {
                 var (g, l) = playerStats[comboSig];
                 if (g >= config.SeasonMatchCap || l >= config.SeasonLossCap) continue;
-                if (!state.Pool.TryGetValue(comboSig, out var entry)) continue;
+                if (!seasonPool.TryGetValue(comboSig, out var entry)) continue;
                 int toPlay = Math.Min(Math.Max(1, config.GamesPerEval), config.SeasonMatchCap - g);
                 if (toPlay <= 0) continue;
-                var opps = EloSystem.SelectOpponentSignatures(state, config, isNewDeck: false, entry.Elo, toPlay, rng, excludeComboSig: comboSig, useSegmentNeighborhood: true);
+                var opps = EloSystem.SelectOpponentSignaturesForSeason(state, config, seasonSigs, isNewDeck: false, entry.Elo, toPlay, rng, excludeComboSig: comboSig, useSegmentNeighborhood: true);
                 opps = opps.Take(toPlay).ToList();
                 foreach (var opp in opps)
                     schedule.Add((comboSig, opp));
@@ -293,8 +342,6 @@ public static class Runner
             foreach (var (comboSigD, oppSig, winner) in results)
             {
                 playerStats[comboSigD] = (playerStats[comboSigD].games + 1, playerStats[comboSigD].losses + (winner == 1 ? 1 : 0));
-                if (playerStats.TryGetValue(oppSig, out var oppStat))
-                    playerStats[oppSig] = (oppStat.games + 1, oppStat.losses + (winner == 0 ? 1 : 0));
             }
         }
     }
@@ -315,7 +362,7 @@ public static class Runner
         {
             foreach (var (comboSigD, oppSig) in schedule)
             {
-                if (!state.Pool.TryGetValue(comboSigD, out var eD) || !state.Pool.TryGetValue(oppSig, out var eOpp))
+                if (!state.TryGetEntry(comboSigD, out var eD) || !state.TryGetEntry(oppSig, out var eOpp))
                     continue;
                 var deckD = eD.Representative.ToDeck(db);
                 var deckOpp = eOpp.Representative.ToDeck(db);
@@ -345,7 +392,7 @@ public static class Runner
             var rnd = new Random(Random.Shared.Next());
             foreach (var (index, comboSigD, oppSig) in chunks[w])
             {
-                if (!state.Pool.TryGetValue(comboSigD, out var eD) || !state.Pool.TryGetValue(oppSig, out var eOpp))
+                if (!state.TryGetEntry(comboSigD, out var eD) || !state.TryGetEntry(oppSig, out var eOpp))
                     continue;
                 var deckD = eD.Representative.ToDeck(db);
                 var deckOpp = eOpp.Representative.ToDeck(db);
@@ -380,13 +427,19 @@ public static class Runner
         var k = config.EloK;
         foreach (var (comboSigD, oppSig, winner) in results)
         {
-            if (!state.Pool.TryGetValue(comboSigD, out var entryD) || !state.Pool.TryGetValue(oppSig, out var entryOpp))
+            if (!state.TryGetEntry(comboSigD, out var entryD) || !state.TryGetEntry(oppSig, out var entryOpp))
                 continue;
             double eloD = entryD.Elo;
             double eloOpp = entryOpp.Elo;
             EloSystem.UpdateElo(eloD, eloOpp, winner, k, out eloD, out eloOpp);
-            state.Pool[comboSigD] = entryD with { Elo = eloD, GameCount = entryD.GameCount + 1 };
-            state.Pool[oppSig] = entryOpp with { Elo = eloOpp, GameCount = entryOpp.GameCount + 1 };
+            if (state.VirtualPlayerPool.TryGetValue(comboSigD, out var vD))
+                state.VirtualPlayerPool[comboSigD] = vD with { Elo = eloD, GameCount = vD.GameCount + 1 };
+            if (state.HistoryPool.TryGetValue(comboSigD, out var hD))
+                state.HistoryPool[comboSigD] = hD with { Elo = eloD, GameCount = hD.GameCount + 1 };
+            if (state.VirtualPlayerPool.TryGetValue(oppSig, out var vO))
+                state.VirtualPlayerPool[oppSig] = vO with { Elo = eloOpp, GameCount = vO.GameCount + 1 };
+            if (state.HistoryPool.TryGetValue(oppSig, out var hO))
+                state.HistoryPool[oppSig] = hO with { Elo = eloOpp, GameCount = hO.GameCount + 1 };
             state.IncrementTotalGames();
             state.RecordMatch(comboSigD, eloD, eloOpp, winner);
         }
@@ -420,7 +473,7 @@ public static class Runner
             if (deck == null) continue;
             var comboSig = ComboSignature.FromDeckRep(deck);
             var ensured = RepresentativeSelector.EnsureRepresentative(comboSig, deck, state, config, pool, simulator, db, rng);
-            EloSystem.TryAddToPool(state, config, comboSig, ensured.Representative, config.InitialElo, isConfirmed: ensured.IsConfirmed);
+            state.VirtualPlayerPool[comboSig] = new ComboEntry(comboSig, ensured.Representative, config.InitialElo, false, ensured.IsConfirmed, 0);
             state.AnchoredPlayerComboSig[key] = comboSig;
             state.AnchoredLastImprovedSeason[key] = state.CurrentSeason;
         }
@@ -436,15 +489,15 @@ public static class Runner
         IItemTemplateResolver db)
     {
         if (opponentSignatures.Count == 0)
-            return (state.Pool.TryGetValue(comboSigD, out var e) ? e.Elo : config.InitialElo, 0, 0);
+            return (state.TryGetEntry(comboSigD, out var e) ? e.Elo : config.InitialElo, 0, 0);
         int losses = 0;
-        double elo = state.Pool.TryGetValue(comboSigD, out var entry) ? entry.Elo : config.InitialElo;
+        double elo = state.TryGetEntry(comboSigD, out var entry) ? entry.Elo : config.InitialElo;
         var silentSink = new SilentBattleLogSink();
         var k = config.EloK;
         int gamesPlayed = 0;
         foreach (var oppSig in opponentSignatures)
         {
-            if (!state.Pool.TryGetValue(oppSig, out var oppEntry)) continue;
+            if (!state.TryGetEntry(oppSig, out var oppEntry)) continue;
             var repOpp = oppEntry.Representative;
             var deckD = repD.ToDeck(db);
             var deckOpp = repOpp.ToDeck(db);
@@ -456,12 +509,17 @@ public static class Runner
             int winner = simulator.Run(dA, dB, db, silentSink, BattleLogLevel.None);
             if (winner >= 0 && swap == 1) winner = 1 - winner;
             EloSystem.UpdateElo(elo, eloOpp, winner, k, out elo, out eloOpp);
-            state.Pool[oppSig] = oppEntry with { Elo = eloOpp, GameCount = oppEntry.GameCount + 1 };
+            if (state.VirtualPlayerPool.TryGetValue(oppSig, out var vOpp))
+                state.VirtualPlayerPool[oppSig] = vOpp with { Elo = eloOpp, GameCount = vOpp.GameCount + 1 };
+            if (state.HistoryPool.TryGetValue(oppSig, out var hOpp))
+                state.HistoryPool[oppSig] = hOpp with { Elo = eloOpp, GameCount = hOpp.GameCount + 1 };
             state.IncrementTotalGames();
             gamesPlayed++;
             if (winner == 1) losses++;
         }
-        EloSystem.TryAddToPool(state, config, comboSigD, repD, elo, gamesPlayedDelta: gamesPlayed);
+        int baseGames = GetCumulativeGameCount(state, comboSigD);
+        state.VirtualPlayerPool[comboSigD] = new ComboEntry(comboSigD, repD, elo, false, false, baseGames + gamesPlayed);
+        EloSystem.TryAddToHistoryPool(state, config, comboSigD, repD, elo, gamesPlayedDelta: gamesPlayed);
         return (elo, gamesPlayed, losses);
     }
 
@@ -486,7 +544,7 @@ public static class Runner
                 if (deck == null) continue;
                 var comboSig = ComboSignature.FromDeckRep(deck);
                 var ensured = RepresentativeSelector.EnsureRepresentative(comboSig, deck, state, config, pool, simulator, db, rng);
-                EloSystem.TryAddToPool(state, config, comboSig, ensured.Representative, config.InitialElo, isConfirmed: ensured.IsConfirmed);
+                state.VirtualPlayerPool[comboSig] = new ComboEntry(comboSig, ensured.Representative, config.InitialElo, false, ensured.IsConfirmed, 0);
                 state.AnchoredPlayerComboSig[key] = comboSig;
                 state.AnchoredLastImprovedSeason[key] = 0;
             }
@@ -499,17 +557,17 @@ public static class Runner
             var deck = DeckGen.RandomDeckWeightedSynergy(shape, pool, state.Priors, db, rng, config.ExploreMix, config.SynergyPairLambda, config, 0);
             if (deck == null) continue;
             var comboSig = ComboSignature.FromDeckRep(deck);
-            if (state.Pool.ContainsKey(comboSig)) continue;
+            if (state.VirtualPlayerPool.ContainsKey(comboSig)) continue;
             var ensured = RepresentativeSelector.EnsureRepresentative(comboSig, deck, state, config, pool, simulator, db, rng);
-            EloSystem.TryAddToPool(state, config, comboSig, ensured.Representative, config.InitialElo, isConfirmed: ensured.IsConfirmed);
+            state.VirtualPlayerPool[comboSig] = new ComboEntry(comboSig, ensured.Representative, config.InitialElo, false, ensured.IsConfirmed, 0);
             state.StrengthPlayerComboSigs.Add(comboSig);
             state.StrengthLastImprovedSeason.Add(0);
         }
         Console.WriteLine($"  锚定玩家数: {state.AnchoredPlayerComboSig.Count}，强度玩家数: {state.StrengthPlayerComboSigs.Count}");
         Console.WriteLine("  进行初始对局...");
-        foreach (var kv in state.Pool.ToList())
+        foreach (var kv in state.VirtualPlayerPool.ToList())
         {
-            var opps = state.Pool.Keys.Where(s => s != kv.Key).Take(Math.Max(1, config.GamesPerEval)).ToList();
+            var opps = state.VirtualPlayerPool.Keys.Where(s => s != kv.Key).Take(Math.Max(1, config.GamesPerEval)).ToList();
             if (opps.Count == 0) continue;
             EloSystem.RunGamesAndUpdateElo(kv.Key, kv.Value.Representative, opps, state, config, simulator, db);
         }
@@ -528,13 +586,19 @@ public static class Runner
             var deck = DeckGen.RandomDeckWeightedSynergy(shape, pool, state.Priors, db, rng, config.ExploreMix, config.SynergyPairLambda, config, state.TotalGames);
             if (deck == null) continue;
             var comboSig = ComboSignature.FromDeckRep(deck);
-            if (state.Pool.ContainsKey(comboSig)) continue;
+            if (state.VirtualPlayerPool.ContainsKey(comboSig)) continue;
             var ensured = RepresentativeSelector.EnsureRepresentative(comboSig, deck, state, config, pool, simulator, db, rng);
             var opps = EloSystem.SelectOpponentSignatures(state, config, isNewDeck: true, null, Math.Max(1, config.GamesPerEval * 2));
             if (opps.Count == 0)
-                EloSystem.TryAddToPool(state, config, comboSig, ensured.Representative, config.InitialElo, isConfirmed: ensured.IsConfirmed);
+                state.VirtualPlayerPool[comboSig] = new ComboEntry(comboSig, ensured.Representative, config.InitialElo, false, ensured.IsConfirmed, 0);
             else
-                EloSystem.RunGamesAndUpdateElo(comboSig, ensured.Representative, opps, state, config, simulator, db);
+            {
+                var elo = EloSystem.RunGamesAndUpdateElo(comboSig, ensured.Representative, opps, state, config, simulator, db);
+                // 该 comboSig 是新注入强度玩家的“当前卡组”，必须确保在池内以便下一赛季参赛
+                int baseGames = GetCumulativeGameCount(state, comboSig);
+                state.VirtualPlayerPool[comboSig] = new ComboEntry(comboSig, ensured.Representative, elo, false, ensured.IsConfirmed, baseGames);
+                EloSystem.TryAddToHistoryPool(state, config, comboSig, ensured.Representative, elo, isConfirmed: ensured.IsConfirmed);
+            }
             state.StrengthPlayerComboSigs.Add(comboSig);
             state.StrengthLastImprovedSeason.Add(state.CurrentSeason);
             added++;

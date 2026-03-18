@@ -7,7 +7,7 @@ namespace BazaarArena.QualityDeckFinder;
 
 public static class StatePersistence
 {
-    private const int Version = 6;
+    private const int Version = 7;
     private static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = false,
@@ -22,12 +22,14 @@ public static class StatePersistence
             boundsSnapshot = state.Config.SegmentBounds.ToList();
         }
 
-        var poolValues = state.Pool.Values.ToList();
-        int poolSize = poolValues.Count;
-        int confirmedCount = poolValues.Count(e => e.IsConfirmed);
-        int localOptimaCount = poolValues.Count(e => e.IsLocalOptimum);
-        double maxElo = poolSize > 0 ? poolValues.Max(e => e.Elo) : state.Config.InitialElo;
-        double minElo = poolSize > 0 ? poolValues.Min(e => e.Elo) : state.Config.InitialElo;
+        var historyValues = state.HistoryPool.Values.ToList();
+        var virtualValues = state.VirtualPlayerPool.Values.ToList();
+        int historySize = historyValues.Count;
+        int virtualSize = virtualValues.Count;
+        int confirmedCount = virtualValues.Count(e => e.IsConfirmed);
+        int localOptimaCount = virtualValues.Count(e => e.IsLocalOptimum);
+        double maxElo = virtualSize > 0 ? virtualValues.Max(e => e.Elo) : state.Config.InitialElo;
+        double minElo = virtualSize > 0 ? virtualValues.Min(e => e.Elo) : state.Config.InitialElo;
         var dto = new StateDto
         {
             Version = Version,
@@ -39,7 +41,8 @@ public static class StatePersistence
             RngSeed = state.RngSeed,
             Summary = new SummaryDto
             {
-                PoolSize = poolSize,
+                PoolSize = virtualSize,
+                HistoryPoolSize = historySize,
                 ConfirmedCount = confirmedCount,
                 LocalOptimaCount = localOptimaCount,
                 MaxElo = maxElo,
@@ -90,7 +93,17 @@ public static class StatePersistence
                 ItemWeights = state.Priors.ItemWeights.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.Ordinal),
                 PairWeights = state.Priors.PairWeights.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.Ordinal),
             },
-            Combos = state.Pool.Select(kv => new ComboDto
+            VirtualCombos = state.VirtualPlayerPool.Select(kv => new ComboDto
+            {
+                ComboSig = kv.Key,
+                RepresentativeShape = kv.Value.Representative.Shape.ToList(),
+                RepresentativeItems = kv.Value.Representative.ItemNames.ToList(),
+                Elo = kv.Value.Elo,
+                IsLocalOptimum = kv.Value.IsLocalOptimum,
+                IsConfirmed = kv.Value.IsConfirmed,
+                GameCount = kv.Value.GameCount,
+            }).ToList(),
+            HistoryCombos = state.HistoryPool.Select(kv => new ComboDto
             {
                 ComboSig = kv.Key,
                 RepresentativeShape = kv.Value.Representative.Shape.ToList(),
@@ -125,7 +138,7 @@ public static class StatePersistence
         {
             var json = File.ReadAllText(path);
             var dto = JsonSerializer.Deserialize<StateDto>(json);
-            if (dto == null || dto.Combos == null) return null;
+            if (dto == null) return null;
             // 允许加载旧版本；缺失字段将使用默认/空。
             if (dto.Version <= 0 || dto.Version > Version) return null;
 
@@ -201,20 +214,34 @@ public static class StatePersistence
                 }
             }
 
-            foreach (var c in dto.Combos)
+            var virtualCombos = dto.VirtualCombos ?? dto.Combos ?? [];
+            foreach (var c in virtualCombos)
             {
                 if (c.ComboSig == null || c.RepresentativeShape == null || c.RepresentativeItems == null)
                     continue;
                 if (c.RepresentativeShape.Count != c.RepresentativeItems.Count)
                     continue;
                 var rep = new DeckRep(c.RepresentativeShape, c.RepresentativeItems);
-                state.Pool[c.ComboSig] = new ComboEntry(c.ComboSig, rep, c.Elo, c.IsLocalOptimum, c.IsConfirmed, c.GameCount);
+                state.VirtualPlayerPool[c.ComboSig] = new ComboEntry(c.ComboSig, rep, c.Elo, c.IsLocalOptimum, c.IsConfirmed, c.GameCount);
             }
 
-            // 恢复后确保所有强度玩家 comboSig 都在池中，避免 Top10 为空（历史 state 可能漏保存）
-            if (dto.StrengthPlayerComboSigs != null && dto.StrengthPlayerComboSigs.Count > 0 && dto.Combos != null && dto.Combos.Count > 0)
+            if (dto.HistoryCombos != null)
             {
-                var first = dto.Combos[0];
+                foreach (var c in dto.HistoryCombos)
+                {
+                    if (c.ComboSig == null || c.RepresentativeShape == null || c.RepresentativeItems == null)
+                        continue;
+                    if (c.RepresentativeShape.Count != c.RepresentativeItems.Count)
+                        continue;
+                    var rep = new DeckRep(c.RepresentativeShape, c.RepresentativeItems);
+                    state.HistoryPool[c.ComboSig] = new ComboEntry(c.ComboSig, rep, c.Elo, c.IsLocalOptimum, c.IsConfirmed, c.GameCount);
+                }
+            }
+
+            // 恢复后确保所有强度玩家 comboSig 都在虚拟玩家池中，避免 Top10 为空（历史 state 可能漏保存）
+            if (dto.StrengthPlayerComboSigs != null && dto.StrengthPlayerComboSigs.Count > 0 && virtualCombos.Count > 0)
+            {
+                var first = virtualCombos[0];
                 if (first.RepresentativeShape != null && first.RepresentativeItems != null && first.RepresentativeShape.Count == first.RepresentativeItems.Count)
                 {
                     var placeholderRep = new DeckRep(first.RepresentativeShape, first.RepresentativeItems);
@@ -222,8 +249,8 @@ public static class StatePersistence
                     foreach (var sig in state.StrengthPlayerComboSigs)
                     {
                         if (string.IsNullOrEmpty(sig)) continue;
-                        if (state.Pool.ContainsKey(sig)) continue;
-                        state.Pool[sig] = new ComboEntry(sig, placeholderRep, initialElo, false, false, 0);
+                        if (state.VirtualPlayerPool.ContainsKey(sig)) continue;
+                        state.VirtualPlayerPool[sig] = new ComboEntry(sig, placeholderRep, initialElo, false, false, 0);
                     }
                 }
             }
@@ -272,7 +299,10 @@ public static class StatePersistence
         public SummaryDto? Summary { get; set; }
         public ConfigSnapshotDto? ConfigSnapshot { get; set; }
         public PriorsDto? Priors { get; set; }
+        // v6 及之前：Combos 为单一池。v7 起：VirtualCombos/HistoryCombos 分离；为兼容旧版保留 Combos。
         public List<ComboDto>? Combos { get; set; }
+        public List<ComboDto>? VirtualCombos { get; set; }
+        public List<ComboDto>? HistoryCombos { get; set; }
         public List<ComboStatsDto>? ComboStats { get; set; }
     }
 
@@ -285,6 +315,7 @@ public static class StatePersistence
     private class SummaryDto
     {
         public int PoolSize { get; set; }
+        public int HistoryPoolSize { get; set; }
         public int ConfirmedCount { get; set; }
         public int LocalOptimaCount { get; set; }
         public double MaxElo { get; set; }

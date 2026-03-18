@@ -2,17 +2,20 @@ using System.Collections.Concurrent;
 
 namespace BazaarArena.QualityDeckFinder;
 
-/// <summary>优化器状态：单一池（组合+代表排列+ELO）、分段定义、计数与可选 RNG 种子。Pool 与计数为多线程安全。</summary>
+/// <summary>优化器状态：历史玩家池（分段上限）与虚拟玩家当前卡组池分离；分段定义、计数与可选 RNG 种子。池与计数为多线程安全。</summary>
 public sealed class OptimizerState
 {
     public Config Config { get; }
     public Priors Priors { get; } = new();
 
-    /// <summary>入池/踢人时使用的锁，保证 TryAddToPool 整段逻辑原子。</summary>
-    public object PoolSync { get; } = new object();
+    /// <summary>历史池入池/踢人时使用的锁，保证整段逻辑原子。</summary>
+    public object HistoryPoolSync { get; } = new object();
 
-    /// <summary>池中所有组合：comboSignature -> ComboEntry。</summary>
-    public ConcurrentDictionary<string, ComboEntry> Pool { get; } = new(StringComparer.Ordinal);
+    /// <summary>历史玩家池：用于匹配对手抽样（分段上限），不会包含所有虚拟玩家当前卡组。</summary>
+    public ConcurrentDictionary<string, ComboEntry> HistoryPool { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>虚拟玩家当前卡组池：保证本赛季参赛虚拟玩家（全量）都有代表排列可对战。</summary>
+    public ConcurrentDictionary<string, ComboEntry> VirtualPlayerPool { get; } = new(StringComparer.Ordinal);
 
     /// <summary>锚定玩家当前卡组：key = "itemName|shapeIndex"，value = comboSig。</summary>
     public ConcurrentDictionary<string, string> AnchoredPlayerComboSig { get; } = new(StringComparer.Ordinal);
@@ -102,8 +105,8 @@ public sealed class OptimizerState
         }
     }
 
-    /// <summary>当前池中属于某段的卡组（按 ELO 归属）。</summary>
-    public List<string> SignaturesInSegment(int segmentIndex)
+    /// <summary>给定池中属于某段的卡组（按 ELO 归属）。</summary>
+    public List<string> SignaturesInSegment(ConcurrentDictionary<string, ComboEntry> pool, int segmentIndex)
     {
         IReadOnlyList<double> bounds;
         lock (Config.SegmentBoundsLock)
@@ -114,12 +117,22 @@ public sealed class OptimizerState
         var lo = segmentIndex == 0 ? 0.0 : (segmentIndex - 1 >= bounds.Count ? bounds[^1] : bounds[segmentIndex - 1]);
         var hi = segmentIndex >= bounds.Count ? double.MaxValue : bounds[segmentIndex];
         var list = new List<string>();
-        foreach (var kv in Pool)
+        foreach (var kv in pool)
         {
             var elo = kv.Value.Elo;
             if (elo >= lo && elo < hi)
                 list.Add(kv.Key);
         }
         return list;
+    }
+
+    public bool TryGetEntry(string comboSig, out ComboEntry entry)
+    {
+        if (VirtualPlayerPool.TryGetValue(comboSig, out entry))
+            return true;
+        if (HistoryPool.TryGetValue(comboSig, out entry))
+            return true;
+        entry = default!;
+        return false;
     }
 }

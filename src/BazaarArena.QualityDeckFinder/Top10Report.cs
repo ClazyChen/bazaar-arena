@@ -3,11 +3,18 @@ namespace BazaarArena.QualityDeckFinder;
 /// <summary>按 ELO 输出强度玩家 Top10 与锚定玩家每物品最强卡组（含对局数）。</summary>
 public static class Top10Report
 {
+    private static int GetCumulativeGameCount(OptimizerState state, string comboSig)
+    {
+        int v = state.VirtualPlayerPool.TryGetValue(comboSig, out var ve) ? ve.GameCount : 0;
+        int h = state.HistoryPool.TryGetValue(comboSig, out var he) ? he.GameCount : 0;
+        return Math.Max(v, h);
+    }
+
     public static void Print(OptimizerState state)
     {
         var strengthSig = state.StrengthPlayerComboSigs.Distinct(StringComparer.Ordinal).ToList();
         var top = strengthSig
-            .Select(sig => state.Pool.TryGetValue(sig, out var e) ? (sig, e) : (sig, (ComboEntry?)null))
+            .Select(sig => state.VirtualPlayerPool.TryGetValue(sig, out var e) ? (sig, e) : (sig, (ComboEntry?)null))
             .Where(x => x.Item2 != null)
             .OrderByDescending(x => x.Item2!.Elo)
             .Take(10)
@@ -18,10 +25,12 @@ public static class Top10Report
         Console.WriteLine($"赛季 {state.CurrentSeason}，总对局 {state.TotalGames}");
         for (int i = 0; i < top.Count; i++)
         {
+            var sig = top[i].sig;
             var e = top[i].Item2!;
             var counts = ComboSignature.ShapeCounts(e.Representative.Shape);
             var itemsStr = string.Join(", ", e.Representative.ItemNames);
-            Console.WriteLine($"  {i + 1}. ELO {e.Elo:F0}  对局数 {e.GameCount}  形状({counts.small},{counts.medium},{counts.large})  {itemsStr}");
+            var games = GetCumulativeGameCount(state, sig);
+            Console.WriteLine($"  {i + 1}. ELO {e.Elo:F0}  对局数 {games}  形状({counts.small},{counts.medium},{counts.large})  {itemsStr}");
         }
         Console.WriteLine("==============================================");
 
@@ -53,7 +62,7 @@ public static class Top10Report
             ComboEntry? best = null;
             foreach (var (_, comboSig) in kv.Value)
             {
-                if (!state.Pool.TryGetValue(comboSig, out var e)) continue;
+                if (!state.VirtualPlayerPool.TryGetValue(comboSig, out var e)) continue;
                 if (best == null || e.Elo > best.Elo || (e.Elo == best.Elo && e.GameCount > best.GameCount))
                     best = e;
             }
@@ -72,7 +81,8 @@ public static class Top10Report
         {
             var counts = ComboSignature.ShapeCounts(entry.Representative.Shape);
             var itemsStr = string.Join(", ", entry.Representative.ItemNames);
-            Console.WriteLine($"  {itemName}:  ELO {entry.Elo:F0}  对局数 {entry.GameCount}  形状({counts.small},{counts.medium},{counts.large})  {itemsStr}");
+            var games = GetCumulativeGameCount(state, entry.ComboSig);
+            Console.WriteLine($"  {itemName}:  ELO {entry.Elo:F0}  对局数 {games}  形状({counts.small},{counts.medium},{counts.large})  {itemsStr}");
         }
         Console.WriteLine("==================================================");
     }

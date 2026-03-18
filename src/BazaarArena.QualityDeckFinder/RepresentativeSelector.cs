@@ -62,7 +62,7 @@ public static class RepresentativeSelector
     }
 
     private static double GuessEloForConfirm(string comboSig, OptimizerState state, Config config)
-        => state.Pool.TryGetValue(comboSig, out var e) ? e.Elo : config.InitialElo;
+        => state.TryGetEntry(comboSig, out var e) ? e.Elo : config.InitialElo;
 
     private static List<string> SelectConfirmOpponents(OptimizerState state, Config config, double baseElo, int k)
     {
@@ -86,7 +86,7 @@ public static class RepresentativeSelector
         var silentSink = new SilentBattleLogSink();
         foreach (var sig in opponentSigs)
         {
-            if (!state.Pool.TryGetValue(sig, out var opp)) continue;
+            if (!state.TryGetEntry(sig, out var opp)) continue;
             var deckA = cand.ToDeck(db);
             var deckB = opp.Representative.ToDeck(db);
             for (int g = 0; g < Math.Max(1, gamesPerOpponent); g++)
