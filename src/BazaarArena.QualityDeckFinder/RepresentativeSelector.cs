@@ -6,7 +6,8 @@ using SimulatorClass = BazaarArena.BattleSimulator.BattleSimulator;
 namespace BazaarArena.QualityDeckFinder;
 
 /// <summary>
-/// 组合代表选择：无先验时直接返回 seed；有先验时用协同得分爬山快速得到代表，可选一次外战确认。
+/// 组合代表选择：无先验时直接返回 seed；有先验时用协同得分爬山快速得到代表。
+/// 按设计文档约束：采用激进策略确定最优顺序，不做外战验证。
 /// </summary>
 public static class RepresentativeSelector
 {
@@ -30,9 +31,20 @@ public static class RepresentativeSelector
         IItemTemplateResolver db,
         Random rng)
     {
+        long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
+        if (state.RepresentativeCache.TryGetValue(comboSig, out var cached))
+        {
+            PerfCounters.AddHillEnsureRepresentativeTicks(System.Diagnostics.Stopwatch.GetTimestamp() - t0);
+            return new Result(cached, false, 0, 0);
+        }
+
         // 无先验：顺序可任意，直接返回 seed，不跑对战
         if (!SynergyScorer.DeckHasAnySynergyPrior(seed, db))
+        {
+            state.RepresentativeCache.TryAdd(comboSig, seed);
+            PerfCounters.AddHillEnsureRepresentativeTicks(System.Diagnostics.Stopwatch.GetTimestamp() - t0);
             return new Result(seed, false, 0, 0);
+        }
 
         // 有先验：用协同得分指导爬山，不依赖对战
         var internalBudget = Math.Max(1, config.InnerBudget);
@@ -52,63 +64,10 @@ public static class RepresentativeSelector
             }
         }
 
-        // 外战确认：对手不足时直接返回当前代表
-        var opponentSigs = SelectConfirmOpponents(state, config, GuessEloForConfirm(comboSig, state, config), config.ConfirmOpponents);
-        if (opponentSigs.Count == 0)
-            return new Result(current, false, 0, 0);
-
-        _ = ExternalScore(current, opponentSigs, config.ConfirmGamesPerOpponent, state, simulator, db, rng, out int externalGames);
-        return new Result(current, true, 0, externalGames);
-    }
-
-    private static double GuessEloForConfirm(string comboSig, OptimizerState state, Config config)
-        => state.TryGetEntry(comboSig, out var e) ? e.Elo : config.InitialElo;
-
-    private static List<string> SelectConfirmOpponents(OptimizerState state, Config config, double baseElo, int k)
-    {
-        if (k <= 0) return [];
-        var sigs = EloSystem.SelectOpponentSignatures(state, config, isNewDeck: false, baseElo, M: k);
-        return sigs.Distinct(StringComparer.Ordinal).Take(k).ToList();
-    }
-
-    private static double ExternalScore(
-        DeckRep cand,
-        IReadOnlyList<string> opponentSigs,
-        int gamesPerOpponent,
-        OptimizerState state,
-        SimulatorClass simulator,
-        IItemTemplateResolver db,
-        Random rng,
-        out int gamesPlayed)
-    {
-        int wins = 0, losses = 0, draws = 0;
-        gamesPlayed = 0;
-        var silentSink = new SilentBattleLogSink();
-        foreach (var sig in opponentSigs)
-        {
-            if (!state.TryGetEntry(sig, out var opp)) continue;
-            var deckA = cand.ToDeck(db);
-            var deckB = opp.Representative.ToDeck(db);
-            for (int g = 0; g < Math.Max(1, gamesPerOpponent); g++)
-            {
-                int swap = rng.Next(2);
-                Deck d0, d1;
-                if (swap == 0) { d0 = deckA; d1 = deckB; }
-                else { d0 = deckB; d1 = deckA; }
-                int winner = simulator.Run(d0, d1, db, silentSink, BattleLogLevel.None);
-                if (winner < 0) draws++;
-                else
-                {
-                    // winner=0 表示 d0 赢；若交换后 cand 在 d1，则需要翻转
-                    int candWinner = swap == 0 ? winner : (winner == 0 ? 1 : 0);
-                    if (candWinner == 0) wins++; else losses++;
-                }
-                gamesPlayed++;
-            }
-        }
-        // score：胜=1 平=0.5 负=0
-        var total = wins + losses + draws;
-        return total <= 0 ? 0 : (wins + 0.5 * draws) / total;
+        // 设计文档要求：采用激进策略，由协同先验直接确定代表排列，不做外战确认。
+        state.RepresentativeCache.TryAdd(comboSig, current);
+        PerfCounters.AddHillEnsureRepresentativeTicks(System.Diagnostics.Stopwatch.GetTimestamp() - t0);
+        return new Result(current, false, 0, 0);
     }
 
     private static List<DeckRep> SelectTopCandidates(

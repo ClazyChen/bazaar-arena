@@ -105,7 +105,9 @@ public static class HillClimb
         Random rng,
         OpponentSelector opponentSelector)
     {
+        long tShuffle0 = System.Diagnostics.Stopwatch.GetTimestamp();
         var ordered = neighbors.OrderBy(_ => rng.Next()).ToList();
+        PerfCounters.AddHillNeighborShuffleTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tShuffle0);
         foreach (var n in ordered)
         {
             var comboSig = n.comboSig;
@@ -147,6 +149,7 @@ public static class HillClimb
         int mabBudgetPerStep,
         OpponentSelector opponentSelector)
     {
+        long tMab0 = System.Diagnostics.Stopwatch.GetTimestamp();
         var n = neighbors.Count;
         var lastElo = new double[n];
         var count = new int[n];
@@ -194,9 +197,11 @@ public static class HillClimb
                 var comboSig = neighbors[i].comboSig;
                 var rep = state.TryGetEntry(comboSig, out var ex) ? ex.Representative : neighbors[i].seedRepresentative;
                 var finalElo = state.TryGetEntry(comboSig, out var ex2) ? ex2.Elo : lastElo[i];
+                PerfCounters.AddHillMabTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tMab0);
                 return ((comboSig, rep), finalElo);
             }
         }
+        PerfCounters.AddHillMabTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tMab0);
         return (null, 0);
     }
 }

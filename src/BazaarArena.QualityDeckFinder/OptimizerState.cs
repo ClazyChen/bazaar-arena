@@ -17,6 +17,12 @@ public sealed class OptimizerState
     /// <summary>虚拟玩家当前卡组池：保证本赛季参赛虚拟玩家（全量）都有代表排列可对战。</summary>
     public ConcurrentDictionary<string, ComboEntry> VirtualPlayerPool { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// 组合的代表排列缓存：comboSig -> representative。
+    /// 代表排列用于对战与 HillClimb 的“邻居候选评估”；根据设计文档，排列由内战/协同先验激进确定，不做外战验证。
+    /// </summary>
+    public ConcurrentDictionary<string, DeckRep> RepresentativeCache { get; } = new(StringComparer.Ordinal);
+
     /// <summary>锚定玩家当前卡组：key = "itemName|shapeIndex"，value = comboSig。</summary>
     public ConcurrentDictionary<string, string> AnchoredPlayerComboSig { get; } = new(StringComparer.Ordinal);
 

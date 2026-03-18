@@ -70,19 +70,19 @@ dotnet run -c Release --project src/BazaarArena.QualityDeckFinder/BazaarArena.Qu
 
 ## 实测数据（1 赛季，小规模预算）
 
-> 注：每次运行会因为随机种子/卡组变化导致轻微抖动；这里更关注“占比与趋势”。
+> 注：每次运行会因为随机种子/初始玩家数/卡组变化导致抖动；这里更关注“占比与趋势”。（已包含：P0 并行评估 + 并行热路径 thread-local RNG + P1b 禁用外战确认与代表缓存）
 
 ### A. `--workers 0`（单线程）
 
 （方案 1 + BuildSide 精简克隆：workers=0 等价于不开并行）
 
-- **赛季总耗时**：27.5s  
-- **赛季对局增量**：8412  
-- **吞吐**：306.2 局/秒  
-- **匹配赛跑局**：0.779s（622 局）  
-- **HillClimb（强度）**：3.874s  
-- **HillClimb（锚定）**：22.806s  
-- **`BattleSimulator.Run()` 均值**：1.311ms/局
+- **赛季总耗时**：10.3s  
+- **赛季对局增量**：8323  
+- **吞吐**：806.7 局/秒  
+- **匹配赛跑局**：0.721s（≈598 局）  
+- **HillClimb（强度）**：1.546s  
+- **HillClimb（锚定）**：8.036s  
+- **`BattleSimulator.Run()` 均值**：1.196ms/局
 
 占比粗算：
 
@@ -94,27 +94,27 @@ dotnet run -c Release --project src/BazaarArena.QualityDeckFinder/BazaarArena.Qu
 
 （方案 1 的“正确并行粒度” + BuildSide 精简克隆：评估对局展开为列表并行模拟，再按原顺序单线程应用 ELO/写池）
 
-- **赛季总耗时**：20.2s  
-- **赛季对局增量**：8010  
-- **吞吐**：397.4 局/秒  
-- **匹配赛（并行）跑局**：0.327s（600 局）  
-- **HillClimb（强度）**：3.752s  
-- **HillClimb（锚定）**：16.060s  
-- **`BattleSimulator.Run()` 均值**：2.462ms/局（注意：并行下“单局均值”会因争用变大）
+- **赛季总耗时**：5.6s  
+- **赛季对局增量**：9265  
+- **吞吐**：1646.0 局/秒  
+- **匹配赛（并行）跑局**：0.379s（≈600 局）  
+- **HillClimb（强度）**：0.810s  
+- **HillClimb（锚定）**：4.425s  
+- **`BattleSimulator.Run()` 均值**：2.299ms/局（注意：并行下“单局均值”会因争用变大）
 
 观察：
 
-- **HillClimb 吃到并行收益**：锚定优化约 22.8s → 16.1s（约 **1.42×**），赛季总耗时约 27.5s → 20.2s（约 **1.36×**）。
+- **HillClimb 吃到并行收益**：锚定优化约 8.0s → 4.4s（约 **1.82×**），赛季总耗时约 10.3s → 5.6s（约 **1.83×**）。
 - **`Run()` 合计耗时可能大于赛季墙钟耗时**：这是正常现象——并行时多个线程的 `Run()` 时间在墙钟上重叠，统计的是“CPU 时间总和”，不是墙钟时间。
-- 仍存在 **并行争用**：并行下 `Run()` 的“每局均值”会上升（2.118ms/局 vs 1.220ms/局），因此加速比远小于 workers 数；后续要进一步提升，需要减少模拟器分配/争用（见 P1）。
+- 仍存在 **并行争用**：并行下 `Run()` 的“每局均值”会上升（2.299ms/局 vs 1.196ms/局），因此加速比远小于 workers 数；后续要进一步提升，需要减少模拟器分配/争用（见 P1）。
 
 ---
 
-## 为什么 `--workers 14` 仍然慢（机制解释）
+## 为什么 `--workers 14` 仍然不是 14×（机制解释）
 
-### 1) 并行覆盖范围太小（改造前）
+### 1) 主要耗时仍在 HillClimb，且并行加速受限于单局成本上升
 
-当前代码中并行只在 `Runner.RunMatchPhaseParallel → RunGamesParallel` 生效；而 HillClimb 调用 `EloSystem.RunGamesAndUpdateElo*` 评估邻居时会跑大量对局，但没有 worker 并行。
+当前实现已将 HillClimb 评估对局纳入并行（`EloSystem.RunGamesAndUpdateElo*`：并行模拟 winners + 顺序写回 ELO/池），因此“并行覆盖范围太小”这一类问题已基本解决；但在 `--workers 14` 下，`BattleSimulator.Run()` 的**单局均值会明显上升**（GC/内存带宽/调度等争用），导致整体加速比远小于 worker 数。
 
 因此当默认参数较大时：
 
@@ -127,9 +127,7 @@ dotnet run -c Release --project src/BazaarArena.QualityDeckFinder/BazaarArena.Qu
   - 活跃玩家数（强度 + 锚定代表数）
   成乘法关系增长
 
-只并行“匹配赛”相当于只加速了总成本中的小分量。
-
-本次按方案 1 做的改造要点是：**把 HillClimb 评估中的对局模拟也纳入并行**（但仍保持 ELO/池更新按原顺序单线程应用），因此总耗时才出现明显下降。
+在 P1b 落地后，HillClimb 的“非对局开销”（尤其代表排列外战确认）已基本消失，当前进一步提速的主要方向回到：**降低每局模拟的分配/争用**（见 P1），让并行的“每核效率”上来。
 
 ### 2) 并行不是免费午餐：每局平均成本会上升
 
@@ -143,6 +141,36 @@ dotnet run -c Release --project src/BazaarArena.QualityDeckFinder/BazaarArena.Qu
 
 ---
 
+## 进一步细分：HillClimb 的真正瓶颈在哪里
+
+为验证“HillClimb 慢到底慢在哪”，对以下热点做了墙钟拆分并在 `--perf` 输出：
+
+- 邻域采样：`Neighborhood.SampleComboNeighborsWeighted`
+- 洗牌/随机序：`neighbors.OrderBy(_ => rng.Next()).ToList()`
+- 代表排列确保：`RepresentativeSelector.EnsureRepresentative`（协同先验爬山 + 缓存；不做外战确认）
+- 选对手：`EloSystem.SelectOpponentSignatures`（HillClimb 用）
+- 评估对局：`EloSystem.RunGamesAndUpdateElo*`（已含“构建对局/模拟对局/顺序写回”细分）
+
+本节仅展示一次代表性跑数（会随随机种子略抖动）；核心关注“哪个子项是大头”。
+
+### A. `--workers 0`（单线程，一次跑数）
+
+- HillClimb 总墙钟：强度 1546ms + 锚定 8036ms
+- HillClimb 评估细分：构建对局 7ms，**模拟对局 9244ms**，顺序写回 17ms
+- HillClimb 其它细分：邻域采样 73ms，洗牌/随机序 2ms，EnsureRepresentative 32ms，选对手 17ms
+
+结论：P1b 落地后，`EnsureRepresentative` 已不再是大头；**HillClimb 的墙钟主要由“模拟对局（Run）”构成**。
+
+### B. `--workers 14`（并行，一次跑数）
+
+- HillClimb 总墙钟：强度 810ms + 锚定 4425ms
+- HillClimb 评估细分：构建对局 7ms，**模拟对局 4828ms**，顺序写回 20ms
+- HillClimb 其它细分：邻域采样 62ms，洗牌/随机序 2ms，EnsureRepresentative 44ms，选对手 18ms
+
+结论：并行后“模拟对局”明显变快，且 `EnsureRepresentative` 不再主导；此时 `--workers` 的收益主要被 **`BattleSimulator.Run()` 并行下单局成本上升**与调度/GC 争用限制。
+
+---
+
 ## 当前统计的局限（避免误读）
 
 - `--perf` 中的“构建 Deck(ToDeck/BuildSide)”目前统计的是 **`DeckRep.ToDeck()` 的时间**；真正重的部分往往在 `BattleSimulator.Run()` 内部的 `BuildSide`（克隆 `ItemTemplate/AbilityDefinition` 等），这部分时间已经包含在 `Run()` 的均值里，但不会单独拆出来。
@@ -152,15 +180,17 @@ dotnet run -c Release --project src/BazaarArena.QualityDeckFinder/BazaarArena.Qu
 
 ## 后续优化建议（按优先级）
 
-### P0：把 HillClimb 的“对局评估”纳入并行（结构性收益最大）
+### P0（已落地）：把 HillClimb 的“对局评估”纳入并行（结构性收益最大）
 
-思路（不改变算法语义的前提下）：
+已实现要点（不改变算法语义的前提下）：
 
 - **把“对局评估”与“写池/更新 ELO/Priors”解耦**  
   先并行跑局（纯函数式：输入两套 deck → winner），收集结果；再由单线程按固定顺序应用结果更新 state。
-- 对 HillClimb：在同一步内评估多个候选邻居时，可以并行计算它们的对局结果（尤其是 MAB 预算下的多次评估）。
+- 对 HillClimb：评估时把需要跑的局按“原本顺序”展开为线性列表，先并行模拟 winners，再按顺序应用 ELO/写池，保证与单线程等价。
 
-这类改造通常能带来数量级收益，因为 HillClimb 是绝对大头。
+补充：并行热路径中将 `Random.Shared` 替换为线程局部随机数以降低争用。
+
+落地后的现状：**HillClimb 仍是绝对大头**，并行加速开始受限于 `BattleSimulator.Run()` 的单局成本在多线程下上升（GC/内存带宽/调度），因此下一步更值得投入的是 P1。
 
 ### P1：降低每局模拟的分配/克隆成本（提升单局吞吐）
 
@@ -176,6 +206,10 @@ dotnet run -c Release --project src/BazaarArena.QualityDeckFinder/BazaarArena.Qu
 - **复用临时集合**：减少 `new List<>` / `ToList()` / `OrderBy()` 等热点分配（例如帧循环内的临时集合）。
 
 这会同时提升单线程与多线程的上限，并缓解并行下 `Run()` 均值上升的问题。
+
+### P1b（已落地）：移除外战确认 + 代表缓存（原 HillClimb 最大头）
+
+按设计文档约束（不做外战验证），已将 `EnsureRepresentative` 的外战确认移除，并新增 comboSig→代表排列缓存，避免在 HillClimb 中反复为同一组合做代表寻找。落地后 `EnsureRepresentative` 在 HillClimb 的墙钟占比已降到毫秒级，HillClimb 的主瓶颈回到对局模拟与其并行争用（见上文细分）。
 
 ### P2：降低 HillClimb 的“评估局数”而不显著降质量（算法层）
 

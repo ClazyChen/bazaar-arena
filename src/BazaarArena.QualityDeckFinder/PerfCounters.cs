@@ -16,8 +16,17 @@ public static class PerfCounters
     private static long _matchScheduleTicks;
     private static long _matchRunTicks;
     private static long _matchApplyTicks;
+    private static long _matchSelectOpponentsTicks;
     private static long _hillClimbStrengthTicks;
     private static long _hillClimbAnchoredTicks;
+    private static long _hillEvalBuildTicks;
+    private static long _hillEvalSimulateTicks;
+    private static long _hillEvalApplyTicks;
+    private static long _hillNeighborSampleTicks;
+    private static long _hillNeighborShuffleTicks;
+    private static long _hillEnsureRepresentativeTicks;
+    private static long _hillSelectOpponentsTicks;
+    private static long _hillMabTicks;
     private static long _abandonInjectTicks;
 
     private static long _matchGames;
@@ -51,8 +60,17 @@ public static class PerfCounters
         _matchScheduleTicks = 0;
         _matchRunTicks = 0;
         _matchApplyTicks = 0;
+        _matchSelectOpponentsTicks = 0;
         _hillClimbStrengthTicks = 0;
         _hillClimbAnchoredTicks = 0;
+        _hillEvalBuildTicks = 0;
+        _hillEvalSimulateTicks = 0;
+        _hillEvalApplyTicks = 0;
+        _hillNeighborSampleTicks = 0;
+        _hillNeighborShuffleTicks = 0;
+        _hillEnsureRepresentativeTicks = 0;
+        _hillSelectOpponentsTicks = 0;
+        _hillMabTicks = 0;
         _abandonInjectTicks = 0;
         _matchGames = 0;
         _matchRounds = 0;
@@ -68,8 +86,17 @@ public static class PerfCounters
     public static void AddMatchScheduleTicks(long ticks) { if (Enabled) Interlocked.Add(ref _matchScheduleTicks, ticks); }
     public static void AddMatchRunTicks(long ticks) { if (Enabled) Interlocked.Add(ref _matchRunTicks, ticks); }
     public static void AddMatchApplyTicks(long ticks) { if (Enabled) Interlocked.Add(ref _matchApplyTicks, ticks); }
+    public static void AddMatchSelectOpponentsTicks(long ticks) { if (Enabled) Interlocked.Add(ref _matchSelectOpponentsTicks, ticks); }
     public static void AddHillClimbStrengthTicks(long ticks) { if (Enabled) Interlocked.Add(ref _hillClimbStrengthTicks, ticks); }
     public static void AddHillClimbAnchoredTicks(long ticks) { if (Enabled) Interlocked.Add(ref _hillClimbAnchoredTicks, ticks); }
+    public static void AddHillEvalBuildTicks(long ticks) { if (Enabled) Interlocked.Add(ref _hillEvalBuildTicks, ticks); }
+    public static void AddHillEvalSimulateTicks(long ticks) { if (Enabled) Interlocked.Add(ref _hillEvalSimulateTicks, ticks); }
+    public static void AddHillEvalApplyTicks(long ticks) { if (Enabled) Interlocked.Add(ref _hillEvalApplyTicks, ticks); }
+    public static void AddHillNeighborSampleTicks(long ticks) { if (Enabled) Interlocked.Add(ref _hillNeighborSampleTicks, ticks); }
+    public static void AddHillNeighborShuffleTicks(long ticks) { if (Enabled) Interlocked.Add(ref _hillNeighborShuffleTicks, ticks); }
+    public static void AddHillEnsureRepresentativeTicks(long ticks) { if (Enabled) Interlocked.Add(ref _hillEnsureRepresentativeTicks, ticks); }
+    public static void AddHillSelectOpponentsTicks(long ticks) { if (Enabled) Interlocked.Add(ref _hillSelectOpponentsTicks, ticks); }
+    public static void AddHillMabTicks(long ticks) { if (Enabled) Interlocked.Add(ref _hillMabTicks, ticks); }
     public static void AddAbandonInjectTicks(long ticks) { if (Enabled) Interlocked.Add(ref _abandonInjectTicks, ticks); }
 
     public static void AddMatchGames(int games) { if (Enabled) Interlocked.Add(ref _matchGames, games); }
@@ -124,8 +151,17 @@ public static class PerfCounters
         double matchScheduleMs = TicksToMs(Interlocked.Read(ref _matchScheduleTicks));
         double matchRunMs = TicksToMs(Interlocked.Read(ref _matchRunTicks));
         double matchApplyMs = TicksToMs(Interlocked.Read(ref _matchApplyTicks));
+        double matchSelectOppMs = TicksToMs(Interlocked.Read(ref _matchSelectOpponentsTicks));
         double hillStrengthMs = TicksToMs(Interlocked.Read(ref _hillClimbStrengthTicks));
         double hillAnchoredMs = TicksToMs(Interlocked.Read(ref _hillClimbAnchoredTicks));
+        double hillEvalBuildMs = TicksToMs(Interlocked.Read(ref _hillEvalBuildTicks));
+        double hillEvalSimulateMs = TicksToMs(Interlocked.Read(ref _hillEvalSimulateTicks));
+        double hillEvalApplyMs = TicksToMs(Interlocked.Read(ref _hillEvalApplyTicks));
+        double hillNeighborSampleMs = TicksToMs(Interlocked.Read(ref _hillNeighborSampleTicks));
+        double hillNeighborShuffleMs = TicksToMs(Interlocked.Read(ref _hillNeighborShuffleTicks));
+        double hillEnsureRepMs = TicksToMs(Interlocked.Read(ref _hillEnsureRepresentativeTicks));
+        double hillSelectOppMs = TicksToMs(Interlocked.Read(ref _hillSelectOpponentsTicks));
+        double hillMabMs = TicksToMs(Interlocked.Read(ref _hillMabTicks));
         double abandonInjectMs = TicksToMs(Interlocked.Read(ref _abandonInjectTicks));
 
         // 汇总 thread-local（仅统计当前赛季）
@@ -153,7 +189,13 @@ public static class PerfCounters
         Console.WriteLine($"[性能] 赛季 {seasonNumber1Based} 总耗时 {seasonElapsedMs:F0}ms，对局增量 {seasonGamesDelta}，吞吐 {gamesPerSec:F2} 局/秒");
         Console.WriteLine($"[性能]  代表选择 {repMs:F0}ms");
         Console.WriteLine($"[性能]  匹配赛：轮数 {Interlocked.Read(ref _matchRounds)}，赛程构造 {matchScheduleMs:F0}ms，跑局 {matchRunMs:F0}ms，合并写池 {matchApplyMs:F0}ms，本季匹配局数 {Interlocked.Read(ref _matchGames)}");
+        if (matchSelectOppMs > 0)
+            Console.WriteLine($"[性能]  匹配赛细分：选对手 {matchSelectOppMs:F0}ms");
         Console.WriteLine($"[性能]  卡组优化：强度 {hillStrengthMs:F0}ms，锚定 {hillAnchoredMs:F0}ms");
+        if (hillEvalBuildMs > 0 || hillEvalSimulateMs > 0 || hillEvalApplyMs > 0)
+            Console.WriteLine($"[性能]  HillClimb 评估细分：构建对局 {hillEvalBuildMs:F0}ms，模拟对局 {hillEvalSimulateMs:F0}ms，顺序写回 {hillEvalApplyMs:F0}ms");
+        if (hillNeighborSampleMs > 0 || hillEnsureRepMs > 0 || hillSelectOppMs > 0 || hillMabMs > 0 || hillNeighborShuffleMs > 0)
+            Console.WriteLine($"[性能]  HillClimb 其它细分：邻域采样 {hillNeighborSampleMs:F0}ms，洗牌/随机序 {hillNeighborShuffleMs:F0}ms，EnsureRepresentative {hillEnsureRepMs:F0}ms，选对手 {hillSelectOppMs:F0}ms，MAB/循环控制 {hillMabMs:F0}ms");
         Console.WriteLine($"[性能]  放弃/注入 {abandonInjectMs:F0}ms");
         if (battleCount > 0)
             Console.WriteLine($"[性能]  对战模拟 Run()：{battleCount} 次，合计 {battleMs:F0}ms，均值 {(battleMs / battleCount):F3}ms/局");

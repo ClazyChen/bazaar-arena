@@ -66,6 +66,7 @@ public static class EloSystem
     /// </summary>
     public static List<string> SelectOpponentSignatures(OptimizerState state, Config config, bool isNewDeck, double? deckElo, int M, Random? rng = null, string? excludeComboSig = null, bool useSegmentNeighborhood = false)
     {
+        long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
         rng ??= Random.Shared;
         var segmentIndex = isNewDeck ? 0 : state.SegmentIndex(deckElo ?? config.InitialElo);
         var candidates = new List<string>();
@@ -103,7 +104,9 @@ public static class EloSystem
             for (int s = segmentIndex; s >= 0 && candidates.Count < M; s--)
                 AddFromSegment(s);
         }
-        return candidates.Distinct(StringComparer.Ordinal).Take(M).ToList();
+        var result = candidates.Distinct(StringComparer.Ordinal).Take(M).ToList();
+        PerfCounters.AddHillSelectOpponentsTicks(System.Diagnostics.Stopwatch.GetTimestamp() - t0);
+        return result;
     }
 
     /// <summary>
@@ -120,6 +123,7 @@ public static class EloSystem
         string? excludeComboSig = null,
         bool useSegmentNeighborhood = false)
     {
+        long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
         rng ??= Random.Shared;
         M = Math.Max(0, M);
         if (M == 0) return [];
@@ -181,7 +185,9 @@ public static class EloSystem
             if (picked.Count >= M) break;
         }
 
-        return picked.Distinct(StringComparer.Ordinal).Take(M).ToList();
+        var result = picked.Distinct(StringComparer.Ordinal).Take(M).ToList();
+        PerfCounters.AddMatchSelectOpponentsTicks(System.Diagnostics.Stopwatch.GetTimestamp() - t0);
+        return result;
     }
 
     /// <summary>运行若干场对战：组合代表 repD 与 opponents 中随机对手的代表对战，更新双方组合的 ELO；返回 D 的更新后 ELO。</summary>
@@ -197,6 +203,7 @@ public static class EloSystem
         if (opponentSignatures.Count == 0)
             return state.TryGetEntry(comboSigD, out var e) ? e.Elo : config.InitialElo;
 
+        long tAll0 = System.Diagnostics.Stopwatch.GetTimestamp();
         var silentSink = new SilentBattleLogSink();
         var k = config.EloK;
         var gamesPerOpp = Math.Max(1, config.GamesPerEval / Math.Max(1, opponentSignatures.Count));
@@ -208,6 +215,7 @@ public static class EloSystem
         // 先把一次评估需要跑的所有 games 按“原本的顺序”展开成线性列表：
         // (oppSig0 的 g=0.., oppSig1 的 g=0.., ...)
         // 然后并行跑出 winners，再按该线性顺序单线程应用 ELO/写池，保持语义不变。
+        long tBuild0All = System.Diagnostics.Stopwatch.GetTimestamp();
         var tBuildD0 = System.Diagnostics.Stopwatch.GetTimestamp();
         var deckD = repD.ToDeck(db);
         PerfCounters.RecordDeckBuild(System.Diagnostics.Stopwatch.GetTimestamp() - tBuildD0);
@@ -222,14 +230,18 @@ public static class EloSystem
             PerfCounters.RecordDeckBuild(System.Diagnostics.Stopwatch.GetTimestamp() - tBuild0);
 
             for (int g = 0; g < gamesPerOpp; g++)
-                games.Add((oppSig, deckOpp, Random.Shared.Next(2)));
+                games.Add((oppSig, deckOpp, ThreadLocalRandom.Next(2)));
         }
+        PerfCounters.AddHillEvalBuildTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tBuild0All);
 
+        long tSim0 = System.Diagnostics.Stopwatch.GetTimestamp();
         var winners = workers <= 1
             ? SimulateWinnersSingle(simulator, db, silentSink, deckD, games)
             : SimulateWinnersParallel(simulator, db, silentSink, deckD, games, workers);
+        PerfCounters.AddHillEvalSimulateTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tSim0);
 
         // 顺序应用（与 games 列表顺序一致）
+        long tApply0 = System.Diagnostics.Stopwatch.GetTimestamp();
         var currentOppElo = new Dictionary<string, double>(StringComparer.Ordinal);
         for (int i = 0; i < games.Count; i++)
         {
@@ -254,6 +266,7 @@ public static class EloSystem
             gamesPlayedByD++;
             state.RecordMatch(comboSigD, currentEloD, eloOpp, winner);
         }
+        PerfCounters.AddHillEvalApplyTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tApply0);
 
         // D 的最新 elo 写回虚拟玩家池；并尝试写入历史池（受分段上限限制）
         int baseGames = GetCumulativeGameCount(state, comboSigD);
@@ -292,6 +305,7 @@ public static class EloSystem
         int gamesPerOpp = (int)Math.Ceiling(totalGamesBudget / (double)oppCount);
 
         int workers = Math.Max(0, config.Workers);
+        long tBuild0All = System.Diagnostics.Stopwatch.GetTimestamp();
         var tBuildD0 = System.Diagnostics.Stopwatch.GetTimestamp();
         var deckD = repD.ToDeck(db);
         PerfCounters.RecordDeckBuild(System.Diagnostics.Stopwatch.GetTimestamp() - tBuildD0);
@@ -310,11 +324,15 @@ public static class EloSystem
             for (int g = 0; g < gCap; g++)
                 games.Add((oppSig, deckOpp, rng.Next(2)));
         }
+        PerfCounters.AddHillEvalBuildTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tBuild0All);
 
+        long tSim0 = System.Diagnostics.Stopwatch.GetTimestamp();
         var winners = workers <= 1
             ? SimulateWinnersSingle(simulator, db, silentSink, deckD, games)
             : SimulateWinnersParallel(simulator, db, silentSink, deckD, games, workers);
+        PerfCounters.AddHillEvalSimulateTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tSim0);
 
+        long tApply0 = System.Diagnostics.Stopwatch.GetTimestamp();
         var currentOppElo = new Dictionary<string, double>(StringComparer.Ordinal);
         for (int i = 0; i < games.Count; i++)
         {
@@ -339,6 +357,7 @@ public static class EloSystem
             gamesPlayedByD++;
             state.RecordMatch(comboSigD, currentEloD, eloOpp, winner);
         }
+        PerfCounters.AddHillEvalApplyTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tApply0);
 
         int baseGames = GetCumulativeGameCount(state, comboSigD);
         state.VirtualPlayerPool[comboSigD] = new ComboEntry(comboSigD, repD, currentEloD, false, false, baseGames + gamesPlayedByD);

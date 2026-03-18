@@ -74,6 +74,7 @@ public static class Neighborhood
         Config? config = null,
         int totalGames = 0)
     {
+        long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
         exploreMix = Math.Clamp(exploreMix, 0.0, 1.0);
         config ??= new Config();
         var t = Math.Clamp(totalGames / (double)Math.Max(1, config.PriorsAnnealGames), 0.0, 1.0);
@@ -188,6 +189,7 @@ public static class Neighborhood
             remaining.Remove(chosenSig);
         }
 
+        PerfCounters.AddHillNeighborSampleTicks(System.Diagnostics.Stopwatch.GetTimestamp() - t0);
         return result;
     }
 }

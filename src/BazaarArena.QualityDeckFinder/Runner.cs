@@ -394,7 +394,7 @@ public static class Runner
                 var deckD = eD.Representative.ToDeck(db);
                 var deckOpp = eOpp.Representative.ToDeck(db);
                 PerfCounters.RecordDeckBuild(System.Diagnostics.Stopwatch.GetTimestamp() - tBuild0);
-                int swap = Random.Shared.Next(2);
+                int swap = ThreadLocalRandom.Next(2);
                 Deck dA, dB;
                 if (swap == 0) { dA = deckD; dB = deckOpp; }
                 else { dA = deckOpp; dB = deckD; }
@@ -419,7 +419,6 @@ public static class Runner
         Parallel.For(0, workers, w =>
         {
             var list = new List<(int index, int winner)>();
-            var rnd = new Random(Random.Shared.Next());
             foreach (var (index, comboSigD, oppSig) in chunks[w])
             {
                 if (!state.TryGetEntry(comboSigD, out var eD) || !state.TryGetEntry(oppSig, out var eOpp))
@@ -428,7 +427,7 @@ public static class Runner
                 var deckD = eD.Representative.ToDeck(db);
                 var deckOpp = eOpp.Representative.ToDeck(db);
                 PerfCounters.RecordDeckBuild(System.Diagnostics.Stopwatch.GetTimestamp() - tBuild0);
-                int swap = rnd.Next(2);
+                int swap = ThreadLocalRandom.Next(2);
                 Deck dA, dB;
                 if (swap == 0) { dA = deckD; dB = deckOpp; }
                 else { dA = deckOpp; dB = deckD; }
