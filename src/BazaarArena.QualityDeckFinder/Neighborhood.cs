@@ -1,3 +1,5 @@
+using BazaarArena.Core;
+
 namespace BazaarArena.QualityDeckFinder;
 
 /// <summary>
@@ -86,6 +88,17 @@ public static class Neighborhood
         var names = representative.ItemNames.ToList();
         var used = new HashSet<string>(representative.ItemNames, StringComparer.Ordinal);
 
+        ItemTemplate? anchorTemplate = null;
+        int anchorSlot = -1;
+        if (!string.IsNullOrEmpty(anchorItemName) && db != null)
+        {
+            anchorTemplate = db.GetTemplate(anchorItemName);
+            for (int k = 0; k < representative.ItemNames.Count; k++)
+            {
+                if (representative.ItemNames[k] == anchorItemName) { anchorSlot = k; break; }
+            }
+        }
+
         // comboSig -> (seed, weight)
         var best = new Dictionary<string, (DeckRep seed, double w)>(StringComparer.Ordinal);
 
@@ -103,7 +116,7 @@ public static class Neighborhood
                 var seed = new DeckRep(shape, next);
                 var comboSig = ComboSignature.FromDeckRep(seed);
 
-                // 权重：单物品权重 + 物品对协同 + 声明协同先验得分
+                // 权重：单物品权重 + 物品对协同 + 声明协同先验得分（锚定时以锚定视角得分为主）
                 double itemW = priors.ItemWeight(size, name);
                 double comboW = itemW;
                 if (pairLambda > 0)
@@ -119,7 +132,11 @@ public static class Neighborhood
                 if (db != null)
                 {
                     var templateX = db.GetTemplate(name);
-                    var synergyScore = SynergyScorer.Score(templateX, representative, slot, db);
+                    double synergyScore;
+                    if (anchorTemplate is { } anchor && anchorSlot >= 0)
+                        synergyScore = SynergyScorer.ScoreFromAnchorPerspective(anchor, anchorSlot, slot, templateX, db);
+                    else
+                        synergyScore = SynergyScorer.Score(templateX, representative, slot, db);
                     comboW += Math.Max(0, synergyScore);
                 }
 

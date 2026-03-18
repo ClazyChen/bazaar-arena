@@ -211,6 +211,23 @@ public static class StatePersistence
                 state.Pool[c.ComboSig] = new ComboEntry(c.ComboSig, rep, c.Elo, c.IsLocalOptimum, c.IsConfirmed, c.GameCount);
             }
 
+            // 恢复后确保所有强度玩家 comboSig 都在池中，避免 Top10 为空（历史 state 可能漏保存）
+            if (dto.StrengthPlayerComboSigs != null && dto.StrengthPlayerComboSigs.Count > 0 && dto.Combos != null && dto.Combos.Count > 0)
+            {
+                var first = dto.Combos[0];
+                if (first.RepresentativeShape != null && first.RepresentativeItems != null && first.RepresentativeShape.Count == first.RepresentativeItems.Count)
+                {
+                    var placeholderRep = new DeckRep(first.RepresentativeShape, first.RepresentativeItems);
+                    double initialElo = state.Config.InitialElo;
+                    foreach (var sig in state.StrengthPlayerComboSigs)
+                    {
+                        if (string.IsNullOrEmpty(sig)) continue;
+                        if (state.Pool.ContainsKey(sig)) continue;
+                        state.Pool[sig] = new ComboEntry(sig, placeholderRep, initialElo, false, false, 0);
+                    }
+                }
+            }
+
             if (dto.ComboStats != null)
             {
                 foreach (var s in dto.ComboStats)

@@ -93,6 +93,81 @@ public static class SynergyScorer
         return score;
     }
 
+    /// <summary>
+    /// 锚定视角得分：将候选放在 candidateSlotIndex 时，对锚定物品（在 anchorSlotIndex）而言满足其上游/下游/邻居子句的得分。
+    /// 用于锚定玩家卡组生成与邻域采样，以锚定物品的相关性为主选择其他槽位物品。
+    /// </summary>
+    public static double ScoreFromAnchorPerspective(
+        ItemTemplate anchorTemplate,
+        int anchorSlotIndex,
+        int candidateSlotIndex,
+        ItemTemplate? candidateTemplate,
+        IItemTemplateResolver db)
+    {
+        if (candidateTemplate == null) return 0.0;
+        if (anchorSlotIndex == candidateSlotIndex) return 0.0;
+
+        double score = 0.0;
+        bool leftOfAnchor = candidateSlotIndex < anchorSlotIndex;
+        bool rightOfAnchor = candidateSlotIndex > anchorSlotIndex;
+        bool isLeftNeighbor = candidateSlotIndex == anchorSlotIndex - 1;
+        bool isRightNeighbor = candidateSlotIndex == anchorSlotIndex + 1;
+
+        if (anchorTemplate.UpstreamRequirements != null)
+        {
+            foreach (var clause in anchorTemplate.UpstreamRequirements)
+            {
+                if (!CandidateInDirectionForClause(leftOfAnchor, rightOfAnchor, clause)) continue;
+                if (SatisfiesClause(candidateTemplate, clause))
+                    score += 1.0;
+            }
+        }
+
+        if (anchorTemplate.DownstreamRequirements != null)
+        {
+            foreach (var clause in anchorTemplate.DownstreamRequirements)
+            {
+                if (!CandidateInDirectionForClause(leftOfAnchor, rightOfAnchor, clause)) continue;
+                if (SatisfiesClause(candidateTemplate, clause))
+                    score += 1.0;
+            }
+        }
+
+        if (anchorTemplate.NeighborPreference != null && (isLeftNeighbor || isRightNeighbor))
+        {
+            if (SatisfiesAnyClause(candidateTemplate, anchorTemplate.NeighborPreference))
+                score += 1.0;
+        }
+
+        return score;
+    }
+
+    /// <summary>候选在锚定左侧/右侧是否满足子句方向要求。</summary>
+    private static bool CandidateInDirectionForClause(bool leftOfAnchor, bool rightOfAnchor, SynergyClause clause)
+    {
+        return clause.Direction switch
+        {
+            SynergyDirection.Left => leftOfAnchor,
+            SynergyDirection.Right => rightOfAnchor,
+            _ => leftOfAnchor || rightOfAnchor,
+        };
+    }
+
+    /// <summary>卡组中是否至少有一件物品声明了协同先验（上游/下游/邻居）。无先验时顺序可任意，无需选代表。</summary>
+    public static bool DeckHasAnySynergyPrior(DeckRep deck, IItemTemplateResolver db)
+    {
+        foreach (var name in deck.ItemNames)
+        {
+            var t = db.GetTemplate(name);
+            if (t == null) continue;
+            if ((t.UpstreamRequirements != null && t.UpstreamRequirements.Count > 0) ||
+                (t.DownstreamRequirements != null && t.DownstreamRequirements.Count > 0) ||
+                (t.NeighborPreference != null && t.NeighborPreference.Count > 0))
+                return true;
+        }
+        return false;
+    }
+
     /// <summary>对当前卡组顺序打分：各物品的上游/下游/邻居满足子句数之和（用于排列 tie-break 或代表选择）。</summary>
     public static double DeckOrderScore(DeckRep deck, IItemTemplateResolver db)
     {

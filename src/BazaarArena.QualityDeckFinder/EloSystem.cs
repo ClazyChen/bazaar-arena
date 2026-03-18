@@ -54,10 +54,10 @@ public static class EloSystem
     /// <summary>
     /// 为卡组 D 选取对手签名列表：
     /// - 新卡组：从段 0 起往高段抽直到够 M 个
-    /// - 非新卡组：从 D 所在段往低段抽直到够 M 个
-    /// 段内会随机打散，以避免固定遍历顺序带来的偏差。
+    /// - 非新卡组：默认从 D 所在段往低段抽；useSegmentNeighborhood 为 true 时从当前段±1 段抽
+    /// excludeComboSig 不为空时排除该签名，便于匹配赛不浪费名额。
     /// </summary>
-    public static List<string> SelectOpponentSignatures(OptimizerState state, Config config, bool isNewDeck, double? deckElo, int M, Random? rng = null)
+    public static List<string> SelectOpponentSignatures(OptimizerState state, Config config, bool isNewDeck, double? deckElo, int M, Random? rng = null, string? excludeComboSig = null, bool useSegmentNeighborhood = false)
     {
         rng ??= Random.Shared;
         var segmentIndex = isNewDeck ? 0 : state.SegmentIndex(deckElo ?? config.InitialElo);
@@ -67,30 +67,34 @@ public static class EloSystem
         {
             maxSeg = config.SegmentBounds.Count;
         }
+
+        void AddFromSegment(int s)
+        {
+            var inSeg = state.SignaturesInSegment(s);
+            foreach (var sig in inSeg.OrderBy(_ => rng.Next()))
+            {
+                if (excludeComboSig != null && string.Equals(sig, excludeComboSig, StringComparison.Ordinal)) continue;
+                candidates.Add(sig);
+                if (candidates.Count >= M) return;
+            }
+        }
+
         if (isNewDeck)
         {
             for (int s = 0; s <= maxSeg && candidates.Count < M; s++)
-            {
-                var inSeg = state.SignaturesInSegment(s);
-                // 段内随机化：避免枚举顺序偏差
-                foreach (var sig in inSeg.OrderBy(_ => rng.Next()))
-                {
-                    candidates.Add(sig);
-                    if (candidates.Count >= M) break;
-                }
-            }
+                AddFromSegment(s);
+        }
+        else if (useSegmentNeighborhood)
+        {
+            var lo = Math.Max(0, segmentIndex - 1);
+            var hi = Math.Min(maxSeg, segmentIndex + 1);
+            for (int s = lo; s <= hi && candidates.Count < M; s++)
+                AddFromSegment(s);
         }
         else
         {
             for (int s = segmentIndex; s >= 0 && candidates.Count < M; s--)
-            {
-                var inSeg = state.SignaturesInSegment(s);
-                foreach (var sig in inSeg.OrderBy(_ => rng.Next()))
-                {
-                    candidates.Add(sig);
-                    if (candidates.Count >= M) break;
-                }
-            }
+                AddFromSegment(s);
         }
         return candidates.Distinct(StringComparer.Ordinal).Take(M).ToList();
     }
@@ -240,7 +244,12 @@ public static class EloSystem
             }
             if (inSegment.Count >= config.SegmentCap)
             {
-                var candidates = inSegment.Where(s => state.Pool.TryGetValue(s, out var e) && e.Elo < elo).ToList();
+                var protectedSigs = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var sig in state.AnchoredPlayerComboSig.Values)
+                    protectedSigs.Add(sig);
+                foreach (var sig in state.StrengthPlayerComboSigs)
+                    protectedSigs.Add(sig);
+                var candidates = inSegment.Where(s => state.Pool.TryGetValue(s, out var e) && e.Elo < elo && !protectedSigs.Contains(s)).ToList();
                 if (candidates.Count == 0)
                     return;
                 string? kickSig = null;

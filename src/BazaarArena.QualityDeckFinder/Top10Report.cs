@@ -54,7 +54,7 @@ public static class Top10Report
             foreach (var (_, comboSig) in kv.Value)
             {
                 if (!state.Pool.TryGetValue(comboSig, out var e)) continue;
-                if (best == null || e.Elo > best.Elo)
+                if (best == null || e.Elo > best.Elo || (e.Elo == best.Elo && e.GameCount > best.GameCount))
                     best = e;
             }
             if (best != null)

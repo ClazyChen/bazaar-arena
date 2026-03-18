@@ -6,8 +6,7 @@ using SimulatorClass = BazaarArena.BattleSimulator.BattleSimulator;
 namespace BazaarArena.QualityDeckFinder;
 
 /// <summary>
-/// 组合代表选择：先在同一组合内部做“内战”快速筛选候选排列，再用少量外战对强对手集确认代表。
-/// 默认偏快探索：内战/外战都使用较小预算，参数由 Config 控制。
+/// 组合代表选择：无先验时直接返回 seed；有先验时用协同得分爬山快速得到代表，可选一次外战确认。
 /// </summary>
 public static class RepresentativeSelector
 {
@@ -19,6 +18,7 @@ public static class RepresentativeSelector
 
     /// <summary>
     /// 为 comboSig 找到代表排列。seed 必须属于该组合（物品集合一致，shapeCounts 一致）。
+    /// 无协同先验时直接返回 seed；有先验时用协同得分指导爬山，快速完成（不做内战对战）。
     /// </summary>
     public static Result EnsureRepresentative(
         string comboSig,
@@ -30,53 +30,35 @@ public static class RepresentativeSelector
         IItemTemplateResolver db,
         Random rng)
     {
-        // 1) 内战：在同组合内做少量 swap-hillclimb，收集少量候选
+        // 无先验：顺序可任意，直接返回 seed，不跑对战
+        if (!SynergyScorer.DeckHasAnySynergyPrior(seed, db))
+            return new Result(seed, false, 0, 0);
+
+        // 有先验：用协同得分指导爬山，不依赖对战
         var internalBudget = Math.Max(1, config.InnerBudget);
-        var warsPerCompare = Math.Max(1, config.InnerWars);
-        var candidates = new List<DeckRep> { seed };
         var current = seed;
-        int internalGames = 0;
+        double currentScore = SynergyScorer.DeckOrderScore(current, db);
 
         for (int step = 0; step < internalBudget; step++)
         {
             var challenger = PermutationNeighbor.RandomSwap(current, rng);
             if (challenger == null) break;
 
-            var (winsA, winsB, draws) = BattleCompare.HeadToHead(current, challenger, warsPerCompare, simulator, db, rng);
-            internalGames += warsPerCompare;
-
-            // 偏保守：只在 challenger 明显更强时替换 current，避免被随机性抖动带偏
-            if (winsB > winsA || (winsB == winsA && SynergyScorer.DeckOrderScore(challenger, db) > SynergyScorer.DeckOrderScore(current, db)))
+            var challengerScore = SynergyScorer.DeckOrderScore(challenger, db);
+            if (challengerScore > currentScore)
             {
                 current = challenger;
-                candidates.Add(challenger);
+                currentScore = challengerScore;
             }
         }
 
-        // 取 Top-3 候选：用一个很便宜的内部“小联赛”筛一遍
-        var top = SelectTopCandidates(candidates, simulator, db, rng, config.InnerSelectTop, config.InnerSelectWars, out var extraGames);
-        internalGames += extraGames;
+        // 外战确认：对手不足时直接返回当前代表
+        var opponentSigs = SelectConfirmOpponents(state, config, GuessEloForConfirm(comboSig, state, config), config.ConfirmOpponents);
+        if (opponentSigs.Count == 0)
+            return new Result(current, false, 0, 0);
 
-        // 2) 外战确认：对段内/Top 的强对手集跑少量局，选最终代表
-        var opponentSigs = SelectConfirmOpponents(state, config, top.Count > 0 ? GuessEloForConfirm(comboSig, state, config) : config.InitialElo, config.ConfirmOpponents);
-        int externalGames = 0;
-        if (opponentSigs.Count == 0 || top.Count == 0)
-            return new Result(current, false, internalGames, externalGames);
-
-        var best = top[0];
-        double bestScore = double.NegativeInfinity;
-        foreach (var cand in top)
-        {
-            var score = ExternalScore(cand, opponentSigs, config.ConfirmGamesPerOpponent, state, simulator, db, rng, out var games);
-            externalGames += games;
-            if (score > bestScore)
-            {
-                bestScore = score;
-                best = cand;
-            }
-        }
-
-        return new Result(best, IsConfirmed: true, internalGames, externalGames);
+        _ = ExternalScore(current, opponentSigs, config.ConfirmGamesPerOpponent, state, simulator, db, rng, out int externalGames);
+        return new Result(current, true, 0, externalGames);
     }
 
     private static double GuessEloForConfirm(string comboSig, OptimizerState state, Config config)

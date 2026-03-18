@@ -13,7 +13,10 @@ public static class Runner
         var rng = state.RngSeed.HasValue ? new Random(state.RngSeed.Value) : new Random();
 
         if (state.Pool.Count == 0 || (state.AnchoredPlayerComboSig.Count == 0 && state.StrengthPlayerComboSigs.Count == 0))
+        {
             SeedPoolWithVirtualPlayers(simulator, db, pool, state, config, rng);
+            Console.WriteLine($"[初始化完成] 池大小 {state.Pool.Count}，开始虚拟赛季循环。");
+        }
 
         if (config.Workers > 0)
         {
@@ -28,13 +31,21 @@ public static class Runner
         {
             RunSeason(simulator, db, pool, state, config, rng);
             state.CurrentSeason++;
-            seasonsSinceTop++;
             seasonsSinceSave++;
 
-            if (seasonsSinceTop >= config.TopInterval)
+            if (config.TopInterval == 1)
             {
-                seasonsSinceTop = 0;
                 Top10Report.Print(state);
+                seasonsSinceTop = 0;
+            }
+            else
+            {
+                seasonsSinceTop++;
+                if (seasonsSinceTop >= config.TopInterval)
+                {
+                    seasonsSinceTop = 0;
+                    Top10Report.Print(state);
+                }
             }
 
             if (seasonsSinceSave >= config.SaveInterval)
@@ -42,6 +53,15 @@ public static class Runner
                 seasonsSinceSave = 0;
                 StatePersistence.Save(config.StatePath, state);
                 Console.WriteLine($"[已保存状态到 {config.StatePath}]");
+            }
+
+            if (config.MaxSeasons > 0 && state.CurrentSeason >= config.MaxSeasons)
+            {
+                Console.WriteLine($"[已达最大赛季数 {config.MaxSeasons}，输出最终报告并保存后退出]");
+                Top10Report.Print(state);
+                StatePersistence.Save(config.StatePath, state);
+                Console.WriteLine($"[已保存状态到 {config.StatePath}]");
+                return;
             }
         }
     }
@@ -55,19 +75,36 @@ public static class Runner
         {
             RunSeason(simulator, db, pool, state, config, mainRng);
             state.CurrentSeason++;
-            seasonsSinceTop++;
             seasonsSinceSave++;
 
-            if (seasonsSinceTop >= config.TopInterval)
+            if (config.TopInterval == 1)
             {
-                seasonsSinceTop = 0;
                 Top10Report.Print(state);
+                seasonsSinceTop = 0;
+            }
+            else
+            {
+                seasonsSinceTop++;
+                if (seasonsSinceTop >= config.TopInterval)
+                {
+                    seasonsSinceTop = 0;
+                    Top10Report.Print(state);
+                }
             }
             if (seasonsSinceSave >= config.SaveInterval)
             {
                 seasonsSinceSave = 0;
                 StatePersistence.Save(config.StatePath, state);
                 Console.WriteLine($"[已保存状态到 {config.StatePath}]");
+            }
+
+            if (config.MaxSeasons > 0 && state.CurrentSeason >= config.MaxSeasons)
+            {
+                Console.WriteLine($"[已达最大赛季数 {config.MaxSeasons}，输出最终报告并保存后退出]");
+                Top10Report.Print(state);
+                StatePersistence.Save(config.StatePath, state);
+                Console.WriteLine($"[已保存状态到 {config.StatePath}]");
+                return;
             }
         }
     }
@@ -87,13 +124,18 @@ public static class Runner
 
         if (activeComboSigs.Count == 0) return;
 
+        Console.WriteLine($"[赛季 {state.CurrentSeason + 1}] 活跃玩家 {activeComboSigs.Count}，总对局 {state.TotalGames}，开始匹配赛...");
+
         // 匹配赛：受 SeasonMatchCap / SeasonLossCap 限制；多 worker 时每轮并行跑局、单线程合并写池
         if (config.Workers > 0)
             RunMatchPhaseParallel(activeComboSigs.ToList(), state, config, simulator, db, rng);
         else
             RunMatchPhaseSingle(activeComboSigs.ToList(), state, config, simulator, db, rng);
 
+        Console.WriteLine("  匹配赛结束。");
+
         // 卡组优化：每个活跃玩家尝试一次爬山，若更优则切换并本季不再优化；强度玩家同卡组合并
+        Console.WriteLine($"  卡组优化：强度玩家 {state.StrengthPlayerComboSigs.Count}，锚定代表 {representatives.Count}。");
         var strengthIndicesToUpdate = new List<(int index, string newComboSig)>();
         int idx = 0;
         foreach (var comboSig in state.StrengthPlayerComboSigs.ToList())
@@ -119,6 +161,7 @@ public static class Runner
                 state.StrengthLastImprovedSeason[pair.index] = state.CurrentSeason;
             }
         }
+        Console.WriteLine("    强度玩家优化完成。");
         foreach (var itemName in representatives.Keys.ToList())
         {
             var key = representatives[itemName];
@@ -135,6 +178,7 @@ public static class Runner
                 EloSystem.TryAddToPool(state, config, newSig, newRep, newElo);
             }
         }
+        Console.WriteLine("    锚定代表优化完成。");
         var merged = state.StrengthPlayerComboSigs.Distinct(StringComparer.Ordinal).ToList();
         var newLast = new List<int>();
         foreach (var sig in merged)
@@ -156,6 +200,19 @@ public static class Runner
             InjectStrengthPlayers(simulator, db, pool, state, config, rng);
     }
 
+    private static void PrintMatchPhasePoolInfo(OptimizerState state, Config config)
+    {
+        int maxSeg;
+        lock (config.SegmentBoundsLock)
+        {
+            maxSeg = config.SegmentBounds.Count;
+        }
+        var segCounts = new List<int>();
+        for (int s = 0; s <= maxSeg; s++)
+            segCounts.Add(state.SignaturesInSegment(s).Count);
+        Console.WriteLine($"  匹配赛池：池大小 {state.Pool.Count}，各段人数 [{string.Join(", ", segCounts)}]");
+    }
+
     /// <summary>单线程匹配赛：逐玩家、逐批对局并立即更新池。</summary>
     private static void RunMatchPhaseSingle(
         List<string> activeComboSigs,
@@ -165,8 +222,14 @@ public static class Runner
         IItemTemplateResolver db,
         Random rng)
     {
+        PrintMatchPhasePoolInfo(state, config);
+        const int progressInterval = 50;
+        int processed = 0;
         foreach (var comboSig in activeComboSigs)
         {
+            processed++;
+            if (processed % progressInterval == 0)
+                Console.WriteLine($"  匹配赛：已处理 {processed}/{activeComboSigs.Count} 个活跃玩家，总对局 {state.TotalGames}");
             if (!state.Pool.TryGetValue(comboSig, out var entry)) continue;
             var rep = entry.Representative;
             double elo = entry.Elo;
@@ -174,8 +237,8 @@ public static class Runner
             int losses = 0;
             while (games < config.SeasonMatchCap && losses < config.SeasonLossCap)
             {
-                var opps = EloSystem.SelectOpponentSignatures(state, config, isNewDeck: false, elo, Math.Max(1, config.GamesPerEval), rng);
-                opps = opps.Where(s => s != comboSig).Take(Math.Max(1, config.GamesPerEval)).ToList();
+                var opps = EloSystem.SelectOpponentSignatures(state, config, isNewDeck: false, elo, Math.Max(1, config.GamesPerEval), rng, excludeComboSig: comboSig, useSegmentNeighborhood: true);
+                opps = opps.Take(Math.Max(1, config.GamesPerEval)).ToList();
                 if (opps.Count == 0) break;
                 var (newElo, gamesPlayed, lossDelta) = RunGamesAndCountLosses(comboSig, rep, opps, state, config, simulator, db);
                 elo = newElo;
@@ -196,10 +259,13 @@ public static class Runner
         IItemTemplateResolver db,
         Random rng)
     {
+        PrintMatchPhasePoolInfo(state, config);
         var playerStats = new Dictionary<string, (int games, int losses)>(StringComparer.Ordinal);
         foreach (var s in activeComboSigs)
             playerStats[s] = (0, 0);
 
+        int gamesAtSeasonStart = state.TotalGames;
+        int round = 0;
         while (true)
         {
             var schedule = new List<(string comboSigD, string oppSig)>();
@@ -210,15 +276,19 @@ public static class Runner
                 if (!state.Pool.TryGetValue(comboSig, out var entry)) continue;
                 int toPlay = Math.Min(Math.Max(1, config.GamesPerEval), config.SeasonMatchCap - g);
                 if (toPlay <= 0) continue;
-                var opps = EloSystem.SelectOpponentSignatures(state, config, isNewDeck: false, entry.Elo, toPlay, rng);
-                opps = opps.Where(x => x != comboSig).Take(toPlay).ToList();
+                var opps = EloSystem.SelectOpponentSignatures(state, config, isNewDeck: false, entry.Elo, toPlay, rng, excludeComboSig: comboSig, useSegmentNeighborhood: true);
+                opps = opps.Take(toPlay).ToList();
                 foreach (var opp in opps)
                     schedule.Add((comboSig, opp));
             }
             if (schedule.Count == 0) break;
 
+            round++;
             var results = RunGamesParallel(schedule, state, config, simulator, db);
             ApplyMatchResults(state, config, results);
+            int seasonGames = state.TotalGames - gamesAtSeasonStart;
+            if (round % 5 == 1 || schedule.Count >= 80)
+                Console.WriteLine($"  匹配赛：第 {round} 轮，本轮 {schedule.Count} 场，本季累计 {seasonGames} 场，总对局 {state.TotalGames}");
 
             foreach (var (comboSigD, oppSig, winner) in results)
             {
@@ -397,6 +467,7 @@ public static class Runner
 
     private static void SeedPoolWithVirtualPlayers(SimulatorClass simulator, IItemTemplateResolver db, ItemPool pool, OptimizerState state, Config config, Random rng)
     {
+        Console.WriteLine("[初始化] 正在生成锚定玩家与强度玩家...");
         var allItems = pool.SmallNames.Concat(pool.MediumNames).Concat(pool.LargeNames).ToList();
         for (int si = 0; si < Shapes.All.Count; si++)
         {
@@ -420,7 +491,7 @@ public static class Runner
                 state.AnchoredLastImprovedSeason[key] = 0;
             }
         }
-        for (int k = 0; k < 5; k++)
+        for (int k = 0; k < 10; k++)
         {
             var shapeIndex = rng.Next(Shapes.All.Count);
             var shape = Shapes.GetRandomPermutation(shapeIndex, rng);
@@ -434,12 +505,15 @@ public static class Runner
             state.StrengthPlayerComboSigs.Add(comboSig);
             state.StrengthLastImprovedSeason.Add(0);
         }
+        Console.WriteLine($"  锚定玩家数: {state.AnchoredPlayerComboSig.Count}，强度玩家数: {state.StrengthPlayerComboSigs.Count}");
+        Console.WriteLine("  进行初始对局...");
         foreach (var kv in state.Pool.ToList())
         {
             var opps = state.Pool.Keys.Where(s => s != kv.Key).Take(Math.Max(1, config.GamesPerEval)).ToList();
             if (opps.Count == 0) continue;
             EloSystem.RunGamesAndUpdateElo(kv.Key, kv.Value.Representative, opps, state, config, simulator, db);
         }
+        Console.WriteLine($"  初始对局完成，总对局 {state.TotalGames}。");
     }
 
     private static void InjectStrengthPlayers(SimulatorClass simulator, IItemTemplateResolver db, ItemPool pool, OptimizerState state, Config config, Random rng)

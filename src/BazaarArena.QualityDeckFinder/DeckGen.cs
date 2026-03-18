@@ -234,7 +234,7 @@ public static class DeckGen
             {
                 bool itemOnly = roll < randMix + itemMix;
                 var weights = candidates.Select(n =>
-                    CandidateWeight(
+                    CandidateWeightAnchored(
                         size,
                         n,
                         selected,
@@ -243,7 +243,10 @@ public static class DeckGen
                         pairLambda,
                         config,
                         t,
-                        itemOnly)).ToList();
+                        itemOnly,
+                        anchorTemplate,
+                        anchorPos,
+                        i)).ToList();
                 pick = candidates[WeightedPick.PickIndex(weights, rng)];
             }
 
@@ -253,6 +256,44 @@ public static class DeckGen
         }
 
         return new DeckRep(shape, names);
+    }
+
+    /// <summary>锚定生成时使用：协同得分以锚定物品的上游/下游/邻居先验为主。</summary>
+    private static double CandidateWeightAnchored(
+        int size,
+        string candidate,
+        IReadOnlyList<string> selected,
+        Priors priors,
+        IItemTemplateResolver db,
+        double pairLambda,
+        Config config,
+        double annealT,
+        bool itemOnly,
+        ItemTemplate anchorTemplate,
+        int anchorSlotIndex,
+        int fillingSlotIndex)
+    {
+        double itemW = priors.ItemWeight(size, candidate);
+        if (itemOnly)
+            return Math.Max(1e-6, itemW);
+
+        double w = itemW;
+
+        if (selected.Count == 0 || pairLambda <= 0)
+            return Math.Max(1e-6, w);
+
+        var clip = Math.Max(1.0, config.PriorsSignalClip);
+        var pairEff = Math.Max(0.0, pairLambda * (0.3 + 0.7 * annealT));
+
+        double sum = 0;
+        foreach (var other in selected)
+            sum += priors.PairWeight(candidate, other);
+        w += pairEff * (sum / clip);
+
+        var candidateTemplate = db.GetTemplate(candidate);
+        w += SynergyScorer.ScoreFromAnchorPerspective(anchorTemplate, anchorSlotIndex, fillingSlotIndex, candidateTemplate, db);
+
+        return Math.Max(1e-6, w);
     }
 
     private static double CandidateWeight(

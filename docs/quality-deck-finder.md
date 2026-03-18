@@ -29,7 +29,7 @@ cd src/BazaarArena.QualityDeckFinder/bin/Debug/net10.0-windows
 主循环为**虚拟赛季**，每赛季步骤：
 
 1. **代表选择**：每物品在锚定玩家中按权重（ELO/温度 + 探索）选一名代表；本季活跃玩家 = 所有强度玩家 + 这些代表对应的锚定玩家。
-2. **匹配赛**：每个活跃玩家从同段/邻段抽对手，打对局直至达到「单赛季对局上限」或「单赛季失败次数上限」；支持多 worker 并行跑局，阶段结束后**单线程**按结果更新池。
+2. **匹配赛**：每个活跃玩家从**历史玩家池**与**本季其他虚拟玩家当前卡组**中按同段/邻段随机抽选对手，打对局直至达到「单赛季对局上限」或「单赛季失败次数上限」；池在段满踢人时不会踢出任何虚拟玩家当前卡组，保证可匹配集合完整。支持多 worker 并行跑局，阶段结束后**单线程**按结果更新池。
 3. **卡组优化**：每个活跃玩家做邻域爬山；若找到更优卡组则切换并本季不再优化；强度玩家同卡组合并为一。
 4. **赛季结束**：当前所有虚拟玩家卡组确保在池中；段满时按与同段相似度踢出。
 5. **放弃**：长期无改进的强度玩家移出列表（卡组留池）；长期无改进的锚定玩家用含该物品的随机卡组重启。
@@ -52,6 +52,7 @@ cd src/BazaarArena.QualityDeckFinder/bin/Debug/net10.0-windows
 | `--segment-cap <n>` | 每个 ELO 分段的最大卡组数量 | 50 |
 | `--games-per-eval <n>` | 每次评估时与对手的对战场数（量级） | 5 |
 | `--max-climb-steps <n>` | 单次爬山最大步数 | 500 |
+| `--restarts-per-shape <n>` | 每形状重启次数（内部/预留） | 5 |
 | `--neighbor-sample <n>` | 邻域采样时每步最多评估的邻居数 | 80 |
 | `--mab-budget <n>` | MAB 模式下每步最多评估的邻居数 | 30 |
 | `--inner-wars <n>` | 内战：每次比较的对局数 | 3 |
@@ -81,6 +82,7 @@ cd src/BazaarArena.QualityDeckFinder/bin/Debug/net10.0-windows
 | `--inject-count <n>` | 每次注入最多尝试加入的随机强度玩家数量 | 1 |
 | `--abandon-threshold <n>` | 连续 n 赛季无改进则放弃（强度移出/锚定重启）；0 表示不放弃 | 15 |
 | `--workers <n>` | 匹配赛阶段并行 worker 数；0 表示仅主线程 | 0 |
+| `--max-seasons <n>` | 最多运行 n 个虚拟赛季后退出并保存；0 表示不限制 | 0 |
 
 示例：
 
@@ -93,6 +95,15 @@ dotnet run --project src/BazaarArena.QualityDeckFinder/BazaarArena.QualityDeckFi
 
 # 从已保存的状态继续
 dotnet run --project src/BazaarArena.QualityDeckFinder/BazaarArena.QualityDeckFinder.csproj -- --resume quality_deck_state.json
+
+# 小规模测试：仅跑 10 个赛季后退出并保存到指定文件
+dotnet run --project src/BazaarArena.QualityDeckFinder/BazaarArena.QualityDeckFinder.csproj -- --max-seasons 10 --state quality_deck_test_10.json --top-interval 5
+```
+
+**根据保存的元数据检查探测效果**：运行结束后可用脚本查看状态摘要与 Top 卡组：
+
+```bash
+python scripts/inspect_quality_deck_state.py quality_deck_test_10.json
 ```
 
 ---
@@ -140,7 +151,7 @@ dotnet run --project src/BazaarArena.QualityDeckFinder/BazaarArena.QualityDeckFi
 - **等级**：固定为 2（6 槽点）。
 - **物品池**：海盗（Vanessa）最新版、铜级；卡组内不允许重复使用同一物品。带 **OverridableAttributes** 的物品进战时可复写属性设为 Bronze 档默认值的一半。
 - **形状与次序**：7 种尺寸组成；槽位顺序在同组成下随机化。邻域为「同尺寸替换」+「任意两槽交换」。卡组优化时邻域与排列打分采用**物品声明的上游/下游/邻居协同先验**（无 MechanicTagger）。
-- **段满踢出**：某段达到容量上限时，新卡组若加入则踢出该段内与同段最相似且 ELO 低于新卡组者，以保护多样性。
+- **段满踢出**：某段达到容量上限时，新卡组若加入则踢出该段内与同段最相似且 ELO 低于新卡组者，以保护多样性；**当前被锚定/强度玩家使用的卡组不会被踢出**，以保证匹配赛对手来源（历史玩家 + 其他虚拟玩家）完整。
 - **多 worker**：匹配赛阶段可设 `--workers > 0`；对局由多 worker 并行执行，每 worker 只产出对局结果，阶段结束后单线程按顺序更新池，无需对池加锁。
 
 更多算法与设计见 `docs/优质卡组探测器设计文档.md` 与 `implementation-notes` 中相关章节。

@@ -101,6 +101,9 @@ public sealed class Config
     /// <summary>并行 worker 数量；0 表示仅主线程运行（不启用多 worker）。</summary>
     public int Workers { get; set; } = 0;
 
+    /// <summary>最多运行多少个虚拟赛季后退出；0 表示不限制（一直运行）。</summary>
+    public int MaxSeasons { get; set; } = 0;
+
     public static Config Parse(string[] args)
     {
         // 先找 --config，若存在则从 JSON 读取作为基准配置
@@ -249,6 +252,34 @@ public sealed class Config
                     c.AnchoredReportCount = arc;
                     i++;
                     break;
+                case "--representative-temperature" when i + 1 < args.Length && double.TryParse(args[i + 1], out var rtemp):
+                    c.RepresentativeTemperature = rtemp;
+                    i++;
+                    break;
+                case "--representative-explore" when i + 1 < args.Length && double.TryParse(args[i + 1], out var rexp):
+                    c.RepresentativeExploreProb = rexp;
+                    i++;
+                    break;
+                case "--min-games-representative" when i + 1 < args.Length && int.TryParse(args[i + 1], out var mgr):
+                    c.MinGamesForRepresentative = mgr;
+                    i++;
+                    break;
+                case "--season-match-cap" when i + 1 < args.Length && int.TryParse(args[i + 1], out var smc):
+                    c.SeasonMatchCap = smc;
+                    i++;
+                    break;
+                case "--season-loss-cap" when i + 1 < args.Length && int.TryParse(args[i + 1], out var slc):
+                    c.SeasonLossCap = slc;
+                    i++;
+                    break;
+                case "--abandon-threshold" when i + 1 < args.Length && int.TryParse(args[i + 1], out var abt):
+                    c.AbandonSeasonsThreshold = abt;
+                    i++;
+                    break;
+                case "--max-seasons" when i + 1 < args.Length && int.TryParse(args[i + 1], out var ms) && ms >= 0:
+                    c.MaxSeasons = ms;
+                    i++;
+                    break;
             }
         }
         return c;
@@ -299,6 +330,12 @@ public sealed class Config
         cfg.CandidateItemOnlyMixEnd = Math.Clamp(cfg.CandidateItemOnlyMixEnd, 0.0, 1.0);
         cfg.AnchoredMix = Math.Clamp(cfg.AnchoredMix, 0.0, 1.0);
         if (cfg.AnchoredReportCount < 0) cfg.AnchoredReportCount = 12;
+        if (cfg.SeasonMatchCap <= 0) cfg.SeasonMatchCap = 30;
+        if (cfg.SeasonLossCap <= 0) cfg.SeasonLossCap = 10;
+        if (cfg.RepresentativeTemperature <= 0) cfg.RepresentativeTemperature = 100;
+        if (cfg.RepresentativeExploreProb < 0) cfg.RepresentativeExploreProb = 0.10;
+        cfg.RepresentativeExploreProb = Math.Clamp(cfg.RepresentativeExploreProb, 0.0, 1.0);
+        if (cfg.MinGamesForRepresentative < 0) cfg.MinGamesForRepresentative = 0;
         if (cfg.InjectInterval < 0) cfg.InjectInterval = 20;
         if (cfg.InjectCount < 0) cfg.InjectCount = 1;
         if (cfg.AbandonSeasonsThreshold < 0) cfg.AbandonSeasonsThreshold = 15;

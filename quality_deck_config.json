@@ -4,9 +4,7 @@
   "SaveInterval": 10,
 
   "SegmentCap": 50,
-  "SegmentBounds": [1400, 1600, 1800],
-  "SegmentExpandStep": 200,
-  "SegmentExpandMaxBounds": 10,
+  "SegmentBounds": [1600, 1800, 2000, 2200],
 
   "InitialElo": 1500,
   "EloK": 32,
@@ -26,7 +24,6 @@
   "ExploreMix": 0.40,
   "PriorEmaAlpha": 0.04,
   "SynergyPairLambda": 0.25,
-  "SynergyMechanicLambda": 0.10,
 
   "PriorsSignalClip": 200,
   "PriorsUnconfirmedMultiplier": 0.20,
@@ -37,35 +34,20 @@
   "CandidateItemOnlyMixStart": 0.60,
   "CandidateItemOnlyMixEnd": 0.20,
 
+  "RepresentativeTemperature": 100,
+  "RepresentativeExploreProb": 0.10,
+  "MinGamesForRepresentative": 0,
+  "SeasonMatchCap": 30,
+  "SeasonLossCap": 10,
+  "AbandonSeasonsThreshold": 15,
+
   "Workers": 14,
 
   "InjectInterval": 10,
   "InjectCount": 1,
 
-  "RerateIntervalClimbs": 20,
-  "RerateBatchSize": 4,
-  "RerateGamesPerDeck": 8,
-
-  "FastLaneEnabled": true,
-  "FastLaneEloDeltaThreshold": 80,
-
-  "FastLaneIncubateMaxClimbSteps": 1200,
-  "FastLaneIncubateNeighborSampleSize": 140,
-  "FastLaneIncubateMabBudgetPerStep": 80,
-
-  "FastLaneWinrateWindowGames": 12,
-  "FastLaneWinrateThreshold": 0.65,
-  "FastLaneSprintFallbackThreshold": 0.55,
-
-  "FastLaneSprintMaxClimbSteps": 1800,
-  "FastLaneSprintNeighborSampleSize": 180,
-  "FastLaneSprintMabBudgetPerStep": 120,
-
-  "FastLaneSprintOppWeightSeg": 0.60,
-  "FastLaneSprintOppWeightPrev": 0.30,
-  "FastLaneSprintOppWeightNext": 0.10,
-
   "AnchoredMix": 0.20,
-  "AnchoredReportCount": 10
-}
+  "AnchoredReportCount": 10,
 
+  "MaxSeasons": 0
+}
