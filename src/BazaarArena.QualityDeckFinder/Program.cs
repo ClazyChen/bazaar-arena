@@ -27,6 +27,8 @@ VanessaLarge.RegisterAll(db);
 
 var simulator = new SimulatorClass();
 var pool = new ItemPool(db);
+// QDF 特化：启动时预扁平化物品池（Bronze + 50% overrides），避免每局重复扁平化与构造 overrides
+IItemTemplateResolver resolver = new QdfPreflattenedResolver(db, pool);
 
 if (config.ResumePath != null)
 {
@@ -41,12 +43,12 @@ if (config.ResumePath != null)
         Console.WriteLine("错误：加载状态失败");
         return 1;
     }
-    Runner.Run(simulator, db, pool, state, config);
+    Runner.Run(simulator, resolver, pool, state, config);
 }
 else
 {
     var state = new OptimizerState(config);
-    Runner.Run(simulator, db, pool, state, config);
+    Runner.Run(simulator, resolver, pool, state, config);
 }
 
 return 0;

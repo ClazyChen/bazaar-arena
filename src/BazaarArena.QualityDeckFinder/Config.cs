@@ -104,6 +104,9 @@ public sealed class Config
     /// <summary>最多运行多少个虚拟赛季后退出；0 表示不限制（一直运行）。</summary>
     public int MaxSeasons { get; set; } = 0;
 
+    /// <summary>输出性能统计（每赛季各阶段耗时、对局吞吐、并行效率粗略指标）。</summary>
+    public bool Perf { get; set; } = false;
+
     public static Config Parse(string[] args)
     {
         // 先找 --config，若存在则从 JSON 读取作为基准配置
@@ -279,6 +282,9 @@ public sealed class Config
                 case "--max-seasons" when i + 1 < args.Length && int.TryParse(args[i + 1], out var ms) && ms >= 0:
                     c.MaxSeasons = ms;
                     i++;
+                    break;
+                case "--perf":
+                    c.Perf = true;
                     break;
             }
         }

@@ -203,38 +203,56 @@ public static class EloSystem
         double currentEloD = state.TryGetEntry(comboSigD, out var entryD) ? entryD.Elo : config.InitialElo;
         int gamesPlayedByD = 0;
 
+        int workers = Math.Max(0, config.Workers);
+
+        // 先把一次评估需要跑的所有 games 按“原本的顺序”展开成线性列表：
+        // (oppSig0 的 g=0.., oppSig1 的 g=0.., ...)
+        // 然后并行跑出 winners，再按该线性顺序单线程应用 ELO/写池，保持语义不变。
+        var tBuildD0 = System.Diagnostics.Stopwatch.GetTimestamp();
+        var deckD = repD.ToDeck(db);
+        PerfCounters.RecordDeckBuild(System.Diagnostics.Stopwatch.GetTimestamp() - tBuildD0);
+
+        var games = new List<(string oppSig, Deck deckOpp, int swap)>(opponentSignatures.Count * gamesPerOpp);
         foreach (var oppSig in opponentSignatures)
         {
             if (!state.TryGetEntry(oppSig, out var oppEntry)) continue;
             var repOpp = oppEntry.Representative;
-            var deckDO = repD.ToDeck(db);
-            var deckOppO = repOpp.ToDeck(db);
-            double eloOpp = oppEntry.Elo;
+            var tBuild0 = System.Diagnostics.Stopwatch.GetTimestamp();
+            var deckOpp = repOpp.ToDeck(db);
+            PerfCounters.RecordDeckBuild(System.Diagnostics.Stopwatch.GetTimestamp() - tBuild0);
 
             for (int g = 0; g < gamesPerOpp; g++)
+                games.Add((oppSig, deckOpp, Random.Shared.Next(2)));
+        }
+
+        var winners = workers <= 1
+            ? SimulateWinnersSingle(simulator, db, silentSink, deckD, games)
+            : SimulateWinnersParallel(simulator, db, silentSink, deckD, games, workers);
+
+        // 顺序应用（与 games 列表顺序一致）
+        var currentOppElo = new Dictionary<string, double>(StringComparer.Ordinal);
+        for (int i = 0; i < games.Count; i++)
+        {
+            var (oppSig, _, swap) = games[i];
+            if (!currentOppElo.TryGetValue(oppSig, out var eloOpp))
             {
-                int swap = Random.Shared.Next(2);
-                Deck dA, dB;
-                double eloA, eloB;
-                if (swap == 0) { dA = deckDO; dB = deckOppO; eloA = currentEloD; eloB = eloOpp; }
-                else { dA = deckOppO; dB = deckDO; eloA = eloOpp; eloB = currentEloD; }
-
-                int winner = simulator.Run(dA, dB, db, silentSink, BattleLogLevel.None);
-                if (winner >= 0 && swap == 1) winner = 1 - winner;
-                UpdateElo(currentEloD, eloOpp, winner, k, out currentEloD, out eloOpp);
-
-                // 对手可能来自历史池或虚拟玩家池：分别更新存在的池条目
-                if (state.HistoryPool.TryGetValue(oppSig, out var hOpp))
-                    state.HistoryPool[oppSig] = hOpp with { Elo = eloOpp, GameCount = hOpp.GameCount + 1 };
-                if (state.VirtualPlayerPool.TryGetValue(oppSig, out var vOpp))
-                    state.VirtualPlayerPool[oppSig] = vOpp with { Elo = eloOpp, GameCount = vOpp.GameCount + 1 };
-                // 继续使用刚才的 oppEntry 仅用于代表与 eloOpp
-                state.IncrementTotalGames();
-                gamesPlayedByD++;
-
-                // 记录对局（D 视角）：winner=0 表示 D 胜；1 表示 D 负；-1 平局
-                state.RecordMatch(comboSigD, currentEloD, eloOpp, winner);
+                if (!state.TryGetEntry(oppSig, out var oppEntry)) continue;
+                eloOpp = oppEntry.Elo;
+                currentOppElo[oppSig] = eloOpp;
             }
+
+            int winner = winners[i];
+            if (winner >= 0 && swap == 1) winner = 1 - winner;
+            UpdateElo(currentEloD, eloOpp, winner, k, out currentEloD, out eloOpp);
+            currentOppElo[oppSig] = eloOpp;
+
+            if (state.HistoryPool.TryGetValue(oppSig, out var hOpp))
+                state.HistoryPool[oppSig] = hOpp with { Elo = eloOpp, GameCount = hOpp.GameCount + 1 };
+            if (state.VirtualPlayerPool.TryGetValue(oppSig, out var vOpp))
+                state.VirtualPlayerPool[oppSig] = vOpp with { Elo = eloOpp, GameCount = vOpp.GameCount + 1 };
+            state.IncrementTotalGames();
+            gamesPlayedByD++;
+            state.RecordMatch(comboSigD, currentEloD, eloOpp, winner);
         }
 
         // D 的最新 elo 写回虚拟玩家池；并尝试写入历史池（受分段上限限制）
@@ -273,42 +291,109 @@ public static class EloSystem
         int oppCount = Math.Max(1, opps.Count);
         int gamesPerOpp = (int)Math.Ceiling(totalGamesBudget / (double)oppCount);
 
+        int workers = Math.Max(0, config.Workers);
+        var tBuildD0 = System.Diagnostics.Stopwatch.GetTimestamp();
+        var deckD = repD.ToDeck(db);
+        PerfCounters.RecordDeckBuild(System.Diagnostics.Stopwatch.GetTimestamp() - tBuildD0);
+
+        var games = new List<(string oppSig, Deck deckOpp, int swap)>(Math.Max(8, totalGamesBudget));
         foreach (var oppSig in opps)
         {
-            if (gamesPlayedByD >= totalGamesBudget) break;
+            if (games.Count >= totalGamesBudget) break;
             if (!state.TryGetEntry(oppSig, out var oppEntry)) continue;
             var repOpp = oppEntry.Representative;
-            var deckDO = repD.ToDeck(db);
-            var deckOppO = repOpp.ToDeck(db);
-            double eloOpp = oppEntry.Elo;
+            var tBuild0 = System.Diagnostics.Stopwatch.GetTimestamp();
+            var deckOpp = repOpp.ToDeck(db);
+            PerfCounters.RecordDeckBuild(System.Diagnostics.Stopwatch.GetTimestamp() - tBuild0);
 
-            for (int g = 0; g < gamesPerOpp && gamesPlayedByD < totalGamesBudget; g++)
+            int gCap = Math.Min(gamesPerOpp, Math.Max(0, totalGamesBudget - games.Count));
+            for (int g = 0; g < gCap; g++)
+                games.Add((oppSig, deckOpp, rng.Next(2)));
+        }
+
+        var winners = workers <= 1
+            ? SimulateWinnersSingle(simulator, db, silentSink, deckD, games)
+            : SimulateWinnersParallel(simulator, db, silentSink, deckD, games, workers);
+
+        var currentOppElo = new Dictionary<string, double>(StringComparer.Ordinal);
+        for (int i = 0; i < games.Count; i++)
+        {
+            var (oppSig, _, swap) = games[i];
+            if (!currentOppElo.TryGetValue(oppSig, out var eloOpp))
             {
-                int swap = rng.Next(2);
-                Deck dA, dB;
-                double eloA, eloB;
-                if (swap == 0) { dA = deckDO; dB = deckOppO; eloA = currentEloD; eloB = eloOpp; }
-                else { dA = deckOppO; dB = deckDO; eloA = eloOpp; eloB = currentEloD; }
-
-                int winner = simulator.Run(dA, dB, db, silentSink, BattleLogLevel.None);
-                if (winner >= 0 && swap == 1) winner = 1 - winner;
-                UpdateElo(currentEloD, eloOpp, winner, k, out currentEloD, out eloOpp);
-
-                if (state.HistoryPool.TryGetValue(oppSig, out var hOpp))
-                    state.HistoryPool[oppSig] = hOpp with { Elo = eloOpp, GameCount = hOpp.GameCount + 1 };
-                if (state.VirtualPlayerPool.TryGetValue(oppSig, out var vOpp))
-                    state.VirtualPlayerPool[oppSig] = vOpp with { Elo = eloOpp, GameCount = vOpp.GameCount + 1 };
-                state.IncrementTotalGames();
-                gamesPlayedByD++;
-
-                state.RecordMatch(comboSigD, currentEloD, eloOpp, winner);
+                if (!state.TryGetEntry(oppSig, out var oppEntry)) continue;
+                eloOpp = oppEntry.Elo;
+                currentOppElo[oppSig] = eloOpp;
             }
+
+            int winner = winners[i];
+            if (winner >= 0 && swap == 1) winner = 1 - winner;
+            UpdateElo(currentEloD, eloOpp, winner, k, out currentEloD, out eloOpp);
+            currentOppElo[oppSig] = eloOpp;
+
+            if (state.HistoryPool.TryGetValue(oppSig, out var hOpp))
+                state.HistoryPool[oppSig] = hOpp with { Elo = eloOpp, GameCount = hOpp.GameCount + 1 };
+            if (state.VirtualPlayerPool.TryGetValue(oppSig, out var vOpp))
+                state.VirtualPlayerPool[oppSig] = vOpp with { Elo = eloOpp, GameCount = vOpp.GameCount + 1 };
+            state.IncrementTotalGames();
+            gamesPlayedByD++;
+            state.RecordMatch(comboSigD, currentEloD, eloOpp, winner);
         }
 
         int baseGames = GetCumulativeGameCount(state, comboSigD);
         state.VirtualPlayerPool[comboSigD] = new ComboEntry(comboSigD, repD, currentEloD, false, false, baseGames + gamesPlayedByD);
         TryAddToHistoryPool(state, config, comboSigD, repD, currentEloD, gamesPlayedDelta: gamesPlayedByD);
         return currentEloD;
+    }
+
+    private static int[] SimulateWinnersSingle(
+        SimulatorClass simulator,
+        IItemTemplateResolver db,
+        IBattleLogSink silentSink,
+        Deck deckD,
+        List<(string oppSig, Deck deckOpp, int swap)> games)
+    {
+        var winners = new int[games.Count];
+        for (int i = 0; i < games.Count; i++)
+        {
+            var (_, deckOpp, swap) = games[i];
+            Deck dA = swap == 0 ? deckD : deckOpp;
+            Deck dB = swap == 0 ? deckOpp : deckD;
+            var tRun0 = System.Diagnostics.Stopwatch.GetTimestamp();
+            winners[i] = simulator.Run(dA, dB, db, silentSink, BattleLogLevel.None);
+            PerfCounters.RecordBattleRun(System.Diagnostics.Stopwatch.GetTimestamp() - tRun0);
+        }
+        return winners;
+    }
+
+    private static int[] SimulateWinnersParallel(
+        SimulatorClass simulator,
+        IItemTemplateResolver db,
+        IBattleLogSink silentSink,
+        Deck deckD,
+        List<(string oppSig, Deck deckOpp, int swap)> games,
+        int workers)
+    {
+        workers = Math.Max(1, workers);
+        var winners = new int[games.Count];
+        var chunks = new List<List<int>>(workers);
+        for (int w = 0; w < workers; w++) chunks.Add(new List<int>());
+        for (int i = 0; i < games.Count; i++) chunks[i % workers].Add(i);
+
+        Parallel.For(0, workers, w =>
+        {
+            foreach (var i in chunks[w])
+            {
+                var (_, deckOpp, swap) = games[i];
+                Deck dA = swap == 0 ? deckD : deckOpp;
+                Deck dB = swap == 0 ? deckOpp : deckD;
+                var tRun0 = System.Diagnostics.Stopwatch.GetTimestamp();
+                winners[i] = simulator.Run(dA, dB, db, silentSink, BattleLogLevel.None);
+                PerfCounters.RecordBattleRun(System.Diagnostics.Stopwatch.GetTimestamp() - tRun0);
+            }
+        });
+
+        return winners;
     }
 
     /// <summary>将组合加入历史池：按 ELO 归段，若段满则踢出该段内与同段最相似（最冗余）且 ELO 低于新组合的一张，以保护多样性。</summary>

@@ -167,7 +167,7 @@ public class BattleSimulator
                         {
                             var auraContext = new BattleAuraContext(side, item, opp);
                             int critRate = item.Template.GetInt(Key.CritRatePercent, item.Tier, 0, auraContext);
-                            if (critRate > 0 && Random.Shared.Next(100) < critRate)
+                            if (critRate > 0 && ThreadLocalRandom.Next100() < critRate)
                             {
                                 isCrit = true;
                                 critDamagePercent = item.Template.GetInt(Key.CritDamagePercent, item.Tier, 200, auraContext);
@@ -264,55 +264,8 @@ public class BattleSimulator
         {
                     var t = resolver.GetTemplate(entry.ItemName);
             if (t == null) return null;
-                    var clone = new ItemTemplate
-            {
-                Name = t.Name,
-                Desc = t.Desc,
-                MinTier = t.MinTier,
-                        Size = t.Size,
-                        Hero = t.Hero,
-                        Tags = [..t.Tags],
-                        Abilities = t.Abilities.Select(a =>
-                        {
-                            var def = new AbilityDefinition
-                            {
-                                TriggerName = a.TriggerName,
-                                Priority = a.Priority,
-                                Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
-                                SourceCondition = Condition.Clone(a.SourceCondition),
-                                InvokeTargetCondition = Condition.Clone(a.InvokeTargetCondition),
-                                TargetCondition = Condition.Clone(a.TargetCondition),
-                                Value = a.Value,
-                                ValueKey = a.ValueKey,
-                                ApplyCritMultiplier = a.ApplyCritMultiplier,
-                                UseSelf = a.UseSelf,
-                                Apply = a.Apply,
-                                EffectLogName = a.EffectLogName,
-                                TargetCountKey = a.TargetCountKey,
-                                Triggers = a.Triggers?.Select(e => new AbilityDefinition.TriggerEntry
-                                {
-                                    TriggerName = e.TriggerName,
-                                    Condition = Condition.Clone(e.Condition),
-                                    SourceCondition = Condition.Clone(e.SourceCondition),
-                                    InvokeTargetCondition = Condition.Clone(e.InvokeTargetCondition),
-                                }).ToList(),
-                            };
-                            def.EnsureTriggersInitializedFromTopLevel();
-                            return def;
-                        }).ToList(),
-                Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), Value = a.Value, Percent = a.Percent }).ToList(),
-            };
-            clone.SetIntsByTier(t.GetIntsByTierSnapshot());
-            // 仅对模板声明为可复写的属性应用 Overrides，避免卡组中多出的键（或旧版序列化）覆盖 Multicast、AmmoCap、Damage 等模板字段导致效果失效
-            if (entry.Overrides != null && t.OverridableAttributes != null)
-            {
-                foreach (var kv in entry.Overrides)
-                {
-                    if (t.OverridableAttributes.ContainsKey(kv.Key))
-                        clone.SetInt(kv.Key, kv.Value);
-                }
-            }
-            side.Items.Add(new BattleItemState(clone, entry.Tier));
+            var battleTemplate = ItemTemplateBattleClone.Create(t, entry.Tier, entry.Overrides);
+            side.Items.Add(new BattleItemState(battleTemplate, entry.Tier));
         }
         return side;
     }
@@ -465,7 +418,6 @@ public class BattleSimulator
                 for (int a = 0; a < abilityOwner.Template.Abilities.Count; a++)
                 {
                     var ab = abilityOwner.Template.Abilities[a];
-                        ab.EnsureTriggersInitializedFromTopLevel();
                         if (ab.Triggers == null || ab.Triggers.Count == 0)
                         {
                             if (ab.TriggerName != triggerName) continue;

@@ -155,3 +155,7 @@ python scripts/inspect_quality_deck_state.py quality_deck_test_10.json
 - **多 worker**：匹配赛阶段可设 `--workers > 0`；对局由多 worker 并行执行，每 worker 只产出对局结果，阶段结束后单线程按顺序更新池，无需对池加锁。
 
 更多算法与设计见 `docs/优质卡组探测器设计文档.md` 与 `implementation-notes` 中相关章节。
+
+## 性能分析与后续优化
+
+若发现“总对局数增长很快但运行时间仍很长 / `--workers` 提升不明显”，可参考性能分析报告：`docs/quality-deck-finder-perf-report.md`。其中包含分阶段耗时拆解、并行效率实测、以及后续优化优先级建议；并提供 `--perf` 的复现方法用于持续观测与回归。

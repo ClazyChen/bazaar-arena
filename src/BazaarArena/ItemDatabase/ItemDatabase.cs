@@ -80,8 +80,23 @@ public class ItemDatabase : IItemTemplateResolver
             foreach (var kv in template.OverridableAttributes)
                 template.SetIntOrByTierByKey(kv.Key, kv.Value);
         }
+        NormalizeAbilities(template);
         EnsureTypeTags(template);
         _templates[template.Name] = template;
+    }
+
+    /// <summary>
+    /// 注册阶段一次性规范化能力触发配置：
+    /// - 补齐主字段 Condition 的默认值（与模拟器一致）
+    /// - 保证 Triggers 非空且首条与主字段一致
+    /// </summary>
+    private static void NormalizeAbilities(ItemTemplate template)
+    {
+        foreach (var a in template.Abilities ?? [])
+        {
+            a.Condition = EnsureTriggerCondition(a.TriggerName, a.Condition);
+            a.SyncPrimaryTriggerEntryFromTopLevel();
+        }
     }
 
     /// <summary>根据 Ability Apply 类型、SameAsSource 光环、可暴击与冷却自动补充类型 Tag 与 Crit/Cooldown。供 Condition 与可暴击判定使用。</summary>
@@ -220,7 +235,7 @@ public class ItemDatabase : IItemTemplateResolver
                         InvokeTargetCondition = Condition.Clone(e.InvokeTargetCondition),
                     }).ToList(),
                 };
-                def.EnsureTriggersInitializedFromTopLevel();
+                def.SyncPrimaryTriggerEntryFromTopLevel();
                 return def;
             })],
             Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), Value = a.Value, Percent = a.Percent }).ToList(),

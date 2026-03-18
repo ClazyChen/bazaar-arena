@@ -18,6 +18,7 @@ public static class Runner
     public static void Run(SimulatorClass simulator, IItemTemplateResolver db, ItemPool pool, OptimizerState state, Config config)
     {
         var rng = state.RngSeed.HasValue ? new Random(state.RngSeed.Value) : new Random();
+        PerfCounters.Enabled = config.Perf;
 
         if ((state.HistoryPool.Count == 0 && state.VirtualPlayerPool.Count == 0) || (state.AnchoredPlayerComboSig.Count == 0 && state.StrengthPlayerComboSigs.Count == 0))
         {
@@ -119,7 +120,12 @@ public static class Runner
     /// <summary>执行一个虚拟赛季：代表选择 → 匹配赛 → 卡组优化 → 赛季结束（入池/注入/合并）。</summary>
     private static void RunSeason(SimulatorClass simulator, IItemTemplateResolver db, ItemPool pool, OptimizerState state, Config config, Random rng)
     {
+        PerfCounters.SeasonBegin(state.TotalGames);
+
+        var t0 = System.Diagnostics.Stopwatch.GetTimestamp();
         var representatives = AnchoredRepresentativeScheduler.SelectRepresentatives(state, config, rng);
+        PerfCounters.AddRepTicks(System.Diagnostics.Stopwatch.GetTimestamp() - t0);
+
         var activeComboSigs = new HashSet<string>(StringComparer.Ordinal);
         foreach (var s in state.StrengthPlayerComboSigs)
             activeComboSigs.Add(s);
@@ -153,6 +159,7 @@ public static class Runner
         Console.WriteLine($"  卡组优化：强度玩家 {state.StrengthPlayerComboSigs.Count}，锚定代表 {representatives.Count}。");
         var strengthIndicesToUpdate = new List<(int index, string newComboSig)>();
         int idx = 0;
+        var strengthStart = System.Diagnostics.Stopwatch.GetTimestamp();
         foreach (var comboSig in state.StrengthPlayerComboSigs.ToList())
         {
             if (!state.VirtualPlayerPool.TryGetValue(comboSig, out var entry)) { idx++; continue; }
@@ -168,6 +175,7 @@ public static class Runner
             }
             idx++;
         }
+        PerfCounters.AddHillClimbStrengthTicks(System.Diagnostics.Stopwatch.GetTimestamp() - strengthStart);
         while (state.StrengthLastImprovedSeason.Count < state.StrengthPlayerComboSigs.Count)
             state.StrengthLastImprovedSeason.Add(0);
         foreach (var pair in strengthIndicesToUpdate)
@@ -179,6 +187,7 @@ public static class Runner
             }
         }
         Console.WriteLine("    强度玩家优化完成。");
+        var anchoredStart = System.Diagnostics.Stopwatch.GetTimestamp();
         foreach (var itemName in representatives.Keys.ToList())
         {
             var key = representatives[itemName];
@@ -197,6 +206,7 @@ public static class Runner
                 EloSystem.TryAddToHistoryPool(state, config, newSig, newRep, newElo);
             }
         }
+        PerfCounters.AddHillClimbAnchoredTicks(System.Diagnostics.Stopwatch.GetTimestamp() - anchoredStart);
         Console.WriteLine("    锚定代表优化完成。");
         var merged = state.StrengthPlayerComboSigs.Distinct(StringComparer.Ordinal).ToList();
         var newLast = new List<int>();
@@ -213,10 +223,13 @@ public static class Runner
         state.StrengthLastImprovedSeason.Clear();
         state.StrengthLastImprovedSeason.AddRange(newLast);
 
+        var abandonInjectStart = System.Diagnostics.Stopwatch.GetTimestamp();
         ApplyAbandon(simulator, db, pool, state, config, rng);
-
         if (config.InjectInterval > 0 && state.CurrentSeason > 0 && state.CurrentSeason % config.InjectInterval == 0)
             InjectStrengthPlayers(simulator, db, pool, state, config, rng);
+        PerfCounters.AddAbandonInjectTicks(System.Diagnostics.Stopwatch.GetTimestamp() - abandonInjectStart);
+
+        PerfCounters.PrintSeasonSummary(state.CurrentSeason + 1, state.TotalGames);
     }
 
     private static void PrintMatchPhasePoolInfo(OptimizerState state, Config config, IReadOnlyDictionary<string, ComboEntry> seasonPool)
@@ -288,7 +301,10 @@ public static class Runner
                 var opps = EloSystem.SelectOpponentSignaturesForSeason(state, config, seasonSigs, isNewDeck: false, elo, Math.Max(1, config.GamesPerEval), rng, excludeComboSig: comboSig, useSegmentNeighborhood: true);
                 opps = opps.Take(Math.Max(1, config.GamesPerEval)).ToList();
                 if (opps.Count == 0) break;
+                var runStart = System.Diagnostics.Stopwatch.GetTimestamp();
                 var (newElo, gamesPlayed, lossDelta) = RunGamesAndCountLosses(comboSig, rep, opps, state, config, simulator, db);
+                PerfCounters.AddMatchRunTicks(System.Diagnostics.Stopwatch.GetTimestamp() - runStart);
+                PerfCounters.AddMatchGames(gamesPlayed);
                 elo = newElo;
                 games += gamesPlayed;
                 losses += lossDelta;
@@ -317,6 +333,7 @@ public static class Runner
         int round = 0;
         while (true)
         {
+            var scheduleStart = System.Diagnostics.Stopwatch.GetTimestamp();
             var schedule = new List<(string comboSigD, string oppSig)>();
             foreach (var comboSig in seasonSigs)
             {
@@ -331,10 +348,19 @@ public static class Runner
                     schedule.Add((comboSig, opp));
             }
             if (schedule.Count == 0) break;
+            PerfCounters.AddMatchScheduleTicks(System.Diagnostics.Stopwatch.GetTimestamp() - scheduleStart);
 
             round++;
+            PerfCounters.AddMatchRound();
+            PerfCounters.AddMatchGames(schedule.Count);
+
+            var runStart = System.Diagnostics.Stopwatch.GetTimestamp();
             var results = RunGamesParallel(schedule, state, config, simulator, db);
+            PerfCounters.AddMatchRunTicks(System.Diagnostics.Stopwatch.GetTimestamp() - runStart);
+
+            var applyStart = System.Diagnostics.Stopwatch.GetTimestamp();
             ApplyMatchResults(state, config, results);
+            PerfCounters.AddMatchApplyTicks(System.Diagnostics.Stopwatch.GetTimestamp() - applyStart);
             int seasonGames = state.TotalGames - gamesAtSeasonStart;
             if (round % 5 == 1 || schedule.Count >= 80)
                 Console.WriteLine($"  匹配赛：第 {round} 轮，本轮 {schedule.Count} 场，本季累计 {seasonGames} 场，总对局 {state.TotalGames}");
@@ -364,13 +390,17 @@ public static class Runner
             {
                 if (!state.TryGetEntry(comboSigD, out var eD) || !state.TryGetEntry(oppSig, out var eOpp))
                     continue;
+                var tBuild0 = System.Diagnostics.Stopwatch.GetTimestamp();
                 var deckD = eD.Representative.ToDeck(db);
                 var deckOpp = eOpp.Representative.ToDeck(db);
+                PerfCounters.RecordDeckBuild(System.Diagnostics.Stopwatch.GetTimestamp() - tBuild0);
                 int swap = Random.Shared.Next(2);
                 Deck dA, dB;
                 if (swap == 0) { dA = deckD; dB = deckOpp; }
                 else { dA = deckOpp; dB = deckD; }
+                var tRun0 = System.Diagnostics.Stopwatch.GetTimestamp();
                 int winner = simulator.Run(dA, dB, db, silentSink, BattleLogLevel.None);
+                PerfCounters.RecordBattleRun(System.Diagnostics.Stopwatch.GetTimestamp() - tRun0);
                 if (winner >= 0 && swap == 1) winner = 1 - winner;
                 results.Add((comboSigD, oppSig, winner));
             }
@@ -394,13 +424,17 @@ public static class Runner
             {
                 if (!state.TryGetEntry(comboSigD, out var eD) || !state.TryGetEntry(oppSig, out var eOpp))
                     continue;
+                var tBuild0 = System.Diagnostics.Stopwatch.GetTimestamp();
                 var deckD = eD.Representative.ToDeck(db);
                 var deckOpp = eOpp.Representative.ToDeck(db);
+                PerfCounters.RecordDeckBuild(System.Diagnostics.Stopwatch.GetTimestamp() - tBuild0);
                 int swap = rnd.Next(2);
                 Deck dA, dB;
                 if (swap == 0) { dA = deckD; dB = deckOpp; }
                 else { dA = deckOpp; dB = deckD; }
+                var tRun0 = System.Diagnostics.Stopwatch.GetTimestamp();
                 int winner = simulator.Run(dA, dB, db, silentSink, BattleLogLevel.None);
+                PerfCounters.RecordBattleRun(System.Diagnostics.Stopwatch.GetTimestamp() - tRun0);
                 if (winner >= 0 && swap == 1) winner = 1 - winner;
                 list.Add((index, winner));
             }
@@ -499,14 +533,18 @@ public static class Runner
         {
             if (!state.TryGetEntry(oppSig, out var oppEntry)) continue;
             var repOpp = oppEntry.Representative;
+            var tBuild0 = System.Diagnostics.Stopwatch.GetTimestamp();
             var deckD = repD.ToDeck(db);
             var deckOpp = repOpp.ToDeck(db);
+            PerfCounters.RecordDeckBuild(System.Diagnostics.Stopwatch.GetTimestamp() - tBuild0);
             double eloOpp = oppEntry.Elo;
             int swap = Random.Shared.Next(2);
             Deck dA, dB;
             if (swap == 0) { dA = deckD; dB = deckOpp; }
             else { dA = deckOpp; dB = deckD; }
+            var tRun0 = System.Diagnostics.Stopwatch.GetTimestamp();
             int winner = simulator.Run(dA, dB, db, silentSink, BattleLogLevel.None);
+            PerfCounters.RecordBattleRun(System.Diagnostics.Stopwatch.GetTimestamp() - tRun0);
             if (winner >= 0 && swap == 1) winner = 1 - winner;
             EloSystem.UpdateElo(elo, eloOpp, winner, k, out elo, out eloOpp);
             if (state.VirtualPlayerPool.TryGetValue(oppSig, out var vOpp))

@@ -98,7 +98,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         if (take <= 0) return [];
         for (int n = 0; n < take; n++)
         {
-            int j = Random.Shared.Next(n, pool.Count);
+            int j = ThreadLocalRandom.Next(n, pool.Count);
             (pool[n], pool[j]) = (pool[j], pool[n]);
         }
         return pool.Take(take).ToList();
@@ -132,7 +132,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         if (take <= 0) return [];
         for (int n = 0; n < take; n++)
         {
-            int j = Random.Shared.Next(n, pool.Count);
+            int j = ThreadLocalRandom.Next(n, pool.Count);
             (pool[n], pool[j]) = (pool[j], pool[n]);
         }
         return pool.Take(take).ToList();

@@ -344,4 +344,9 @@ public class ItemTemplate
     /// <summary>获取按等级扩展属性的只读副本，用于序列化或复制。</summary>
     public IReadOnlyDictionary<string, List<int>> GetIntsByTierSnapshot() =>
         _intsByTier.ToDictionary(kv => kv.Key, kv => new List<int>(kv.Value));
+
+    /// <summary>
+    /// 获取按等级扩展属性的只读视图（不复制）。仅用于高性能遍历键与读取值；调用方不得修改返回的列表内容。
+    /// </summary>
+    internal IReadOnlyDictionary<string, List<int>> GetIntsByTierView() => _intsByTier;
 }

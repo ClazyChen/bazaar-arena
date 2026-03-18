@@ -75,13 +75,6 @@ public class AbilityDefinition
         primary.InvokeTargetCondition = InvokeTargetCondition;
     }
 
-    /// <summary>若尚未初始化 Triggers，则根据主字段创建首条 TriggerEntry；不覆盖已有配置。</summary>
-    internal void EnsureTriggersInitializedFromTopLevel()
-    {
-        if (Triggers != null && Triggers.Count > 0) return;
-        SyncPrimaryTriggerEntryFromTopLevel();
-    }
-
     /// <summary>解析数值：ValueKey 或 defaultKey 对应 template.GetInt；结果为 0 时用 Value。</summary>
     public int ResolveValue(ItemTemplate template, ItemTier tier, string defaultKey)
     {
@@ -155,7 +148,8 @@ public class AbilityDefinition
         Condition? sourceCondition = null,
         Condition? invokeTargetCondition = null)
     {
-        EnsureTriggersInitializedFromTopLevel();
+        // 追加触发配置前，保证 Triggers 已初始化且首条与主字段一致
+        SyncPrimaryTriggerEntryFromTopLevel();
 
         Condition? defaultCond = null;
         if (trigger == Trigger.UseItem)
