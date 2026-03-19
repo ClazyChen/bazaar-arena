@@ -26,14 +26,20 @@ public sealed class OptimizerState
     /// <summary>锚定玩家当前卡组：key = "itemName|shapeIndex"，value = comboSig。</summary>
     public ConcurrentDictionary<string, string> AnchoredPlayerComboSig { get; } = new(StringComparer.Ordinal);
 
-    /// <summary>强度玩家当前卡组列表（每项为一个 comboSig）。仅主线程/赛季步骤内修改。</summary>
-    public List<string> StrengthPlayerComboSigs { get; } = new();
-
-    /// <summary>每个强度玩家上次改进的赛季（与 StrengthPlayerComboSigs 一一对应）；用于放弃判定。</summary>
-    public List<int> StrengthLastImprovedSeason { get; } = new();
+    /// <summary>
+    /// 锚定代表参赛次数：key = anchoredKey（"itemName|shapeIndex"），value = 被选为代表的次数。
+    /// 用于代表采样的公平性加权，避免某形状长期垄断参赛机会。
+    /// </summary>
+    public ConcurrentDictionary<string, int> AnchoredPickCounts { get; } = new(StringComparer.Ordinal);
 
     /// <summary>每个锚定玩家（key）上次改进的赛季；用于放弃判定。</summary>
     public Dictionary<string, int> AnchoredLastImprovedSeason { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// 锚定玩家“实际参赛的赛季计数”（从上次改进/重启起累计）。
+    /// 仅当该锚定玩家在某赛季被选为代表参赛时才 +1；未参赛的赛季不计入放弃阈值。
+    /// </summary>
+    public ConcurrentDictionary<string, int> AnchoredParticipatedSeasonsSinceImproved { get; } = new(StringComparer.Ordinal);
 
     /// <summary>当前赛季编号（用于报告与断点续跑）。</summary>
     public int CurrentSeason { get; set; }

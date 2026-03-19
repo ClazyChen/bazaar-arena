@@ -1,6 +1,6 @@
 namespace BazaarArena.QualityDeckFinder;
 
-/// <summary>按 ELO 输出强度玩家 Top10 与锚定玩家每物品最强卡组（含对局数）。</summary>
+/// <summary>按 ELO 输出全局 Top10（从虚拟池）与锚定玩家每物品最强卡组（含对局数）。</summary>
 public static class Top10Report
 {
     private static int GetCumulativeGameCount(OptimizerState state, string comboSig)
@@ -12,24 +12,19 @@ public static class Top10Report
 
     public static void Print(OptimizerState state)
     {
-        var strengthSig = state.StrengthPlayerComboSigs.Distinct(StringComparer.Ordinal).ToList();
-        var top = strengthSig
-            .Select(sig => state.VirtualPlayerPool.TryGetValue(sig, out var e) ? (sig, e) : (sig, (ComboEntry?)null))
-            .Where(x => x.Item2 != null)
-            .OrderByDescending(x => x.Item2!.Elo)
+        Console.WriteLine();
+        Console.WriteLine("========== Top 10 卡组（虚拟池） ==========");
+        Console.WriteLine($"赛季 {state.CurrentSeason}，总对局 {state.TotalGames}");
+        var top = state.VirtualPlayerPool.Values
+            .OrderByDescending(e => e.Elo)
             .Take(10)
             .ToList();
-
-        Console.WriteLine();
-        Console.WriteLine("========== Top 10 卡组（强度玩家） ==========");
-        Console.WriteLine($"赛季 {state.CurrentSeason}，总对局 {state.TotalGames}");
         for (int i = 0; i < top.Count; i++)
         {
-            var sig = top[i].sig;
-            var e = top[i].Item2!;
+            var e = top[i];
             var counts = ComboSignature.ShapeCounts(e.Representative.Shape);
             var itemsStr = string.Join(", ", e.Representative.ItemNames);
-            var games = GetCumulativeGameCount(state, sig);
+            var games = GetCumulativeGameCount(state, e.ComboSig);
             Console.WriteLine($"  {i + 1}. ELO {e.Elo:F0}  对局数 {games}  形状({counts.small},{counts.medium},{counts.large})  {itemsStr}");
         }
         Console.WriteLine("==============================================");

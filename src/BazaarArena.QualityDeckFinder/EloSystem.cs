@@ -39,6 +39,173 @@ public static class EloSystem
         }
         return sum;
     }
+
+    /// <summary>
+    /// 赛季末重建历史池：对「历史池 + 虚拟玩家池」并集按当前 ELO 重新分段，并在每段位内做上限裁剪以维持容量有效。
+    /// 裁剪策略：先按 ELO 取 TopK（K=cap*5）降低成本，再用 ELO - λ*平均相似度（同段 Jaccard）做 greedy 剔除直到 cap。
+    /// </summary>
+    public static void RebuildHistoryPoolAtSeasonEnd(OptimizerState state, Config config)
+    {
+        int cap = Math.Max(1, config.SegmentCap);
+
+        // 并集快照：优先使用虚拟池代表（更“新鲜”），并合并 GameCount/标记。
+        var union = new Dictionary<string, ComboEntry>(StringComparer.Ordinal);
+        foreach (var kv in state.HistoryPool)
+            union[kv.Key] = kv.Value;
+        foreach (var kv in state.VirtualPlayerPool)
+        {
+            if (union.TryGetValue(kv.Key, out var ex))
+            {
+                var v = kv.Value;
+                union[kv.Key] = ex with
+                {
+                    Representative = v.Representative,
+                    Elo = v.Elo,
+                    IsLocalOptimum = ex.IsLocalOptimum || v.IsLocalOptimum,
+                    IsConfirmed = ex.IsConfirmed || v.IsConfirmed,
+                    GameCount = Math.Max(ex.GameCount, v.GameCount),
+                };
+            }
+            else
+            {
+                union[kv.Key] = kv.Value;
+            }
+        }
+
+        int maxSeg;
+        lock (config.SegmentBoundsLock)
+        {
+            maxSeg = config.SegmentBounds.Count;
+        }
+
+        var bySeg = new Dictionary<int, List<ComboEntry>>();
+        foreach (var e in union.Values)
+        {
+            int s = state.SegmentIndex(e.Elo);
+            if (!bySeg.TryGetValue(s, out var list))
+            {
+                list = new List<ComboEntry>();
+                bySeg[s] = list;
+            }
+            list.Add(e);
+        }
+
+        var nextHistory = new Dictionary<string, ComboEntry>(StringComparer.Ordinal);
+        for (int s = 0; s <= maxSeg; s++)
+        {
+            if (!bySeg.TryGetValue(s, out var list) || list.Count == 0)
+                continue;
+
+            if (list.Count <= cap)
+            {
+                foreach (var e in list)
+                    nextHistory[e.ComboSig] = e;
+                continue;
+            }
+
+            foreach (var e in PruneSegmentByEloAndDiversity(list, cap))
+                nextHistory[e.ComboSig] = e;
+        }
+
+        lock (state.HistoryPoolSync)
+        {
+            state.HistoryPool.Clear();
+            foreach (var kv in nextHistory)
+                state.HistoryPool[kv.Key] = kv.Value;
+        }
+    }
+
+    private static List<ComboEntry> PruneSegmentByEloAndDiversity(List<ComboEntry> candidates, int cap)
+    {
+        // TopK 截断，避免段内候选过大导致 O(n^2) 爆炸
+        int K = Math.Min(candidates.Count, Math.Max(cap, cap * 5));
+        var top = candidates
+            .OrderByDescending(e => e.Elo)
+            .ThenByDescending(e => e.GameCount)
+            .Take(K)
+            .ToList();
+
+        int n = top.Count;
+        if (n <= cap) return top;
+
+        // 预构建集合用于 Jaccard，相似度矩阵与相似度和（用于动态更新平均相似度）
+        var sets = new List<HashSet<string>>(n);
+        for (int i = 0; i < n; i++)
+            sets.Add(new HashSet<string>(top[i].Representative.ItemNames, StringComparer.Ordinal));
+
+        var sim = new double[n, n];
+        var sumSim = new double[n];
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = i + 1; j < n; j++)
+            {
+                double s = Jaccard(sets[i], sets[j]);
+                sim[i, j] = s;
+                sim[j, i] = s;
+                sumSim[i] += s;
+                sumSim[j] += s;
+            }
+        }
+
+        double minElo = top.Min(e => e.Elo);
+        double maxElo = top.Max(e => e.Elo);
+        double eloSpan = Math.Max(1e-6, maxElo - minElo);
+        double NormElo(double elo) => (elo - minElo) / eloSpan; // 0~1
+
+        // λ：多样性惩罚系数（先常数，后续可考虑做配置）
+        const double lambda = 0.8;
+
+        var alive = new bool[n];
+        for (int i = 0; i < n; i++) alive[i] = true;
+        int aliveCount = n;
+
+        // greedy：每次剔除综合分最低者，并更新其余项的 sumSim
+        while (aliveCount > cap)
+        {
+            int remove = -1;
+            double worstScore = double.PositiveInfinity;
+            for (int i = 0; i < n; i++)
+            {
+                if (!alive[i]) continue;
+                double avgSim = aliveCount <= 1 ? 0.0 : (sumSim[i] / (aliveCount - 1));
+                double score = NormElo(top[i].Elo) - lambda * avgSim;
+                if (score < worstScore)
+                {
+                    worstScore = score;
+                    remove = i;
+                }
+            }
+
+            if (remove < 0) break;
+            alive[remove] = false;
+            aliveCount--;
+            for (int j = 0; j < n; j++)
+            {
+                if (!alive[j]) continue;
+                sumSim[j] -= sim[j, remove];
+            }
+        }
+
+        var kept = new List<ComboEntry>(cap);
+        for (int i = 0; i < n; i++)
+            if (alive[i])
+                kept.Add(top[i]);
+
+        // 可能因为浮点/极端情况 kept 超 cap，补一层硬截断
+        return kept
+            .OrderByDescending(e => e.Elo)
+            .ThenByDescending(e => e.GameCount)
+            .Take(cap)
+            .ToList();
+    }
+
+    private static double Jaccard(HashSet<string> a, HashSet<string> b)
+    {
+        if (a.Count == 0 && b.Count == 0) return 0;
+        int cap = a.Intersect(b).Count();
+        int cup = a.Union(b).Count();
+        return cup == 0 ? 0 : (double)cap / cup;
+    }
     /// <summary>计算 ELO 期望得分：己方 eloA 对 己方 eloB 的期望得分（0~1）。</summary>
     public static double ExpectedScore(double eloA, double eloB)
     {
@@ -415,7 +582,9 @@ public static class EloSystem
         return winners;
     }
 
-    /// <summary>将组合加入历史池：按 ELO 归段，若段满则踢出该段内与同段最相似（最冗余）且 ELO 低于新组合的一张，以保护多样性。</summary>
+    /// <summary>
+    /// 将组合加入历史池：仅负责写入/更新（赛季末会统一按段位上限重建历史池）。
+    /// </summary>
     public static void TryAddToHistoryPool(
         OptimizerState state,
         Config config,
@@ -428,8 +597,6 @@ public static class EloSystem
     {
         lock (state.HistoryPoolSync)
         {
-            var segmentIndex = state.SegmentIndex(elo);
-            var inSegment = state.SignaturesInSegment(state.HistoryPool, segmentIndex);
             if (state.HistoryPool.TryGetValue(comboSig, out var existing))
             {
                 state.HistoryPool[comboSig] = existing with
@@ -441,35 +608,6 @@ public static class EloSystem
                     GameCount = existing.GameCount + Math.Max(0, gamesPlayedDelta),
                 };
                 return;
-            }
-            if (inSegment.Count >= config.SegmentCap)
-            {
-                var protectedSigs = new HashSet<string>(StringComparer.Ordinal);
-                foreach (var sig in state.AnchoredPlayerComboSig.Values)
-                    protectedSigs.Add(sig);
-                foreach (var sig in state.StrengthPlayerComboSigs)
-                    protectedSigs.Add(sig);
-                var candidates = inSegment.Where(s => state.HistoryPool.TryGetValue(s, out var e) && e.Elo < elo && !protectedSigs.Contains(s)).ToList();
-                if (candidates.Count == 0)
-                    return;
-                string? kickSig = null;
-                double bestRedundancy = double.MinValue;
-                double kickElo = double.MaxValue;
-                foreach (var s in candidates)
-                {
-                    var redundancy = RedundancyInSegment(s, inSegment, state);
-                    var candidateElo = state.HistoryPool[s].Elo;
-                    if (redundancy > bestRedundancy || (redundancy == bestRedundancy && candidateElo < kickElo))
-                    {
-                        bestRedundancy = redundancy;
-                        kickSig = s;
-                        kickElo = candidateElo;
-                    }
-                }
-                if (kickSig != null)
-                    state.HistoryPool.TryRemove(kickSig, out _);
-                else
-                    return;
             }
             state.HistoryPool[comboSig] = new ComboEntry(comboSig, representative, elo, isLocalOptimum, isConfirmed, Math.Max(0, gamesPlayedDelta));
         }

@@ -237,13 +237,9 @@ public static class DeckGen
                     CandidateWeightAnchored(
                         size,
                         n,
-                        selected,
+                        names,
                         priors,
                         db,
-                        pairLambda,
-                        config,
-                        t,
-                        itemOnly,
                         anchorTemplate,
                         anchorPos,
                         i)).ToList();
@@ -262,38 +258,30 @@ public static class DeckGen
     private static double CandidateWeightAnchored(
         int size,
         string candidate,
-        IReadOnlyList<string> selected,
+        IReadOnlyList<string> deckItemNamesBySlot,
         Priors priors,
         IItemTemplateResolver db,
-        double pairLambda,
-        Config config,
-        double annealT,
-        bool itemOnly,
         ItemTemplate anchorTemplate,
         int anchorSlotIndex,
         int fillingSlotIndex)
     {
-        double itemW = priors.ItemWeight(size, candidate);
-        if (itemOnly)
-            return Math.Max(1e-6, itemW);
-
-        double w = itemW;
-
-        if (selected.Count == 0 || pairLambda <= 0)
-            return Math.Max(1e-6, w);
-
-        var clip = Math.Max(1.0, config.PriorsSignalClip);
-        var pairEff = Math.Max(0.0, pairLambda * (0.3 + 0.7 * annealT));
-
-        double sum = 0;
-        foreach (var other in selected)
-            sum += priors.PairWeight(candidate, other);
-        w += pairEff * (sum / clip);
-
+        // 锚定初始化/重启：固定层级权重，不退火
+        double priorW = priors.ItemWeight(size, candidate);
         var candidateTemplate = db.GetTemplate(candidate);
-        w += SynergyScorer.ScoreFromAnchorPerspective(anchorTemplate, anchorSlotIndex, fillingSlotIndex, candidateTemplate, db);
+        if (candidateTemplate == null)
+            return Math.Max(1e-6, priorW);
 
-        return Math.Max(1e-6, w);
+        return Math.Max(
+            1e-6,
+            SynergyScorer.AnchorHierarchyWeight(
+                anchorTemplate,
+                anchorSlotIndex,
+                fillingSlotIndex,
+                candidateTemplate,
+                deckItemNamesBySlot,
+                replacedSlotIndex: fillingSlotIndex,
+                db,
+                priorWeight: priorW));
     }
 
     private static double CandidateWeight(

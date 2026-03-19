@@ -7,6 +7,9 @@ public static class PerfCounters
 {
     public static bool Enabled { get; set; }
 
+    // --- run scoped ---
+    private static long _runStartTimestamp;
+
     // --- season scoped ---
     private static long _seasonStartTimestamp;
     private static int _seasonStartTotalGames;
@@ -52,6 +55,8 @@ public static class PerfCounters
     public static void SeasonBegin(int totalGames)
     {
         if (!Enabled) return;
+        if (Interlocked.Read(ref _runStartTimestamp) == 0)
+            Interlocked.CompareExchange(ref _runStartTimestamp, Stopwatch.GetTimestamp(), 0);
         _seasonStartTimestamp = Stopwatch.GetTimestamp();
         _seasonStartTotalGames = totalGames;
         Interlocked.Increment(ref _seasonId);
@@ -147,6 +152,10 @@ public static class PerfCounters
         int seasonGamesDelta = Math.Max(0, totalGamesEnd - _seasonStartTotalGames);
         double gamesPerSec = seasonElapsedMs <= 0 ? 0 : seasonGamesDelta / (seasonElapsedMs / 1000.0);
 
+        var runStart = Interlocked.Read(ref _runStartTimestamp);
+        var runElapsedMs = runStart == 0 ? 0.0 : TicksToMs(Stopwatch.GetTimestamp() - runStart);
+        double avgGamesPerSec = runElapsedMs <= 0 ? 0 : totalGamesEnd / (runElapsedMs / 1000.0);
+
         double repMs = TicksToMs(Interlocked.Read(ref _repTicks));
         double matchScheduleMs = TicksToMs(Interlocked.Read(ref _matchScheduleTicks));
         double matchRunMs = TicksToMs(Interlocked.Read(ref _matchRunTicks));
@@ -186,6 +195,8 @@ public static class PerfCounters
         double battleMs = TicksToMs(battleTicks);
         double deckBuildMs = TicksToMs(deckBuildTicks);
 
+        if (runElapsedMs > 0)
+            Console.WriteLine($"[性能] 已运行 {runElapsedMs / 1000.0:F1}s，总对局 {totalGamesEnd}，平均吞吐 {avgGamesPerSec:F2} 局/秒");
         Console.WriteLine($"[性能] 赛季 {seasonNumber1Based} 总耗时 {seasonElapsedMs:F0}ms，对局增量 {seasonGamesDelta}，吞吐 {gamesPerSec:F2} 局/秒");
         Console.WriteLine($"[性能]  代表选择 {repMs:F0}ms");
         Console.WriteLine($"[性能]  匹配赛：轮数 {Interlocked.Read(ref _matchRounds)}，赛程构造 {matchScheduleMs:F0}ms，跑局 {matchRunMs:F0}ms，合并写池 {matchApplyMs:F0}ms，本季匹配局数 {Interlocked.Read(ref _matchGames)}");

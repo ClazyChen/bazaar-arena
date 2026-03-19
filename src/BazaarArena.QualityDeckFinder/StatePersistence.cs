@@ -7,7 +7,7 @@ namespace BazaarArena.QualityDeckFinder;
 
 public static class StatePersistence
 {
-    private const int Version = 7;
+    private const int Version = 8;
     private static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = false,
@@ -50,9 +50,12 @@ public static class StatePersistence
             },
             CurrentSeason = state.CurrentSeason,
             AnchoredPlayers = state.AnchoredPlayerComboSig.Select(kv => new AnchoredPlayerDto { Key = kv.Key, ComboSig = kv.Value }).ToList(),
-            StrengthPlayerComboSigs = state.StrengthPlayerComboSigs.ToList(),
-            StrengthLastImprovedSeason = state.StrengthLastImprovedSeason.ToList(),
+            // 强度玩家机制已移除：为兼容旧版分析脚本/状态结构，仍输出空列表
+            StrengthPlayerComboSigs = [],
+            StrengthLastImprovedSeason = [],
             AnchoredLastImprovedSeason = state.AnchoredLastImprovedSeason.ToDictionary(kv => kv.Key, kv => kv.Value),
+            AnchoredParticipatedSeasonsSinceImproved = state.AnchoredParticipatedSeasonsSinceImproved.ToDictionary(kv => kv.Key, kv => kv.Value),
+            AnchoredPickCounts = state.AnchoredPickCounts.ToDictionary(kv => kv.Key, kv => kv.Value),
             ConfigSnapshot = new ConfigSnapshotDto
             {
                 TopInterval = state.Config.TopInterval,
@@ -175,24 +178,24 @@ public static class StatePersistence
                         state.AnchoredPlayerComboSig[a.Key] = a.ComboSig;
                 }
             }
-            if (dto.StrengthPlayerComboSigs != null)
-            {
-                state.StrengthPlayerComboSigs.Clear();
-                state.StrengthPlayerComboSigs.AddRange(dto.StrengthPlayerComboSigs.Where(s => !string.IsNullOrEmpty(s)));
-            }
-            if (dto.StrengthLastImprovedSeason != null)
-            {
-                state.StrengthLastImprovedSeason.Clear();
-                state.StrengthLastImprovedSeason.AddRange(dto.StrengthLastImprovedSeason);
-            }
             if (dto.AnchoredLastImprovedSeason != null)
             {
                 state.AnchoredLastImprovedSeason.Clear();
                 foreach (var kv in dto.AnchoredLastImprovedSeason)
                     state.AnchoredLastImprovedSeason[kv.Key] = kv.Value;
             }
-            while (state.StrengthLastImprovedSeason.Count < state.StrengthPlayerComboSigs.Count)
-                state.StrengthLastImprovedSeason.Add(0);
+            if (dto.AnchoredParticipatedSeasonsSinceImproved != null)
+            {
+                state.AnchoredParticipatedSeasonsSinceImproved.Clear();
+                foreach (var kv in dto.AnchoredParticipatedSeasonsSinceImproved)
+                    state.AnchoredParticipatedSeasonsSinceImproved[kv.Key] = kv.Value;
+            }
+            if (dto.AnchoredPickCounts != null)
+            {
+                state.AnchoredPickCounts.Clear();
+                foreach (var kv in dto.AnchoredPickCounts)
+                    state.AnchoredPickCounts[kv.Key] = kv.Value;
+            }
 
             if (dto.Priors != null)
             {
@@ -238,22 +241,7 @@ public static class StatePersistence
                 }
             }
 
-            // 恢复后确保所有强度玩家 comboSig 都在虚拟玩家池中，避免 Top10 为空（历史 state 可能漏保存）
-            if (dto.StrengthPlayerComboSigs != null && dto.StrengthPlayerComboSigs.Count > 0 && virtualCombos.Count > 0)
-            {
-                var first = virtualCombos[0];
-                if (first.RepresentativeShape != null && first.RepresentativeItems != null && first.RepresentativeShape.Count == first.RepresentativeItems.Count)
-                {
-                    var placeholderRep = new DeckRep(first.RepresentativeShape, first.RepresentativeItems);
-                    double initialElo = state.Config.InitialElo;
-                    foreach (var sig in state.StrengthPlayerComboSigs)
-                    {
-                        if (string.IsNullOrEmpty(sig)) continue;
-                        if (state.VirtualPlayerPool.ContainsKey(sig)) continue;
-                        state.VirtualPlayerPool[sig] = new ComboEntry(sig, placeholderRep, initialElo, false, false, 0);
-                    }
-                }
-            }
+            // 强度玩家机制已移除：忽略旧状态中的 StrengthPlayerComboSigs/StrengthLastImprovedSeason 字段。
 
             if (dto.ComboStats != null)
             {
@@ -296,6 +284,8 @@ public static class StatePersistence
         public List<string>? StrengthPlayerComboSigs { get; set; }
         public List<int>? StrengthLastImprovedSeason { get; set; }
         public Dictionary<string, int>? AnchoredLastImprovedSeason { get; set; }
+        public Dictionary<string, int>? AnchoredParticipatedSeasonsSinceImproved { get; set; }
+        public Dictionary<string, int>? AnchoredPickCounts { get; set; }
         public SummaryDto? Summary { get; set; }
         public ConfigSnapshotDto? ConfigSnapshot { get; set; }
         public PriorsDto? Priors { get; set; }

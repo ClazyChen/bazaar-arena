@@ -12,7 +12,7 @@ public sealed class Config
     public string StatePath { get; set; } = "quality_deck_state.json";
     public int TopInterval { get; set; } = 10;
     public int SaveInterval { get; set; } = 20;
-    public int SegmentCap { get; set; } = 50;
+    public int SegmentCap { get; set; } = 100;
     public int GamesPerEval { get; set; } = 5;
     public int MaxClimbSteps { get; set; } = 500;
     public int RestartsPerShape { get; set; } = 5;
@@ -90,10 +90,10 @@ public sealed class Config
     /// <summary>单赛季每玩家最大失败次数，超过则提前停止该玩家本季匹配。</summary>
     public int SeasonLossCap { get; set; } = 10;
 
-    /// <summary>每完成 n 个赛季执行一次随机强度玩家注入；0 表示禁用。</summary>
-    public int InjectInterval { get; set; } = 20;
-    /// <summary>每次注入最多尝试加入的随机强度玩家数量。</summary>
-    public int InjectCount { get; set; } = 1;
+    /// <summary>强度玩家注入（已废弃）：保留字段仅为兼容旧配置，实际不再使用。</summary>
+    public int InjectInterval { get; set; } = 0;
+    /// <summary>强度玩家注入（已废弃）：保留字段仅为兼容旧配置，实际不再使用。</summary>
+    public int InjectCount { get; set; } = 0;
 
     /// <summary>连续多少赛季无改进则放弃：强度玩家移出列表（卡组留池），锚定玩家用含该物品的随机卡组重启。0 表示不放弃。</summary>
     public int AbandonSeasonsThreshold { get; set; } = 15;
@@ -106,6 +106,12 @@ public sealed class Config
 
     /// <summary>输出性能统计（每赛季各阶段耗时、对局吞吐、并行效率粗略指标）。</summary>
     public bool Perf { get; set; } = false;
+
+    /// <summary>输出爬山诊断：局部最优判定的证据（按赛季汇总）。</summary>
+    public bool HillClimbDiag { get; set; } = false;
+
+    /// <summary>连续多少轮“本批邻居无改进”才判定为局部最优并重启；1=一轮即判。</summary>
+    public int MinNoImproveRoundsForLocalOptimum { get; set; } = 1;
 
     public static Config Parse(string[] args)
     {
@@ -286,6 +292,13 @@ public sealed class Config
                 case "--perf":
                     c.Perf = true;
                     break;
+                case "--hill-diag":
+                    c.HillClimbDiag = true;
+                    break;
+                case "--min-no-improve-rounds" when i + 1 < args.Length && int.TryParse(args[i + 1], out var mnir) && mnir >= 1:
+                    c.MinNoImproveRoundsForLocalOptimum = mnir;
+                    i++;
+                    break;
             }
         }
         return c;
@@ -345,6 +358,7 @@ public sealed class Config
         if (cfg.InjectInterval < 0) cfg.InjectInterval = 20;
         if (cfg.InjectCount < 0) cfg.InjectCount = 1;
         if (cfg.AbandonSeasonsThreshold < 0) cfg.AbandonSeasonsThreshold = 15;
+        if (cfg.MinNoImproveRoundsForLocalOptimum < 1) cfg.MinNoImproveRoundsForLocalOptimum = 1;
         if (cfg.Workers < 0) cfg.Workers = 0;
 
         return cfg;

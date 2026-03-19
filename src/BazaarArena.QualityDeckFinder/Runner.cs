@@ -20,7 +20,7 @@ public static class Runner
         var rng = state.RngSeed.HasValue ? new Random(state.RngSeed.Value) : new Random();
         PerfCounters.Enabled = config.Perf;
 
-        if ((state.HistoryPool.Count == 0 && state.VirtualPlayerPool.Count == 0) || (state.AnchoredPlayerComboSig.Count == 0 && state.StrengthPlayerComboSigs.Count == 0))
+        if ((state.HistoryPool.Count == 0 && state.VirtualPlayerPool.Count == 0) || state.AnchoredPlayerComboSig.Count == 0)
         {
             SeedPoolWithVirtualPlayers(simulator, db, pool, state, config, rng);
             Console.WriteLine($"[初始化完成] 历史池 {state.HistoryPool.Count}，虚拟玩家池 {state.VirtualPlayerPool.Count}，开始虚拟赛季循环。");
@@ -122,13 +122,18 @@ public static class Runner
     {
         PerfCounters.SeasonBegin(state.TotalGames);
 
+        int localOptRestarts = 0;
+        int abandonRestarts = 0;
+
         var t0 = System.Diagnostics.Stopwatch.GetTimestamp();
         var representatives = AnchoredRepresentativeScheduler.SelectRepresentatives(state, config, rng);
         PerfCounters.AddRepTicks(System.Diagnostics.Stopwatch.GetTimestamp() - t0);
 
+        // 参赛计数：仅当锚定玩家本季被选为代表参赛时才计入，用于“长期不改进放弃”判定。
+        foreach (var anchoredKey in representatives.Values)
+            state.AnchoredParticipatedSeasonsSinceImproved.AddOrUpdate(anchoredKey, 1, (_, v) => v + 1);
+
         var activeComboSigs = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var s in state.StrengthPlayerComboSigs)
-            activeComboSigs.Add(s);
         foreach (var key in representatives.Values)
         {
             if (state.AnchoredPlayerComboSig.TryGetValue(key, out var sig))
@@ -147,6 +152,21 @@ public static class Runner
                 seasonPool[sig] = e;
         }
 
+        // 调试口径：活跃玩家 ELO 分布（用于排查“赛季后活跃玩家全落最低段”）
+        if (seasonPool.Count > 0)
+        {
+            double minElo = double.MaxValue, maxElo = double.MinValue, sumElo = 0;
+            int initialCount = 0;
+            foreach (var e in seasonPool.Values)
+            {
+                minElo = Math.Min(minElo, e.Elo);
+                maxElo = Math.Max(maxElo, e.Elo);
+                sumElo += e.Elo;
+                if (Math.Abs(e.Elo - config.InitialElo) < 0.0001) initialCount++;
+            }
+            Console.WriteLine($"  [调试] 活跃ELO: min={minElo:F1}, max={maxElo:F1}, avg={sumElo / seasonPool.Count:F1}, ==Initial {initialCount}/{seasonPool.Count}");
+        }
+
         // 匹配赛：受 SeasonMatchCap / SeasonLossCap 限制；多 worker 时每轮并行跑局、单线程合并写池
         if (config.Workers > 0)
             RunMatchPhaseParallel(seasonPool, state, config, simulator, db, rng);
@@ -155,52 +175,86 @@ public static class Runner
 
         Console.WriteLine("  匹配赛结束。");
 
-        // 卡组优化：每个活跃玩家尝试一次爬山，若更优则切换并本季不再优化；强度玩家同卡组合并
-        Console.WriteLine($"  卡组优化：强度玩家 {state.StrengthPlayerComboSigs.Count}，锚定代表 {representatives.Count}。");
-        var strengthIndicesToUpdate = new List<(int index, string newComboSig)>();
-        int idx = 0;
-        var strengthStart = System.Diagnostics.Stopwatch.GetTimestamp();
-        foreach (var comboSig in state.StrengthPlayerComboSigs.ToList())
-        {
-            if (!state.VirtualPlayerPool.TryGetValue(comboSig, out var entry)) { idx++; continue; }
-            var (newSig, newRep, isLocalOpt) = HillClimb.Run(comboSig, entry.Representative, state, config, pool, simulator, db, rng, anchorItemName: null);
-            if (string.IsNullOrEmpty(newSig)) { idx++; continue; }
-            var newElo = state.TryGetEntry(newSig, out var ne) ? ne.Elo : config.InitialElo;
-            if (newSig != comboSig && newElo > entry.Elo)
-            {
-                strengthIndicesToUpdate.Add((idx, newSig));
-                int baseGames = GetCumulativeGameCount(state, newSig);
-                state.VirtualPlayerPool[newSig] = new ComboEntry(newSig, newRep, newElo, isLocalOpt, false, baseGames);
-                EloSystem.TryAddToHistoryPool(state, config, newSig, newRep, newElo, isLocalOptimum: isLocalOpt);
-            }
-            idx++;
-        }
-        PerfCounters.AddHillClimbStrengthTicks(System.Diagnostics.Stopwatch.GetTimestamp() - strengthStart);
-        while (state.StrengthLastImprovedSeason.Count < state.StrengthPlayerComboSigs.Count)
-            state.StrengthLastImprovedSeason.Add(0);
-        foreach (var pair in strengthIndicesToUpdate)
-        {
-            if (pair.index < state.StrengthPlayerComboSigs.Count)
-            {
-                state.StrengthPlayerComboSigs[pair.index] = pair.newComboSig;
-                state.StrengthLastImprovedSeason[pair.index] = state.CurrentSeason;
-            }
-        }
-        Console.WriteLine("    强度玩家优化完成。");
+        // 卡组优化：仅锚定代表参与优化
+        Console.WriteLine($"  卡组优化：锚定代表 {representatives.Count}。");
         var anchoredStart = System.Diagnostics.Stopwatch.GetTimestamp();
+        int hillRuns = 0;
+        int hillStopNoNeighbors = 0;
+        int hillStopNoImprove = 0;
+        int hillStopMaxSteps = 0;
+        int hillIterationsSum = 0;
+        int hillNeighborsSampledSum = 0;
+        int hillNeighborsEvaluatedSum = 0;
+        int hillZeroNeighborIterSum = 0;
+        double hillBestDeltaMax = double.NegativeInfinity;
+        double hillBestDeltaSum = 0;
+        int hillFoundImprovementCount = 0;
+        int hillLocalOptButPositiveDeltaCount = 0;
         foreach (var itemName in representatives.Keys.ToList())
         {
             var key = representatives[itemName];
             if (!state.AnchoredPlayerComboSig.TryGetValue(key, out var comboSig)) continue;
             if (!state.VirtualPlayerPool.TryGetValue(comboSig, out var entry)) continue;
             var anchorItem = AnchoredRepresentativeScheduler.ItemNameFromKey(key);
-            var (newSig, newRep, _) = HillClimb.Run(comboSig, entry.Representative, state, config, pool, simulator, db, rng, anchorItemName: anchorItem);
+            string newSig;
+            DeckRep newRep;
+            bool isLocalOptimum;
+            HillClimb.RunDiag diag = default;
+            if (config.HillClimbDiag)
+            {
+                (newSig, newRep, isLocalOptimum, diag) =
+                    HillClimb.RunWithDiag(comboSig, entry.Representative, state, config, pool, simulator, db, rng, anchorItemName: anchorItem);
+            }
+            else
+            {
+                (newSig, newRep, isLocalOptimum) =
+                    HillClimb.Run(comboSig, entry.Representative, state, config, pool, simulator, db, rng, anchorItemName: anchorItem);
+            }
+            if (config.HillClimbDiag)
+            {
+                hillRuns++;
+                hillIterationsSum += diag.Iterations;
+                hillNeighborsSampledSum += diag.TotalNeighborsSampled;
+                hillNeighborsEvaluatedSum += diag.TotalNeighborsEvaluated;
+                hillZeroNeighborIterSum += diag.ZeroNeighborIterations;
+                if (!double.IsNegativeInfinity(diag.BestDeltaEloSeen))
+                {
+                    hillBestDeltaSum += diag.BestDeltaEloSeen;
+                    hillBestDeltaMax = Math.Max(hillBestDeltaMax, diag.BestDeltaEloSeen);
+                }
+                switch (diag.StopReason)
+                {
+                    case HillClimb.StopReason.NoNeighbors: hillStopNoNeighbors++; break;
+                    case HillClimb.StopReason.NoImprovementInSample: hillStopNoImprove++; break;
+                    case HillClimb.StopReason.ReachedMaxSteps: hillStopMaxSteps++; break;
+                }
+                if (!isLocalOptimum) hillFoundImprovementCount++;
+                if (isLocalOptimum && diag.StopReason == HillClimb.StopReason.NoImprovementInSample && diag.BestDeltaEloSeen > 0)
+                    hillLocalOptButPositiveDeltaCount++;
+                if (isLocalOptimum && diag.WhenLocalOpt_NextNotNull && diag.WhenLocalOpt_NextElo > diag.WhenLocalOpt_CurrentElo)
+                    Console.WriteLine($"  [诊断] 判断层异常: next!=null 且 nextElo({diag.WhenLocalOpt_NextElo:F1})>currentElo({diag.WhenLocalOpt_CurrentElo:F1}) 却判局部最优");
+            }
             if (string.IsNullOrEmpty(newSig)) continue;
-            var newElo = state.TryGetEntry(newSig, out var ne) ? ne.Elo : config.InitialElo;
-            if (newSig != comboSig && newElo > entry.Elo)
+
+            // 锚定玩家达到局部最优：停止继续优化，重启该锚定玩家从随机起点继续探索其他路线
+            if (isLocalOptimum)
+            {
+                RestartAnchoredPlayer(simulator, db, pool, state, config, rng, key, itemName);
+                localOptRestarts++;
+                state.AnchoredParticipatedSeasonsSinceImproved[key] = 0;
+                continue;
+            }
+
+            // 采纳新组合时，避免把 ELO 重置到 InitialElo（会导致下一赛季“活跃玩家”段位分布塌缩到最低段）。
+            // 正常情况下 HillClimb 已对候选跑过对局并写回池，这里直接复用其 ELO；
+            // 若极端情况下池里还没有该条目，则继承当前锚定玩家的 ELO，保持赛季间段位连续性。
+            var hasNewEntry = state.TryGetEntry(newSig, out var ne);
+            var newElo = hasNewEntry ? ne.Elo : entry.Elo;
+            if (newSig != comboSig && (!hasNewEntry || newElo > entry.Elo))
             {
                 state.AnchoredPlayerComboSig[key] = newSig;
                 state.AnchoredLastImprovedSeason[key] = state.CurrentSeason;
+                state.AnchoredParticipatedSeasonsSinceImproved[key] = 0;
                 int baseGames = GetCumulativeGameCount(state, newSig);
                 state.VirtualPlayerPool[newSig] = new ComboEntry(newSig, newRep, newElo, false, false, baseGames);
                 EloSystem.TryAddToHistoryPool(state, config, newSig, newRep, newElo);
@@ -208,27 +262,25 @@ public static class Runner
         }
         PerfCounters.AddHillClimbAnchoredTicks(System.Diagnostics.Stopwatch.GetTimestamp() - anchoredStart);
         Console.WriteLine("    锚定代表优化完成。");
-        var merged = state.StrengthPlayerComboSigs.Distinct(StringComparer.Ordinal).ToList();
-        var newLast = new List<int>();
-        foreach (var sig in merged)
+        if (config.HillClimbDiag && hillRuns > 0)
         {
-            int best = 0;
-            for (int i = 0; i < state.StrengthPlayerComboSigs.Count; i++)
-                if (StringComparer.Ordinal.Equals(state.StrengthPlayerComboSigs[i], sig) && i < state.StrengthLastImprovedSeason.Count)
-                    best = Math.Max(best, state.StrengthLastImprovedSeason[i]);
-            newLast.Add(best);
+            Console.WriteLine($"  [诊断] HillClimb: runs={hillRuns}, 找到改进={hillFoundImprovementCount}, stop(noNeighbors/noImprove/maxSteps)={hillStopNoNeighbors}/{hillStopNoImprove}/{hillStopMaxSteps}");
+            Console.WriteLine($"  [诊断] HillClimb: iterAvg={(double)hillIterationsSum / hillRuns:F2}, neighborsSampledAvg={(double)hillNeighborsSampledSum / hillRuns:F1}, neighborsEvalAvg={(double)hillNeighborsEvaluatedSum / hillRuns:F1}, zeroNeighborIterAvg={(double)hillZeroNeighborIterSum / hillRuns:F2}");
+            Console.WriteLine($"  [诊断] HillClimb: bestDeltaEloSeen avg={(hillBestDeltaSum / hillRuns):F1}, max={(double.IsNegativeInfinity(hillBestDeltaMax) ? 0 : hillBestDeltaMax):F1}");
+            if (hillLocalOptButPositiveDeltaCount > 0)
+                Console.WriteLine($"  [诊断] 局部最优但曾见更优邻居(bestDelta>0): {hillLocalOptButPositiveDeltaCount}/{hillRuns} ← 疑似判断层bug");
         }
-        state.StrengthPlayerComboSigs.Clear();
-        state.StrengthPlayerComboSigs.AddRange(merged);
-        state.StrengthLastImprovedSeason.Clear();
-        state.StrengthLastImprovedSeason.AddRange(newLast);
 
         var abandonInjectStart = System.Diagnostics.Stopwatch.GetTimestamp();
-        ApplyAbandon(simulator, db, pool, state, config, rng);
-        if (config.InjectInterval > 0 && state.CurrentSeason > 0 && state.CurrentSeason % config.InjectInterval == 0)
-            InjectStrengthPlayers(simulator, db, pool, state, config, rng);
+        abandonRestarts = ApplyAbandon(simulator, db, pool, state, config, rng);
         PerfCounters.AddAbandonInjectTicks(System.Diagnostics.Stopwatch.GetTimestamp() - abandonInjectStart);
+        if (abandonRestarts > 0)
+            Console.WriteLine($"  [调试] 放弃重启锚定玩家 {abandonRestarts} 个（ELO 继承，不重置 Initial）");
 
+        // 赛季末重建历史池：对「历史池 + 虚拟玩家池」并集按段位上限裁剪，避免 ELO 漂移后段位堆积失控
+        EloSystem.RebuildHistoryPoolAtSeasonEnd(state, config);
+
+        Console.WriteLine($"  [调试] 重启汇总：局部最优重启 {localOptRestarts}，长期不改进放弃重启 {abandonRestarts}");
         PerfCounters.PrintSeasonSummary(state.CurrentSeason + 1, state.TotalGames);
     }
 
@@ -478,25 +530,17 @@ public static class Runner
         }
     }
 
-    private static void ApplyAbandon(SimulatorClass simulator, IItemTemplateResolver db, ItemPool pool, OptimizerState state, Config config, Random rng)
+    private static int ApplyAbandon(SimulatorClass simulator, IItemTemplateResolver db, ItemPool pool, OptimizerState state, Config config, Random rng)
     {
         int threshold = Math.Max(0, config.AbandonSeasonsThreshold);
-        if (threshold == 0) return;
+        if (threshold == 0) return 0;
 
-        for (int i = state.StrengthPlayerComboSigs.Count - 1; i >= 0; i--)
-        {
-            if (i >= state.StrengthLastImprovedSeason.Count) continue;
-            if (state.CurrentSeason - state.StrengthLastImprovedSeason[i] >= threshold)
-            {
-                state.StrengthPlayerComboSigs.RemoveAt(i);
-                state.StrengthLastImprovedSeason.RemoveAt(i);
-            }
-        }
-
+        int changed = 0;
         foreach (var key in state.AnchoredPlayerComboSig.Keys.ToList())
         {
-            int lastImproved = state.AnchoredLastImprovedSeason.GetValueOrDefault(key, 0);
-            if (state.CurrentSeason - lastImproved < threshold) continue;
+            // 放弃判定：按“该锚定玩家实际参赛的赛季数”（未参赛的赛季不计入）
+            int participated = state.AnchoredParticipatedSeasonsSinceImproved.TryGetValue(key, out var p) ? p : 0;
+            if (participated < threshold) continue;
             var itemName = AnchoredRepresentativeScheduler.ItemNameFromKey(key);
             if (string.IsNullOrEmpty(itemName)) continue;
             var shapeIndex = AnchoredRepresentativeScheduler.ShapeIndexFromKey(key);
@@ -506,10 +550,17 @@ public static class Runner
             if (deck == null) continue;
             var comboSig = ComboSignature.FromDeckRep(deck);
             var ensured = RepresentativeSelector.EnsureRepresentative(comboSig, deck, state, config, pool, simulator, db, rng);
-            state.VirtualPlayerPool[comboSig] = new ComboEntry(comboSig, ensured.Representative, config.InitialElo, false, ensured.IsConfirmed, 0);
+            // 放弃重启：继承该锚定玩家当前 ELO，避免赛季间活跃段位分布塌缩到最低段。
+            var oldSig = state.AnchoredPlayerComboSig.TryGetValue(key, out var os) ? os : null;
+            var oldElo = !string.IsNullOrEmpty(oldSig) && state.TryGetEntry(oldSig, out var oe) ? oe.Elo : config.InitialElo;
+            int baseGames = GetCumulativeGameCount(state, comboSig);
+            state.VirtualPlayerPool[comboSig] = new ComboEntry(comboSig, ensured.Representative, oldElo, false, ensured.IsConfirmed, baseGames);
             state.AnchoredPlayerComboSig[key] = comboSig;
             state.AnchoredLastImprovedSeason[key] = state.CurrentSeason;
+            state.AnchoredParticipatedSeasonsSinceImproved[key] = 0;
+            changed++;
         }
+        return changed;
     }
 
     private static (double newElo, int gamesPlayed, int losses) RunGamesAndCountLosses(
@@ -562,7 +613,7 @@ public static class Runner
 
     private static void SeedPoolWithVirtualPlayers(SimulatorClass simulator, IItemTemplateResolver db, ItemPool pool, OptimizerState state, Config config, Random rng)
     {
-        Console.WriteLine("[初始化] 正在生成锚定玩家与强度玩家...");
+        Console.WriteLine("[初始化] 正在生成锚定玩家...");
         var allItems = pool.SmallNames.Concat(pool.MediumNames).Concat(pool.LargeNames).ToList();
         for (int si = 0; si < Shapes.All.Count; si++)
         {
@@ -584,23 +635,10 @@ public static class Runner
                 state.VirtualPlayerPool[comboSig] = new ComboEntry(comboSig, ensured.Representative, config.InitialElo, false, ensured.IsConfirmed, 0);
                 state.AnchoredPlayerComboSig[key] = comboSig;
                 state.AnchoredLastImprovedSeason[key] = 0;
+                state.AnchoredParticipatedSeasonsSinceImproved[key] = 0;
             }
         }
-        for (int k = 0; k < 10; k++)
-        {
-            var shapeIndex = rng.Next(Shapes.All.Count);
-            var shape = Shapes.GetRandomPermutation(shapeIndex, rng);
-            if (!pool.CanBuildNoDuplicate(shape)) continue;
-            var deck = DeckGen.RandomDeckWeightedSynergy(shape, pool, state.Priors, db, rng, config.ExploreMix, config.SynergyPairLambda, config, 0);
-            if (deck == null) continue;
-            var comboSig = ComboSignature.FromDeckRep(deck);
-            if (state.VirtualPlayerPool.ContainsKey(comboSig)) continue;
-            var ensured = RepresentativeSelector.EnsureRepresentative(comboSig, deck, state, config, pool, simulator, db, rng);
-            state.VirtualPlayerPool[comboSig] = new ComboEntry(comboSig, ensured.Representative, config.InitialElo, false, ensured.IsConfirmed, 0);
-            state.StrengthPlayerComboSigs.Add(comboSig);
-            state.StrengthLastImprovedSeason.Add(0);
-        }
-        Console.WriteLine($"  锚定玩家数: {state.AnchoredPlayerComboSig.Count}，强度玩家数: {state.StrengthPlayerComboSigs.Count}");
+        Console.WriteLine($"  锚定玩家数: {state.AnchoredPlayerComboSig.Count}");
         Console.WriteLine("  进行初始对局...");
         foreach (var kv in state.VirtualPlayerPool.ToList())
         {
@@ -611,35 +649,45 @@ public static class Runner
         Console.WriteLine($"  初始对局完成，总对局 {state.TotalGames}。");
     }
 
-    private static void InjectStrengthPlayers(SimulatorClass simulator, IItemTemplateResolver db, ItemPool pool, OptimizerState state, Config config, Random rng)
+    private static void RestartAnchoredPlayer(
+        SimulatorClass simulator,
+        IItemTemplateResolver db,
+        ItemPool pool,
+        OptimizerState state,
+        Config config,
+        Random rng,
+        string anchoredKey,
+        string anchorItemName)
     {
-        int added = 0;
-        int tries = Math.Max(config.InjectCount * 3, 10);
-        for (int t = 0; t < tries && added < config.InjectCount; t++)
-        {
-            var shapeIndex = rng.Next(Shapes.All.Count);
-            var shape = Shapes.GetRandomPermutation(shapeIndex, rng);
-            if (!pool.CanBuildNoDuplicate(shape)) continue;
-            var deck = DeckGen.RandomDeckWeightedSynergy(shape, pool, state.Priors, db, rng, config.ExploreMix, config.SynergyPairLambda, config, state.TotalGames);
-            if (deck == null) continue;
-            var comboSig = ComboSignature.FromDeckRep(deck);
-            if (state.VirtualPlayerPool.ContainsKey(comboSig)) continue;
-            var ensured = RepresentativeSelector.EnsureRepresentative(comboSig, deck, state, config, pool, simulator, db, rng);
-            var opps = EloSystem.SelectOpponentSignatures(state, config, isNewDeck: true, null, Math.Max(1, config.GamesPerEval * 2));
-            if (opps.Count == 0)
-                state.VirtualPlayerPool[comboSig] = new ComboEntry(comboSig, ensured.Representative, config.InitialElo, false, ensured.IsConfirmed, 0);
-            else
-            {
-                var elo = EloSystem.RunGamesAndUpdateElo(comboSig, ensured.Representative, opps, state, config, simulator, db);
-                // 该 comboSig 是新注入强度玩家的“当前卡组”，必须确保在池内以便下一赛季参赛
-                int baseGames = GetCumulativeGameCount(state, comboSig);
-                state.VirtualPlayerPool[comboSig] = new ComboEntry(comboSig, ensured.Representative, elo, false, ensured.IsConfirmed, baseGames);
-                EloSystem.TryAddToHistoryPool(state, config, comboSig, ensured.Representative, elo, isConfirmed: ensured.IsConfirmed);
-            }
-            state.StrengthPlayerComboSigs.Add(comboSig);
-            state.StrengthLastImprovedSeason.Add(state.CurrentSeason);
-            added++;
-        }
+        var shapeIndex = AnchoredRepresentativeScheduler.ShapeIndexFromKey(anchoredKey);
+        var shapePerm = Shapes.GetRandomPermutation(shapeIndex, rng);
+        if (!pool.CanBuildNoDuplicate(shapePerm)) return;
+
+        // TODO(anchor-weighting): 初始化/重启应改为“锚定上/下游优先”的固定层级权重
+        var deck = DeckGen.RandomDeckWeightedSynergyAnchored(
+            shapePerm,
+            pool,
+            state.Priors,
+            db,
+            rng,
+            config.ExploreMix,
+            config.SynergyPairLambda,
+            anchorItemName,
+            config,
+            state.TotalGames);
+        if (deck == null) return;
+
+        var comboSig = ComboSignature.FromDeckRep(deck);
+        var ensured = RepresentativeSelector.EnsureRepresentative(comboSig, deck, state, config, pool, simulator, db, rng);
+        // 重启锚定玩家：继承该锚定玩家当前 ELO，避免下一赛季活跃玩家被大量重置到 InitialElo。
+        var oldSig = state.AnchoredPlayerComboSig.TryGetValue(anchoredKey, out var os) ? os : null;
+        var oldElo = !string.IsNullOrEmpty(oldSig) && state.TryGetEntry(oldSig, out var oe) ? oe.Elo : config.InitialElo;
+        int baseGames = GetCumulativeGameCount(state, comboSig);
+        state.VirtualPlayerPool[comboSig] = new ComboEntry(comboSig, ensured.Representative, oldElo, false, ensured.IsConfirmed, baseGames);
+        state.AnchoredPlayerComboSig[anchoredKey] = comboSig;
+        state.AnchoredLastImprovedSeason[anchoredKey] = state.CurrentSeason;
+        state.AnchoredParticipatedSeasonsSinceImproved[anchoredKey] = 0;
+        state.IncrementTotalRestarts();
     }
 
 }

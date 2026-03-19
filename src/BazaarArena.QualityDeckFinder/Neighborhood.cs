@@ -77,6 +77,8 @@ public static class Neighborhood
         long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
         exploreMix = Math.Clamp(exploreMix, 0.0, 1.0);
         config ??= new Config();
+        // 锚定权重层级不退火：在锚定视角下，协同优先级固定，prior 仅作为最后 tie-break。
+        // 非锚定模式仍可继续沿用旧的退火逻辑（当前 QDF 已改为锚定-only，因此基本走锚定分支）。
         var t = Math.Clamp(totalGames / (double)Math.Max(1, config.PriorsAnnealGames), 0.0, 1.0);
         var clip = Math.Max(1.0, config.PriorsSignalClip);
         var itemOnlyMix = Math.Clamp(
@@ -119,30 +121,36 @@ public static class Neighborhood
 
                 // 权重：单物品权重 + 物品对协同 + 声明协同先验得分（锚定时以锚定视角得分为主）
                 double itemW = priors.ItemWeight(size, name);
-                double comboW = itemW;
-                if (pairLambda > 0)
-                {
-                    double pairSum = 0;
-                    foreach (var other in names)
-                    {
-                        if (other == current) continue;
-                        pairSum += priors.PairWeight(name, other);
-                    }
-                    comboW += pairEff * (pairSum / clip);
-                }
-                if (db != null)
+                double w;
+                if (db != null && anchorTemplate is { } anchor && anchorSlot >= 0)
                 {
                     var templateX = db.GetTemplate(name);
-                    double synergyScore;
-                    if (anchorTemplate is { } anchor && anchorSlot >= 0)
-                        synergyScore = SynergyScorer.ScoreFromAnchorPerspective(anchor, anchorSlot, slot, templateX, db);
+                    if (templateX == null)
+                        w = Math.Max(1e-6, itemW);
                     else
-                        synergyScore = SynergyScorer.Score(templateX, representative, slot, db);
-                    comboW += Math.Max(0, synergyScore);
+                        w = Math.Max(1e-6, SynergyScorer.AnchorHierarchyWeight(anchor, anchorSlot, slot, templateX, names, replacedSlotIndex: slot, db, priorWeight: itemW));
                 }
-
-                // 与单物品模式做混合（退火）：早期更接近 itemW，后期更接近 comboW。
-                var w = Math.Max(1e-6, (1.0 - itemOnlyMix) * comboW + itemOnlyMix * itemW);
+                else
+                {
+                    // 非锚定：保留原有退火混合（兼容）
+                    double comboW = itemW;
+                    if (pairLambda > 0)
+                    {
+                        double pairSum = 0;
+                        foreach (var other in names)
+                        {
+                            if (other == current) continue;
+                            pairSum += priors.PairWeight(name, other);
+                        }
+                        comboW += pairEff * (pairSum / clip);
+                    }
+                    if (db != null)
+                    {
+                        var templateX = db.GetTemplate(name);
+                        comboW += Math.Max(0, SynergyScorer.Score(templateX, representative, slot, db));
+                    }
+                    w = Math.Max(1e-6, (1.0 - itemOnlyMix) * comboW + itemOnlyMix * itemW);
+                }
                 if (!best.TryGetValue(comboSig, out var ex) || w > ex.w)
                     best[comboSig] = (seed, w);
             }

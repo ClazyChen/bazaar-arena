@@ -142,6 +142,76 @@ public static class SynergyScorer
         return score;
     }
 
+    /// <summary>
+    /// 锚定权重（固定层级、不退火）：
+    /// 1) 候选满足锚定物品的上游/下游/邻居要求（最高优先级）
+    /// 2) 候选的上游/下游/邻居要求能被锚定物品满足（次高）
+    /// 3) 候选与锚定以外的其它物品存在上游/下游/邻居关系（再次）
+    /// 4) prior（最后）
+    /// </summary>
+    public static double AnchorHierarchyWeight(
+        ItemTemplate anchorTemplate,
+        int anchorSlotIndex,
+        int candidateSlotIndex,
+        ItemTemplate candidateTemplate,
+        IReadOnlyList<string> deckItemNames,
+        int replacedSlotIndex,
+        IItemTemplateResolver db,
+        double priorWeight)
+    {
+        int layer1 = CountSatisfy(anchorTemplate, anchorSlotIndex, candidateTemplate, candidateSlotIndex);
+        int layer2 = CountSatisfy(candidateTemplate, candidateSlotIndex, anchorTemplate, anchorSlotIndex);
+
+        int layer3 = 0;
+        for (int i = 0; i < deckItemNames.Count; i++)
+        {
+            if (i == anchorSlotIndex) continue;
+            if (i == replacedSlotIndex) continue;
+            if (i == candidateSlotIndex) continue;
+            var other = db.GetTemplate(deckItemNames[i]);
+            if (other == null) continue;
+            layer3 += CountSatisfy(other, i, candidateTemplate, candidateSlotIndex);
+            layer3 += CountSatisfy(candidateTemplate, candidateSlotIndex, other, i);
+        }
+
+        // 层级分离：保证 layer1 >> layer2 >> layer3 >> prior
+        // priorWeight 仍然作为最后的 tie-break（通常很小）
+        return 1_000_000.0 * layer1 + 10_000.0 * layer2 + 100.0 * layer3 + Math.Max(0.0, priorWeight);
+    }
+
+    private static int CountSatisfy(ItemTemplate requiring, int requiringSlotIndex, ItemTemplate other, int otherSlotIndex)
+    {
+        if (requiringSlotIndex == otherSlotIndex) return 0;
+
+        bool otherLeft = otherSlotIndex < requiringSlotIndex;
+        bool otherRight = otherSlotIndex > requiringSlotIndex;
+        bool isNeighbor = Math.Abs(otherSlotIndex - requiringSlotIndex) == 1;
+        int score = 0;
+
+        if (requiring.UpstreamRequirements != null)
+        {
+            foreach (var clause in requiring.UpstreamRequirements)
+            {
+                if (!CandidateInDirectionForClause(otherLeft, otherRight, clause)) continue;
+                if (SatisfiesClause(other, clause)) score++;
+            }
+        }
+        if (requiring.DownstreamRequirements != null)
+        {
+            foreach (var clause in requiring.DownstreamRequirements)
+            {
+                if (!CandidateInDirectionForClause(otherLeft, otherRight, clause)) continue;
+                if (SatisfiesClause(other, clause)) score++;
+            }
+        }
+        if (isNeighbor && requiring.NeighborPreference != null && requiring.NeighborPreference.Count > 0)
+        {
+            if (SatisfiesAnyClause(other, requiring.NeighborPreference))
+                score++;
+        }
+        return score;
+    }
+
     /// <summary>候选在锚定左侧/右侧是否满足子句方向要求。</summary>
     private static bool CandidateInDirectionForClause(bool leftOfAnchor, bool rightOfAnchor, SynergyClause clause)
     {

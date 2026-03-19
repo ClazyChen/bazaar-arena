@@ -32,9 +32,10 @@ cd src/BazaarArena.QualityDeckFinder/bin/Debug/net10.0-windows
 2. **匹配赛**：每个活跃玩家从**历史玩家池**与**本季其他虚拟玩家当前卡组**中按同段/邻段随机抽选对手，打对局直至达到「单赛季对局上限」或「单赛季失败次数上限」；池在段满踢人时不会踢出任何虚拟玩家当前卡组，保证可匹配集合完整。支持多 worker 并行跑局，阶段结束后**单线程**按结果更新池。
 3. **卡组优化**：每个活跃玩家做邻域爬山；若找到更优卡组则切换并本季不再优化；强度玩家同卡组合并为一。
 4. **赛季结束**：当前所有虚拟玩家卡组确保在池中；段满时按与同段相似度踢出。
-5. **放弃**：长期无改进的强度玩家移出列表（卡组留池）；长期无改进的锚定玩家用含该物品的随机卡组重启。
-6. **注入**：每 N 个赛季注入若干新强度玩家（随机卡组 + 初始对局）。
-7. **报告/保存**：按 `TopInterval`/`SaveInterval` 输出 Top10、锚定样本并保存状态。
+5. **放弃**：锚定玩家按**实际参赛的赛季数**累计无改进，达到阈值则用含该物品的随机卡组重启（ELO 继承，不重置为 InitialElo）；未参赛的赛季不计入。
+6. **报告/保存**：按 `TopInterval`/`SaveInterval` 输出 Top10、锚定样本并保存状态。
+
+> 强度玩家注入等旧机制若配置为 0 则已不参与主循环；以 `Runner.cs` 与 `Config` 为准。
 
 卡组优化采用**物品声明的上游/下游/邻居协同先验**（`ItemTemplate` 的 `UpstreamRequirements`、`DownstreamRequirements`、`NeighborPreference`），不再使用机制标签或 MechanicTagger。
 
@@ -80,9 +81,12 @@ cd src/BazaarArena.QualityDeckFinder/bin/Debug/net10.0-windows
 | `--season-loss-cap <n>` | 单赛季每玩家最大失败次数，超过则停止该玩家本季匹配 | 10 |
 | `--inject-interval <n>` | 每完成 n **个赛季**执行一次强度玩家注入；0 表示禁用 | 20 |
 | `--inject-count <n>` | 每次注入最多尝试加入的随机强度玩家数量 | 1 |
-| `--abandon-threshold <n>` | 连续 n 赛季无改进则放弃（强度移出/锚定重启）；0 表示不放弃 | 15 |
+| `--abandon-threshold <n>` | 连续 **n 个实际参赛赛季**无改进则放弃并重启该锚定玩家；0 表示不放弃 | 15 |
 | `--workers <n>` | 匹配赛阶段并行 worker 数；0 表示仅主线程 | 0 |
 | `--max-seasons <n>` | 最多运行 n 个虚拟赛季后退出并保存；0 表示不限制 | 0 |
+| `--perf` | 输出每赛季各阶段耗时与对局吞吐等性能统计 | 关 |
+| `--hill-diag` | 输出每季 HillClimb 诊断（runs、找到改进、stop 分布、bestDelta 等） | 关 |
+| `--min-no-improve-rounds <n>` | 连续 n 轮邻居无改进才在**起点**判局部最优；已前进过则保留改进不重启 | 1 |
 
 示例：
 
@@ -155,6 +159,8 @@ python scripts/inspect_quality_deck_state.py quality_deck_test_10.json
 - **多 worker**：匹配赛阶段可设 `--workers > 0`；对局由多 worker 并行执行，每 worker 只产出对局结果，阶段结束后单线程按顺序更新池，无需对池加锁。
 
 更多算法与设计见 `docs/优质卡组探测器设计文档.md` 与 `implementation-notes` 中相关章节。
+
+**ELO / HillClimb / 局部最优与段位塌缩的排查经验**见 `docs/qdf_hillclimb_diagnosis.md`。
 
 ## 性能分析与后续优化
 
