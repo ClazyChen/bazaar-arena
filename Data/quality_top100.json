@@ -1,0 +1,2383 @@
+{
+  "Source": "D:\\Files\\game-aux\\bazaar\\bazaar-arena\\quality_deck_state.json",
+  "StateVersion": 8,
+  "TopN": 100,
+  "GeneratedFrom": {
+    "VirtualCombosCount": 92516,
+    "HistoryCombosCount": 500
+  },
+  "Decks": [
+    {
+      "Rank": 1,
+      "Elo": 2632.5862154993433,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,海底热泉,燃烧响炮,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "海底热泉",
+        "鹦鹉皮特",
+        "棉鳚",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 3342
+    },
+    {
+      "Rank": 2,
+      "Elo": 2626.2131914962506,
+      "ComboSig": "c=6,0,0|毒须鲶,水母,水草,海螺壳,珊瑚,雪怪蟹",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "珊瑚",
+        "海螺壳",
+        "水母",
+        "雪怪蟹",
+        "毒须鲶",
+        "水草"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 967
+    },
+    {
+      "Rank": 3,
+      "Elo": 2616.176443316396,
+      "ComboSig": "c=4,1,0|棉鳚,海底热泉,燃烧响炮,皮皮虾,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "海底热泉",
+        "棉鳚",
+        "鹦鹉皮特",
+        "皮皮虾"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 2795
+    },
+    {
+      "Rank": 4,
+      "Elo": 2610.6152062786227,
+      "ComboSig": "c=6,0,0|毒须鲶,水母,水草,海螺壳,迷幻蝠鲼,雪怪蟹",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "水草",
+        "海螺壳",
+        "雪怪蟹",
+        "水母",
+        "迷幻蝠鲼",
+        "毒须鲶"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 1259
+    },
+    {
+      "Rank": 5,
+      "Elo": 2604.092992456497,
+      "ComboSig": "c=6,0,0|棉鳚,毒须鲶,水母,水草,海螺壳,雪怪蟹",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "棉鳚",
+        "海螺壳",
+        "水母",
+        "雪怪蟹",
+        "毒须鲶",
+        "水草"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1090
+    },
+    {
+      "Rank": 6,
+      "Elo": 2561.929838189465,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,火炮,燃烧响炮,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "火炮",
+        "鹦鹉皮特",
+        "棉鳚",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 2455
+    },
+    {
+      "Rank": 7,
+      "Elo": 2553.9778540088596,
+      "ComboSig": "c=6,0,0|毒须鲶,水母,水草,海螺壳,雪怪蟹,鱼饵",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "鱼饵",
+        "水母",
+        "雪怪蟹",
+        "毒须鲶",
+        "海螺壳",
+        "水草"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 656
+    },
+    {
+      "Rank": 8,
+      "Elo": 2529.891581222626,
+      "ComboSig": "c=6,0,0|毒须鲶,水母,水草,海螺壳,珍珠,迷幻蝠鲼",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "水草",
+        "海螺壳",
+        "珍珠",
+        "水母",
+        "迷幻蝠鲼",
+        "毒须鲶"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1297
+    },
+    {
+      "Rank": 9,
+      "Elo": 2508.962254314991,
+      "ComboSig": "c=6,0,0|打火机,棉鳚,燃烧响炮,皮皮虾,葡萄弹,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "皮皮虾",
+        "鹦鹉皮特",
+        "棉鳚",
+        "打火机",
+        "葡萄弹"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 982
+    },
+    {
+      "Rank": 10,
+      "Elo": 2499.7898818533863,
+      "ComboSig": "c=4,1,0|刺刀,手斧,淬锋钢,迷你弯刀,鲨齿爪",
+      "RepresentativeShape": [
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "MSSSS",
+      "RepresentativeItems": [
+        "鲨齿爪",
+        "手斧",
+        "淬锋钢",
+        "迷你弯刀",
+        "刺刀"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1773
+    },
+    {
+      "Rank": 11,
+      "Elo": 2492.598731509604,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,水草,海底热泉,燃烧响炮",
+      "RepresentativeShape": [
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "MSSSS",
+      "RepresentativeItems": [
+        "海底热泉",
+        "棉鳚",
+        "水草",
+        "燃烧响炮",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 825
+    },
+    {
+      "Rank": 12,
+      "Elo": 2491.4236900745987,
+      "ComboSig": "c=4,1,0|三花,手斧,迷你弯刀,靴里剑,鲨齿爪",
+      "RepresentativeShape": [
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "MSSSS",
+      "RepresentativeItems": [
+        "鲨齿爪",
+        "靴里剑",
+        "三花",
+        "迷你弯刀",
+        "手斧"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 844
+    },
+    {
+      "Rank": 13,
+      "Elo": 2484.9764087652898,
+      "ComboSig": "c=6,0,0|打火机,棉鳚,毒须鲶,淬锋钢,燃烧响炮,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "打火机",
+        "棉鳚",
+        "鹦鹉皮特",
+        "毒须鲶",
+        "淬锋钢",
+        "燃烧响炮"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1259
+    },
+    {
+      "Rank": 14,
+      "Elo": 2471.637228168334,
+      "ComboSig": "c=6,0,0|打火机,棉鳚,燃烧响炮,皮皮虾,靴里剑,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "靴里剑",
+        "燃烧响炮",
+        "打火机",
+        "棉鳚",
+        "鹦鹉皮特",
+        "皮皮虾"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1110
+    },
+    {
+      "Rank": 15,
+      "Elo": 2470.3356236607547,
+      "ComboSig": "c=6,0,0|三花,手斧,打火机,棉鳚,燃烧响炮,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "手斧",
+        "三花",
+        "鹦鹉皮特",
+        "棉鳚",
+        "打火机",
+        "燃烧响炮"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1502
+    },
+    {
+      "Rank": 16,
+      "Elo": 2468.7592223027923,
+      "ComboSig": "c=6,0,0|毒须鲶,水母,水草,海螺壳,珍珠,雪怪蟹",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "珍珠",
+        "海螺壳",
+        "水母",
+        "雪怪蟹",
+        "毒须鲶",
+        "水草"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 2022
+    },
+    {
+      "Rank": 17,
+      "Elo": 2465.2780081222395,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,海底热泉,燃烧响炮,舱底蠕虫",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        2
+      ],
+      "ShapePattern": "SSSSM",
+      "RepresentativeItems": [
+        "舱底蠕虫",
+        "打火机",
+        "棉鳚",
+        "燃烧响炮",
+        "海底热泉"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 901
+    },
+    {
+      "Rank": 18,
+      "Elo": 2458.5878594789588,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,海底热泉,燃烧响炮,藏刃匕首",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        2,
+        1
+      ],
+      "ShapePattern": "SSSMS",
+      "RepresentativeItems": [
+        "打火机",
+        "棉鳚",
+        "藏刃匕首",
+        "海底热泉",
+        "燃烧响炮"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1180
+    },
+    {
+      "Rank": 19,
+      "Elo": 2453.4139683858352,
+      "ComboSig": "c=6,0,0|打火机,棉鳚,淬锋钢,燃烧响炮,皮皮虾,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "打火机",
+        "棉鳚",
+        "鹦鹉皮特",
+        "皮皮虾",
+        "淬锋钢",
+        "燃烧响炮"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 2085
+    },
+    {
+      "Rank": 20,
+      "Elo": 2452.25673975619,
+      "ComboSig": "c=6,0,0|打火机,棉鳚,燃烧响炮,皮皮虾,舱底蠕虫,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "皮皮虾",
+        "鹦鹉皮特",
+        "棉鳚",
+        "打火机",
+        "舱底蠕虫"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 951
+    },
+    {
+      "Rank": 21,
+      "Elo": 2443.4511848420875,
+      "ComboSig": "c=4,1,0|刺刀,手斧,棉鳚,武士刀,淬锋钢",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        2,
+        1
+      ],
+      "ShapePattern": "SSSMS",
+      "RepresentativeItems": [
+        "手斧",
+        "淬锋钢",
+        "棉鳚",
+        "武士刀",
+        "刺刀"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 754
+    },
+    {
+      "Rank": 22,
+      "Elo": 2442.574948746601,
+      "ComboSig": "c=6,0,0|三花,打火机,棉鳚,淬锋钢,燃烧响炮,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "打火机",
+        "棉鳚",
+        "鹦鹉皮特",
+        "三花",
+        "淬锋钢",
+        "燃烧响炮"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 2015
+    },
+    {
+      "Rank": 23,
+      "Elo": 2430.1800268869933,
+      "ComboSig": "c=6,0,0|打火机,棉鳚,燃烧响炮,靴里剑,食人鱼,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "靴里剑",
+        "燃烧响炮",
+        "打火机",
+        "棉鳚",
+        "鹦鹉皮特",
+        "食人鱼"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 1129
+    },
+    {
+      "Rank": 24,
+      "Elo": 2429.303137575283,
+      "ComboSig": "c=4,1,0|手斧,打火机,棉鳚,海底热泉,燃烧响炮",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "海底热泉",
+        "手斧",
+        "棉鳚",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 748
+    },
+    {
+      "Rank": 25,
+      "Elo": 2423.7097738091884,
+      "ComboSig": "c=4,1,0|木桶,水母,淬锋钢,独角鲸,迷幻蝠鲼",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        2,
+        1
+      ],
+      "ShapePattern": "SSSMS",
+      "RepresentativeItems": [
+        "水母",
+        "迷幻蝠鲼",
+        "独角鲸",
+        "木桶",
+        "淬锋钢"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 943
+    },
+    {
+      "Rank": 26,
+      "Elo": 2417.85277630504,
+      "ComboSig": "c=6,0,0|水草,海螺壳,淬锋钢,独角鲸,珊瑚,鱼饵",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "珊瑚",
+        "海螺壳",
+        "独角鲸",
+        "淬锋钢",
+        "鱼饵",
+        "水草"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1070
+    },
+    {
+      "Rank": 27,
+      "Elo": 2401.6768155462196,
+      "ComboSig": "c=6,0,0|毒须鲶,水母,水草,海螺壳,独角鲸,雪怪蟹",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "独角鲸",
+        "海螺壳",
+        "水母",
+        "雪怪蟹",
+        "毒须鲶",
+        "水草"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 1175
+    },
+    {
+      "Rank": 28,
+      "Elo": 2401.053160920209,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,海底热泉,海螺壳,燃烧响炮",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "海底热泉",
+        "海螺壳",
+        "棉鳚",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 188
+    },
+    {
+      "Rank": 29,
+      "Elo": 2397.8725279249393,
+      "ComboSig": "c=6,0,0|毒须鲶,水母,水草,珊瑚,迷幻蝠鲼,雪怪蟹",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "珊瑚",
+        "迷幻蝠鲼",
+        "水母",
+        "雪怪蟹",
+        "毒须鲶",
+        "水草"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 731
+    },
+    {
+      "Rank": 30,
+      "Elo": 2396.857601955489,
+      "ComboSig": "c=6,0,0|水草,淬锋钢,独角鲸,珊瑚,珍珠,迷幻蝠鲼",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "水草",
+        "迷幻蝠鲼",
+        "独角鲸",
+        "淬锋钢",
+        "珍珠",
+        "珊瑚"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 484
+    },
+    {
+      "Rank": 31,
+      "Elo": 2390.413178591012,
+      "ComboSig": "c=4,1,0|步枪,水草,淬锋钢,火药角,独角鲸",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "SSMSS",
+      "RepresentativeItems": [
+        "淬锋钢",
+        "火药角",
+        "步枪",
+        "独角鲸",
+        "水草"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 946
+    },
+    {
+      "Rank": 32,
+      "Elo": 2388.7950955164406,
+      "ComboSig": "c=6,0,0|棉鳚,毒须鲶,水母,水草,珍珠,雪怪蟹",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "水草",
+        "棉鳚",
+        "毒须鲶",
+        "雪怪蟹",
+        "水母",
+        "珍珠"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 818
+    },
+    {
+      "Rank": 33,
+      "Elo": 2377.2954968800855,
+      "ComboSig": "c=4,1,0|棉鳚,海底热泉,燃烧响炮,雪怪蟹,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        2
+      ],
+      "ShapePattern": "SSSSM",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "雪怪蟹",
+        "鹦鹉皮特",
+        "棉鳚",
+        "海底热泉"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 165
+    },
+    {
+      "Rank": 34,
+      "Elo": 2372.9295349578074,
+      "ComboSig": "c=4,1,0|手斧,淬锋钢,迷你弯刀,靴里剑,鲨齿爪",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "SSMSS",
+      "RepresentativeItems": [
+        "靴里剑",
+        "淬锋钢",
+        "鲨齿爪",
+        "手斧",
+        "迷你弯刀"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 723
+    },
+    {
+      "Rank": 35,
+      "Elo": 2360.2564102722677,
+      "ComboSig": "c=4,1,0|刺刀,手斧,藏刃匕首,迷你弯刀,鲨齿爪",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "藏刃匕首",
+        "鲨齿爪",
+        "手斧",
+        "迷你弯刀",
+        "刺刀"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 1446
+    },
+    {
+      "Rank": 36,
+      "Elo": 2358.054688771057,
+      "ComboSig": "c=4,1,0|步枪,淬锋钢,火药角,珊瑚,舱底蠕虫",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "SSMSS",
+      "RepresentativeItems": [
+        "淬锋钢",
+        "火药角",
+        "步枪",
+        "珊瑚",
+        "舱底蠕虫"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 1202
+    },
+    {
+      "Rank": 37,
+      "Elo": 2355.334126408171,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,水草,海底热泉,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "水草",
+        "海底热泉",
+        "鹦鹉皮特",
+        "棉鳚",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 487
+    },
+    {
+      "Rank": 38,
+      "Elo": 2353.835306677824,
+      "ComboSig": "c=4,1,0|步枪,淬锋钢,火药角,珊瑚,葡萄弹",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "SSMSS",
+      "RepresentativeItems": [
+        "淬锋钢",
+        "火药角",
+        "步枪",
+        "葡萄弹",
+        "珊瑚"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 651
+    },
+    {
+      "Rank": 39,
+      "Elo": 2352.717116861528,
+      "ComboSig": "c=4,1,0|木桶,水草,淬锋钢,独角鲸,鱼饵",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "SSMSS",
+      "RepresentativeItems": [
+        "淬锋钢",
+        "独角鲸",
+        "木桶",
+        "水草",
+        "鱼饵"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 370
+    },
+    {
+      "Rank": 40,
+      "Elo": 2347.313641089923,
+      "ComboSig": "c=4,1,0|刺刀,棉鳚,舱底蠕虫,藏刃匕首,鲨齿爪",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "舱底蠕虫",
+        "鲨齿爪",
+        "棉鳚",
+        "藏刃匕首",
+        "刺刀"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 927
+    },
+    {
+      "Rank": 41,
+      "Elo": 2340.9306620855073,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,海底热泉,燃烧响炮,珊瑚",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        2,
+        1
+      ],
+      "ShapePattern": "SSSMS",
+      "RepresentativeItems": [
+        "打火机",
+        "棉鳚",
+        "珊瑚",
+        "海底热泉",
+        "燃烧响炮"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 866
+    },
+    {
+      "Rank": 42,
+      "Elo": 2333.6013637463207,
+      "ComboSig": "c=4,1,0|木桶,水草,淬锋钢,独角鲸,龙涎香",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "独角鲸",
+        "木桶",
+        "淬锋钢",
+        "水草",
+        "龙涎香"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1014
+    },
+    {
+      "Rank": 43,
+      "Elo": 2332.7349226094093,
+      "ComboSig": "c=4,1,0|左轮手枪,手斧,淬锋钢,湿件战服,独角鲸",
+      "RepresentativeShape": [
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "MSSSS",
+      "RepresentativeItems": [
+        "湿件战服",
+        "淬锋钢",
+        "独角鲸",
+        "手斧",
+        "左轮手枪"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 737
+    },
+    {
+      "Rank": 44,
+      "Elo": 2331.356988634078,
+      "ComboSig": "c=4,1,0|手斧,步枪,火药角,珊瑚,藏刃匕首",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "SSMSS",
+      "RepresentativeItems": [
+        "手斧",
+        "火药角",
+        "步枪",
+        "珊瑚",
+        "藏刃匕首"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 957
+    },
+    {
+      "Rank": 45,
+      "Elo": 2329.244517537646,
+      "ComboSig": "c=4,1,0|三花,宠物石,独角鲸,珍珠,鲨齿爪",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "SSMSS",
+      "RepresentativeItems": [
+        "宠物石",
+        "三花",
+        "鲨齿爪",
+        "珍珠",
+        "独角鲸"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 176
+    },
+    {
+      "Rank": 46,
+      "Elo": 2319.7381523090194,
+      "ComboSig": "c=2,2,0|棉鳚,海底热泉,火炮,火药角",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        2
+      ],
+      "ShapePattern": "SMSM",
+      "RepresentativeItems": [
+        "火药角",
+        "火炮",
+        "棉鳚",
+        "海底热泉"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1209
+    },
+    {
+      "Rank": 47,
+      "Elo": 2319.170662686964,
+      "ComboSig": "c=4,1,0|手雷,步枪,淬锋钢,舱底蠕虫,葡萄弹",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "舱底蠕虫",
+        "步枪",
+        "手雷",
+        "葡萄弹",
+        "淬锋钢"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 27
+    },
+    {
+      "Rank": 48,
+      "Elo": 2319.1430012348533,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,火炮,燃烧响炮,皮皮虾",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "火炮",
+        "皮皮虾",
+        "棉鳚",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 2498
+    },
+    {
+      "Rank": 49,
+      "Elo": 2316.9825056889263,
+      "ComboSig": "c=4,1,0|宠物石,左轮手枪,手斧,靴里剑,鲨齿爪",
+      "RepresentativeShape": [
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "MSSSS",
+      "RepresentativeItems": [
+        "鲨齿爪",
+        "左轮手枪",
+        "手斧",
+        "靴里剑",
+        "宠物石"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 948
+    },
+    {
+      "Rank": 50,
+      "Elo": 2313.6025524138163,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,流星索,火炮,燃烧响炮",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "火炮",
+        "流星索",
+        "棉鳚",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 130
+    },
+    {
+      "Rank": 51,
+      "Elo": 2307.438520839297,
+      "ComboSig": "c=6,0,0|宠物石,打火机,棉鳚,燃烧响炮,藏刃匕首,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "藏刃匕首",
+        "打火机",
+        "棉鳚",
+        "鹦鹉皮特",
+        "宠物石",
+        "燃烧响炮"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1308
+    },
+    {
+      "Rank": 52,
+      "Elo": 2303.3033220807306,
+      "ComboSig": "c=6,0,0|毒须鲶,水母,水草,海螺壳,珊瑚,迷幻蝠鲼",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "水草",
+        "海螺壳",
+        "珊瑚",
+        "水母",
+        "迷幻蝠鲼",
+        "毒须鲶"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 436
+    },
+    {
+      "Rank": 53,
+      "Elo": 2297.0832034868704,
+      "ComboSig": "c=4,1,0|木桶,毒须鲶,水草,迷幻蝠鲼,雪怪蟹",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        2,
+        1
+      ],
+      "ShapePattern": "SSSMS",
+      "RepresentativeItems": [
+        "毒须鲶",
+        "雪怪蟹",
+        "迷幻蝠鲼",
+        "木桶",
+        "水草"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 363
+    },
+    {
+      "Rank": 54,
+      "Elo": 2294.815478168726,
+      "ComboSig": "c=4,1,0|三花,打火机,棉鳚,火炮,燃烧响炮",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        2
+      ],
+      "ShapePattern": "SSSSM",
+      "RepresentativeItems": [
+        "三花",
+        "棉鳚",
+        "打火机",
+        "燃烧响炮",
+        "火炮"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 629
+    },
+    {
+      "Rank": 55,
+      "Elo": 2291.982257210999,
+      "ComboSig": "c=6,0,0|毒须鲶,水母,水草,海螺壳,淬锋钢,舱底蠕虫",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "舱底蠕虫",
+        "淬锋钢",
+        "水草",
+        "水母",
+        "海螺壳",
+        "毒须鲶"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 110
+    },
+    {
+      "Rank": 56,
+      "Elo": 2290.612853499755,
+      "ComboSig": "c=2,2,0|弯刀,木桶,淬锋钢,藏刃匕首",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        2
+      ],
+      "ShapePattern": "SSMM",
+      "RepresentativeItems": [
+        "藏刃匕首",
+        "淬锋钢",
+        "木桶",
+        "弯刀"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 586
+    },
+    {
+      "Rank": 57,
+      "Elo": 2289.5243870934137,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,流星索,海底热泉,燃烧响炮",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "海底热泉",
+        "流星索",
+        "棉鳚",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 151
+    },
+    {
+      "Rank": 58,
+      "Elo": 2282.021585118659,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,海底热泉,食人鱼,鹦鹉皮特",
+      "RepresentativeShape": [
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "MSSSS",
+      "RepresentativeItems": [
+        "海底热泉",
+        "食人鱼",
+        "鹦鹉皮特",
+        "棉鳚",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 231
+    },
+    {
+      "Rank": 59,
+      "Elo": 2275.422692212146,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,海底热泉,燃烧响炮,独角鲸",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "棉鳚",
+        "海底热泉",
+        "独角鲸",
+        "燃烧响炮",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 99
+    },
+    {
+      "Rank": 60,
+      "Elo": 2274.984238353866,
+      "ComboSig": "c=4,1,0|左轮手枪,弹簧刀,棉鳚,湿件战服,独角鲸",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        2
+      ],
+      "ShapePattern": "SSSSM",
+      "RepresentativeItems": [
+        "独角鲸",
+        "左轮手枪",
+        "弹簧刀",
+        "棉鳚",
+        "湿件战服"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 649
+    },
+    {
+      "Rank": 61,
+      "Elo": 2270.2823869052872,
+      "ComboSig": "c=4,1,0|手斧,淬锋钢,舱底蠕虫,靴里剑,鲨齿爪",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "SSMSS",
+      "RepresentativeItems": [
+        "靴里剑",
+        "淬锋钢",
+        "鲨齿爪",
+        "手斧",
+        "舱底蠕虫"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 169
+    },
+    {
+      "Rank": 62,
+      "Elo": 2267.821776359309,
+      "ComboSig": "c=4,1,0|木桶,淬锋钢,独角鲸,珍珠,迷幻蝠鲼",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        2,
+        1
+      ],
+      "ShapePattern": "SSSMS",
+      "RepresentativeItems": [
+        "独角鲸",
+        "迷幻蝠鲼",
+        "淬锋钢",
+        "木桶",
+        "珍珠"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 1197
+    },
+    {
+      "Rank": 63,
+      "Elo": 2262.6618090436104,
+      "ComboSig": "c=4,1,0|宠物石,左轮手枪,湿件战服,藏刃匕首,迷你弯刀",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        2,
+        1
+      ],
+      "ShapePattern": "SSSMS",
+      "RepresentativeItems": [
+        "宠物石",
+        "迷你弯刀",
+        "左轮手枪",
+        "湿件战服",
+        "藏刃匕首"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 720
+    },
+    {
+      "Rank": 64,
+      "Elo": 2258.5918541142623,
+      "ComboSig": "c=4,1,0|手斧,手雷,火药角,葡萄弹,鲨齿爪",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "SSMSS",
+      "RepresentativeItems": [
+        "火药角",
+        "手雷",
+        "鲨齿爪",
+        "手斧",
+        "葡萄弹"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 803
+    },
+    {
+      "Rank": 65,
+      "Elo": 2258.429383513544,
+      "ComboSig": "c=2,2,0|木桶,武士刀,淬锋钢,迷幻蝠鲼",
+      "RepresentativeShape": [
+        2,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "MMSS",
+      "RepresentativeItems": [
+        "武士刀",
+        "木桶",
+        "淬锋钢",
+        "迷幻蝠鲼"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 632
+    },
+    {
+      "Rank": 66,
+      "Elo": 2257.5612392031567,
+      "ComboSig": "c=6,0,0|手斧,淬锋钢,舱底蠕虫,藏刃匕首,迷你弯刀,靴里剑",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "舱底蠕虫",
+        "藏刃匕首",
+        "手斧",
+        "靴里剑",
+        "迷你弯刀",
+        "淬锋钢"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 226
+    },
+    {
+      "Rank": 67,
+      "Elo": 2251.706691260457,
+      "ComboSig": "c=4,1,0|三花,左轮手枪,湿件战服,葡萄弹,雪怪蟹",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "左轮手枪",
+        "湿件战服",
+        "葡萄弹",
+        "三花",
+        "雪怪蟹"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 197
+    },
+    {
+      "Rank": 68,
+      "Elo": 2249.857008794063,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,火炮,燃烧响炮,藏刃匕首",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "火炮",
+        "打火机",
+        "棉鳚",
+        "藏刃匕首"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1438
+    },
+    {
+      "Rank": 69,
+      "Elo": 2248.023612105223,
+      "ComboSig": "c=4,1,0|宠物石,左轮手枪,棉鳚,湿件战服,迷你弯刀",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "宠物石",
+        "湿件战服",
+        "棉鳚",
+        "迷你弯刀",
+        "左轮手枪"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 870
+    },
+    {
+      "Rank": 70,
+      "Elo": 2241.9460179835582,
+      "ComboSig": "c=6,0,0|打火机,棉鳚,燃烧响炮,皮皮虾,藏刃匕首,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "藏刃匕首",
+        "燃烧响炮",
+        "打火机",
+        "皮皮虾",
+        "鹦鹉皮特",
+        "棉鳚"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 1825
+    },
+    {
+      "Rank": 71,
+      "Elo": 2237.52868820427,
+      "ComboSig": "c=4,1,0|三花,手斧,舱底蠕虫,藏刃匕首,鲨齿爪",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "SSMSS",
+      "RepresentativeItems": [
+        "舱底蠕虫",
+        "手斧",
+        "鲨齿爪",
+        "三花",
+        "藏刃匕首"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 835
+    },
+    {
+      "Rank": 72,
+      "Elo": 2237.009771015006,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,海底热泉,淬锋钢,燃烧响炮",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "棉鳚",
+        "海底热泉",
+        "淬锋钢",
+        "燃烧响炮",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 46
+    },
+    {
+      "Rank": 73,
+      "Elo": 2233.85265629846,
+      "ComboSig": "c=4,1,0|刺刀,独角鲸,舱底蠕虫,靴里剑,鲨齿爪",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "舱底蠕虫",
+        "鲨齿爪",
+        "靴里剑",
+        "独角鲸",
+        "刺刀"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 661
+    },
+    {
+      "Rank": 74,
+      "Elo": 2231.1905150364973,
+      "ComboSig": "c=4,1,0|宠物石,手斧,步枪,火药角,藏刃匕首",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "SSMSS",
+      "RepresentativeItems": [
+        "手斧",
+        "火药角",
+        "步枪",
+        "藏刃匕首",
+        "宠物石"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1684
+    },
+    {
+      "Rank": 75,
+      "Elo": 2225.03668117509,
+      "ComboSig": "c=6,0,0|毒须鲶,水母,水草,珍珠,藏刃匕首,雪怪蟹",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "水草",
+        "藏刃匕首",
+        "珍珠",
+        "水母",
+        "雪怪蟹",
+        "毒须鲶"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 563
+    },
+    {
+      "Rank": 76,
+      "Elo": 2221.831282993918,
+      "ComboSig": "c=6,0,0|宠物石,打火机,棉鳚,燃烧响炮,皮皮虾,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "宠物石",
+        "燃烧响炮",
+        "棉鳚",
+        "鹦鹉皮特",
+        "皮皮虾",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1108
+    },
+    {
+      "Rank": 77,
+      "Elo": 2218.3556795909653,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,燃烧响炮,藏刃匕首,鲨齿爪",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        2
+      ],
+      "ShapePattern": "SSSSM",
+      "RepresentativeItems": [
+        "藏刃匕首",
+        "燃烧响炮",
+        "打火机",
+        "棉鳚",
+        "鲨齿爪"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 126
+    },
+    {
+      "Rank": 78,
+      "Elo": 2217.8551805392926,
+      "ComboSig": "c=4,1,0|手斧,棉鳚,淬锋钢,舱底蠕虫,鲨齿爪",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        2,
+        1
+      ],
+      "ShapePattern": "SSSMS",
+      "RepresentativeItems": [
+        "手斧",
+        "舱底蠕虫",
+        "淬锋钢",
+        "鲨齿爪",
+        "棉鳚"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 396
+    },
+    {
+      "Rank": 79,
+      "Elo": 2217.213715024283,
+      "ComboSig": "c=6,0,0|三花,宠物石,打火机,棉鳚,燃烧响炮,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "三花",
+        "打火机",
+        "棉鳚",
+        "鹦鹉皮特",
+        "宠物石",
+        "燃烧响炮"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 220
+    },
+    {
+      "Rank": 80,
+      "Elo": 2217.196214219539,
+      "ComboSig": "c=6,0,0|手斧,打火机,棉鳚,燃烧响炮,皮皮虾,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "打火机",
+        "燃烧响炮",
+        "手斧",
+        "皮皮虾",
+        "鹦鹉皮特",
+        "棉鳚"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 866
+    },
+    {
+      "Rank": 81,
+      "Elo": 2216.6314055543203,
+      "ComboSig": "c=4,1,0|三花,左轮手枪,手斧,葡萄弹,鲨齿爪",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "左轮手枪",
+        "鲨齿爪",
+        "葡萄弹",
+        "三花",
+        "手斧"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 673
+    },
+    {
+      "Rank": 82,
+      "Elo": 2216.3875617265776,
+      "ComboSig": "c=6,0,0|三花,手斧,棉鳚,水草,淬锋钢,独角鲸",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "三花",
+        "手斧",
+        "水草",
+        "棉鳚",
+        "独角鲸",
+        "淬锋钢"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 124
+    },
+    {
+      "Rank": 83,
+      "Elo": 2216.179375082895,
+      "ComboSig": "c=6,0,0|棉鳚,毒须鲶,水母,海螺壳,淬锋钢,雪怪蟹",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "毒须鲶",
+        "雪怪蟹",
+        "水母",
+        "海螺壳",
+        "棉鳚",
+        "淬锋钢"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 77
+    },
+    {
+      "Rank": 84,
+      "Elo": 2215.8762369928736,
+      "ComboSig": "c=6,0,0|手斧,棉鳚,水草,淬锋钢,独角鲸,靴里剑",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "靴里剑",
+        "手斧",
+        "水草",
+        "棉鳚",
+        "独角鲸",
+        "淬锋钢"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 108
+    },
+    {
+      "Rank": 85,
+      "Elo": 2215.5331019278874,
+      "ComboSig": "c=4,1,0|手斧,棉鳚,舱底蠕虫,迷你弯刀,鲨齿爪",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "SSMSS",
+      "RepresentativeItems": [
+        "舱底蠕虫",
+        "棉鳚",
+        "鲨齿爪",
+        "手斧",
+        "迷你弯刀"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 709
+    },
+    {
+      "Rank": 86,
+      "Elo": 2215.5005091259404,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,水草,海底热泉,皮皮虾",
+      "RepresentativeShape": [
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "MSSSS",
+      "RepresentativeItems": [
+        "海底热泉",
+        "棉鳚",
+        "水草",
+        "皮皮虾",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 223
+    },
+    {
+      "Rank": 87,
+      "Elo": 2214.7213732077294,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,海底热泉,燃烧响炮,葡萄弹",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        2,
+        1
+      ],
+      "ShapePattern": "SSSMS",
+      "RepresentativeItems": [
+        "打火机",
+        "棉鳚",
+        "葡萄弹",
+        "海底热泉",
+        "燃烧响炮"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 890
+    },
+    {
+      "Rank": 88,
+      "Elo": 2214.439964553647,
+      "ComboSig": "c=4,1,0|手斧,淬锋钢,藏刃匕首,迷你弯刀,鲨齿爪",
+      "RepresentativeShape": [
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "MSSSS",
+      "RepresentativeItems": [
+        "鲨齿爪",
+        "手斧",
+        "淬锋钢",
+        "迷你弯刀",
+        "藏刃匕首"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 1348
+    },
+    {
+      "Rank": 89,
+      "Elo": 2213.9471186069877,
+      "ComboSig": "c=4,1,0|湿件战服,独角鲸,珊瑚,藏刃匕首,迷你弯刀",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "独角鲸",
+        "湿件战服",
+        "珊瑚",
+        "藏刃匕首",
+        "迷你弯刀"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 539
+    },
+    {
+      "Rank": 90,
+      "Elo": 2213.770882311831,
+      "ComboSig": "c=6,0,0|手斧,打火机,棉鳚,燃烧响炮,葡萄弹,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "手斧",
+        "鹦鹉皮特",
+        "棉鳚",
+        "打火机",
+        "葡萄弹"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 235
+    },
+    {
+      "Rank": 91,
+      "Elo": 2213.6672536370784,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,火炮,燃烧响炮,食人鱼",
+      "RepresentativeShape": [
+        1,
+        2,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SMSSS",
+      "RepresentativeItems": [
+        "燃烧响炮",
+        "火炮",
+        "食人鱼",
+        "棉鳚",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 354
+    },
+    {
+      "Rank": 92,
+      "Elo": 2213.417465936812,
+      "ComboSig": "c=6,0,0|打火机,棉鳚,毒须鲶,燃烧响炮,皮皮虾,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "打火机",
+        "燃烧响炮",
+        "毒须鲶",
+        "皮皮虾",
+        "鹦鹉皮特",
+        "棉鳚"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 1967
+    },
+    {
+      "Rank": 93,
+      "Elo": 2213.356114707935,
+      "ComboSig": "c=4,1,0|打火机,棉鳚,海底热泉,淬锋钢,舱底蠕虫",
+      "RepresentativeShape": [
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "MSSSS",
+      "RepresentativeItems": [
+        "海底热泉",
+        "棉鳚",
+        "打火机",
+        "舱底蠕虫",
+        "淬锋钢"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 1082
+    },
+    {
+      "Rank": 94,
+      "Elo": 2213.181507942628,
+      "ComboSig": "c=6,0,0|棉鳚,毒须鲶,水母,水草,海螺壳,珍珠",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "珍珠",
+        "水母",
+        "海螺壳",
+        "毒须鲶",
+        "棉鳚",
+        "水草"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 756
+    },
+    {
+      "Rank": 95,
+      "Elo": 2212.8952200756967,
+      "ComboSig": "c=6,0,0|水母,水草,海螺壳,淬锋钢,独角鲸,舱底蠕虫",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "淬锋钢",
+        "舱底蠕虫",
+        "海螺壳",
+        "水母",
+        "独角鲸",
+        "水草"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 596
+    },
+    {
+      "Rank": 96,
+      "Elo": 2212.81932680165,
+      "ComboSig": "c=6,0,0|宠物石,手斧,淬锋钢,舱底蠕虫,藏刃匕首,迷你弯刀",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "舱底蠕虫",
+        "藏刃匕首",
+        "手斧",
+        "宠物石",
+        "迷你弯刀",
+        "淬锋钢"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 1229
+    },
+    {
+      "Rank": 97,
+      "Elo": 2212.7523219792743,
+      "ComboSig": "c=6,0,0|毒须鲶,水母,水草,海螺壳,藏刃匕首,雪怪蟹",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "藏刃匕首",
+        "水草",
+        "海螺壳",
+        "水母",
+        "雪怪蟹",
+        "毒须鲶"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 1003
+    },
+    {
+      "Rank": 98,
+      "Elo": 2212.6973704695265,
+      "ComboSig": "c=6,0,0|打火机,棉鳚,水草,燃烧响炮,食人鱼,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "水草",
+        "燃烧响炮",
+        "棉鳚",
+        "鹦鹉皮特",
+        "食人鱼",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": false,
+      "GameCount": 159
+    },
+    {
+      "Rank": 99,
+      "Elo": 2212.3498805254226,
+      "ComboSig": "c=6,0,0|打火机,棉鳚,淬锋钢,燃烧响炮,食人鱼,鹦鹉皮特",
+      "RepresentativeShape": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "ShapePattern": "SSSSSS",
+      "RepresentativeItems": [
+        "淬锋钢",
+        "燃烧响炮",
+        "棉鳚",
+        "鹦鹉皮特",
+        "食人鱼",
+        "打火机"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 944
+    },
+    {
+      "Rank": 100,
+      "Elo": 2212.123626114197,
+      "ComboSig": "c=4,1,0|手斧,步枪,淬锋钢,火药角,独角鲸",
+      "RepresentativeShape": [
+        1,
+        1,
+        2,
+        1,
+        1
+      ],
+      "ShapePattern": "SSMSS",
+      "RepresentativeItems": [
+        "淬锋钢",
+        "火药角",
+        "步枪",
+        "手斧",
+        "独角鲸"
+      ],
+      "IsConfirmed": false,
+      "IsLocalOptimum": true,
+      "GameCount": 86
+    }
+  ]
+}

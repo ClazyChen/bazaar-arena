@@ -20,7 +20,8 @@ public static class SharkClaws
             [
                 Ability.Damage,
                 Ability.AddAttribute(Key.Damage).Override(
-                    additionalTargetCondition: Condition.WithTag(Tag.Weapon)
+                    additionalTargetCondition: Condition.WithTag(Tag.Weapon),
+                    priority: AbilityPriority.High
                 ),
             ],
             DownstreamRequirements =
