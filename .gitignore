@@ -57,3 +57,10 @@ quality_deck_config_no_fast.json
 
 # Cursor（本地 IDE 文件）
 .cursor/
+
+# Python
+__pycache__/
+*.pyc
+
+# Greedy 批量脚本临时输出目录
+**/.tmp_greedy_vanessa_top1*/
