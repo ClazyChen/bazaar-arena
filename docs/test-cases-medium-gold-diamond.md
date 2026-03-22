@@ -1,6 +1,6 @@
 # 中型金/钻物品测试用例
 
-本文档描述针对「中型金」「中型钻」物品的自动化测试用例。每个用例由两方卡组（P1 vs P2）与预期行为（日志中出现的关键内容）组成。卡组定义见 `Data/Decks/test_medium_gold_diamond.json`。脚本：`scripts/run_item_tests_medium_gold_diamond.py`。
+本文档描述针对「中型金」「中型钻」物品的自动化测试用例。每个用例由两方卡组（P1 vs P2）与预期行为（日志中出现的关键内容）组成。卡组定义见 `Data/Decks/item_tests/test_medium_gold_diamond.json`。脚本：`scripts/item_tests/run_item_tests_medium_gold_diamond.py`。
 
 ---
 
@@ -68,5 +68,5 @@
 
 ## 运行方式
 
-- **自动化**：在仓库根目录执行 `python scripts/run_item_tests_medium_gold_diamond.py`，会依次运行上述 9 个用例并检查日志与退出码。
+- **自动化**：在仓库根目录执行 `python scripts/item_tests/run_item_tests_medium_gold_diamond.py`，会依次运行上述 9 个用例并检查日志与退出码。
 - **CLI 与测试流程说明**：见 **docs/cli-and-testing.md**。

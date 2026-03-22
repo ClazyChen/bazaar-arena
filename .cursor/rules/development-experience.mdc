@@ -9,7 +9,7 @@ globs: "**/*.cs","**/*.xaml","**/docs/**"
 ## 仓库结构
 
 - **src/BazaarArena/**：主项目（WPF 应用 + 核心逻辑）。子目录与命名空间：`DeckManager/`、`ItemDatabase/`、`BattleSimulator/`、`Core/`。
-- **Data/**：静态与默认数据。`Data/Decks/` 为卡组集 JSON 默认目录；`Data/levelups.json` 为等级生命表。启动时若存在 `Data/Decks/default.json` 则自动加载为当前卡组集。
+- **Data/**：静态与默认数据。`Data/Decks/` 为卡组集 JSON 默认目录（GUI 常用 `default.json`）；**`Data/Decks/item_tests/`** 存放物品自动化测试用 `test_*.json` 卡组集，与日常卡组集分离。`Data/levelups.json` 为等级生命表。启动时若存在 `Data/Decks/default.json` 则自动加载为当前卡组集。
 - **docs/**：设计文档、实现笔记、GUI 说明、变更记录。详见 `docs/Bazaar Arena 设计文档.md`、`docs/implementation-notes.md`、`docs/gui-overview.md`、`docs/changelog.md`。
 - **.cursor/rules/**：项目约定与开发经验规则，供 AI 与人工查阅。
 

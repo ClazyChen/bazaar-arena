@@ -24,10 +24,6 @@ public static class SharkClaws
                     priority: AbilityPriority.High
                 ),
             ],
-            DownstreamRequirements =
-            [
-                Synergy.And(Tag.Weapon),
-            ],
         };
     }
 
@@ -48,10 +44,6 @@ public static class SharkClaws
                 Ability.AddAttribute(Key.Damage).Override(
                     additionalTargetCondition: Condition.WithTag(Tag.Weapon) & Condition.DifferentFromSource
                 ),
-            ],
-            DownstreamRequirements =
-            [
-                Synergy.And(Tag.Weapon),
             ],
         };
     }

@@ -145,6 +145,13 @@ python scripts\webp_to_png.py
 
 ---
 
+## 4. 物品测试与锚定贪心（Python）
+
+- **物品自动化测试**：Python 脚本在 **`scripts/item_tests/`**（如 `run_item_tests_small_bronze.py`）；CLI 使用的卡组集 JSON 在 **`Data/Decks/item_tests/`**（`test_*.json`）。在仓库根目录执行 `python scripts/item_tests/<脚本名>.py`。完整档位、命令与断言约定见 **`docs/cli-and-testing.md`**。
+- **锚定贪心批跑**：`scripts/run_greedy_vanessa_bronze_top1.py`（与物品测试脚本目录不同）。说明见 **`docs/greedy-deck-finder.md`**。
+
+---
+
 ## 脚本与入口对应关系
 
 | 功能       | CMD 入口        | PowerShell 入口     | 实际逻辑所在   |
@@ -152,5 +159,7 @@ python scripts\webp_to_png.py
 | 开发态运行 | `scripts\run.cmd` | `scripts\run.ps1`   | `run.ps1`      |
 | 发布 exe   | `scripts\build-exe.cmd` | `scripts\build-exe.ps1` | `build-exe.ps1` |
 | WebP 转 PNG | `python scripts\webp_to_png.py` | 同上 | `scripts\webp_to_png.py` |
+| 物品测试（Python） | `python scripts\item_tests\run_item_tests_*.py` | 同上 | 见 **docs/cli-and-testing.md** |
+| 锚定贪心批跑 | `python scripts\run_greedy_vanessa_bronze_top1.py` | 同上 | `scripts\run_greedy_vanessa_bronze_top1.py` |
 
 `.cmd` 脚本会先 `cd` 到仓库根目录，再以 `-ExecutionPolicy Bypass` 调用对应 `.ps1`，因此从任意子目录执行 `scripts\run.cmd` 或 `scripts\build-exe.cmd` 均可，工作目录会被正确设置。

@@ -26,10 +26,6 @@ public static class Switchblade
                     valueKey: Key.Custom_0
                 ),
             ],
-            NeighborPreference =
-            [
-                Synergy.And(Tag.Weapon),
-            ],
         };
     }
 
@@ -52,10 +48,6 @@ public static class Switchblade
                     additionalTargetCondition: Condition.SameAsInvokeTarget,
                     valueKey: Key.Custom_0
                 ),
-            ],
-            NeighborPreference =
-            [
-                Synergy.And(Tag.Weapon),
             ],
         };
     }

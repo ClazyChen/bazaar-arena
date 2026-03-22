@@ -34,10 +34,6 @@ public static class MantisShrimp
                     valueKey: Key.Custom_1
                 ),
             ],
-            UpstreamRequirements =
-            [
-                Synergy.And(Tag.Slow),
-            ],
         };
     }
 }

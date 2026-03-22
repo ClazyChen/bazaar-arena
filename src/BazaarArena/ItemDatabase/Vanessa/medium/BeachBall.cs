@@ -23,11 +23,6 @@ public static class BeachBall
                     priority: AbilityPriority.High
                 ),
             ],
-            DownstreamRequirements =
-            [
-                Synergy.And(Tag.Aquatic),
-                Synergy.And(Tag.Toy),
-            ],
         };
     }
 }

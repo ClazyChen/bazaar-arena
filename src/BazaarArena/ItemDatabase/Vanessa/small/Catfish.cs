@@ -27,10 +27,6 @@ public static class Catfish
                     priority: AbilityPriority.Low
                 ),
             ],
-            UpstreamRequirements =
-            [
-                Synergy.And(Tag.Haste),
-            ],
         };
     }
 }

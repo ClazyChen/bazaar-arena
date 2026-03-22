@@ -45,16 +45,6 @@ Desktop.ini
 # Raw images
 pictures/webp/
 
-# QualityDeckFinder (本地运行状态/断点文件)
-quality_deck_state.json
-my_state.json
-quality_deck_state.*.json
-quality_deck_config.local.json
-
-# QualityDeckFinder（本地快照/派生文件）
-my_state*.json
-quality_deck_config_no_fast.json
-
 # Cursor（本地 IDE 文件）
 .cursor/
 

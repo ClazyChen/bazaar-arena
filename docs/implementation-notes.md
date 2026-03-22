@@ -604,7 +604,7 @@
 ### JSON 与 default.json
 
 - **UTF-8 不转义**：`DeckManager` 的 `JsonSerializerOptions` 增加 `Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping`，保存卡组集时中文等字符正常写入，不再输出 `\uXXXX`。
-- **default.json 不覆盖**：构建时 `Data/Decks/*.json` 复制到输出目录时**排除 default.json**（csproj 中 `Exclude="..\..\Data\Decks\default.json"`）；应用启动时若 `default.json` **不存在**才 `NewCollection()` 并 `SaveCollection(defaultPath)` 生成空集，避免每次构建或运行覆盖用户测试用文件。
+- **default.json 不覆盖**：构建时 `Data/Decks/*.json` 与 `Data/Decks/item_tests/*.json` 复制到输出目录时**排除根目录的 default.json**（csproj 中 `Exclude="..\..\Data\Decks\default.json"`）；应用启动时若 `default.json` **不存在**才 `NewCollection()` 并 `SaveCollection(defaultPath)` 生成空集，避免每次构建或运行覆盖用户测试用文件。
 
 ### 触发器统一与 Condition 自动补全（已重构，见下节）
 
@@ -763,22 +763,9 @@
 
 ---
 
-## 协同先验（Synergy Prior）：上游/下游/邻居
+## ~~协同先验（Synergy Prior）~~（已移除）
 
-用于优质卡组探测等场景的「配合图」与队形启发式：物品可声明**上游**（谁触发我）、**下游**（我影响谁）、**邻居偏好**（希望相邻是什么），便于候选生成与重排打分。
-
-- **数据结构**：`ItemTemplate` 上有三个可选字段（均为 `List<SynergyClause>?`，OR  of ANDs）：
-  - **UpstreamRequirements**：能触发该物品的「上游」需满足的 Tag 条件（可带方向，如刺刀「左侧武器」）。
-  - **DownstreamRequirements**：该物品效果目标的「下游」需满足的 Tag 条件（可带方向，如火药角「右侧弹药」）。
-  - **NeighborPreference**：希望相邻位置存在的 Tag（OR 子句，如迷幻蝠鲼「伙伴或射线」）。
-- **SynergyClause**：一个子句 = 若干 Tag 的 **AND**；`Direction`（Any/Left/Right）表示「相对己方物品的方向」，对上游、下游均有意义（上游=触发者在左/右，下游=目标在左/右）。
-- **书写 API**：统一用 **Synergy.And(...)** 构造子句，避免隐式或运算符歧义：
-  - `Synergy.And(Tag.A, Tag.B)`：无方向 AND。
-  - `Synergy.And(SynergyDirection.Left, Tag.Weapon)`：带方向（如刺刀上游、火药角下游）。
-  - 单 Tag 子句：`Synergy.And(Tag.Friend)`；OR 由列表字面量表达，如 `[ Synergy.And(Tag.Friend), Synergy.And(Tag.Ray) ]`。
-- **语义区分**：**上游/下游**表达「是否会发生/能影响谁」的依赖（配合图）；**NeighborPreference** 表达队形偏好（重排启发式）。例如刺刀「使用此物品左侧的武器时」→ 上游 `Synergy.And(SynergyDirection.Left, Tag.Weapon)`；珍珠「使用其他水系且带冷却物品时充能」→ 上游 `Synergy.And(Tag.Aquatic, Tag.Cooldown)`。
-- **克隆**：`ItemDatabase.CloneTemplate` 会浅拷贝上述三个列表。详见 `Core/SynergyPrior.cs`、`Core/Synergy.cs`。
-- **海盗物品一览**：海盗（Vanessa）关卡物品的上下游、邻居约束及完整 tags（含显式与隐性）见 **docs/vanessa-synergy-prior.txt**。
+`ItemTemplate` 曾支持 **UpstreamRequirements**、**DownstreamRequirements**、**NeighborPreference**（配合图/队形启发式）；卡组搜索改为贪心流程后已不再使用，相关字段、`Core/Synergy.cs` / `SynergyPrior.cs`、物品中的显式声明及 `docs/vanessa-synergy-prior.txt`、`.cursor/rules/synergy-prior.mdc` 均已删除。物品配合关系由 **Ability / Condition / Tag** 与 **EnsureTypeTags** 表达即可。
 
 ---
 

@@ -27,10 +27,6 @@ public static class HoningSteel
                     priority: AbilityPriority.High
                 ),
             ],
-            DownstreamRequirements =
-            [
-                Synergy.And(Tag.Weapon),
-            ],
         };
     }
 
@@ -51,10 +47,6 @@ public static class HoningSteel
                     priority: AbilityPriority.High
                 ),
             ],
-            DownstreamRequirements =
-            [
-                Synergy.And(SynergyDirection.Right, Tag.Weapon),
-            ],
         };
     }
 
@@ -74,10 +66,6 @@ public static class HoningSteel
                     additionalTargetCondition: Condition.RightOfSource & Condition.WithTag(Tag.Weapon),
                     priority: AbilityPriority.High
                 ),
-            ],
-            DownstreamRequirements =
-            [
-                Synergy.And(SynergyDirection.Right, Tag.Weapon),
             ],
         };
     }

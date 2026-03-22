@@ -31,10 +31,6 @@ public static class PetRock
                     Value = Formula.Source(Key.Custom_0),
                 },
             ],
-            DownstreamRequirements =
-            [
-                Synergy.And(Tag.Crit),
-            ],
         };
     }
 }

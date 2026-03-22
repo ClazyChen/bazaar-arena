@@ -46,9 +46,6 @@ internal sealed class GreedyPreflattenedResolver : IItemTemplateResolver
             Abilities = source.Abilities,
             Auras = source.Auras,
             OverridableAttributes = null,
-            UpstreamRequirements = source.UpstreamRequirements,
-            DownstreamRequirements = source.DownstreamRequirements,
-            NeighborPreference = source.NeighborPreference,
         };
 
         foreach (var kv in source.GetIntsByTierSnapshot())

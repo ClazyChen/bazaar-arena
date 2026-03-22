@@ -34,10 +34,6 @@ public static class Wetware
                         c => c > 0 ? 1 : 0),
                 },
             ],
-            UpstreamRequirements =
-            [
-                Synergy.And(Tag.Weapon),
-            ],
         };
     }
 }

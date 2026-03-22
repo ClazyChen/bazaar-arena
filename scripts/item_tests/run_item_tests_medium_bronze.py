@@ -1,30 +1,40 @@
 #!/usr/bin/env python3
-# 使用 CLI 运行大型铜物品测试用例，校验日志内容与退出码，并记录测试结果。
+# 使用 CLI 运行中型铜物品测试用例，校验日志内容与退出码，并记录测试结果。
 # 用法：
-#   - 全量测试：在仓库根目录执行 python scripts/run_item_tests_large_bronze.py
-#   - 仅重跑上次未通过的用例：python scripts/run_item_tests_large_bronze.py --failed-only
+#   - 全量测试：在仓库根目录执行 python scripts/item_tests/run_item_tests_medium_bronze.py
+#   - 仅重跑上次未通过的用例：python scripts/item_tests/run_item_tests_medium_bronze.py --failed-only
 
 import json
 import os
 import subprocess
 import sys
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DECK_JSON = os.path.join(REPO_ROOT, "Data", "Decks", "test_large_bronze.json")
+# 仓库根目录（脚本在 scripts/item_tests/ 下，上两级为根）
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+DECK_JSON = os.path.join(REPO_ROOT, "Data", "Decks", "item_tests", "test_medium_bronze.json")
 LOG_DIR = os.path.join(REPO_ROOT, "Logs", "item_tests")
-RESULTS_JSON = os.path.join(LOG_DIR, "results_large_bronze.json")
+RESULTS_JSON = os.path.join(LOG_DIR, "results_medium_bronze.json")
 CLI_PROJECT = os.path.join(REPO_ROOT, "src", "BazaarArena.Cli", "BazaarArena.Cli.csproj")
 
-LARGE_BRONZE_TESTS = [
-    {"name": "临时避难所_temporary_shelter", "deck1": "lb_temporary_shelter_p1", "deck2": "lb_temporary_shelter_p2", "log_contains": ["临时避难所", "护盾"]},
-    {"name": "哈库维发射器_harkuvian_launcher", "deck1": "lb_harkuvian_launcher_p1", "deck2": "lb_harkuvian_launcher_p2", "log_contains": ["哈库维发射器", "伤害 100"]},
-    {"name": "观光缆车_tourist_chariot", "deck1": "lb_tourist_chariot_p1", "deck2": "lb_tourist_chariot_p2", "log_contains": ["观光缆车", "护盾"]},
-    {"name": "温泉_hot_springs", "deck1": "lb_hot_springs_p1", "deck2": "lb_hot_springs_p2", "log_contains": ["温泉", "治疗"]},
-    {"name": "废品场长枪_junkyard_lance", "deck1": "lb_junkyard_lance_p1", "deck2": "lb_junkyard_lance_p2", "log_contains": ["废品场长枪", "伤害"]},
+# 中型铜物品测试：deck1, deck2, 日志中必须包含的字符串列表
+MEDIUM_BRONZE_TESTS = [
+    {"name": "尖刺圆盾_spiked_buckler", "deck1": "mb_spiked_buckler_p1", "deck2": "mb_spiked_buckler_p2", "log_contains": ["尖刺圆盾", "伤害", "护盾"]},
+    {"name": "临时钝器_improvised_bludgeon", "deck1": "mb_improvised_bludgeon_p1", "deck2": "mb_improvised_bludgeon_p2", "log_contains": ["临时钝器", "伤害", "减速"]},
+    {"name": "暗影斗篷_shadowed_cloak", "deck1": "mb_shadowed_cloak_p1", "deck2": "mb_shadowed_cloak_p2", "log_contains": ["暗影斗篷", "加速"]},
+    {"name": "冰冻钝器_frozen_bludgeon", "deck1": "mb_frozen_bludgeon_p1", "deck2": "mb_frozen_bludgeon_p2", "log_contains": ["冰冻钝器", "伤害", "冻结"]},
+    {"name": "发条刀_clockwork_blades", "deck1": "mb_clockwork_blades_p1", "deck2": "mb_clockwork_blades_p2", "log_contains": ["发条刀", "伤害 20"]},
+    {"name": "大理石鳞甲_marble_scalemail", "deck1": "mb_marble_scalemail_p1", "deck2": "mb_marble_scalemail_p2", "log_contains": ["大理石鳞甲", "护盾"]},
+    {"name": "废品场大棒_junkyard_club", "deck1": "mb_junkyard_club_p1", "deck2": "mb_junkyard_club_p2", "log_contains": ["废品场大棒", "伤害 30"]},
+    {"name": "火箭靴_rocket_boots", "deck1": "mb_rocket_boots_p1", "deck2": "mb_rocket_boots_p2", "log_contains": ["火箭靴", "加速"]},
+    {"name": "火蜥幼兽_salamander_pup", "deck1": "mb_salamander_pup_p1", "deck2": "mb_salamander_pup_p2", "log_contains": ["火蜥幼兽", "灼烧"]},
+    {"name": "简易路障_makeshift_barricade", "deck1": "mb_makeshift_barricade_p1", "deck2": "mb_makeshift_barricade_p2", "log_contains": ["简易路障", "减速"]},
+    {"name": "外骨骼_exoskeleton", "deck1": "mb_exoskeleton_p1", "deck2": "mb_exoskeleton_p2", "log_contains": ["獠牙", "伤害 10"]},
+    {"name": "废品场维修机器人_junkyard_repairbot", "deck1": "mb_junkyard_repairbot_p1", "deck2": "mb_junkyard_repairbot_p2", "log_contains": ["牵引光束", "摧毁", "废品场维修机器人", "修复", "治疗"]},
 ]
 
 
 def load_previous_results() -> dict[str, dict]:
+    """读取上一次测试结果（若不存在则返回空字典）。"""
     try:
         if not os.path.isfile(RESULTS_JSON):
             return {}
@@ -38,24 +48,41 @@ def load_previous_results() -> dict[str, dict]:
 
 
 def save_results(results: dict[str, dict]) -> None:
+    """将本次测试结果写入 JSON 文件。"""
     os.makedirs(os.path.dirname(RESULTS_JSON), exist_ok=True)
     with open(RESULTS_JSON, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2, sort_keys=True)
 
 
 def run_cli_batch(tests_to_run: list[dict]) -> tuple[int, str, str]:
+    """批量运行 CLI 对战，返回 (returncode, stdout, stderr)。"""
     os.makedirs(LOG_DIR, exist_ok=True)
-    batch_path = os.path.join(LOG_DIR, "batch_large_bronze.json")
+    batch_path = os.path.join(LOG_DIR, "batch_medium_bronze.json")
     battles = []
     for t in tests_to_run:
         name = t["name"]
         log_path = os.path.join(LOG_DIR, f"{name}.log")
-        battles.append({"deck1": t["deck1"], "deck2": t["deck2"], "log": log_path})
+        battles.append(
+            {
+                "deck1": t["deck1"],
+                "deck2": t["deck2"],
+                "log": log_path,
+            }
+        )
     batch_cfg = {"battles": battles}
     with open(batch_path, "w", encoding="utf-8") as f:
         json.dump(batch_cfg, f, ensure_ascii=False, indent=2)
 
-    cmd = ["dotnet", "run", "--project", CLI_PROJECT, "--", DECK_JSON, "--batch", batch_path]
+    cmd = [
+        "dotnet",
+        "run",
+        "--project",
+        CLI_PROJECT,
+        "--",
+        DECK_JSON,
+        "--batch",
+        batch_path,
+    ]
     result = subprocess.run(
         cmd,
         cwd=REPO_ROOT,
@@ -81,13 +108,13 @@ def main() -> int:
     previous = load_previous_results()
     results: dict[str, dict] = dict(previous)
 
-    tests_to_run = LARGE_BRONZE_TESTS
+    tests_to_run = MEDIUM_BRONZE_TESTS
     if failed_only and previous:
-        pending = [t for t in LARGE_BRONZE_TESTS if previous.get(t["name"], {}).get("status") != "ok"]
+        pending = [t for t in MEDIUM_BRONZE_TESTS if previous.get(t["name"], {}).get("status") != "ok"]
         if not pending:
-            print("提示：上一次所有大型铜物品测试均已通过，本次 --failed-only 无需执行任何用例。")
+            print("提示：上一次所有中型铜物品测试均已通过，本次 --failed-only 无需执行任何用例。")
             return 0
-        print(f"仅重跑上次未通过的 {len(pending)} 个用例（总计 {len(LARGE_BRONZE_TESTS)} 个）：")
+        print(f"仅重跑上次未通过的 {len(pending)} 个用例（总计 {len(MEDIUM_BRONZE_TESTS)} 个）：")
         tests_to_run = pending
 
     failed: list[tuple[str, str, str]] = []
@@ -147,7 +174,7 @@ def main() -> int:
                 print(detail[-1500:] if len(detail) > 1500 else detail)
         return 1
 
-    print(f"\n全部 {len(LARGE_BRONZE_TESTS)} 个大型铜物品测试通过。")
+    print(f"\n全部 {len(MEDIUM_BRONZE_TESTS)} 个中型铜物品测试通过。")
     return 0
 
 

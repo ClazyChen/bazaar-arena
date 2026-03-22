@@ -1,6 +1,6 @@
 # 大型铜物品测试用例
 
-本文档描述针对「大型铜」物品的自动化测试用例。每个用例由两方卡组（P1 vs P2）与预期行为（日志中出现的关键内容或胜负）组成。卡组定义见 `Data/Decks/test_large_bronze.json`。
+本文档描述针对「大型铜」物品的自动化测试用例。每个用例由两方卡组（P1 vs P2）与预期行为（日志中出现的关键内容或胜负）组成。卡组定义见 `Data/Decks/item_tests/test_large_bronze.json`。
 
 ---
 
@@ -38,6 +38,6 @@
 
 ## 运行方式
 
-- **CLI 单次运行**：`dotnet run --project src/BazaarArena.Cli -- Data/Decks/test_large_bronze.json <deck1_id> <deck2_id> --log Logs/test_large_bronze.log`
-- **自动化**：在仓库根目录执行 `python scripts/run_item_tests_large_bronze.py`，会依次运行上述用例并检查日志与退出码。
+- **CLI 单次运行**：`dotnet run --project src/BazaarArena.Cli -- Data/Decks/item_tests/test_large_bronze.json <deck1_id> <deck2_id> --log Logs/test_large_bronze.log`
+- **自动化**：在仓库根目录执行 `python scripts/item_tests/run_item_tests_large_bronze.py`，会依次运行上述用例并检查日志与退出码。
 - **CLI 与测试流程说明**：见 **docs/cli-and-testing.md**。

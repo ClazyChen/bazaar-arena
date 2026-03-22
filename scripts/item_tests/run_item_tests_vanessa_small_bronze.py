@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # 海盗小型铜物品测试：覆盖 Vanessa 小型铜（最新版）全部物品。
-# 用法：在仓库根目录执行 python scripts/run_item_tests_vanessa_small_bronze.py
+# 用法：在仓库根目录执行 python scripts/item_tests/run_item_tests_vanessa_small_bronze.py
 
 import json
 import os
 import subprocess
 import sys
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DECK_JSON = os.path.join(REPO_ROOT, "Data", "Decks", "test_small_bronze.json")
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+DECK_JSON = os.path.join(REPO_ROOT, "Data", "Decks", "item_tests", "test_small_bronze.json")
 LOG_DIR = os.path.join(REPO_ROOT, "Logs", "item_tests")
 CLI_PROJECT = os.path.join(REPO_ROOT, "src", "BazaarArena.Cli", "BazaarArena.Cli.csproj")
 

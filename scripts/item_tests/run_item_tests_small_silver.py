@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # 使用 CLI 运行小型银物品测试用例，校验日志内容与退出码，并记录测试结果。
 # 用法：
-#   - 全量测试：在仓库根目录执行 python scripts/run_item_tests_small_silver.py
-#   - 仅重跑上次未通过的用例：python scripts/run_item_tests_small_silver.py --failed-only
+#   - 全量测试：在仓库根目录执行 python scripts/item_tests/run_item_tests_small_silver.py
+#   - 仅重跑上次未通过的用例：python scripts/item_tests/run_item_tests_small_silver.py --failed-only
 
 import json
 import os
 import subprocess
 import sys
 
-# 仓库根目录（脚本在 scripts/ 下，上级为根）
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DECK_JSON = os.path.join(REPO_ROOT, "Data", "Decks", "test_small_silver.json")
+# 仓库根目录（脚本在 scripts/item_tests/ 下，上两级为根）
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+DECK_JSON = os.path.join(REPO_ROOT, "Data", "Decks", "item_tests", "test_small_silver.json")
 LOG_DIR = os.path.join(REPO_ROOT, "Logs", "item_tests")
 RESULTS_JSON = os.path.join(LOG_DIR, "results_small_silver.json")
 CLI_PROJECT = os.path.join(REPO_ROOT, "src", "BazaarArena.Cli", "BazaarArena.Cli.csproj")

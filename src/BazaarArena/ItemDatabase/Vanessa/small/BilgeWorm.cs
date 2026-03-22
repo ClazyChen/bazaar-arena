@@ -48,14 +48,6 @@ public static class BilgeWorm
                     targetCondition: Condition.SameAsSource
                 ),
             ],
-            UpstreamRequirements =
-            [
-                Synergy.And(Tag.Crit),
-            ],
-            DownstreamRequirements =
-            [
-                Synergy.And(Tag.Crit),
-            ],
         };
     }
 
@@ -78,14 +70,6 @@ public static class BilgeWorm
                 Ability.PoisonSelf.Override(
                     trigger: Trigger.Crit
                 ),
-            ],
-            UpstreamRequirements =
-            [
-                Synergy.And(Tag.Crit),
-            ],
-            DownstreamRequirements =
-            [
-                Synergy.And(Tag.Crit),
             ],
         };
     }

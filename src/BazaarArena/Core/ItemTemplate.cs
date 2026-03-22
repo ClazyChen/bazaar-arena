@@ -334,13 +334,6 @@ public class ItemTemplate
     /// <summary>光环列表：当在战斗内读取属性并传入 IAuraContext 时，会按条件与公式叠加这些光环。</summary>
     public List<AuraDefinition> Auras { get; set; } = [];
 
-    /// <summary>上游协同先验：能触发该物品的“上游”需满足的机制/标签（OR of ANDs）；null 表示无。</summary>
-    public List<SynergyClause>? UpstreamRequirements { get; set; }
-    /// <summary>下游协同先验：该物品效果目标的“下游”需满足的机制/标签（OR of ANDs），子句 Direction 表示目标在己方左/右/任意；null 表示无。</summary>
-    public List<SynergyClause>? DownstreamRequirements { get; set; }
-    /// <summary>邻居协同先验：希望相邻位置存在的物品类型/机制（OR of ANDs）；null 表示无。</summary>
-    public List<SynergyClause>? NeighborPreference { get; set; }
-
     /// <summary>获取按等级扩展属性的只读副本，用于序列化或复制。</summary>
     public IReadOnlyDictionary<string, List<int>> GetIntsByTierSnapshot() =>
         _intsByTier.ToDictionary(kv => kv.Key, kv => new List<int>(kv.Value));

@@ -25,14 +25,6 @@ public static class YetiCrab
                     additionalTargetCondition: Condition.AdjacentToSource & Condition.WithTag(Tag.Poison)
                 ),
             ],
-            UpstreamRequirements =
-            [
-                Synergy.And(Tag.Freeze),
-            ],
-            NeighborPreference =
-            [
-                Synergy.And(Tag.Poison),
-            ],
         };
     }
 }

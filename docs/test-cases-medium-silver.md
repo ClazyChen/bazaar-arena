@@ -1,6 +1,6 @@
 # 中型银物品测试用例
 
-本文档描述针对「中型银」物品的自动化测试用例。每个用例由两方卡组（P1 vs P2）与预期行为（日志中出现的关键内容）组成。卡组定义见 `Data/Decks/test_medium_silver.json`。脚本：`scripts/run_item_tests_medium_silver.py`。
+本文档描述针对「中型银」物品的自动化测试用例。每个用例由两方卡组（P1 vs P2）与预期行为（日志中出现的关键内容）组成。卡组定义见 `Data/Decks/item_tests/test_medium_silver.json`。脚本：`scripts/item_tests/run_item_tests_medium_silver.py`。
 
 ---
 

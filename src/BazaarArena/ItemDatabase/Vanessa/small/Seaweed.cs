@@ -26,10 +26,6 @@ public static class Seaweed
                     targetCondition: Condition.SameAsSource
                 ),
             ],
-            UpstreamRequirements =
-            [
-                Synergy.And(Tag.Aquatic),
-            ],
         };
     }
 }

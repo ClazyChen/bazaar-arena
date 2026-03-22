@@ -1,12 +1,12 @@
 # 变更记录
 
-## 类型 Tag 与机制 Tag 统一、协同先验（Synergy Prior）
+## 类型 Tag 与机制 Tag 统一（历史：曾新增协同先验数据，现已移除）
 
 - **EnsureTypeTags 改为按 Apply 打标**：类型 Tag（Damage/Burn/Poison/Heal/Shield/Regen）不再根据模板数值属性，改为根据 **Ability.Apply** 与 `Effect.*Apply` 对应关系打标；SameAsSource 光环仍按 AttributeName 补六类 Tag。
 - **Tag.Crit / Tag.Cooldown**：具备六类可暴击 Tag 之一且存在 UseItem+UseSelf+ApplyCritMultiplier 能力时打 Tag.Crit；任意档位 CooldownMs>0 时打 Tag.Cooldown。
 - **机制 Tag**：按 Apply 打 Tag.Charge、Freeze、Slow、Haste、Reload、Repair、Destroy、StopFlying；StartFlying 通过 EffectLogName=="开始飞行" 识别。AddAttribute/ReduceAttribute、GainGold 不参与自动打标。
-- **协同先验**：ItemTemplate 新增 **UpstreamRequirements**、**DownstreamRequirements**、**NeighborPreference**（`List<SynergyClause>?`，OR of ANDs）。子句为若干 Tag 的 AND，可带 **SynergyDirection**（Left/Right）表示相对己方方向。书写统一用 **Synergy.And(tags)** 与 **Synergy.And(direction, tags)**。示例：珍珠上游 Aquatic+Cooldown、刺刀上游 Left+Weapon、火药角下游 Right+Ammo、迷幻蝠鲼邻居 Friend OR Ray、弹簧刀邻居 Weapon。
-- **文档与规则**：implementation-notes 更新「物品类型 Tag 与机制 Tag」、新增「协同先验（Synergy Prior）」；project-conventions.mdc 补充 EnsureTypeTags 与协同先验字段约定；新增 .cursor/rules/synergy-prior.mdc；ItemUiHelper 隐藏 Tag.Crit/Cooldown 与机制 Tag。
+- **协同先验（已移除，见 implementation-notes 说明）**：历史上 ItemTemplate 曾含 **UpstreamRequirements**、**DownstreamRequirements**、**NeighborPreference** 与 **SynergyClause**；现已删除字段、Core 类型、物品声明。下列路径曾为协同先验配套内容，**当前仓库中已不存在**，本changelog 仅作历史索引：`docs/vanessa-synergy-prior.txt`、`.cursor/rules/synergy-prior.mdc`。
+- **文档与规则**：implementation-notes 更新「物品类型 Tag 与机制 Tag」；project-conventions.mdc 补充 EnsureTypeTags；ItemUiHelper 隐藏 Tag.Crit/Cooldown 与机制 Tag。
 
 ---
 

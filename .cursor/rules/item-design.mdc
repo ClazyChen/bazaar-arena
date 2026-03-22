@@ -10,7 +10,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 ### 基础与注册
 
-- **基础字段**：`Name`、`Desc`、`Tags`。Tags 使用 `Tag.Weapon`、`Tag.Friend`、`Tag.Tool`、`Tag.Apparel`、`Tag.Food`、`Tag.Tech`、`Tag.Property`、`Tag.Vehicle`、`Tag.Relic`、`Tag.Dragon`、`Tag.Drone`、`Tag.Toy` 等。**尺寸 Tag**（`Tag.Small`、`Tag.Medium`、`Tag.Large`）与**类型/机制 Tag**（Damage、Burn、Poison、Heal、Shield、Regen、Charge、Freeze、Slow、Haste、Reload、Repair、Destroy、StartFlying、StopFlying、Crit、Cooldown、Ammo）由 **Register** 内 **EnsureTypeTags** 按 Ability.Apply 与光环等自动添加，无需手写。**协同先验**（配合图/队形启发式）：可选字段 **UpstreamRequirements**、**DownstreamRequirements**、**NeighborPreference**（`List<SynergyClause>?`），用 **Synergy.And(tags)** 或 **Synergy.And(direction, tags)** 书写；详见 **.cursor/rules/synergy-prior.mdc** 与 `docs/implementation-notes.md`「协同先验」。
+- **基础字段**：`Name`、`Desc`、`Tags`。Tags 使用 `Tag.Weapon`、`Tag.Friend`、`Tag.Tool`、`Tag.Apparel`、`Tag.Food`、`Tag.Tech`、`Tag.Property`、`Tag.Vehicle`、`Tag.Relic`、`Tag.Dragon`、`Tag.Drone`、`Tag.Toy` 等。**尺寸 Tag**（`Tag.Small`、`Tag.Medium`、`Tag.Large`）与**类型/机制 Tag**（Damage、Burn、Poison、Heal、Shield、Regen、Charge、Freeze、Slow、Haste、Reload、Repair、Destroy、StartFlying、StopFlying、Crit、Cooldown、Ammo）由 **Register** 内 **EnsureTypeTags** 按 Ability.Apply 与光环等自动添加，无需手写。
 - **MinTier、Size**：**不在物品工厂中设置**；在 **RegisterAll** 中通过 `db.DefaultSize`、`db.DefaultMinTier` 按批次设置，`Register` 时写入模板。
 
 ### 数值与时间

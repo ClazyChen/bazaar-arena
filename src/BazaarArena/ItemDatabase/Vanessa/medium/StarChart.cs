@@ -31,11 +31,6 @@ public static class StarChart
                     Value = Formula.Source(Key.Custom_1),
                 },
             ],
-            NeighborPreference =
-            [
-                Synergy.And(Tag.Crit),
-                Synergy.And(Tag.Cooldown),
-            ],
         };
     }
 }

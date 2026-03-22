@@ -28,10 +28,6 @@ public static class Pearl
                     priority: AbilityPriority.Low
                 ),
             ],
-            UpstreamRequirements =
-            [
-                Synergy.And(Tag.Aquatic, Tag.Cooldown),
-            ],
         };
     }
 }

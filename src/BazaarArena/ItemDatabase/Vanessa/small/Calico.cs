@@ -25,10 +25,6 @@ public static class Calico
                     targetCondition: Condition.SameAsSource
                 ),
             ],
-            UpstreamRequirements =
-            [
-                Synergy.And(Tag.Weapon),
-            ],
         };
     }
 
@@ -59,10 +55,6 @@ public static class Calico
                     Value = Formula.Constant(100),
                     Percent = true,
                 },
-            ],
-            UpstreamRequirements =
-            [
-                Synergy.And(Tag.Weapon),
             ],
         };
     }

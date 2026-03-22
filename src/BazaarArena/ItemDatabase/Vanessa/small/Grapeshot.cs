@@ -27,10 +27,6 @@ public static class Grapeshot
                     priority: AbilityPriority.Lowest
                 ),
             ],
-            UpstreamRequirements =
-            [
-                Synergy.And(Tag.Ammo),
-            ],
         };
     }
 
@@ -54,10 +50,6 @@ public static class Grapeshot
                     targetCondition: Condition.SameAsSource,
                     priority: AbilityPriority.Lowest
                 ),
-            ],
-            UpstreamRequirements =
-            [
-                Synergy.And(Tag.Ammo),
             ],
         };
     }

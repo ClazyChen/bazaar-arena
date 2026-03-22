@@ -23,10 +23,6 @@ public static class Bayonet
                     condition: Condition.SameSide & Condition.LeftOfSource & Condition.WithTag(Tag.Weapon)
                 ),
             ],
-            UpstreamRequirements =
-            [
-                Synergy.And(SynergyDirection.Left, Tag.Weapon),
-            ],
         };
     }
 }

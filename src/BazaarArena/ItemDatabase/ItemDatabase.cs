@@ -240,9 +240,6 @@ public class ItemDatabase : IItemTemplateResolver
             })],
             Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), Value = a.Value, Percent = a.Percent }).ToList(),
             OverridableAttributes = t.OverridableAttributes != null ? new Dictionary<string, IntOrByTier>(t.OverridableAttributes) : null,
-            UpstreamRequirements = t.UpstreamRequirements != null ? new List<SynergyClause>(t.UpstreamRequirements) : null,
-            DownstreamRequirements = t.DownstreamRequirements != null ? new List<SynergyClause>(t.DownstreamRequirements) : null,
-            NeighborPreference = t.NeighborPreference != null ? new List<SynergyClause>(t.NeighborPreference) : null,
         };
         clone.SetIntsByTier(t.GetIntsByTierSnapshot());
         return clone;
