@@ -1,4 +1,3 @@
-using BazaarArena.BattleSimulator;
 using BazaarArena.Core;
 
 namespace BazaarArena.ItemDatabase;
@@ -58,13 +57,13 @@ public static class CommonMedium
             Abilities =
             [
                 Ability.Haste.Override(
-                    condition: Condition.RightOfSource,
-                    targetCondition: Condition.RightOfSource,
+                    condition: Condition.RightOfCaster,
+                    targetCondition: Condition.RightOfCaster,
                     priority: AbilityPriority.Low
                 ),
                 Ability.AddAttribute(Key.Damage).Override(
-                    condition: Condition.RightOfSource & Condition.WithTag(Tag.Weapon),
-                    targetCondition: Condition.RightOfSource,
+                    condition: Condition.RightOfCaster & Condition.WithTag(Tag.Weapon),
+                    targetCondition: Condition.RightOfCaster,
                     priority: AbilityPriority.Low
                 ),
             ],
@@ -162,7 +161,7 @@ public static class CommonMedium
             Abilities =
             [
                 Ability.Haste.Override(
-                    additionalTargetCondition: Condition.AdjacentToSource,
+                    additionalTargetCondition: Condition.AdjacentToCaster,
                     priority: AbilityPriority.High
                 ),
             ],
@@ -217,7 +216,7 @@ public static class CommonMedium
                 new AuraDefinition
                 {
                     Attribute = Key.Damage,
-                    Condition = Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon),
+                    Condition = Condition.AdjacentToCaster & Condition.WithTag(Tag.Weapon),
                     Value = Formula.Source(Key.Custom_0),
                 },
             ],
@@ -267,7 +266,7 @@ public static class CommonMedium
                 ),
                 Ability.Charge.Override(
                     trigger: Trigger.Crit,
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ).Also(
                     trigger: Trigger.UseItem,
@@ -297,7 +296,7 @@ public static class CommonMedium
                 ),
                 Ability.Charge.Override(
                     trigger: Trigger.Burn,
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ),
             ],
@@ -348,7 +347,7 @@ public static class CommonMedium
             Abilities =
             [
                 Ability.Freeze.Override(
-                    targetCondition: Condition.SameAsSource | Condition.AdjacentToSource
+                    targetCondition: Condition.SameAsCaster | Condition.AdjacentToCaster
                 ),
                 Ability.Shield.Override(
                     trigger: Trigger.Freeze,
@@ -383,7 +382,7 @@ public static class CommonMedium
                 Ability.Shield,
                 Ability.Charge.Override(
                     trigger: Trigger.Poison,
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ),
             ],
@@ -411,13 +410,13 @@ public static class CommonMedium
                 ),
                 Ability.Charge.Override(
                     trigger: Trigger.Freeze,
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ),
                 Ability.ReduceAttribute(Key.FreezeRemainingMs).Override(
                     trigger: Trigger.Freeze,
-                    condition: Condition.SameAsSource,
-                    targetCondition: Condition.SameAsSource & Condition.IsFrozen,
+                    condition: Condition.SameAsCaster,
+                    targetCondition: Condition.SameAsCaster & Condition.IsFrozen,
                     value: 1_000_000,
                     effectLogName: "解除冻结",
                     priority: AbilityPriority.Low
@@ -445,12 +444,12 @@ public static class CommonMedium
                 new AuraDefinition
                 {
                     Attribute = Key.Damage,
-                    Value = Formula.Source(Key.Custom_0) * Formula.Count(Condition.StrictlyLeftOfSource),
+                    Value = Formula.Source(Key.Custom_0) * Formula.Count(Condition.StrictlyLeftOfCaster),
                 },
                 new AuraDefinition
                 {
                     Attribute = Key.CooldownMs,
-                    Value = Formula.Constant(-1000) * Formula.Count(Condition.StrictlyRightOfSource & Condition.WithTag(Tag.Tech)),
+                    Value = Formula.Constant(-1000) * Formula.Count(Condition.StrictlyRightOfCaster & Condition.WithTag(Tag.Tech)),
                 },
             ],
         };
@@ -471,7 +470,7 @@ public static class CommonMedium
             [
                 Ability.ReduceAttribute(Key.CooldownMs).Override(
                     targetCondition: Condition.SameSide,
-                    additionalTargetCondition: Condition.HasCooldown & Condition.DifferentFromSource & Condition.WithTag(Tag.Tool),
+                    additionalTargetCondition: Condition.HasCooldown & Condition.DifferentFromCaster & Condition.WithTag(Tag.Tool),
                     effectLogName: "冷却缩短"
                 ),
             ],
@@ -480,7 +479,7 @@ public static class CommonMedium
                 new AuraDefinition
                 {
                     Attribute = Key.CooldownMs,
-                    Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToSource & Condition.WithTag(Tag.Tool)),
+                    Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToCaster & Condition.WithTag(Tag.Tool)),
                 },
             ],
         };
@@ -504,7 +503,7 @@ public static class CommonMedium
                 Ability.Slow,
                 Ability.Charge.Override(
                     trigger: Trigger.Crit,
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ),
             ],
@@ -513,7 +512,7 @@ public static class CommonMedium
                 new AuraDefinition
                 {
                     Attribute = Key.CritRatePercent,
-                    Condition = Condition.AdjacentToSource,
+                    Condition = Condition.AdjacentToCaster,
                     Value = Formula.Source(Key.Custom_0),
                 },
             ],
@@ -537,7 +536,7 @@ public static class CommonMedium
                 Ability.Burn,
                 Ability.AddAttribute(Key.Burn).Override(
                     trigger: Trigger.Shield,
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     valueKey: Key.Custom_0,
                     priority: AbilityPriority.Low
                 ),
@@ -560,12 +559,12 @@ public static class CommonMedium
             Abilities =
             [
                 Ability.Destroy.Override(
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Highest
                 ),
                 Ability.Charge.Override(
                     trigger: Trigger.Destroy,
-                    condition: Condition.SameAsSource,
+                    condition: Condition.SameAsCaster,
                     targetCondition: Condition.SameSide,
                     priority: AbilityPriority.Low
                 ),
@@ -574,7 +573,7 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    Condition = Condition.AdjacentToSource,
+                    Condition = Condition.AdjacentToCaster,
                     GrantedTags = [Tag.Vehicle],
                 },
                 new AuraDefinition
@@ -609,14 +608,14 @@ public static class CommonMedium
                 new AuraDefinition
                 {
                     Attribute = Key.CritRatePercent,
-                    Condition = Condition.LeftOfSource & Condition.WithTag(DerivedTag.Ammo),
+                    Condition = Condition.LeftOfCaster & Condition.WithTag(DerivedTag.Ammo),
                     Value = Formula.Constant(100),
                     Percent = true,
                 },
                 new AuraDefinition
                 {
                     Attribute = Key.AmmoCap,
-                    Condition = Condition.LeftOfSource & Condition.WithTag(DerivedTag.Ammo),
+                    Condition = Condition.LeftOfCaster & Condition.WithTag(DerivedTag.Ammo),
                     Value = Formula.Constant(1),
                 },
             ],
@@ -639,7 +638,7 @@ public static class CommonMedium
                 Ability.Damage,
                 Ability.Destroy.Override(
                     trigger: Trigger.Ammo,
-                    condition: Condition.SameAsSource & Condition.AmmoDepleted,
+                    condition: Condition.SameAsCaster & Condition.AmmoDepleted,
                     targetCondition: Condition.DifferentSide,
                     priority: AbilityPriority.Highest
                 ),
@@ -667,7 +666,7 @@ public static class CommonMedium
                 new AuraDefinition
                 {
                     Attribute = Key.LifeSteal,
-                    Condition = Condition.LeftOfSource & Condition.WithTag(Tag.Weapon),
+                    Condition = Condition.LeftOfCaster & Condition.WithTag(Tag.Weapon),
                     Value = Formula.Constant(1),
                 },
             ],
@@ -707,11 +706,11 @@ public static class CommonMedium
             Abilities =
             [
                 Ability.Destroy.Override(
-                    targetCondition: Condition.AdjacentToSource
+                    targetCondition: Condition.AdjacentToCaster
                 ),
                 Ability.Shield.Override(
                     trigger: Trigger.Destroy,
-                    condition: Condition.SameAsSource
+                    condition: Condition.SameAsCaster
                 ),
             ],
             Auras =
@@ -719,8 +718,8 @@ public static class CommonMedium
                 new AuraDefinition
                 {
                     Attribute = Key.Shield,
-                    Condition = Condition.SameAsSource,
-                    Value = RatioUtil.PercentFloor(Formula.Side(BattleSide.KeyMaxHp), Formula.Source(Key.Custom_0)),
+                    Condition = Condition.SameAsCaster,
+                    Value = RatioUtil.PercentFloor(Formula.Side(Key.MaxHp), Formula.Source(Key.Custom_0)),
                 },
             ],
         };
@@ -749,8 +748,8 @@ public static class CommonMedium
                 new AuraDefinition
                 {
                     Attribute = Key.Shield,
-                    Condition = Condition.SameAsSource,
-                    Value = Formula.Opp(BattleSide.KeyBurn),
+                    Condition = Condition.SameAsCaster,
+                    Value = Formula.Opp(Key.Burn),
                 },
             ],
         };

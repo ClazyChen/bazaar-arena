@@ -22,13 +22,13 @@ public class TextBoxBattleLogSink : IBattleLogSink
 
     private static string TimeSec(int timeMs) => (timeMs / 1000.0).ToString("F2") + "s";
 
-    public void OnCast(BattleItemState caster, string itemName, int timeMs, int? ammoRemainingAfter = null)
+    public void OnCast(ItemState caster, string itemName, int timeMs, int? ammoRemainingAfter = null)
     {
         // GUI 不显示施放行，仅保留效果（伤害、护盾、充能等）日志
         return;
     }
 
-    public void OnEffect(BattleItemState caster, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)
+    public void OnEffect(ItemState caster, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)
     {
         if (_level != BattleLogLevel.Detailed) return;
         string critSuffix = isCrit ? " （暴击）" : "";

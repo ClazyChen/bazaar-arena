@@ -15,7 +15,7 @@ public class AbilityDefinition
     public int? TargetCountKey { get; set; }
 
     private static Formula DefaultConditionByTrigger(int trigger) =>
-        trigger == Trigger.UseItem ? Condition.SameAsSource : Condition.SameSide;
+        trigger == Trigger.UseItem ? Condition.SameAsCaster : Condition.SameSide;
 
     public AbilityDefinition Override(
         int? trigger = null,
@@ -32,7 +32,7 @@ public class AbilityDefinition
         int? targetCountKey = null)
     {
         if (TriggerEntries.Count == 0)
-            TriggerEntries.Add(new TriggerEntry { Trigger = Trigger.UseItem, Condition = Condition.SameAsSource });
+            TriggerEntries.Add(new TriggerEntry { Trigger = Trigger.UseItem, Condition = Condition.SameAsCaster });
 
         if (trigger != null)
             TriggerEntries[0].Trigger = trigger.Value;

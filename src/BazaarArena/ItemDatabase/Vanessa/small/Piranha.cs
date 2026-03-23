@@ -21,8 +21,8 @@ public static class Piranha
             [
                 Ability.Damage,
                 Ability.Charge.Override(
-                    condition: Condition.SameSide & (Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Food)) & Condition.DifferentFromSource,
-                    targetCondition: Condition.SameAsSource
+                    condition: Condition.SameSide & (Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Food)) & Condition.DifferentFromCaster,
+                    targetCondition: Condition.SameAsCaster
                 ),
             ],
         };

@@ -10,10 +10,11 @@ public class Formula
     /// <summary>求值。</summary>
     public int Evaluate(BattleContext ctx) => _evaluate(ctx);
 
+    /// <summary>读取「能力持有者」模板整型；与上下文字段 <see cref="BattleContext.Source"/>（引起触发者）区分，此处固定走 <see cref="BattleContext.Caster"/>。</summary>
     public static Formula Source(int key) => new(ctx =>
     {
-        if (ctx.Source == null) return 0;
-        return ctx.Source.Template.GetInt(key, ctx.Source.Tier, 0);
+        if (ctx.Caster == null) return 0;
+        return ctx.Caster.Template.GetInt(key, ctx.Caster.Tier, 0);
     });
 
     public static Formula Caster(int key) => new(ctx =>
@@ -79,30 +80,40 @@ public class Formula
 
     private static BazaarArena.BattleSimulator.BattleSide CurrentSide(BattleContext ctx)
     {
-        int sideIndex = ctx.Source?.SideIndex ?? ctx.Caster?.SideIndex ?? ctx.Item.SideIndex;
+        int sideIndex = ctx.Caster?.SideIndex ?? ctx.Source?.SideIndex ?? ctx.Item.SideIndex;
         return sideIndex == 0 ? ctx.BattleState.Side0 : ctx.BattleState.Side1;
     }
 
     private static BazaarArena.BattleSimulator.BattleSide OppSide(BattleContext ctx)
     {
-        int sideIndex = ctx.Source?.SideIndex ?? ctx.Caster?.SideIndex ?? ctx.Item.SideIndex;
+        int sideIndex = ctx.Caster?.SideIndex ?? ctx.Source?.SideIndex ?? ctx.Item.SideIndex;
         return sideIndex == 0 ? ctx.BattleState.Side1 : ctx.BattleState.Side0;
     }
 
-    private static int ReadSideAttribute(BazaarArena.BattleSimulator.BattleSide side, int key) => key switch
+    private static int ReadSideAttribute(BazaarArena.BattleSimulator.BattleSide side, int key)
     {
-        Key.MaxHp => side.MaxHp,
-        Key.Hp => side.Hp,
-        Key.Shield => side.Shield,
-        Key.Burn => side.Burn,
-        Key.Poison => side.Poison,
-        Key.Regen => side.Regen,
-        Key.Gold => side.Gold,
-        _ => 0,
-    };
+        if (key == Key.SideIndex) return side.SideIndex;
+        if (key == Key.Damage) return side.MaxHp;
+        if (key == Key.Heal) return side.Hp;
+        if (key == Key.Shield) return side.Shield;
+        if (key == Key.Burn) return side.Burn;
+        if (key == Key.Poison) return side.Poison;
+        if (key == Key.Regen) return side.Regen;
+        if (key == Key.Gold) return side.Gold;
+        return 0;
+    }
 
-    public static Formula Side(string sideKey) => new(ctx => CurrentSide(ctx).GetInt(sideKey, 0));
-    public static Formula Opp(string sideKey) => new(ctx => OppSide(ctx).GetInt(sideKey, 0));
+    public static Formula Side(string sideKey) => new(ctx =>
+    {
+        if (!Key.TryGetKey(sideKey, out int k)) return 0;
+        return ReadSideAttribute(CurrentSide(ctx), k);
+    });
+
+    public static Formula Opp(string sideKey) => new(ctx =>
+    {
+        if (!Key.TryGetKey(sideKey, out int k)) return 0;
+        return ReadSideAttribute(OppSide(ctx), k);
+    });
     public static Formula Side(int key) => new(ctx => ReadSideAttribute(CurrentSide(ctx), key));
     public static Formula Opp(int key) => new(ctx => ReadSideAttribute(OppSide(ctx), key));
     public static Formula SideSelect(int key, SideSelectKind kind) => new(ctx =>

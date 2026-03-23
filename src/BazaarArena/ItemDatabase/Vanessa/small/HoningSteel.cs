@@ -43,7 +43,7 @@ public static class HoningSteel
             Abilities =
             [
                 Ability.AddAttribute(Key.Damage).Override(
-                    additionalTargetCondition: Condition.RightOfSource & Condition.WithTag(Tag.Weapon),
+                    additionalTargetCondition: Condition.RightOfCaster & Condition.WithTag(Tag.Weapon),
                     priority: AbilityPriority.High
                 ),
             ],
@@ -63,7 +63,7 @@ public static class HoningSteel
             Abilities =
             [
                 Ability.AddAttribute(Key.Damage).Override(
-                    additionalTargetCondition: Condition.RightOfSource & Condition.WithTag(Tag.Weapon),
+                    additionalTargetCondition: Condition.RightOfCaster & Condition.WithTag(Tag.Weapon),
                     priority: AbilityPriority.High
                 ),
             ],

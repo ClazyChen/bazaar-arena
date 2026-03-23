@@ -3,7 +3,7 @@ using BazaarArena.Core;
 namespace BazaarArena.BattleSimulator;
 
 /// <summary>过渡中的战斗侧公式辅助上下文。</summary>
-internal sealed class FormulaContext(BattleItemState source, BattleSide side, BattleSide? opp)
+internal sealed class FormulaContext(ItemState source, BattleSide side, BattleSide? opp)
 {
     public int GetSourceInt(string key) =>
         source.Template.GetInt(key, source.Tier, 0);

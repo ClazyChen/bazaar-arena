@@ -42,7 +42,7 @@ public static class SharkClaws
             [
                 Ability.Damage,
                 Ability.AddAttribute(Key.Damage).Override(
-                    additionalTargetCondition: Condition.WithTag(Tag.Weapon) & Condition.DifferentFromSource
+                    additionalTargetCondition: Condition.WithTag(Tag.Weapon) & Condition.DifferentFromCaster
                 ),
             ],
         };

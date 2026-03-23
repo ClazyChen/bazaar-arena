@@ -26,11 +26,11 @@ public static class MantisShrimp
                 Ability.Burn,
                 Ability.AddAttribute(Key.Damage).Override(
                     trigger: Trigger.Slow,
-                    targetCondition: Condition.SameAsSource
+                    targetCondition: Condition.SameAsCaster
                 ),
                 Ability.AddAttribute(Key.Burn).Override(
                     trigger: Trigger.Slow,
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     valueKey: Key.Custom_1
                 ),
             ],

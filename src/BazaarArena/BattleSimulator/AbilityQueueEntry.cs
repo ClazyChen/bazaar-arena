@@ -4,7 +4,7 @@ namespace BazaarArena.BattleSimulator;
 public class AbilityQueueEntry
 {
     /// <summary>能力持有者（引用）。</summary>
-    public BattleItemState Owner { get; set; } = null!;
+    public ItemState Owner { get; set; } = null!;
     public int AbilityIndex { get; set; }
     public int PendingCount { get; set; }
     /// <summary>当非 null 时表示本条目由触发器指向的单个目标触发，效果应对该物品施加（如月光宝珠「敌方加速时令其减速」）；不与其他条目合并。</summary>

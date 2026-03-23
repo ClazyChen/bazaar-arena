@@ -102,7 +102,7 @@
 
 ## 运行时变量字典化、Formula 委托类型与光环公式统一
 
-- **运行时变量存字典**：BattleItemState 的 SideIndex、ItemIndex、Tier、CooldownElapsedMs、HasteRemainingMs、SlowRemainingMs、FreezeRemainingMs、InFlight、Destroyed、AmmoRemaining、LastTriggerMs 等全部存入 **ItemTemplate** 的 `_intsByTier`（单值存为长度 1 的列表）；bool 用 GetBool/SetBool（0/1）。BattleSide 的 MaxHp、Hp、Shield、Burn、Poison、Regen、SideIndex 存入 **BattleSide** 的字典，通过 GetInt(key)/SetInt(key) 按名访问。便于公式与扩展用统一接口解析。
+- **运行时变量存字典**：ItemState 的 SideIndex、ItemIndex、Tier、CooldownElapsedMs、HasteRemainingMs、SlowRemainingMs、FreezeRemainingMs、InFlight、Destroyed、AmmoRemaining、LastTriggerMs 等全部存入 **ItemTemplate** 的 `_intsByTier`（单值存为长度 1 的列表）；bool 用 GetBool/SetBool（0/1）。BattleSide 的 MaxHp、Hp、Shield、Burn、Poison、Regen、SideIndex 存入 **BattleSide** 的字典，通过 GetInt(key)/SetInt(key) 按名访问。便于公式与扩展用统一接口解析。
 - **Formula 委托类型**：光环固定加成从「公式名字符串 + AuraFormulaEvaluator 分支」改为 **Formula** 类（持有一个 `Func<IFormulaContext, int>`）。提供 Formula.Source(key)、Formula.Side(key)、Formula.Opp(key)、Formula.Count(condition)、Formula.Constant(n) 与 +、-、*、一元负号、int*Formula 组合。求值由 **FormulaContext**（BattleSimulator）实现 IFormulaContext，BattleAuraContext 调用 formula.Evaluate(ctx)。删除 AuraFormulaEvaluator；现有五处公式改写为表达式（如 OpponentPoison → Formula.Opp(BattleSide.KeyPoison)，SmallCountStash → Formula.Source(Custom_0) * (Formula.Source(StashParameter) + Formula.Count(...))）。
 - **RatioUtil.PercentFloor(Formula, percent)**：增加接受 Formula 的重载，用于光环中「数值的 percent% 向下取整」。Formula 增加 Apply(transform) 与一元负号，纳米机器人等处可写 **-1000 * Formula.Count(...)** 替代 Formula.Constant(-1000) * ...。
 - **文档与规则**：implementation-notes 新增「运行时变量与字典」、更新「光环公式」与「依赖变量的光环」；project-conventions 更新光环 Formula 写法与运行时变量字典约定。
@@ -136,14 +136,14 @@
 
 ---
 
-## BattleItemState 引用化重构（sim）
+## ItemState 引用化重构（sim）
 
-- **目标**：函数与数据结构在标识「哪个物品」时统一使用 `BattleItemState` 引用，不再传递或存储 `(sideIndex, itemIndex)` 组合；`SideIndex`/`ItemIndex` 仍保留在 `BattleItemState` 上供 Condition、排序与输出使用。
-- **数据结构**：`AbilityQueueEntry` 改为 `Owner`（BattleItemState）+ `AbilityIndex`，合并与排序用 `Owner` 引用及 `Owner.SideIndex`/`ItemIndex`；`TriggerInvokeContext` 改为 `InvokeTargetItem`（BattleItemState?）；castQueue / ChargeInducedCastQueue 类型为 `List<BattleItemState>`。
+- **目标**：函数与数据结构在标识「哪个物品」时统一使用 `ItemState` 引用，不再传递或存储 `(sideIndex, itemIndex)` 组合；`SideIndex`/`ItemIndex` 仍保留在 `ItemState` 上供 Condition、排序与输出使用。
+- **数据结构**：`AbilityQueueEntry` 改为 `Owner`（ItemState）+ `AbilityIndex`，合并与排序用 `Owner` 引用及 `Owner.SideIndex`/`ItemIndex`；`TriggerInvokeContext` 改为 `InvokeTargetItem`（ItemState?）；castQueue / ChargeInducedCastQueue 类型为 `List<ItemState>`。
 - **BattleSimulator**：`InvokeTrigger(triggerName, causeItem?, context, ...)`，`AddOrMergeAbility(owner, ...)`，`ExecuteOneEffect(item, ...)`；ProcessCooldown 签名为 `(side, timeMs, castQueue)`；SettleBurn/Poison/Regen 去掉 victimSideIndex，日志接口改为接收 `BattleSide`。
-- **效果与光环**：`IEffectApplyContext` 移除 `ItemIndex`、新增 `CasterItem`（BattleItemState）；`EffectApplyContextImpl` 用 `Item`、`ChargeInducedCastQueue` 为 `List<BattleItemState>?`；`BattleAuraContext(side, targetItem, opp)`，`AuraFormulaEvaluator.Evaluate(formulaName, source, side, opp)`。
-- **日志**：`IBattleLogSink` 的 OnCast/OnEffect 改为接收 `BattleItemState caster`，OnBurnTick/OnPoisonTick/OnRegenTick 改为接收 `BattleSide`；`StatsCollectingSink` 使用 `Dictionary<BattleItemState, ItemAccumEntry>`，输出时按 `(item.SideIndex, item.ItemIndex)` 排序。
-- **文档与规则**：implementation-notes、battle-simulator-ability-queue、item-design 同步为「以 BattleItemState 引用入队/传参」的表述。
+- **效果与光环**：`IEffectApplyContext` 移除 `ItemIndex`、新增 `CasterItem`（ItemState）；`EffectApplyContextImpl` 用 `Item`、`ChargeInducedCastQueue` 为 `List<ItemState>?`；`BattleAuraContext(side, targetItem, opp)`，`AuraFormulaEvaluator.Evaluate(formulaName, source, side, opp)`。
+- **日志**：`IBattleLogSink` 的 OnCast/OnEffect 改为接收 `ItemState caster`，OnBurnTick/OnPoisonTick/OnRegenTick 改为接收 `BattleSide`；`StatsCollectingSink` 使用 `Dictionary<ItemState, ItemAccumEntry>`，输出时按 `(item.SideIndex, item.ItemIndex)` 排序。
+- **文档与规则**：implementation-notes、battle-simulator-ability-queue、item-design 同步为「以 ItemState 引用入队/传参」的表述。
 
 ---
 
@@ -168,7 +168,7 @@
 ## ConditionContext 重构与触发器统一
 
 - **ConditionContext**：收敛为四字段 `MySide`、`EnemySide`、`Item`、`Source?`；移除 CandidateSide/Item、SourceSide/Item、UsedTemplate、CandidateTemplate、SourceInFlight、DestroyedItem* 等场景字段。Condition 全部基于 Item/Source 的 SideIndex/ItemIndex/Template/InFlight 重写；新增 `Condition.LargeOrInFlight`，移除 `DestroyedTargetIsLargeOrInFlight`。
-- **BattleSide / BattleItemState**：新增 `SideIndex`、`ItemIndex`（Run 初始化时写入），用于同侧/相邻等推导。
+- **BattleSide / ItemState**：新增 `SideIndex`、`ItemIndex`（Run 初始化时写入），用于同侧/相邻等推导。
 - **触发器语义统一**：Freeze/Slow/Crit/Destroy 均为「任意物品施加/造成 xx 时触发」，默认 Condition 为 SameSide；可重写实现对方触发。
 - **触发器命名**：`OnDestroy` → `Trigger.Destroy`，`OnCrit` → `Trigger.Crit`，与 UseItem/Freeze/Slow 风格一致。
 - **Destroy**：与 Slow 同构，Condition 判定施加者、InvokeTargetCondition 判定被摧毁物品；牵引光束能力 3 改为 `InvokeTargetCondition = Condition.LargeOrInFlight`。
@@ -193,7 +193,7 @@
 - **类型 Tag**：`Core/Tag.cs` 新增 `Tag.Shield`、`Tag.Damage`、`Tag.Burn`、`Tag.Poison`、`Tag.Heal`、`Tag.Regen`，用于判断护盾/伤害/灼烧等物品及是否可暴击。
 - **注册时自动补充**：`ItemDatabase.Register` 内根据模板属性（任一档位 > 0）自动向 `Tags` 加入对应类型 Tag；若属性为 0 但存在 **Condition 为 SameAsSource** 的光环且 **AttributeName** 为六类之一，也补充对应 Tag（如废品场长枪 Damage=0 由光环提供仍得 Tag.Damage）。无需在物品定义中手写。
 - **Condition 与可暴击**：`Condition.IsShieldItem` 改为依据 `CandidateTemplate.Tags.Contains(Tag.Shield)`；可暴击判定改为 `ItemHasAnyCrittableField` 检查模板是否含上述六类 Tag 之一；移除 `ConditionContext.CandidateTypeSnapshot`。
-- **删除**：移除 `Core/ItemTypeSnapshot.cs`、`BattleItemState.TypeSnapshot` 及 BuildSide 中 TypeSnapshot 赋值；`EffectApplyContextImpl.ReduceAttributeToOpponentSide` 不再设置 `CandidateTypeSnapshot`。
+- **删除**：移除 `Core/ItemTypeSnapshot.cs`、`ItemState.TypeSnapshot` 及 BuildSide 中 TypeSnapshot 赋值；`EffectApplyContextImpl.ReduceAttributeToOpponentSide` 不再设置 `CandidateTypeSnapshot`。
 - **文档与规则**：implementation-notes「物品类型快照」改为「物品类型 Tag」并增加经验总结（为何用 Tag、为何按光环补 Tag）；item-design.mdc、project-conventions.mdc、changelog 相应更新。
 
 ---
@@ -219,7 +219,7 @@
 
 ## 飞行机制、Crit、统一光环读取与三件新物品
 
-- **飞行（In Flight）**：`BattleItemState.InFlight` 运行时状态；`Effect.StartFlying` 设置并记日志「开始飞行」，若已在飞行则不重复结算（幂等）。光环「提供者在飞行」用 AuraDefinition.SourceCondition = Condition.InFlight。Tooltip/日志「飞行」与护盾同色。
+- **飞行（In Flight）**：`ItemState.InFlight` 运行时状态；`Effect.StartFlying` 设置并记日志「开始飞行」，若已在飞行则不重复结算（幂等）。光环「提供者在飞行」用 AuraDefinition.SourceCondition = Condition.InFlight。Tooltip/日志「飞行」与护盾同色。
 - **造成暴击时**：`Trigger.Crit`；`ExecuteOneEffect` 结束后若 `isCrit` 则 `InvokeTrigger(Trigger.Crit, ...)`；`EnsureTriggerCondition` 默认 SameSide。
 - **战斗内属性统一带光环**：`BattleSide.GetItemInt(itemIndex, key, default)` 统一入口；BattleSimulator、EffectApplyContextImpl、BattleAuraContext 中战斗内读属性改为通过 GetItemInt 或带 context 的 GetInt。光环内 FixedValueKey/PercentValueKey 与公式求值（含 `Formula.SourceDamage`）均带 `BattleAuraContext(side, sourceIndex)`。
 - **Formula.SourceDamage**：光环固定加成 = 来源物品 Damage（含光环），用于如巨龙崽崽 Burn = 自身 Damage；`AuraFormulaEvaluator.Evaluate` 增加 `sourceIndex` 参数。

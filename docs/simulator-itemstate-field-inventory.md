@@ -1,8 +1,8 @@
 # ItemState 字段盘点（重构阶段 1）
 
-本文用于“`BattleItemState -> ItemState`”替换时的字段梳理，范围仅覆盖当前 `BattleSimulator` 热路径。
+本文用于 `ItemState` 字段梳理，范围仅覆盖当前 `BattleSimulator` 热路径。
 
-## 1) 运行时状态字段（原 BattleItemState）
+## 1) 运行时状态字段（`ItemState`）
 
 这些字段已迁移为 `ItemState` 直接字段，不再通过 `ItemTemplate` 的 Key 字典读写：
 

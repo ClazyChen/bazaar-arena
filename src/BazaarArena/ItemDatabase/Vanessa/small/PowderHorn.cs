@@ -19,7 +19,7 @@ public static class PowderHorn
             Abilities =
             [
                 Ability.Reload.Override(
-                    additionalTargetCondition: Condition.RightOfSource,
+                    additionalTargetCondition: Condition.RightOfCaster,
                     priority: AbilityPriority.Lowest
                 ),
             ],

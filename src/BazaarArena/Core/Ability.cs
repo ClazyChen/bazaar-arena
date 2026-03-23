@@ -19,7 +19,7 @@ public static class Ability
                 new TriggerEntry
                 {
                     Trigger = Trigger.UseItem,
-                    Condition = Condition.SameAsSource,
+                    Condition = Condition.SameAsCaster,
                 }
             ],
         };

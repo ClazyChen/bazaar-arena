@@ -25,7 +25,7 @@ public static class IllusoRay
                 new AuraDefinition
                 {
                     Attribute = Key.Multicast,
-                    Value = Formula.Count(Condition.AdjacentToSource & (Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Ray))),
+                    Value = Formula.Count(Condition.AdjacentToCaster & (Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Ray))),
                 },
             ],
         };

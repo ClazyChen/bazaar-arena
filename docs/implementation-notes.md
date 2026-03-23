@@ -28,7 +28,7 @@
 
 - **结论**：数据库模板按引用复用；战斗实例化统一 `new ItemState(template, tier)`，卡组覆盖仅写入 `ItemState.Attributes`。不再创建 battle template clone。
 - **关键点**：
-  - `BuildSide`：resolver 取模板后直接构造 `BattleItemState(template, tier)`，再应用 slot overrides（仅允许 `OverridableAttributes` 声明的 key）。
+  - `BuildSide`：resolver 取模板后直接构造 `ItemState(template, tier)`，再应用 slot overrides（仅允许 `OverridableAttributes` 声明的 key）。
   - 战斗内属性读写（伤害、冷却、暴击率、弹药等）优先读写 `ItemState`，避免改写共享模板。
   - `BattleSide.GetItemInt` 优先读 `ItemState` 对应 key，保证运行时变更即时生效。
 
@@ -172,7 +172,7 @@
 1. **触发器统一为待处理队列**：用 **`EffectAppliedTriggerQueue`**（`List<(TriggerName, SideIndex, ItemIndex)>`）替代 OnFreezeApplied / OnSlowApplied / OnDestroyApplied。**`BattleContext`** 只追加条目，模拟器在 **`ability.Apply(ctx)`** 后统一 **`InvokeTrigger`**；**Destroy** 再设 **`Destroyed`**。扩展新「施加时触发」只需在 **`BattleContext`** 写队列、模拟器多一种 **triggerName**。
 2. **ApplyToTargets 与 effectTriggerName**：Freeze/Slow 等对每目标施加后把 **`Trigger.Freeze`/`Trigger.Slow`** 写入队列；**ApplyDestroy** 只写 **`Trigger.Destroy`**，不在此处标记 **Destroyed**。
 3. **属性方法复用**：**`AddAttributeToCasterSide`** / **`SetAttributeOnCasterSide`** / **`ReduceAttributeToSide`** 共用按条件遍历与日志收集逻辑（见 **`BattleContext.EffectApply.cs`**）。
-4. **已移除 `IEffectApplyContext`**：施放者用 **`BattleContext.Caster`/`CasterItem`**（与 **`Item`** 在效果执行时一致）；吸血用 **`ctx.GetResolvedValue(Key.LifeSteal, defaultValue: 0) != 0`**；飞行用 **`CasterItem.InFlight`**。
+4. **已移除 `IEffectApplyContext`**：施放者用 **`BattleContext.Caster`**（与 **`Item`** 在效果执行时一致）；吸血用 **`ctx.GetResolvedValue(Key.LifeSteal, defaultValue: 0) != 0`**；飞行用 **`Caster.InFlight`**。
 
 ### 对照规则
 
@@ -202,7 +202,7 @@
 
 ### Immediate 能力当场执行（不入队）
 
-- **InvokeTrigger** 支持可选参数 **executeImmediate**（`Action<BattleItemState, int, AbilityDefinition>?`）。仅在步骤 7 调用 `InvokeTrigger(Trigger.UseItem, ...)` 时传入该委托。
+- **InvokeTrigger** 支持可选参数 **executeImmediate**（`Action<ItemState, int, AbilityDefinition>?`）。仅在步骤 7 调用 `InvokeTrigger(Trigger.UseItem, ...)` 时传入该委托。
 - **语义**：当某能力匹配 UseItem 且 **Priority == Immediate** 时，**不入队**（不调用 AddOrMergeAbility），改为**当场**调用 `executeImmediate(owner, abilityIndex, ability)`；委托内构造 `AbilityQueueEntry` 并调用 **ExecuteOneEffect**（isCrit: false），效果立即生效（如手里剑的 ReduceAttribute 将 AmmoRemaining 减到 0）。非 Immediate 能力仍照常入 nextAbilityQueue。
 - **用途**：手里剑等「使用一次消耗全部弹药」：Immediate 的 ReduceAttribute(Key.AmmoRemaining, amountKey: Key.AmmoCap)、targetCondition: SameAsSource 在 UseItem 触发时立刻执行，再执行 `AmmoRemaining = max(0, -1)` 保持为 0，最后 InvokeTrigger(Ammo)。
 
@@ -242,7 +242,7 @@
 
 ## 能力队列 250ms 节流状态与冷却缩短联动
 
-- **LastTriggerMs 挂在物品上**：250ms 触发间隔按「能力持有者 + 能力下标」维护，状态存于**物品**（BattleItemState）的字典（GetLastTriggerMs/SetLastTriggerMs），不再存在 AbilityQueueEntry 上。这样同一物品的多条能力各自节流，合并 PendingCount 时也不依赖条目的 LastTriggerMs。
+- **LastTriggerMs 挂在物品上**：250ms 触发间隔按「能力持有者 + 能力下标」维护，状态存于**物品**（ItemState）的字典（GetLastTriggerMs/SetLastTriggerMs），不再存在 AbilityQueueEntry 上。这样同一物品的多条能力各自节流，合并 PendingCount 时也不依赖条目的 LastTriggerMs。
 - **AbilityQueueEntry**：移除 LastTriggerMs；保留 Owner、AbilityIndex、PendingCount，以及可选的 InvokeTargetSideIndex/InvokeTargetItemIndex。步骤 8 中「与上次触发间隔不足 250ms」用 `item.GetLastTriggerMs(entry.AbilityIndex)` 判断。
 - **冷却缩短与充能联动**：ReduceAttribute（CooldownMs）时，目标隐性要求未摧毁；冷却时间有下限 **1000ms**（1 秒）。若缩短后该物品「已过冷却已满」（CooldownElapsedMs >= 新 CooldownMs），与充能满一致：加入 **ChargeInducedCastQueue** 并清零 CooldownElapsedMs（仅当该物品无弹药或弹药未耗尽时可加入施放队列）。这样「时光指针」「仿生手臂」等缩短冷却后立即可施放。
 
@@ -274,7 +274,7 @@
 
 - **只保留 `_intsByTier`**：扩展属性统一用 `Dictionary<string, List<int>>` 存储；单值（如 `CooldownMs = 2000`）存为长度为 1 的列表，读取时 `list.Count == 1` 则对所有 tier 返回该值。不再维护单独的 `_ints`，避免两套存储与同步问题。
 - **IntOrByTier**：在对象初始器中同时支持单值（`Damage = 40`）与按等级列表（`Damage = [25, 35, 45, 55]`）。通过隐式转换（`int` → 单元素列表，`int[]`/`List<int>` → 列表）和属性 setter 写入 `_intsByTier`。
-- **Key 不对外暴露**：`KeyDamage`、`KeyCooldownMs` 等改为 `private const`，不提供 GetKey 等 API。调用方（如 BattleItemState、BattleSimulator）直接用字符串字面量 `"Damage"`、`"CooldownMs"` 调用 `GetInt(key, tier)`，简化依赖。
+- **Key 不对外暴露**：`KeyDamage`、`KeyCooldownMs` 等改为 `private const`，不提供 GetKey 等 API。调用方（如 ItemState、BattleSimulator）直接用字符串字面量 `"Damage"`、`"CooldownMs"` 调用 `GetInt(key, tier)`，简化依赖。
 - **未定义即默认值**：不使用 `ContainsKey`；`GetInt(key, tier, defaultValue)` 在 key 不存在时直接返回默认值。效果数值解析时若 `GetInt(key, tier)` 为 0 则用 `eff.Value` 作为 fallback。
 
 ### 集合表达式直接赋值（Damage = [25, 35, 45, 55]）
@@ -402,12 +402,12 @@
 ### ItemTemplate 中的运行时变量
 
 - **键常量**（Core/ItemTemplate）：`KeySideIndex`、`KeyItemIndex`、`KeyTier`、`KeyCooldownElapsedMs`、`KeyHasteRemainingMs`、`KeySlowRemainingMs`、`KeyFreezeRemainingMs`、`KeyInFlight`、`KeyDestroyed`、`KeyAmmoRemaining`、`KeyLastTriggerMsPrefix`（能力上次触发时间为 `LastTriggerMs_0`、`LastTriggerMs_1`…）；暴击相关 **KeyCritTimeMs**、**KeyIsCritThisUse**、**KeyCritDamagePercentThisUse**（见下节「暴击机制」）。与按等级属性（CooldownMs、Damage 等）无名称冲突。
-- **BattleItemState**：上述 int/bool 不再作为独立字段，全部通过 **Template.GetInt(key)** / **Template.SetInt(key, value)** 与 **GetBool/SetBool** 读写；对外仍保留同名属性（如 `item.SideIndex`、`item.Tier`）委托到 Template。能力上次触发时间用 **GetLastTriggerMs(abilityIndex)** / **SetLastTriggerMs(abilityIndex, timeMs)**。暴击状态用 **CritTimeMs**、**IsCritThisUse**、**CritDamagePercentThisUse**。
+- **ItemState**：上述 int/bool 不再作为独立字段，全部通过 **Template.GetInt(key)** / **Template.SetInt(key, value)** 与 **GetBool/SetBool** 读写；对外仍保留同名属性（如 `item.SideIndex`、`item.Tier`）委托到 Template。能力上次触发时间用 **GetLastTriggerMs(abilityIndex)** / **SetLastTriggerMs(abilityIndex, timeMs)**。暴击状态用 **CritTimeMs**、**IsCritThisUse**、**CritDamagePercentThisUse**。
 - **bool**：Template 用 0/1 存储，提供 **GetBool(key)**、**SetBool(key, value)**。
 
 ### BattleSide 中的数值字段
 
-- **键常量**（BattleSimulator/BattleSide）：`KeySideIndex`、`KeyMaxHp`、`KeyHp`、`KeyShield`、`KeyBurn`、`KeyPoison`、`KeyRegen`。
+- **阵营数值**（BattleSimulator/BattleSide）：`BattleSide.Attributes` 与 **Core/Key** 对齐；`Key.SideIndex=0`，`Key.MaxHp`/`Key.Hp` 分别别名 `Key.Damage`/`Key.Heal`，`Key.Gold=Regen+1`，**`SideStateAttributeCount=Gold+1`（仅 0～7）**。即将落败「首次」等由物品 **Custom_0** 等状态表达，不占用阵营数组。可选 `GetInt(string)` 解析 JSON 键名。
 - **BattleSide** 持有一个 **Dictionary<string, int>**，属性 SideIndex、MaxHp、Hp、Shield、Burn、Poison、Regen 均委托到 **GetInt(key)** / **SetInt(key, value)**，便于公式（如 Formula.Side/Formula.Opp）与按名访问。
 
 ### 小结
@@ -432,7 +432,7 @@
 ### IntOrByTier.Add(delta) 与战斗内模板
 
 - **IntOrByTier**：增加 `Add(int delta)`，对每个 tier 的值加 delta 并返回新的 IntOrByTier；空列表时返回 `[delta, delta, delta, delta]`。用于「本场战斗内增加某数值」类效果（如举重手套给武器加伤害）。
-- **战斗内模板**：`BuildSide` 时每个卡组槽位从 resolver 取 template 后**克隆**一份（新 ItemTemplate + SetIntsByTier），再创建 `BattleItemState(clone, tier)`。因此 `BattleItemState.Template` 为当局专用，可直接修改，例如 `wi.Template.Damage = wi.Template.Damage.Add(value)`，无需额外 DamageBonus 字段。
+- **战斗内模板**：`BuildSide` 时每个卡组槽位从 resolver 取 template 后**克隆**一份（新 ItemTemplate + SetIntsByTier），再创建 `ItemState(clone, tier)`。因此 `ItemState.Template` 为当局专用，可直接修改，例如 `wi.Template.Damage = wi.Template.Damage.Add(value)`，无需额外 DamageBonus 字段。
 - **卡组 Overrides 仅应用 OverridableAttributes 内键**：应用 `entry.Overrides` 时，**只对模板的 `OverridableAttributes` 中存在的 key** 执行 `clone.SetInt(kv.Key, kv.Value)`；若对 Overrides 全量应用，卡组中多出的键（旧版序列化、GUI 默认值等）会覆盖克隆上的 Multicast、AmmoCap、Damage 等，导致多重释放/弹药/伤害失效（如海底热泉多重释放 3 只生效 1 次）。见 BattleSimulator.BuildSide。
 - **Damage 的 getter**：若需对 Damage 做「整体加 delta」并写回，模板的 Damage 属性 get 需返回**完整按等级列表**（如通过 GetIntOrByTier），否则 get 只返回单值会丢失其他 tier。
 
@@ -507,7 +507,7 @@
 ### 光环数据与条件
 
 - **AuraDefinition**（Core）：`AttributeName`（用 **Key.***）、`Condition`、`SourceCondition`、**Value**（`Formula?`）、**Percent**（bool，默认 false）。固定/百分比已统一为 **Value = Formula** + **Percent**（如 `Value = Formula.Source(Key.Custom_0)`、百分比时 `Percent = true`）。BuildSide 与 ItemDatabase 克隆模板时对 Auras 做深拷贝（复制 Value、Percent）。
-- **效果数值（当前实现）**：**`BattleContext.GetResolvedValue`** 读取 **`CasterItem.GetAttribute(key)`**（战斗内 **`ItemState.Attributes`**），再按暴击倍率缩放。**若**需「模板基础 + 己方光环」合一读数，应在 **`GetResolvedValue` 或 `GetItemInt`** 路径显式合并 **`BattleAuraModifiers.Accumulate`** 与 **`Template.GetInt`**（待接线时对照上式）。
+- **效果数值（当前实现）**：**`BattleContext.GetResolvedValue`** 读取 **`Caster.GetAttribute(key)`**（战斗内 **`ItemState.Attributes`**），再按暴击倍率缩放。**若**需「模板基础 + 己方光环」合一读数，应在 **`GetResolvedValue` 或 `GetItemInt`** 路径显式合并 **`BattleAuraModifiers.Accumulate`** 与 **`Template.GetInt`**（待接线时对照上式）。
 
 ### 光环公式（Formula 委托类型）与 SourceCondition 优先
 
@@ -547,7 +547,7 @@
 ### 战斗内属性读取（BattleSide.GetItemInt）
 
 - **原则**：依赖变量的光环在读模板/读运行时字段时都应一致；**接回光环后**宜在 **`GetItemInt`** 或 **`GetResolvedValue`** 单点合并 **`BattleAuraModifiers`**。
-- **当前实现**：**`BattleSide.GetItemInt`** — **`Key.TryGetKey`** 成功则 **`Items[itemIndex].GetAttribute(resolvedKey)`**，否则 **`Template.GetInt(...)`**（**无**光环叠加）。
+- **当前实现**：**`BattleSide.GetItemInt(itemIndex, key, default)`** — **`key` 为 int**；若 **`key < ItemState.Attributes.Length`** 则 **`Items[itemIndex].GetAttribute(key)`**，否则 **`Template.GetInt(key, ...)`**（**无**光环叠加）。
 - **调用点**：BattleSimulator 步骤 7（Multicast、AmmoCap 等）、ProcessCooldown；**`BattleContext.EffectApply`** 内充能/选目标等。**吸血**由 **`ctx.GetResolvedValue(Key.LifeSteal, ...)`** 判断。
 
 ### 依赖变量的光环（Formula.Source）
@@ -650,7 +650,7 @@
 - **属性设计**：与充能（Charge）一致，**内部存毫秒**，物品定义用**秒**。`ItemTemplate` 提供 `Freeze`（`IntOrByTier` 毫秒）、`FreezeSeconds`（`SecondsOrByTier`：可赋单值或 `new[] { 3.0, 4.0, 5.0, 6.0 }`，内部转毫秒）、`FreezeTargetCount`（冻结目标数量，可单值或按等级）。
 - **SecondsOrByTier**：`Core/ItemTemplate.cs` 中结构体，支持从 `double` / `double[]` 隐式转换；秒转毫秒统一用 **`ToMilliseconds()`**（原 ToFreezeMs/ToSlowMs/ToHasteMs 已合并），`FromFirstTierMs(ms)` 用于 getter。定义时写 `FreezeSeconds = new[] { 3.0, 4.0, 5.0, 6.0 }`，符合「物品定义中时间一律用秒」的约定（见 **.cursor/rules/project-conventions.mdc**）。
 - **预定义效果**：`Effect.Freeze` 使用模板的 `Freeze`（毫秒）与 `FreezeTargetCount`。目标选择见下节「充能、加速、减速、冻结统一目标选择」；冻结不可暴击；触发「触发冻结」时按**实际目标数**入队（PendingCount）。
-- **BattleItemState**：已有 `FreezeRemainingMs`；`ProcessCooldown` 中 `FreezeRemainingMs > 0` 时不推进冷却；每帧在某一步中减少 `FreezeRemainingMs`（见下）。
+- **ItemState**：已有 `FreezeRemainingMs`；`ProcessCooldown` 中 `FreezeRemainingMs > 0` 时不推进冷却；每帧在某一步中减少 `FreezeRemainingMs`（见下）。
 
 ### 加速/减速/冻结剩余时间与冷却顺序
 
@@ -715,7 +715,7 @@
 ### 护盾/伤害等「等量于 X」：用光环提供数值，不新增专用 Ability
 
 - **原则**：当效果数值依赖运行时数据（如「护盾等量于己方最大生命值 25%」「护盾等量于敌人灼烧」）时，**不**新增 ShieldPercentOfMaxHp 等专用 Ability/Effect；应**用光环为该属性提供公式值**，配合原有 **Ability.Shield** / **Ability.Damage** 等。
-- **做法**：在物品上增加 **AuraDefinition**：**AttributeName** = Key.Shield（或 Key.Damage 等），**Condition** = SameAsSource（作用在自身），**Value** = Formula（如 **Formula.Opp(BattleSide.KeyBurn)**、**RatioUtil.PercentFloor(Formula.Side(BattleSide.KeyMaxHp), 25)**）。能力仍用 **Ability.Shield**（或对应能力），执行时 **GetResolvedValue(Key.Shield)** 会带上光环，得到公式结果。阵营 key 用 **BattleSide.KeyMaxHp**、**BattleSide.KeyBurn** 等（需 `using BazaarArena.BattleSimulator`）。
+- **做法**：在物品上增加 **AuraDefinition**：**AttributeName** = Key.Shield（或 Key.Damage 等），**Condition** = SameAsSource（作用在自身），**Value** = Formula（如 **Formula.Opp(Key.Burn)**、**RatioUtil.PercentFloor(Formula.Side(Key.MaxHp), 25)**）。能力仍用 **Ability.Shield**（或对应能力），执行时 **GetResolvedValue(Key.Shield)** 会带上光环，得到公式结果。阵营侧读数用 **`Formula.Side(Key.xxx)`** / **`Formula.Opp(Key.xxx)`**（int 下标）。
 
 ### RatioUtil 与 Formula 的百分比重载
 
@@ -743,14 +743,14 @@
 
 - **语义**：Condition 表示「战斗时**一个物品**需满足的条件」，计算时可能涉及其他物品；上下文只提供己方/敌方状态与被评估（及参考）物品，**不**为具体场景（如 OnDestroy、UsedTemplate）增加字段。
 - **ConditionContext 仅四字段**：`MySide`、`EnemySide`、`Item?`（被评估对象：Condition 时=引起触发的物品，InvokeTargetCondition 时=触发器指向的物品，TargetCondition 时=候选目标；可为 null）、`Source`（能力所属物品，恒非空）。同一方/相邻/右侧等由 Item 与 Source 的 SideIndex/ItemIndex 推导。
-- **索引**：`BattleSide.SideIndex`、`BattleItemState.SideIndex`/`ItemIndex` 在 `BattleSimulator.Run` 中、`BuildSide` 之后统一写入，供 Condition 与调用方使用。
+- **索引**：`BattleSide.SideIndex`、`ItemState.SideIndex`/`ItemIndex` 在 `BattleSimulator.Run` 中、`BuildSide` 之后统一写入，供 Condition 与调用方使用。
 - **扩展性**：新需求通过「调用方传入不同的 Item/Source」或组合 Condition（如 `WithTag(Tag.Large) | InFlight`）满足，避免在 Context 上堆场景专用字段。
 
 ### 触发器统一语义与命名
 
 - **统一语义**：Freeze、Slow、Crit、Destroy 均为「**任意物品**施加/造成 xx 时触发」；默认 `Condition.SameSide` 表现为己方，重写 Condition（如 `DifferentSide`）可实现对方触发。与 UseItem（仅己方施放）、BattleStart 一致由 `InvokeTrigger` 统一处理，Condition 评估时 Source=能力持有者、Item=引起触发的物品。
 - **命名统一**：触发器常量与 UseItem/Freeze/Slow 保持一致风格：`Trigger.Crit`、`Trigger.Destroy`（不再使用 OnCrit、OnDestroy），便于后续扩展新触发器时命名一致。
-- **Destroy 与 Slow 同构**：施加摧毁时用 Condition 判定施加者、InvokeTargetCondition 判定被摧毁物品，context 传 `InvokeTargetItem`（BattleItemState 引用），无需 DestroyedItemTemplate 等专用字段；被毁目标为大型或飞行用 `InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight`。
+- **Destroy 与 Slow 同构**：施加摧毁时用 Condition 判定施加者、InvokeTargetCondition 判定被摧毁物品，context 传 `InvokeTargetItem`（ItemState 引用），无需 DestroyedItemTemplate 等专用字段；被毁目标为大型或飞行用 `InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight`。
 
 ---
 
@@ -799,7 +799,7 @@
 
 - 步骤 8 在**处理能力队列前**，对 `toProcessAbilities`（current 的拷贝）按**能力优先级**排序。
 - 排序主键：`AbilityPriority` 枚举值升序（Immediate → Highest → High → Medium → Low → Lowest），数字小的先执行。
-- 同优先级时按 (Owner.SideIndex, Owner.ItemIndex, AbilityIndex) 作为次键，保证顺序稳定、可复现（AbilityQueueEntry.Owner 为 BattleItemState）。
+- 同优先级时按 (Owner.SideIndex, Owner.ItemIndex, AbilityIndex) 作为次键，保证顺序稳定、可复现（AbilityQueueEntry.Owner 为 ItemState）。
 
 这样同一帧内触发的多条能力会严格按「高优先级先于低优先级」执行，与设计意图一致。详见 **.cursor/rules/battle-simulator-ability-queue.mdc**。
 
@@ -855,7 +855,7 @@
 ### 问题：吸血伤害未统计
 
 - **现象**：毒刺等带 **`LifeSteal`** 的物品造成伤害时，**`Apply.Damage`** 为区分展示会以 **「吸血」** 调用 **`LogEffect`**（由 **`ctx.GetResolvedValue(Key.LifeSteal, defaultValue: 0) != 0`** 判断），而 **StatsCollectingSink** 的 **`OnEffect`** 仅对 **`effectKind == "伤害"`** 累加伤害，导致吸血未进报表。
-- **修复**：在 **StatsCollectingSink** 的 switch 中，将 **「吸血」** 与 **「伤害」** 同等处理：`case "伤害": case "吸血":` 均执行 `a.Damage += value` 与 `AddSide(caster.SideIndex, damage: value)`。吸血与伤害为同一数值，仅展示不同，统计时均计入伤害。OnEffect 签名为 `(BattleItemState caster, ...)`。
+- **修复**：在 **StatsCollectingSink** 的 switch 中，将 **「吸血」** 与 **「伤害」** 同等处理：`case "伤害": case "吸血":` 均执行 `a.Damage += value` 与 `AddSide(caster.SideIndex, damage: value)`。吸血与伤害为同一数值，仅展示不同，统计时均计入伤害。OnEffect 签名为 `(ItemState caster, ...)`。
 
 ### 定向效果日志格式统一
 
@@ -881,7 +881,7 @@
 
 ### 加速（Haste）与 Effect.Haste
 
-- **与减速对称**：`BattleItemState` 已有 `HasteRemainingMs`；每帧先处理冷却（加速时 `advanceMs *= 2`），再在步骤 3 中 `HasteRemainingMs = Math.Max(0, HasteRemainingMs - FrameMs)`。
+- **与减速对称**：`ItemState` 已有 `HasteRemainingMs`；每帧先处理冷却（加速时 `advanceMs *= 2`），再在步骤 3 中 `HasteRemainingMs = Math.Max(0, HasteRemainingMs - FrameMs)`。
 - **模板**：`ItemTemplate` 提供 `Haste`（毫秒）、`HasteSeconds`（秒，可单值或按等级）、`HasteTargetCount`（目标数，默认 1）；物品定义用 `HasteSeconds = new[] { 1.0, 2.0, 3.0, 4.0 }`。
 - **效果**：**Effect.Haste**（已移除 Effect.Accelerate）从模板读 `Haste`、`HasteTargetCount`（默认 1），调用 `ctx.ApplyHaste(hasteMs, count, ctx.TargetCondition)`；目标由统一逻辑选取（己方有冷却 + 满足能力 `TargetCondition`，默认 SameSide）。暗影斗篷在能力上设 `TargetCondition = Condition.RightOfSource`、`HasteTargetCount = 1`，不在 Effect 内写死。
 - **日志与 UI**：`EffectLogFormat` 对「加速」将毫秒格式化为「N 秒」；`EffectKeywordFormatting` 中「加速」颜色 `rgb(0,236,195)`；`ItemDescHelper` 支持 `{HasteSeconds}` → `Haste`。

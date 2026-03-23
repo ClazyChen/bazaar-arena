@@ -21,7 +21,7 @@ public static class Rifle
             [
                 Ability.Damage,
                 Ability.AddAttribute(Key.Damage).Override(
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     valueKey: Key.Custom_0,
                     priority: AbilityPriority.Low
                 ),
@@ -45,8 +45,8 @@ public static class Rifle
             [
                 Ability.Damage,
                 Ability.Reload.Override(
-                    condition: Condition.SameAsSource & Condition.OnlyWeaponWithCooldown,
-                    targetCondition: Condition.SameAsSource,
+                    condition: Condition.SameAsCaster & Condition.OnlyWeaponWithCooldown,
+                    targetCondition: Condition.SameAsCaster,
                     valueKey: Key.Custom_0,
                     priority: AbilityPriority.Lowest
                 ),

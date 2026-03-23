@@ -25,7 +25,7 @@ public static class SeaShell
                 new AuraDefinition
                 {
                     Attribute = Key.Shield,
-                    Condition = Condition.SameAsSource,
+                    Condition = Condition.SameAsCaster,
                     Value = Formula.Source(Key.Custom_0) * Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Aquatic)),
                 },
             ],

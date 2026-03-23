@@ -18,7 +18,7 @@ public static class FishingRod
             Abilities =
             [
                 Ability.Haste.Override(
-                    additionalTargetCondition: Condition.RightOfSource & Condition.WithTag(Tag.Aquatic),
+                    additionalTargetCondition: Condition.RightOfCaster & Condition.WithTag(Tag.Aquatic),
                     priority: AbilityPriority.High
                 ),
             ],

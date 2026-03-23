@@ -23,11 +23,11 @@ public static class Zoarcid
             [
                 Ability.Damage,
                 Ability.Haste.Override(
-                    additionalTargetCondition: Condition.AdjacentToSource
+                    additionalTargetCondition: Condition.AdjacentToCaster
                 ),
                 Ability.Charge.Override(
                     trigger: Trigger.Burn,
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ),
             ],
@@ -51,11 +51,11 @@ public static class Zoarcid
             [
                 Ability.Damage,
                 Ability.Haste.Override(
-                    additionalTargetCondition: Condition.AdjacentToSource
+                    additionalTargetCondition: Condition.AdjacentToCaster
                 ),
                 Ability.Charge.Override(
                     trigger: Trigger.Burn,
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ),
             ],
@@ -79,11 +79,11 @@ public static class Zoarcid
             [
                 Ability.Damage,
                 Ability.Haste.Override(
-                    additionalTargetCondition: Condition.AdjacentToSource
+                    additionalTargetCondition: Condition.AdjacentToCaster
                 ),
                 Ability.Charge.Override(
                     trigger: Trigger.Burn,
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ),
             ],

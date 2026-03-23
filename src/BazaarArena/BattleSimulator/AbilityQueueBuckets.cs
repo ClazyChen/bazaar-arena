@@ -52,7 +52,7 @@ internal sealed class AbilityQueueBuckets
     }
 
     /// <summary>在全部桶中自尾向前查找同 (Owner, AbilityIndex) 且无 InvokeTarget 的条目并累加 PendingCount；找到则 true。</summary>
-    public bool TryMergePending(BattleItemState owner, int abilityIdx, int pendingToAdd)
+    public bool TryMergePending(ItemState owner, int abilityIdx, int pendingToAdd)
     {
         for (int bi = 0; bi < BucketCount; bi++)
         {

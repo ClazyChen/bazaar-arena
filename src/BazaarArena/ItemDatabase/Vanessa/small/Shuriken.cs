@@ -20,7 +20,7 @@ public static class Shuriken
             Abilities =
             [
                 Ability.ReduceAttribute(Key.AmmoRemaining, amountKey: Key.AmmoCap).Override(
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Immediate,
                     effectLogName: ""
                 ),

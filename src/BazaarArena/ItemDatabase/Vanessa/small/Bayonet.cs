@@ -20,7 +20,7 @@ public static class Bayonet
             [
                 Ability.Damage.Override(
                     trigger: Trigger.UseItem,
-                    condition: Condition.SameSide & Condition.LeftOfSource & Condition.WithTag(Tag.Weapon)
+                    condition: Condition.SameSide & Condition.LeftOfCaster & Condition.WithTag(Tag.Weapon)
                 ),
             ],
         };

@@ -12,6 +12,7 @@ public sealed partial class BattleContext
     /// </summary>
     public ItemState Item { get; set; } = null!;
     public ItemState Caster { get; set; } = null!;
+    /// <summary>引起当前触发的那件物品（如 UseItem 的被使用物、Slow 的施放者）；无单独「原因」时与 <see cref="Caster"/> 一致（如战斗开始、暴击自身）。</summary>
     public ItemState? Source { get; set; }
     public ItemState? InvokeTarget { get; set; }
 
@@ -22,7 +23,7 @@ public sealed partial class BattleContext
     public bool IsCrit { get; set; }
     public int TimeMs { get; set; }
     public IBattleLogSink LogSink { get; set; } = null!;
-    public List<BattleItemState>? ChargeInducedCastQueue { get; set; }
+    public List<ItemState>? ChargeInducedCastQueue { get; set; }
     public List<(int TriggerName, int SideIndex, int ItemIndex)>? EffectAppliedTriggerQueue { get; set; }
     public Formula? TargetCondition { get; set; }
     public string? EffectLogName { get; set; }
@@ -32,18 +33,18 @@ public sealed partial class BattleContext
         BattleState battleState,
         BattleSide side,
         BattleSide opp,
-        BattleItemState item,
+        ItemState item,
         int resolvedValue,
         int critMultiplier,
         bool isCrit,
         int timeMs,
         IBattleLogSink logSink,
-        List<BattleItemState>? chargeInducedCastQueue,
+        List<ItemState>? chargeInducedCastQueue,
         List<(int TriggerName, int SideIndex, int ItemIndex)>? effectAppliedTriggerQueue,
         Formula? targetCondition,
         string? effectLogName,
         int? targetCountKey,
-        BattleItemState? invokeTargetItem)
+        ItemState? invokeTargetItem)
     {
         BattleState = battleState;
         Side = side;

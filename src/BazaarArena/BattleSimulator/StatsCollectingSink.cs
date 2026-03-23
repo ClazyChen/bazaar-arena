@@ -6,7 +6,7 @@ public class StatsCollectingSink : IBattleLogSink
     /// <summary>强度曲线采样间隔（毫秒），默认 500。</summary>
     public int CurveIntervalMs { get; set; } = 500;
 
-    private readonly Dictionary<BattleItemState, ItemAccumEntry> _itemAccum = [];
+    private readonly Dictionary<ItemState, ItemAccumEntry> _itemAccum = [];
     private int _side0Damage;
     private int _side0Burn;
     private int _side0Poison;
@@ -77,7 +77,7 @@ public class StatsCollectingSink : IBattleLogSink
         }
     }
 
-    public void OnCast(BattleItemState caster, string itemName, int timeMs, int? ammoRemainingAfter = null)
+    public void OnCast(ItemState caster, string itemName, int timeMs, int? ammoRemainingAfter = null)
     {
         if (!_itemAccum.TryGetValue(caster, out var entry))
         {
@@ -89,7 +89,7 @@ public class StatsCollectingSink : IBattleLogSink
         TryRecordCurve(timeMs);
     }
 
-    public void OnEffect(BattleItemState caster, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)
+    public void OnEffect(ItemState caster, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)
     {
         if (!_itemAccum.TryGetValue(caster, out var entry))
         {

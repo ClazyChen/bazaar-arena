@@ -22,13 +22,13 @@ public static class LifePreserver
                 Ability.Shield,
                 Ability.Heal.Override(
                     trigger: Trigger.AboutToLose,
-                    additionalCondition: Condition.SourceCustom0IsZero,
+                    additionalCondition: Condition.CasterCustom0IsZero,
                     priority: AbilityPriority.Immediate
                 ),
                 Ability.AddAttribute(Key.Custom_0).Override(
                     trigger: Trigger.AboutToLose,
-                    additionalCondition: Condition.SourceCustom0IsZero,
-                    targetCondition: Condition.SameAsSource,
+                    additionalCondition: Condition.CasterCustom0IsZero,
+                    targetCondition: Condition.SameAsCaster,
                     value: 1,
                     effectLogName: "",
                     priority: AbilityPriority.Immediate

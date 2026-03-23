@@ -1,4 +1,3 @@
-using BazaarArena.BattleSimulator;
 using BazaarArena.Core;
 
 namespace BazaarArena.ItemDatabase;
@@ -146,7 +145,7 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     Attribute = Key.CritRatePercent,
-                    Condition = Condition.AdjacentToSource,
+                    Condition = Condition.AdjacentToCaster,
                     Value = Formula.Source(Key.Custom_0),
                 },
             ],
@@ -279,7 +278,7 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     Attribute = Key.Heal,
-                    Value = Formula.Opp(BattleSide.KeyPoison),
+                    Value = Formula.Opp(Key.Poison),
                 },
             ],
         };
@@ -301,8 +300,8 @@ public static class CommonSmall
                 Ability.Poison,
                 Ability.AddAttribute(Key.Poison).Override(
                     trigger: Trigger.Slow,
-                    condition: Condition.AdjacentToSource,
-                    targetCondition: Condition.SameAsSource,
+                    condition: Condition.AdjacentToCaster,
+                    targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ),
             ],
@@ -321,7 +320,7 @@ public static class CommonSmall
             Abilities =
             [
                 Ability.Slow.Override(
-                    condition: Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon)
+                    condition: Condition.AdjacentToCaster & Condition.WithTag(Tag.Weapon)
                 ),
             ],
         };
@@ -346,7 +345,7 @@ public static class CommonSmall
                 ),
                 Ability.Charge.Override(
                     condition: Condition.SameSide & Condition.WithTag(Tag.Weapon),
-                    targetCondition: Condition.SameAsSource
+                    targetCondition: Condition.SameAsCaster
                 ),
             ],
         };
@@ -369,7 +368,7 @@ public static class CommonSmall
                 Ability.StartFlying.Override(
                     trigger: Trigger.Crit,
                     condition: Condition.SameSide,
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ),
             ],
@@ -401,7 +400,7 @@ public static class CommonSmall
                 Ability.Damage,
                 Ability.Burn,
                 Ability.StartFlying.Override(
-                    additionalTargetCondition: Condition.SameAsSource
+                    additionalTargetCondition: Condition.SameAsCaster
                 ),
             ],
             Auras =
@@ -433,7 +432,7 @@ public static class CommonSmall
                 ),
                 Ability.Charge.Override(
                     condition: Condition.SameSide & Condition.WithTag(Tag.Tool),
-                    targetCondition: Condition.SameAsSource
+                    targetCondition: Condition.SameAsCaster
                 ),
             ],
         };
@@ -463,7 +462,7 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     Attribute = Key.CooldownMs,
-                    Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToSource & Condition.WithTag(Tag.Friend)),
+                    Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToCaster & Condition.WithTag(Tag.Friend)),
                 },
             ],
         };
@@ -545,15 +544,15 @@ public static class CommonSmall
             Abilities =
             [
                 Ability.Destroy.Override(
-                    additionalTargetCondition: Condition.FirstNonDestroyedRightOfSource
+                    additionalTargetCondition: Condition.FirstNonDestroyedRightOfCaster
                 ),
                 Ability.Damage.Override(
                     trigger: Trigger.Destroy,
-                    condition: Condition.SameAsSource
+                    condition: Condition.SameAsCaster
                 ),
                 Ability.Damage.Override(
                     trigger: Trigger.Destroy,
-                    condition: Condition.SameAsSource,
+                    condition: Condition.SameAsCaster,
                     additionalCondition: Condition.WithTag(Tag.Large) | Condition.InFlight
                 ),
             ],
@@ -574,7 +573,7 @@ public static class CommonSmall
             Abilities =
             [
                 Ability.Charge.Override(
-                    additionalTargetCondition: Condition.DifferentFromSource & Condition.NotWithTag(Tag.Weapon),
+                    additionalTargetCondition: Condition.DifferentFromCaster & Condition.NotWithTag(Tag.Weapon),
                     priority: AbilityPriority.High
                 )
             ],
@@ -602,7 +601,7 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     Attribute = Key.CooldownMs,
-                    Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToSource & (Condition.WithTag(Tag.Aquatic) | Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Relic))),
+                    Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToCaster & (Condition.WithTag(Tag.Aquatic) | Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Relic))),
                 },
             ],
         };

@@ -42,7 +42,7 @@ public static class Revolver
                 Ability.Damage,
                 Ability.Reload.Override(
                     trigger: Trigger.Crit,
-                    targetCondition: Condition.SameAsSource,
+                    targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ),
             ],

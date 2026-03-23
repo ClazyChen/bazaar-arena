@@ -95,7 +95,7 @@ public class ItemDatabase : IItemTemplateResolver
         foreach (var a in template.Abilities ?? [])
         {
             if (a.TriggerEntries == null || a.TriggerEntries.Count == 0)
-                a.TriggerEntries = [new TriggerEntry { Trigger = Trigger.UseItem, Condition = Condition.SameAsSource }];
+                a.TriggerEntries = [new TriggerEntry { Trigger = Trigger.UseItem, Condition = Condition.SameAsCaster }];
             for (int i = 0; i < a.TriggerEntries.Count; i++)
             {
                 var e = a.TriggerEntries[i];
@@ -105,7 +105,7 @@ public class ItemDatabase : IItemTemplateResolver
         }
     }
 
-    /// <summary>根据 Ability Apply 类型、SameAsSource 光环、可暴击与冷却自动补充类型 Tag 与 Crit/Cooldown。供 Condition 与可暴击判定使用。</summary>
+    /// <summary>根据 Ability Apply 类型、SameAsCaster 光环、可暴击与冷却自动补充类型 Tag 与 Crit/Cooldown。供 Condition 与可暴击判定使用。</summary>
     private static void EnsureTypeTags(ItemTemplate template)
     {
         if (template.Size == ItemSize.Small) TryAddTag(template, Tag.Small);
@@ -123,7 +123,7 @@ public class ItemDatabase : IItemTemplateResolver
 
         foreach (var aura in template.Auras ?? [])
         {
-            if (aura.Condition != Condition.SameAsSource) continue;
+            if (aura.Condition != Condition.SameAsCaster) continue;
             var tag = AttributeToTypeTag(aura.Attribute);
             if (tag != 0) TryAddDerivedTag(template, tag);
         }
@@ -211,10 +211,10 @@ public class ItemDatabase : IItemTemplateResolver
         SetDerivedTagMask(template, GetDerivedTagMask(template) | tagMask);
     }
 
-    /// <summary>condition ?? default：UseItem → SameAsSource，Freeze/Slow/Haste/Crit/Destroy/Burn → SameSide，BattleStart → Always。</summary>
+    /// <summary>condition ?? default：UseItem → SameAsCaster，Freeze/Slow/Haste/Crit/Destroy/Burn → SameSide，BattleStart → Always。</summary>
     private static Formula EnsureTriggerCondition(int triggerName, Formula? condition)
     {
-        if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
+        if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsCaster;
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Haste) return condition ?? Condition.SameSide;

@@ -40,7 +40,7 @@ globs: "**/ItemDatabase/**","**/Core/BattleContext*.cs","**/Core/Apply.cs","**/C
 - **局外成长（光环 + 可覆盖变量）**：若效果为「局外某条件（如购买水系、赢得战斗）时此物品某属性提高 X/Y/Z/W」，不实现局外触发，但可用**基础数值（若有）+ 光环公式 + OverridableAttributes** 描述：**Custom_0** 写模板上（每档提高量等），**Custom_1** 仅写 **OverridableAttributes**（局外可覆盖，已购买数量常用默认 5/10/15/20）；光环 `Value = Formula.Source(Key.Custom_0) * Formula.Source(Key.Custom_1)`。参考 **珊瑚**（治疗）、**珊瑚护甲**（护盾）、**狼筅**。
 - **StashParameter**：用于如储物箱「小型物品数 + StashParameter」类公式时，默认值只写在 **OverridableAttributes** 中即可。
 - **弹药**：`AmmoCap`（0 表示无弹药）；使用后扣减 `AmmoRemaining`，日志可显示剩余弹药。
-- **战斗内模板**：每场战斗每个槽位用卡组 template 克隆；`BattleItemState.Template` 即该克隆，可直接修改（如 `Template.Damage = Template.Damage.Add(delta)`）。
+- **战斗内模板**：每场战斗每个槽位用卡组 template 克隆；`ItemState.Template` 即该克隆，可直接修改（如 `Template.Damage = Template.Damage.Add(delta)`）。
 
 ---
 

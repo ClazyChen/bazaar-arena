@@ -23,7 +23,7 @@ public static class Seaweed
                 Ability.AddAttribute(Key.Heal).Override(
                     trigger: Trigger.UseItem,
                     condition: Condition.SameSide & Condition.WithTag(Tag.Aquatic),
-                    targetCondition: Condition.SameAsSource
+                    targetCondition: Condition.SameAsCaster
                 ),
             ],
         };

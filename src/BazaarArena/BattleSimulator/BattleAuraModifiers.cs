@@ -6,7 +6,7 @@ namespace BazaarArena.BattleSimulator;
 internal static class BattleAuraModifiers
 {
     /// <param name="attributeName">属性名或整型 key 的字符串形式（与 AuraDefinition.Attribute 一致）。</param>
-    public static void Accumulate(BattleSide side, BattleItemState targetItem, BattleSide? opp,
+    public static void Accumulate(BattleSide side, ItemState targetItem, BattleSide? opp,
         string attributeName, out int fixedSum, out int percentSum)
     {
         fixedSum = 0;

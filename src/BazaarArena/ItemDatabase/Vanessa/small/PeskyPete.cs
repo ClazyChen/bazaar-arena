@@ -7,7 +7,7 @@ namespace BazaarArena.ItemDatabase.Vanessa.Small;
 public static class PeskyPete
 {
     private static readonly Formula AdjacentFriendOrProperty =
-        Condition.AdjacentToSource & (Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Property));
+        Condition.AdjacentToCaster & (Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Property));
 
     /// <summary>鹦鹉皮特（最新版，铜）：8 » 7 » 6 » 5s 小 铜 伙伴；▶ 造成 2 灼烧；每有一个相邻的伙伴或地产，此物品 +1 多重释放。</summary>
     public static ItemTemplate Template()

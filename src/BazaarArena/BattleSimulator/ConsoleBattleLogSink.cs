@@ -15,14 +15,14 @@ public class ConsoleBattleLogSink : IBattleLogSink
 
     public void OnHpSnapshot(int timeMs, int side0Hp, int side1Hp) { }
 
-    public void OnCast(BattleItemState caster, string itemName, int timeMs, int? ammoRemainingAfter = null)
+    public void OnCast(ItemState caster, string itemName, int timeMs, int? ammoRemainingAfter = null)
     {
         if (_level != BattleLogLevel.Detailed) return;
         string suffix = ammoRemainingAfter.HasValue ? $" 剩余弹药 {ammoRemainingAfter.Value}" : "";
         Console.WriteLine($"  玩家{caster.SideIndex + 1} 施放 [{itemName}] @ {timeMs}ms{suffix}");
     }
 
-    public void OnEffect(BattleItemState caster, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)
+    public void OnEffect(ItemState caster, string itemName, string effectKind, int value, int timeMs, bool isCrit = false, string? extraSuffix = null)
     {
         if (_level != BattleLogLevel.Detailed) return;
         string critSuffix = isCrit ? " （暴击）" : "";

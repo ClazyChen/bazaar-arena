@@ -45,7 +45,7 @@ public static class BilgeWorm
                 Ability.PoisonSelf,
                 Ability.Charge.Override(
                     trigger: Trigger.Crit,
-                    targetCondition: Condition.SameAsSource
+                    targetCondition: Condition.SameAsCaster
                 ),
             ],
         };

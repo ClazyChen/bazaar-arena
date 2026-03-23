@@ -21,7 +21,7 @@ public static class Wetware
                 Ability.Shield,
                 Ability.AddAttribute(Key.Shield).Override(
                     condition: Condition.SameSide & Condition.WithTag(Tag.Weapon),
-                    targetCondition: Condition.SameAsSource
+                    targetCondition: Condition.SameAsCaster
                 ),
             ],
             Auras =
@@ -30,7 +30,7 @@ public static class Wetware
                 {
                     Attribute = Key.CooldownMs,
                     Value = Formula.Constant(-2000) * Formula.Apply(
-                        Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Tech) & Condition.DifferentFromSource),
+                        Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Tech) & Condition.DifferentFromCaster),
                         c => c > 0 ? 1 : 0),
                 },
             ],

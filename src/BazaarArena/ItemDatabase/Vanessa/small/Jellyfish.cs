@@ -22,8 +22,8 @@ public static class Jellyfish
                 Ability.Poison,
                 Ability.Haste.Override(
                     trigger: Trigger.UseItem,
-                    condition: Condition.SameSide & Condition.WithTag(Tag.Aquatic) & Condition.AdjacentToSource,
-                    targetCondition: Condition.SameAsSource
+                    condition: Condition.SameSide & Condition.WithTag(Tag.Aquatic) & Condition.AdjacentToCaster,
+                    targetCondition: Condition.SameAsCaster
                 ),
             ],
         };

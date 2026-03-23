@@ -21,8 +21,8 @@ public static class ShoeBlade
             [
                 Ability.Damage,
                 Ability.AddAttribute(Key.Custom_0).Override(
-                    additionalCondition: Condition.SourceCustom0IsZero,
-                    targetCondition: Condition.SameAsSource,
+                    additionalCondition: Condition.CasterCustom0IsZero,
+                    targetCondition: Condition.SameAsCaster,
                     value: 1,
                     effectLogName: "",
                     priority: AbilityPriority.Lowest
@@ -34,7 +34,7 @@ public static class ShoeBlade
                 {
                     Attribute = Key.CritRatePercent,
                     Value = Formula.Constant(100),
-                    SourceCondition = Condition.SourceCustom0IsZero,
+                    SourceCondition = Condition.CasterCustom0IsZero,
                 },
             ],
         };
