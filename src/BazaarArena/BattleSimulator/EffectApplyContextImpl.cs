@@ -58,8 +58,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
 
     public int GetResolvedValue(int key, bool applyCritMultiplier = false, int defaultValue = 0)
     {
-        var auraContext = new BattleAuraContext(Side, Item, Opp);
-        int baseValue = Item.Template.GetInt(key, Item.Tier, defaultValue);
+        int baseValue = Item.GetAttribute(key);
         return applyCritMultiplier ? baseValue * CritMultiplier : baseValue;
     }
 
@@ -263,11 +262,11 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public void ApplyReload(int amount, int targetCount, Formula? targetCondition = null)
     {
         if (amount <= 0 || targetCount <= 0) return;
-        var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.WithTag(Tag.Ammo);
+        var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.WithTag(DerivedTag.Ammo);
         ApplyToTargetsBothSides(targetCount, cond, EffectLogName ?? "装填", amount, (side, index) =>
         {
             var t = side.Items[index];
-            int cap = t.Template.GetInt(Key.AmmoCap, t.Tier, 0);
+            int cap = t.GetAttribute(Key.AmmoCap);
             int add = Math.Min(amount, Math.Max(0, cap - t.AmmoRemaining));
             t.AmmoRemaining += add;
             // 装填后若充能已满且现有子弹，与充能满时一致：加入施放队列并清零已过冷却
@@ -327,11 +326,11 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             foreach (int i in indices)
             {
                 var wi = Side.Items[i];
-                if (attributeKey == Key.Damage) { wi.Template.Damage = wi.Template.Damage.Add(value); targetNames.Add(wi.Template.Name); }
-                else if (attributeKey == Key.Poison) { wi.Template.Poison = wi.Template.Poison.Add(value); targetNames.Add(wi.Template.Name); }
-                else if (attributeKey == Key.CritRatePercent) { wi.Template.CritRatePercent = wi.Template.CritRatePercent.Add(value); targetNames.Add(wi.Template.Name); }
+                if (attributeKey == Key.Damage) { wi.SetAttribute(Key.Damage, wi.GetAttribute(Key.Damage) + value); targetNames.Add(wi.Template.Name); }
+                else if (attributeKey == Key.Poison) { wi.SetAttribute(Key.Poison, wi.GetAttribute(Key.Poison) + value); targetNames.Add(wi.Template.Name); }
+                else if (attributeKey == Key.CritRatePercent) { wi.SetAttribute(Key.CritRatePercent, wi.GetAttribute(Key.CritRatePercent) + value); targetNames.Add(wi.Template.Name); }
                 else if (attributeKey == Key.InFlight) { wi.InFlight = value != 0; targetNames.Add(wi.Template.Name); }
-                else { wi.Template.SetIntByKey(attributeKey, wi.Template.GetInt(attributeKey, wi.Tier, 0) + value); targetNames.Add(wi.Template.Name); }
+                else { wi.SetAttribute(attributeKey, wi.GetAttribute(attributeKey) + value); targetNames.Add(wi.Template.Name); }
             }
             if (targetNames.Count > 0 && !string.IsNullOrEmpty(logName))
                 LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
@@ -339,11 +338,11 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }
         ApplyToSideWithCondition(Side, Opp, cond, logName, value, (wi, _) =>
         {
-            if (attributeKey == Key.Damage) { wi.Template.Damage = wi.Template.Damage.Add(value); return wi.Template.Name; }
-            if (attributeKey == Key.Poison) { wi.Template.Poison = wi.Template.Poison.Add(value); return wi.Template.Name; }
-            if (attributeKey == Key.CritRatePercent) { wi.Template.CritRatePercent = wi.Template.CritRatePercent.Add(value); return wi.Template.Name; }
+            if (attributeKey == Key.Damage) { wi.SetAttribute(Key.Damage, wi.GetAttribute(Key.Damage) + value); return wi.Template.Name; }
+            if (attributeKey == Key.Poison) { wi.SetAttribute(Key.Poison, wi.GetAttribute(Key.Poison) + value); return wi.Template.Name; }
+            if (attributeKey == Key.CritRatePercent) { wi.SetAttribute(Key.CritRatePercent, wi.GetAttribute(Key.CritRatePercent) + value); return wi.Template.Name; }
             if (attributeKey == Key.InFlight) { wi.InFlight = value != 0; return wi.Template.Name; }
-            wi.Template.SetIntByKey(attributeKey, wi.Template.GetInt(attributeKey, wi.Tier, 0) + value);
+            wi.SetAttribute(attributeKey, wi.GetAttribute(attributeKey) + value);
             return wi.Template.Name;
         });
     }
@@ -355,7 +354,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         ApplyToSideWithCondition(Side, Opp, targetCondition, logName, 0, (wi, _) =>
         {
             if (attributeKey == Key.InFlight) { wi.InFlight = value != 0; return wi.Template.Name; }
-            wi.Template.SetIntByKey(attributeKey, value);
+            wi.SetAttribute(attributeKey, value);
             return wi.Template.Name;
         });
     }
@@ -376,13 +375,13 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         foreach (var (side, index) in targets)
         {
             var wi = side.Items[index];
-            int current = wi.Template.GetInt(attributeKey, wi.Tier, 0);
+            int current = wi.GetAttribute(attributeKey);
             int newVal = current - value;
             if (attributeKey == Key.CooldownMs)
                 newVal = Math.Max(minCooldownMs, newVal);
             else
                 newVal = Math.Max(0, newVal);
-            wi.Template.SetIntByKey(attributeKey, newVal);
+            wi.SetAttribute(attributeKey, newVal);
             targetNames.Add(wi.Template.Name);
 
             // 冷却缩短后若充能已满，与充能效果一致：加入施放队列并清零已过冷却

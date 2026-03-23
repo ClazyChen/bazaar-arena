@@ -4,6 +4,40 @@
 
 ---
 
+## Tag/DerivedTag、Apply 统一入口与模板复用经验（2026-03-24）
+
+### 1) Tag 与 DerivedTag 必须分离位域
+
+- **结论**：普通标签与自动推导标签不能混在同一常量表中连续占位，否则后续扩展很快逼近 `int` 位宽上限并产生冲突风险。
+- **约定**：
+  - 普通标签（显式定义 + 尺寸 `Small/Medium/Large`）放 **`Tag`**，写入 **`Key.Tags`**。
+  - 自动推导标签（`Damage/Shield/Ammo/Burn/Poison/Heal/Regen/Crit/Cooldown/...`）放 **`DerivedTag`**，写入 **`Key.DerivedTags`**。
+  - `DerivedTag` 从 **`1 << 0`** 重新编号，独立于 `Tag`。
+- **条件判定**：`Condition.WithTag/NotWithTag/WithTemplateTag` 需同时检查 `Tags` 与 `DerivedTags`（分别判位，再做 OR 语义），不能先把两个位掩码直接合并后按单域理解。
+
+### 2) Apply 必须作为能力执行入口，Effect 只承载实现
+
+- **结论**：能力定义统一使用 **`Apply.*`** 作为执行入口，`Effect.*Apply` 仅作为具体效果实现；`Apply` 为空实现会导致大量能力“看似入队，实际不生效”。
+- **落地方式**：
+  - `Apply.Damage/Shield/Heal/...` 转发到 `Effect.*Apply`。
+  - `Apply.AddAttribute(int)` / `Apply.ReduceAttribute(int)` 转发到 `Effect.AddAttributeApply(...)` / `Effect.ReduceAttributeApply(...)`。
+  - 转发时从模拟器线程上下文取得当前 `IEffectApplyContext`，保证所有能力共用同一上下文管线。
+- **效果**：能力执行入口统一，日志/目标筛选/触发回报不再出现“绕过上下文”的分叉行为。
+
+### 3) 模板不再战斗内克隆，运行时状态统一写 ItemState
+
+- **结论**：数据库模板按引用复用；战斗实例化统一 `new ItemState(template, tier)`，卡组覆盖仅写入 `ItemState.Attributes`。不再创建 battle template clone。
+- **关键点**：
+  - `BuildSide`：resolver 取模板后直接构造 `BattleItemState(template, tier)`，再应用 slot overrides（仅允许 `OverridableAttributes` 声明的 key）。
+  - 战斗内属性读写（伤害、冷却、暴击率、弹药等）优先读写 `ItemState`，避免改写共享模板。
+  - `BattleSide.GetItemInt` 优先读 `ItemState` 对应 key，保证运行时变更即时生效。
+
+### 验证记录
+
+- 仅就本轮改动执行过 `dotnet build`（通过）与 `python scripts/item_tests/run_item_tests_small_bronze.py`（失败 14 项，主要为日志断言未命中，待后续专项排查）；本节先记录架构与实现经验，不放松现有断言。
+
+---
+
 ## Ability/Aura 硬切收敛经验（2026-03-24）
 
 ### 关键收敛路径

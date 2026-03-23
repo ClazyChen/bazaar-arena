@@ -5,8 +5,7 @@ public static class Ability
 {
     private static Formula WithCooldownTarget(Formula baseCondition) => baseCondition & Condition.NotDestroyed & Condition.HasCooldown;
     private static Formula WithNotDestroyedTarget(Formula baseCondition) => baseCondition & Condition.NotDestroyed;
-    private static Formula WithAmmoTarget(Formula baseCondition) => baseCondition & Condition.NotDestroyed & Condition.WithTag(Tag.Ammo);
-    private static readonly Action<BattleContext> NoopApply = _ => { };
+    private static Formula WithAmmoTarget(Formula baseCondition) => baseCondition & Condition.NotDestroyed & Condition.WithTag(DerivedTag.Ammo);
 
     private static AbilityDefinition CreateBase(AbilityType abilityType, Action<BattleContext>? apply)
     {
@@ -100,14 +99,14 @@ public static class Ability
         effectLogName: "结束飞行");
 
     /// <summary>对满足目标条件的物品增加指定属性（限本场战斗）。attributeKey 如 Key.Damage、Key.Poison；amountKey 默认 Key.Custom_0。</summary>
-    public static AbilityDefinition AddAttribute(int attributeKey, int? amountKey = null) => CreateBase(AbilityType.AddAttribute, NoopApply).Override(
+    public static AbilityDefinition AddAttribute(int attributeKey, int? amountKey = null) => CreateBase(AbilityType.AddAttribute, Apply.AddAttribute(attributeKey)).Override(
         valueKey: amountKey ?? Key.Custom_0,
         applyCritMultiplier: false,
         targetCondition: Condition.SameSide,
         targetCountKey: Key.ModifyAttributeTargetCount);
 
     /// <summary>对满足目标条件的物品减少指定属性（限本场战斗，不低于 0）。amountKey 默认 Key.Custom_0。</summary>
-    public static AbilityDefinition ReduceAttribute(int attributeKey, int? amountKey = null) => CreateBase(AbilityType.ReduceAttribute, NoopApply).Override(
+    public static AbilityDefinition ReduceAttribute(int attributeKey, int? amountKey = null) => CreateBase(AbilityType.ReduceAttribute, Apply.ReduceAttribute(attributeKey)).Override(
         valueKey: amountKey ?? Key.Custom_0,
         applyCritMultiplier: false,
         targetCondition: Condition.DifferentSide,

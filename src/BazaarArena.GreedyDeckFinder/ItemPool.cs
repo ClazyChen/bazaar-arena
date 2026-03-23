@@ -26,7 +26,7 @@ public sealed class ItemPool
             if (excluded.Contains(name))
                 continue;
             var t = db.GetTemplate(name);
-            if (t == null || (t.Hero ?? Hero.Common) != Hero.Vanessa || t.MinTier != ItemTier.Bronze)
+            if (t == null || t.Hero != Hero.Vanessa || t.MinTier != ItemTier.Bronze)
                 continue;
 
             switch (t.Size)

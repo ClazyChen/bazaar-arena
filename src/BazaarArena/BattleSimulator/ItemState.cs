@@ -36,6 +36,15 @@ public class ItemState
             Attributes[i] = template.GetInt(i, tier, 0);
     }
 
+    public ItemState(ItemState source)
+    {
+        Template = source.Template;
+        Attributes = new int[Key.ItemStateAttributeCount];
+        Array.Copy(source.Attributes, Attributes, Attributes.Length);
+        foreach (var kv in source._lastTriggerMsByAbility)
+            _lastTriggerMsByAbility[kv.Key] = kv.Value;
+    }
+
     public int GetLastTriggerMs(int abilityIndex) =>
         _lastTriggerMsByAbility.TryGetValue(abilityIndex, out int v) ? v : int.MinValue;
 

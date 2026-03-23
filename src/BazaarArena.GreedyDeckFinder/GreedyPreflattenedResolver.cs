@@ -50,9 +50,9 @@ internal sealed class GreedyPreflattenedResolver : IItemTemplateResolver
 
         foreach (var kv in source.GetIntsByTierSnapshot())
         {
-            string key = kv.Key;
+            int key = kv.Key;
             int v = source.GetInt(key, ItemTier.Bronze, defaultValue: 0);
-            flat.SetInt(key, v);
+            flat.SetIntByKey(key, v);
         }
 
         if (source.OverridableAttributes != null)
@@ -67,7 +67,7 @@ internal sealed class GreedyPreflattenedResolver : IItemTemplateResolver
                     4 => (bronzeVal + source.GetInt(kv.Key, ItemTier.Silver, bronzeVal)) / 2,
                     _ => bronzeVal / 2,
                 };
-                flat.SetInt(kv.Key, applied);
+                flat.SetIntByKey(kv.Key, applied);
             }
         }
 

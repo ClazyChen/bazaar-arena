@@ -326,7 +326,7 @@ public static class CommonMedium
             [
                 Ability.Damage,
                 Ability.AddAttribute(Key.Shield).Override(
-                    additionalTargetCondition: Condition.WithTag(Tag.Shield),
+                    additionalTargetCondition: Condition.WithTag(DerivedTag.Shield),
                     priority: AbilityPriority.High
                 ),
             ],
@@ -609,14 +609,14 @@ public static class CommonMedium
                 new AuraDefinition
                 {
                     Attribute = Key.CritRatePercent,
-                    Condition = Condition.LeftOfSource & Condition.WithTag(Tag.Ammo),
+                    Condition = Condition.LeftOfSource & Condition.WithTag(DerivedTag.Ammo),
                     Value = Formula.Constant(100),
                     Percent = true,
                 },
                 new AuraDefinition
                 {
                     Attribute = Key.AmmoCap,
-                    Condition = Condition.LeftOfSource & Condition.WithTag(Tag.Ammo),
+                    Condition = Condition.LeftOfSource & Condition.WithTag(DerivedTag.Ammo),
                     Value = Formula.Constant(1),
                 },
             ],

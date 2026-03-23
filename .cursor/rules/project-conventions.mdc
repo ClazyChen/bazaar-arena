@@ -21,6 +21,12 @@ alwaysApply: true
 
 - **Ability 多触发与 Ability.Also**：当同一条效果语义需要在多个触发器/条件下生效、且数值、目标与优先级完全一致并需要共享 250ms 触发间隔时，优先使用一条能力 + 多次 **ability.Also(...)**（如 `Ability.Damage.Override(...).Also(trigger: Trigger.BattleStart, condition: ...)`），而不是复制多条几乎相同的能力定义；`Also` 的参数顺序与缩进风格与 `Override` 保持一致（先 trigger，再 condition/additionalCondition，再 invokeTargetCondition/sourceCondition），不修改 Priority/TargetCondition/ValueKey 等共享属性。
 
+- **Tag / DerivedTag 分离**：普通标签（显式标签 + `Small/Medium/Large`）仅使用 **Tag** 并写入 `Key.Tags`；自动推导标签（如 `Damage`、`Shield`、`Ammo`、`Burn`、`Poison`、`Heal`、`Regen`、`Crit`、`Cooldown`、`Charge`、`Freeze`、`Slow`、`Haste`、`Reload`）仅使用 **DerivedTag** 并写入 `Key.DerivedTags`。`DerivedTag` 从 `1<<0` 独立编号；涉及标签判断时（如 `Condition.WithTag`）必须同时检查 `Tags` 与 `DerivedTags`，不得把两类标签混为同一常量域扩展。
+
+- **Apply 统一执行入口**：能力定义统一通过 **Apply.\*** 执行效果（`Ability.*` 默认绑定 Apply）；`Effect.*` 仅承载具体实现，不直接作为能力入口。新增能力类型时先补齐 `Apply` 到 `Effect` 的转发，再接入 `Ability` 工厂，确保所有效果都走统一 `IEffectApplyContext`。
+
+- **模板复用与实例化**：`ItemDatabase` 注册后模板按引用复用，不再提供/依赖 `ItemTemplate` 战斗克隆；卡组实例化统一 `new ItemState(template, tier)`（含扁平化路径）。战斗内可变数值（冷却、伤害增减、暴击率、弹药等）写入 `ItemState.Attributes`，`BuildSide` 仅把 slot overrides 应用到 `ItemState`（且仅限 `OverridableAttributes` 声明 key）。
+
 - **物品多版本命名**：同一物品可有多个版本注册；**无后缀**表示最新版本，**`[物品名]_Sx`** 表示第 x 赛季版本（如 `獠牙_S10`）。历史版本同样用**基名**（去掉 `_Sx`）定位显示图片（`pictures/png/<基名>.png`）。GUI 默认物品池只显示最新版本（`GetLatestOnlyNames()`）；可选物品区与卡组内**右键**可循环切换版本（最新→较高赛季→较低赛季→最新），左键可将当前显示的版本拖入卡组；左键点击其他位置且未拖拽入卡组时，池中已切换到历史版本的项会重置为显示最新版本。**卡组内**版本切换仅在与当前槽位 **MinTier** 一致的版本间循环（避免铜槽切到银版本）。详见 `docs/implementation-notes.md`「多版本物品与 GUI 版本切换」。
 - **GUI 卡组集**：启动时优先打开 **上次打开的卡组集**（路径存于 Data/last-collection.txt）；无记录、文件不存在或打开失败时使用 default.json；打开/新建另存为/保存另存为成功时更新记录。详见 implementation-notes「GUI 启动时上次打开的卡组集」。
 

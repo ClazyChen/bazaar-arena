@@ -53,4 +53,14 @@ internal static class BattleSimulatorThreadScratch
         if (s_execDepth <= 0) return;
         s_execDepth--;
     }
+
+    internal static Core.IEffectApplyContext CurrentEffectApplyContextOrThrow()
+    {
+        if (s_execDepth <= 0 || s_execContexts == null)
+            throw new InvalidOperationException("当前不在效果应用上下文内，无法执行 Apply。");
+        var ctx = s_execContexts[s_execDepth - 1];
+        if (ctx == null)
+            throw new InvalidOperationException("效果应用上下文未初始化。");
+        return ctx;
+    }
 }

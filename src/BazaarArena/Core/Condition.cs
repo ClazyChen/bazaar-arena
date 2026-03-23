@@ -2,16 +2,17 @@ namespace BazaarArena.Core;
 
 public static class Condition
 {
-    private static int GetRuntimeTags(BattleContext ctx)
+    private static bool HasRuntimeTag(BattleContext ctx, int tagMask)
     {
-        // 运行时优先读取 ItemState 属性，兼容模板默认值。
-        return ctx.Item.GetAttribute(Key.Tags) | ctx.Item.GetAttribute(Key.DerivedTags);
+        // Tag 与 DerivedTag 使用独立位域，需分别判定后再合并语义。
+        return (ctx.Item.GetAttribute(Key.Tags) & tagMask) != 0
+            || (ctx.Item.GetAttribute(Key.DerivedTags) & tagMask) != 0;
     }
 
-    private static int GetTemplateTags(BattleContext ctx)
+    private static bool HasTemplateTag(BattleContext ctx, int tagMask)
     {
-        return ctx.Item.Template.GetInt(Key.Tags, ctx.Item.Tier, 0)
-            | ctx.Item.Template.GetInt(Key.DerivedTags, ctx.Item.Tier, 0);
+        return (ctx.Item.Template.GetInt(Key.Tags, ctx.Item.Tier, 0) & tagMask) != 0
+            || (ctx.Item.Template.GetInt(Key.DerivedTags, ctx.Item.Tier, 0) & tagMask) != 0;
     }
 
     public static Formula Always { get; } = Formula.True;
@@ -67,9 +68,9 @@ public static class Condition
     public static Formula CanCrit { get; } = Formula.True;
     public static Formula FirstNonDestroyedRightOfSource { get; } = Formula.False;
 
-    public static Formula WithTag(int tagMask) => new(ctx => (GetRuntimeTags(ctx) & tagMask) != 0 ? 1 : 0);
-    public static Formula NotWithTag(int tagMask) => new(ctx => (GetRuntimeTags(ctx) & tagMask) == 0 ? 1 : 0);
-    public static Formula WithTemplateTag(int tagMask) => new(ctx => (GetTemplateTags(ctx) & tagMask) != 0 ? 1 : 0);
+    public static Formula WithTag(int tagMask) => new(ctx => HasRuntimeTag(ctx, tagMask) ? 1 : 0);
+    public static Formula NotWithTag(int tagMask) => new(ctx => HasRuntimeTag(ctx, tagMask) ? 0 : 1);
+    public static Formula WithTemplateTag(int tagMask) => new(ctx => HasTemplateTag(ctx, tagMask) ? 1 : 0);
     public static Formula LeftMost(Formula inner) => inner;
     public static Formula RightMost(Formula inner) => inner;
 }

@@ -112,33 +112,33 @@ public class ItemDatabase : IItemTemplateResolver
         else if (template.Size == ItemSize.Medium) TryAddTag(template, Tag.Medium);
         else if (template.Size == ItemSize.Large) TryAddTag(template, Tag.Large);
 
-        if (HasAnyTierPositive(template, Key.AmmoCap)) TryAddTag(template, Tag.Ammo);
+        if (HasAnyTierPositive(template, Key.AmmoCap)) TryAddDerivedTag(template, DerivedTag.Ammo);
 
         // 类型/机制 Tag：由 Ability 的 Apply 类型决定（与 MechanicTagger 规则一致）
         foreach (var a in template.Abilities ?? [])
         {
             var typeTag = AbilityTypeToTypeTag(a.AbilityType);
-            if (typeTag != 0) TryAddTag(template, typeTag);
+            if (typeTag != 0) TryAddDerivedTag(template, typeTag);
         }
 
         foreach (var aura in template.Auras ?? [])
         {
             if (aura.Condition != Condition.SameAsSource) continue;
             var tag = AttributeToTypeTag(aura.Attribute);
-            if (tag != 0) TryAddTag(template, tag);
+            if (tag != 0) TryAddDerivedTag(template, tag);
         }
 
         // Tag.Crit：具备六类可暴击 Tag 之一且至少一条 UseItem+UseSelf+ApplyCritMultiplier 能力
         if (HasAnyCrittableTag(template) && HasUseItemSelfCritAbility(template))
-            TryAddTag(template, Tag.Crit);
+            TryAddDerivedTag(template, DerivedTag.Crit);
 
-        if (HasAnyTierPositive(template, Key.CooldownMs)) TryAddTag(template, Tag.Cooldown);
+        if (HasAnyTierPositive(template, Key.CooldownMs)) TryAddDerivedTag(template, DerivedTag.Cooldown);
     }
 
     private static bool HasAnyCrittableTag(ItemTemplate template)
     {
-        var tags = GetTagMask(template);
-        int crittableMask = Tag.Damage | Tag.Burn | Tag.Poison | Tag.Heal | Tag.Shield | Tag.Regen;
+        var tags = GetDerivedTagMask(template);
+        int crittableMask = DerivedTag.Damage | DerivedTag.Burn | DerivedTag.Poison | DerivedTag.Heal | DerivedTag.Shield | DerivedTag.Regen;
         return (tags & crittableMask) != 0;
     }
 
@@ -154,16 +154,16 @@ public class ItemDatabase : IItemTemplateResolver
 
     private static int AbilityTypeToTypeTag(AbilityType abilityType) => abilityType switch
     {
-        AbilityType.Damage => Tag.Damage,
-        AbilityType.Burn => Tag.Burn,
-        AbilityType.Poison => Tag.Poison,
-        AbilityType.Heal => Tag.Heal,
-        AbilityType.Shield => Tag.Shield,
-        AbilityType.Charge => Tag.Charge,
-        AbilityType.Freeze => Tag.Freeze,
-        AbilityType.Slow => Tag.Slow,
-        AbilityType.Haste => Tag.Haste,
-        AbilityType.Reload => Tag.Reload,
+        AbilityType.Damage => DerivedTag.Damage,
+        AbilityType.Burn => DerivedTag.Burn,
+        AbilityType.Poison => DerivedTag.Poison,
+        AbilityType.Heal => DerivedTag.Heal,
+        AbilityType.Shield => DerivedTag.Shield,
+        AbilityType.Charge => DerivedTag.Charge,
+        AbilityType.Freeze => DerivedTag.Freeze,
+        AbilityType.Slow => DerivedTag.Slow,
+        AbilityType.Haste => DerivedTag.Haste,
+        AbilityType.Reload => DerivedTag.Reload,
         _ => 0,
     };
 
@@ -172,12 +172,12 @@ public class ItemDatabase : IItemTemplateResolver
     {
         return attribute switch
         {
-            Key.Damage => Tag.Damage,
-            Key.Burn => Tag.Burn,
-            Key.Poison => Tag.Poison,
-            Key.Heal => Tag.Heal,
-            Key.Shield => Tag.Shield,
-            Key.Regen => Tag.Regen,
+            Key.Damage => DerivedTag.Damage,
+            Key.Burn => DerivedTag.Burn,
+            Key.Poison => DerivedTag.Poison,
+            Key.Heal => DerivedTag.Heal,
+            Key.Shield => DerivedTag.Shield,
+            Key.Regen => DerivedTag.Regen,
             _ => 0,
         };
     }
@@ -200,57 +200,15 @@ public class ItemDatabase : IItemTemplateResolver
         SetTagMask(template, GetTagMask(template) | tagMask);
     }
 
-    /// <summary>根据名称创建模板副本（用于对战中的实例，可叠加局外重写）。</summary>
-    public ItemTemplate? CreateTemplate(string name)
-    {
-        var t = GetTemplate(name);
-        return t == null ? null : CloneTemplate(t);
-    }
+    private static int GetDerivedTagMask(ItemTemplate template) =>
+        template.GetInt(Key.DerivedTags, template.MinTier, 0);
 
-    private static ItemTemplate CloneTemplate(ItemTemplate t)
+    private static void SetDerivedTagMask(ItemTemplate template, int tagMask) =>
+        template.SetIntByKey(Key.DerivedTags, tagMask);
+
+    private static void TryAddDerivedTag(ItemTemplate template, int tagMask)
     {
-        var clone = new ItemTemplate
-        {
-            Name = t.Name,
-            Desc = t.Desc,
-            MinTier = t.MinTier,
-            Size = t.Size,
-            Hero = t.Hero,
-            Abilities = [.. t.Abilities.Select(a =>
-            {
-                var def = new AbilityDefinition
-                {
-                    TriggerEntries = a.TriggerEntries.Select(e => new TriggerEntry
-                    {
-                        Trigger = e.Trigger,
-                        Condition = e.Condition,
-                    }).ToList(),
-                    Priority = a.Priority,
-                    AbilityType = a.AbilityType,
-                    UseSelf = a.UseSelf,
-                    Apply = a.Apply,
-                    TargetCondition = a.TargetCondition,
-                    Value = a.Value,
-                    ValueKey = a.ValueKey,
-                    ApplyCritMultiplier = a.ApplyCritMultiplier,
-                    EffectLogName = a.EffectLogName,
-                    TargetCountKey = a.TargetCountKey,
-                };
-                return def;
-            })],
-            Auras = t.Auras.Select(a => new AuraDefinition
-            {
-                Attribute = a.Attribute,
-                Condition = a.Condition,
-                SourceCondition = a.SourceCondition,
-                Value = a.Value,
-                Percent = a.Percent,
-                GrantedTags = a.GrantedTags != null ? [.. a.GrantedTags] : null,
-            }).ToList(),
-            OverridableAttributes = t.OverridableAttributes != null ? new Dictionary<int, IntOrByTier>(t.OverridableAttributes) : null,
-        };
-        clone.SetIntsByTier(t.GetIntsByTierSnapshot());
-        return clone;
+        SetDerivedTagMask(template, GetDerivedTagMask(template) | tagMask);
     }
 
     /// <summary>condition ?? default：UseItem → SameAsSource，Freeze/Slow/Haste/Crit/Destroy/Burn → SameSide，BattleStart → Always。</summary>

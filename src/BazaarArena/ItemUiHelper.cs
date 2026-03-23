@@ -58,34 +58,20 @@ internal static class ItemUiHelper
     {
         // UI 只显示 1 次尺寸；并隐藏注册时自动补充的“尺寸/效果类型”标签（伤害/护盾/治疗等）。
         // 这些标签主要用于 Condition/可暴击判定等内部逻辑，展示出来会显得冗余且容易造成尺寸重复。
-        var hiddenAutoTags = new HashSet<int>
+        var hiddenNormalTags = new HashSet<int>
         {
             Tag.Small,
             Tag.Medium,
             Tag.Large,
-            Tag.Damage,
-            Tag.Shield,
-            Tag.Heal,
-            Tag.Burn,
-            Tag.Poison,
-            Tag.Regen,
-            Tag.Crit,
-            Tag.Cooldown,
-            Tag.Charge,
-            Tag.Freeze,
-            Tag.Slow,
-            Tag.Haste,
-            Tag.Reload,
-            Tag.Ammo,
         };
 
         var parts = new List<string> { SizeToDisplayName(template.Size) };
-        int tags = template.GetInt(Key.Tags, template.MinTier, 0) | template.GetInt(Key.DerivedTags, template.MinTier, 0);
+        int tags = template.GetInt(Key.Tags, template.MinTier, 0);
         for (int bit = 0; bit < 31; bit++)
         {
             int tag = 1 << bit;
             if ((tags & tag) == 0) continue;
-            if (hiddenAutoTags.Contains(tag)) continue;
+            if (hiddenNormalTags.Contains(tag)) continue;
             var name = TagToDisplayName(tag);
             if (string.IsNullOrEmpty(name)) continue;
             if (!parts.Contains(name))

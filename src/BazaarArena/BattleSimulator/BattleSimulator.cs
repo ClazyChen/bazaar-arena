@@ -164,12 +164,12 @@ public class BattleSimulator
                             }
                             else
                             {
-                                var auraContext = new BattleAuraContext(side, item, opp);
-                                int critRate = item.Template.GetInt(Key.CritRatePercent, item.Tier, 0);
+                                int critRate = item.GetAttribute(Key.CritRatePercent);
                                 if (critRate > 0 && ThreadLocalRandom.Next100() < critRate)
                                 {
                                     isCrit = true;
-                                    critDamagePercent = item.Template.GetInt(Key.CritDamagePercent, item.Tier, 200);
+                                    critDamagePercent = item.GetAttribute(Key.CritDamagePercent);
+                                    if (critDamagePercent <= 0) critDamagePercent = 200;
                                 }
                                 item.CritTimeMs = timeMs;
                                 item.IsCritThisUse = isCrit;
@@ -250,8 +250,8 @@ public class BattleSimulator
     private static bool ItemHasAnyCrittableField(BattleItemState item)
     {
         int tags = item.Template.GetInt(Key.Tags, item.Tier, 0) | item.Template.GetInt(Key.DerivedTags, item.Tier, 0);
-        return (tags & Tag.Damage) != 0 || (tags & Tag.Burn) != 0 || (tags & Tag.Poison) != 0
-            || (tags & Tag.Heal) != 0 || (tags & Tag.Shield) != 0 || (tags & Tag.Regen) != 0;
+        return (tags & DerivedTag.Damage) != 0 || (tags & DerivedTag.Burn) != 0 || (tags & DerivedTag.Poison) != 0
+            || (tags & DerivedTag.Heal) != 0 || (tags & DerivedTag.Shield) != 0 || (tags & DerivedTag.Regen) != 0;
     }
 
     private static BattleSide? BuildSide(Deck deck, IItemTemplateResolver resolver)
@@ -267,10 +267,23 @@ public class BattleSimulator
         {
                     var t = resolver.GetTemplate(entry.ItemName);
             if (t == null) return null;
-            var battleTemplate = ItemTemplateBattleClone.Create(t, entry.Tier, entry.Overrides);
-            side.Items.Add(new BattleItemState(battleTemplate, entry.Tier));
+            var item = new BattleItemState(t, entry.Tier);
+            ApplyOverrides(item, entry.Overrides);
+            side.Items.Add(item);
         }
         return side;
+    }
+
+    private static void ApplyOverrides(BattleItemState item, IReadOnlyDictionary<string, int>? overrides)
+    {
+        if (overrides == null || overrides.Count == 0) return;
+        if (item.Template.OverridableAttributes == null || item.Template.OverridableAttributes.Count == 0) return;
+        foreach (var kv in overrides)
+        {
+            if (!Key.TryGetKey(kv.Key, out int key)) continue;
+            if (!item.Template.OverridableAttributes.ContainsKey(key)) continue;
+            item.SetAttribute(key, kv.Value);
+        }
     }
 
     /// <summary>condition ?? default：UseItem → SameAsSource，Freeze/Slow/Crit/Destroy → SameSide，BattleStart → Always。</summary>
@@ -490,7 +503,7 @@ public class BattleSimulator
         int value = 0;
         if (ability.ValueKey != null)
         {
-            int baseValue = ability.ResolveValue(item.Template, item.Tier, ability.ValueKey ?? Key.Custom_0);
+            int baseValue = item.GetAttribute(ability.ValueKey ?? Key.Custom_0);
             bool applyCrit = ItemHasAnyCrittableField(item) && ability.ApplyCritMultiplier;
             value = applyCrit ? baseValue * critMultiplier : baseValue;
         }

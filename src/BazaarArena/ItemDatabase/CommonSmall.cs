@@ -251,7 +251,7 @@ public static class CommonSmall
             [
                 Ability.Damage,
                 Ability.ReduceAttribute(Key.Shield).Override(
-                    additionalTargetCondition: Condition.WithTag(Tag.Shield),
+                    additionalTargetCondition: Condition.WithTag(DerivedTag.Shield),
                     priority: AbilityPriority.High
                 ),
             ],
