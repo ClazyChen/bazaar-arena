@@ -17,7 +17,7 @@ public static class CoralArmor
             Cooldown = 6.0,
             Shield = 50,
             Custom_0 = [10, 20, 30, 40],
-            OverridableAttributes = new Dictionary<string, IntOrByTier>
+            OverridableAttributes = new Dictionary<int, IntOrByTier>
             {
                 [Key.Custom_1] = [5, 10, 15, 20],
             },
@@ -29,7 +29,7 @@ public static class CoralArmor
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Shield,
+                    Attribute = Key.Shield,
                     Value = Formula.Source(Key.Custom_0) * Formula.Source(Key.Custom_1),
                 },
             ],

@@ -9,40 +9,43 @@ internal sealed class BattleAuraContext(BattleSide side, BattleItemState targetI
     {
         fixedSum = 0;
         percentSum = 0;
+        var battleState = new BattleState { Side0 = side, Side1 = opp ?? side };
+        int attributeKey = int.TryParse(attributeName, out var parsed) ? parsed : -1;
         for (int i = 0; i < side.Items.Count; i++)
         {
             var source = side.Items[i];
             if (source.Destroyed) continue;
             foreach (var aura in source.Template.Auras)
             {
-                if (aura.AttributeName != attributeName) continue;
-                // 评估光环条件时仅用模板标签，避免 GrantedTags 产生循环
-                IReadOnlySet<string> TemplateTagsOnly(BattleItemState i) =>
-                    (i.Template.Tags != null && i.Template.Tags.Count > 0) ? new HashSet<string>(i.Template.Tags) : [];
-                var auraCtx = new ConditionContext
+                if (aura.Attribute != attributeKey) continue;
+                var auraCtx = new BattleContext
                 {
-                    MySide = side,
-                    EnemySide = opp ?? side,
                     Item = targetItem,
                     Source = source,
-                    GetEffectiveTagsForItem = TemplateTagsOnly,
+                    Caster = source,
+                    BattleState = battleState,
                 };
-                if (aura.Condition != null && !aura.Condition.Evaluate(auraCtx)) continue;
+                if (aura.Condition.Evaluate(auraCtx) == 0) continue;
                 if (aura.SourceCondition != null)
                 {
-                    var sourceOnlyCtx = new ConditionContext
+                    var sourceOnlyCtx = new BattleContext
                     {
-                        MySide = side,
-                        EnemySide = opp ?? side,
                         Item = source,
                         Source = source,
-                        GetEffectiveTagsForItem = TemplateTagsOnly,
+                        Caster = source,
+                        BattleState = battleState,
                     };
-                    if (!aura.SourceCondition.Evaluate(sourceOnlyCtx)) continue;
+                    if (aura.SourceCondition.Evaluate(sourceOnlyCtx) == 0) continue;
                 }
                 if (aura.Value != null)
                 {
-                    int v = aura.Value.Evaluate(new FormulaContext(source, side, opp));
+                    int v = aura.Value.Evaluate(new BattleContext
+                    {
+                        BattleState = battleState,
+                        Item = targetItem,
+                        Source = source,
+                        Caster = source,
+                    });
                     if (aura.Percent)
                         percentSum += v;
                     else

@@ -30,7 +30,7 @@ public static class Shuriken
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Multicast,
+                    Attribute = Key.Multicast,
                     Value = Formula.Source(Key.AmmoRemaining) - Formula.Constant(1),
                 },
             ],

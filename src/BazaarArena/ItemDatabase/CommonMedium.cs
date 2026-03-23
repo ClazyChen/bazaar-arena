@@ -216,7 +216,7 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Damage,
+                    Attribute = Key.Damage,
                     Condition = Condition.AdjacentToSource & Condition.WithTag(Tag.Weapon),
                     Value = Formula.Source(Key.Custom_0),
                 },
@@ -318,7 +318,7 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Damage,
+                    Attribute = Key.Damage,
                     Value = Formula.SideSelect(Key.Shield, SideSelectKind.Max),
                 },
             ],
@@ -359,7 +359,7 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.PercentFreezeReduction,
+                    Attribute = Key.PercentFreezeReduction,
                     Condition = Condition.SameSide,
                     Value = Formula.Constant(50),
                 },
@@ -416,7 +416,7 @@ public static class CommonMedium
                 ),
                 Ability.ReduceAttribute(Key.FreezeRemainingMs).Override(
                     trigger: Trigger.Freeze,
-                    invokeTargetCondition: Condition.SameAsSource,
+                    condition: Condition.SameAsSource,
                     targetCondition: Condition.SameAsSource & Condition.IsFrozen,
                     value: 1_000_000,
                     effectLogName: "解除冻结",
@@ -444,12 +444,12 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Damage,
+                    Attribute = Key.Damage,
                     Value = Formula.Source(Key.Custom_0) * Formula.Count(Condition.StrictlyLeftOfSource),
                 },
                 new AuraDefinition
                 {
-                    AttributeName = Key.CooldownMs,
+                    Attribute = Key.CooldownMs,
                     Value = Formula.Constant(-1000) * Formula.Count(Condition.StrictlyRightOfSource & Condition.WithTag(Tag.Tech)),
                 },
             ],
@@ -479,7 +479,7 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.CooldownMs,
+                    Attribute = Key.CooldownMs,
                     Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToSource & Condition.WithTag(Tag.Tool)),
                 },
             ],
@@ -512,7 +512,7 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.CritRatePercent,
+                    Attribute = Key.CritRatePercent,
                     Condition = Condition.AdjacentToSource,
                     Value = Formula.Source(Key.Custom_0),
                 },
@@ -565,7 +565,7 @@ public static class CommonMedium
                 ),
                 Ability.Charge.Override(
                     trigger: Trigger.Destroy,
-                    invokeTargetCondition: Condition.SameAsSource,
+                    condition: Condition.SameAsSource,
                     targetCondition: Condition.SameSide,
                     priority: AbilityPriority.Low
                 ),
@@ -579,7 +579,7 @@ public static class CommonMedium
                 },
                 new AuraDefinition
                 {
-                    AttributeName = Key.PercentCooldownReduction,
+                    Attribute = Key.PercentCooldownReduction,
                     Condition = Condition.SameSide & Condition.WithTag(Tag.Vehicle),
                     Value = Formula.Source(Key.Custom_0),
                 },
@@ -608,14 +608,14 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.CritRatePercent,
+                    Attribute = Key.CritRatePercent,
                     Condition = Condition.LeftOfSource & Condition.WithTag(Tag.Ammo),
                     Value = Formula.Constant(100),
                     Percent = true,
                 },
                 new AuraDefinition
                 {
-                    AttributeName = Key.AmmoCap,
+                    Attribute = Key.AmmoCap,
                     Condition = Condition.LeftOfSource & Condition.WithTag(Tag.Ammo),
                     Value = Formula.Constant(1),
                 },
@@ -666,7 +666,7 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.LifeSteal,
+                    Attribute = Key.LifeSteal,
                     Condition = Condition.LeftOfSource & Condition.WithTag(Tag.Weapon),
                     Value = Formula.Constant(1),
                 },
@@ -718,7 +718,7 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Shield,
+                    Attribute = Key.Shield,
                     Condition = Condition.SameAsSource,
                     Value = RatioUtil.PercentFloor(Formula.Side(BattleSide.KeyMaxHp), Formula.Source(Key.Custom_0)),
                 },
@@ -748,7 +748,7 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Shield,
+                    Attribute = Key.Shield,
                     Condition = Condition.SameAsSource,
                     Value = Formula.Opp(BattleSide.KeyBurn),
                 },

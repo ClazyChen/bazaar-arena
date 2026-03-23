@@ -28,7 +28,7 @@ public static class Wetware
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.CooldownMs,
+                    Attribute = Key.CooldownMs,
                     Value = Formula.Constant(-2000) * Formula.Apply(
                         Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Tech) & Condition.DifferentFromSource),
                         c => c > 0 ? 1 : 0),

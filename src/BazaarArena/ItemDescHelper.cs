@@ -14,17 +14,17 @@ public static class ItemDescHelper
     private static readonly Regex PlaceholderRegex = new(@"\{([^a-zA-Z0-9_]*)([a-zA-Z0-9_]+)([^a-zA-Z0-9_]*)\}", RegexOptions.Compiled);
 
     /// <summary>描述中可用 {Cooldown} 表示冷却秒数，实际读 CooldownMs；{ChargeSeconds} 表示充能秒数，实际读 Charge（毫秒）；{FreezeSeconds}、{SlowSeconds}、{HasteSeconds} 表示冻结/减速/加速秒数。仅当能力为默认选取目标时，描述采用「X {XTargetCount} 件物品 {XSeconds} 秒」形式；有确定目标（如相邻、右侧）时保留如「加速相邻物品 {HasteSeconds} 秒」等写法。</summary>
-    private static string ResolveKey(string key) => key switch
+    private static int ResolveKey(string key) => key switch
     {
-        "Cooldown" => "CooldownMs",
-        "ChargeSeconds" => "Charge",
-        "FreezeSeconds" => "Freeze",
-        "SlowSeconds" => "Slow",
-        "HasteSeconds" => "Haste",
-        _ => key,
+        "Cooldown" => Key.CooldownMs,
+        "ChargeSeconds" => Key.Charge,
+        "FreezeSeconds" => Key.Freeze,
+        "SlowSeconds" => Key.Slow,
+        "HasteSeconds" => Key.Haste,
+        _ => typeof(Key).GetField(key)?.GetValue(null) as int? ?? Key.Custom_0,
     };
 
-    private static bool IsSecondsKey(string key) => key == "CooldownMs" || key == "Charge" || key == "Freeze" || key == "Slow" || key == "Haste";
+    private static bool IsSecondsKey(int key) => key == Key.CooldownMs || key == Key.Charge || key == Key.Freeze || key == Key.Slow || key == Key.Haste;
 
     /// <summary>解析文本中所有占位符，返回 (索引, 占位符全长, 前缀, Key, 后缀)。</summary>
     private static List<(int Index, int Length, string Prefix, string Key, string Suffix)> ParsePlaceholders(string text)
@@ -49,7 +49,7 @@ public static class ItemDescHelper
         foreach (var (index, length, prefix, key, suffix) in matches)
         {
             int idx = index + offset;
-            string actualKey = ResolveKey(key);
+            int actualKey = ResolveKey(key);
             int value = template.GetInt(actualKey, tier, ItemTemplate.GetDefaultValueForKey(actualKey));
             string valueStr = IsSecondsKey(actualKey) ? FormatCooldownSeconds(value) : value.ToString();
             string replaceStr = prefix + valueStr + suffix;
@@ -72,7 +72,7 @@ public static class ItemDescHelper
         foreach (var (index, length, prefix, key, suffix) in matches)
         {
             int idx = index + offset;
-            string actualKey = ResolveKey(key);
+            int actualKey = ResolveKey(key);
             if (!snapshot.TryGetValue(actualKey, out var list) || list.Count == 0)
             {
                 int defaultVal = ItemTemplate.GetDefaultValueForKey(actualKey);

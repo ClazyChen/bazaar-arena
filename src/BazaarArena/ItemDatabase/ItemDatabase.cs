@@ -9,13 +9,13 @@ public class ItemDatabase : IItemTemplateResolver
     private readonly Dictionary<string, ItemTemplate> _templates = new();
 
     /// <summary>注册时用于填充模板的默认尺寸；在 RegisterAll 中按批次设置（如先 Small 再注册所有小物品）。</summary>
-    public ItemSize DefaultSize { get; set; } = ItemSize.Small;
+    public int DefaultSize { get; set; } = ItemSize.Small;
 
     /// <summary>注册时用于填充模板的默认最低档位；在 RegisterAll 中按批次设置（如 Bronze 注册完再设为 Silver）。</summary>
     public ItemTier DefaultMinTier { get; set; } = ItemTier.Bronze;
 
     /// <summary>注册时用于填充模板的默认英雄；在 RegisterAll 中按批次设置，避免同一文件中反复定义。</summary>
-    public string DefaultHero { get; set; } = Hero.Common;
+    public int DefaultHero { get; set; } = Hero.Common;
 
     public ItemTemplate? GetTemplate(string name) =>
         _templates.TryGetValue(name, out var t) ? t : null;
@@ -60,7 +60,7 @@ public class ItemDatabase : IItemTemplateResolver
     }
 
     /// <summary>按尺寸返回 Price 默认值：小 [1,2,4,8]、中 [2,4,8,16]、大 [3,6,12,24]，供 Register 自动设置。</summary>
-    private static IntOrByTier GetDefaultPriceBySize(ItemSize size) => size switch
+    private static IntOrByTier GetDefaultPriceBySize(int size) => size switch
     {
         ItemSize.Small => [1, 2, 4, 8],
         ItemSize.Medium => [2, 4, 8, 16],
@@ -94,8 +94,14 @@ public class ItemDatabase : IItemTemplateResolver
     {
         foreach (var a in template.Abilities ?? [])
         {
-            a.Condition = EnsureTriggerCondition(a.TriggerName, a.Condition);
-            a.SyncPrimaryTriggerEntryFromTopLevel();
+            if (a.TriggerEntries == null || a.TriggerEntries.Count == 0)
+                a.TriggerEntries = [new TriggerEntry { Trigger = Trigger.UseItem, Condition = Condition.SameAsSource }];
+            for (int i = 0; i < a.TriggerEntries.Count; i++)
+            {
+                var e = a.TriggerEntries[i];
+                e.Condition = EnsureTriggerCondition(e.Trigger, e.Condition);
+                a.TriggerEntries[i] = e;
+            }
         }
     }
 
@@ -111,28 +117,15 @@ public class ItemDatabase : IItemTemplateResolver
         // 类型/机制 Tag：由 Ability 的 Apply 类型决定（与 MechanicTagger 规则一致）
         foreach (var a in template.Abilities ?? [])
         {
-            if (a.Apply == Effect.DamageApply) TryAddTag(template, Tag.Damage);
-            else if (a.Apply == Effect.BurnApply) TryAddTag(template, Tag.Burn);
-            else if (a.Apply == Effect.PoisonApply || a.Apply == Effect.PoisonSelfApply) TryAddTag(template, Tag.Poison);
-            else if (a.Apply == Effect.HealApply) TryAddTag(template, Tag.Heal);
-            else if (a.Apply == Effect.ShieldApply) TryAddTag(template, Tag.Shield);
-            else if (a.Apply == Effect.RegenApply) TryAddTag(template, Tag.Regen);
-            else if (a.Apply == Effect.ChargeApply) TryAddTag(template, Tag.Charge);
-            else if (a.Apply == Effect.FreezeApply) TryAddTag(template, Tag.Freeze);
-            else if (a.Apply == Effect.SlowApply) TryAddTag(template, Tag.Slow);
-            else if (a.Apply == Effect.HasteApply) TryAddTag(template, Tag.Haste);
-            else if (a.Apply == Effect.ReloadApply) TryAddTag(template, Tag.Reload);
-            else if (a.Apply == Effect.RepairApply) TryAddTag(template, Tag.Repair);
-            else if (a.Apply == Effect.DestroyApply) TryAddTag(template, Tag.Destroy);
-            else if (a.Apply == Effect.StopFlyingApply) TryAddTag(template, Tag.StopFlying);
-            else if (a.EffectLogName == "开始飞行") TryAddTag(template, Tag.StartFlying);
+            var typeTag = AbilityTypeToTypeTag(a.AbilityType);
+            if (typeTag != 0) TryAddTag(template, typeTag);
         }
 
         foreach (var aura in template.Auras ?? [])
         {
             if (aura.Condition != Condition.SameAsSource) continue;
-            var tag = AttributeNameToTypeTag(aura.AttributeName);
-            if (tag != null) TryAddTag(template, tag);
+            var tag = AttributeToTypeTag(aura.Attribute);
+            if (tag != 0) TryAddTag(template, tag);
         }
 
         // Tag.Crit：具备六类可暴击 Tag 之一且至少一条 UseItem+UseSelf+ApplyCritMultiplier 能力
@@ -144,10 +137,9 @@ public class ItemDatabase : IItemTemplateResolver
 
     private static bool HasAnyCrittableTag(ItemTemplate template)
     {
-        var tags = template.Tags;
-        if (tags == null) return false;
-        return tags.Contains(Tag.Damage) || tags.Contains(Tag.Burn) || tags.Contains(Tag.Poison)
-            || tags.Contains(Tag.Heal) || tags.Contains(Tag.Shield) || tags.Contains(Tag.Regen);
+        var tags = GetTagMask(template);
+        int crittableMask = Tag.Damage | Tag.Burn | Tag.Poison | Tag.Heal | Tag.Shield | Tag.Regen;
+        return (tags & crittableMask) != 0;
     }
 
     private static bool HasUseItemSelfCritAbility(ItemTemplate template)
@@ -155,42 +147,57 @@ public class ItemDatabase : IItemTemplateResolver
         foreach (var a in template.Abilities ?? [])
         {
             if (a.Apply == null || !a.ApplyCritMultiplier || !a.UseSelf) continue;
-            if (a.TriggerName == Trigger.UseItem) return true;
-            if (a.Triggers != null)
-            {
-                foreach (var e in a.Triggers)
-                    if (e.TriggerName == Trigger.UseItem) return true;
-            }
+            if (a.TriggerEntries.Any(e => e.Trigger == Trigger.UseItem)) return true;
         }
         return false;
     }
 
-    /// <summary>将光环 AttributeName 映射为类型 Tag；非类型属性返回 null。</summary>
-    private static string? AttributeNameToTypeTag(string attributeName)
+    private static int AbilityTypeToTypeTag(AbilityType abilityType) => abilityType switch
     {
-        return attributeName switch
+        AbilityType.Damage => Tag.Damage,
+        AbilityType.Burn => Tag.Burn,
+        AbilityType.Poison => Tag.Poison,
+        AbilityType.Heal => Tag.Heal,
+        AbilityType.Shield => Tag.Shield,
+        AbilityType.Charge => Tag.Charge,
+        AbilityType.Freeze => Tag.Freeze,
+        AbilityType.Slow => Tag.Slow,
+        AbilityType.Haste => Tag.Haste,
+        AbilityType.Reload => Tag.Reload,
+        _ => 0,
+    };
+
+    /// <summary>将光环 Attribute 映射为类型 Tag；非类型属性返回 0。</summary>
+    private static int AttributeToTypeTag(int attribute)
+    {
+        return attribute switch
         {
             Key.Damage => Tag.Damage,
             Key.Burn => Tag.Burn,
             Key.Poison => Tag.Poison,
             Key.Heal => Tag.Heal,
             Key.Shield => Tag.Shield,
-            "Regen" => Tag.Regen,
-            _ => null,
+            Key.Regen => Tag.Regen,
+            _ => 0,
         };
     }
 
-    private static bool HasAnyTierPositive(ItemTemplate t, string key)
+    private static bool HasAnyTierPositive(ItemTemplate t, int key)
     {
         foreach (ItemTier tier in Enum.GetValues<ItemTier>())
             if (t.GetInt(key, tier, 0) > 0) return true;
         return false;
     }
 
-    private static void TryAddTag(ItemTemplate template, string tag)
+    private static int GetTagMask(ItemTemplate template) =>
+        template.GetInt(Key.Tags, template.MinTier, 0);
+
+    private static void SetTagMask(ItemTemplate template, int tagMask) =>
+        template.SetIntByKey(Key.Tags, tagMask);
+
+    private static void TryAddTag(ItemTemplate template, int tagMask)
     {
-        if (template.Tags == null) template.Tags = [];
-        if (!template.Tags.Contains(tag)) template.Tags.Add(tag);
+        SetTagMask(template, GetTagMask(template) | tagMask);
     }
 
     /// <summary>根据名称创建模板副本（用于对战中的实例，可叠加局外重写）。</summary>
@@ -209,44 +216,45 @@ public class ItemDatabase : IItemTemplateResolver
             MinTier = t.MinTier,
             Size = t.Size,
             Hero = t.Hero,
-            Tags = [..t.Tags],
             Abilities = [.. t.Abilities.Select(a =>
             {
                 var def = new AbilityDefinition
                 {
-                    TriggerName = a.TriggerName,
+                    TriggerEntries = a.TriggerEntries.Select(e => new TriggerEntry
+                    {
+                        Trigger = e.Trigger,
+                        Condition = e.Condition,
+                    }).ToList(),
                     Priority = a.Priority,
-                    Condition = EnsureTriggerCondition(a.TriggerName, Condition.Clone(a.Condition)),
-                    SourceCondition = Condition.Clone(a.SourceCondition),
-                    InvokeTargetCondition = Condition.Clone(a.InvokeTargetCondition),
-                    TargetCondition = Condition.Clone(a.TargetCondition),
+                    AbilityType = a.AbilityType,
+                    UseSelf = a.UseSelf,
+                    Apply = a.Apply,
+                    TargetCondition = a.TargetCondition,
                     Value = a.Value,
                     ValueKey = a.ValueKey,
                     ApplyCritMultiplier = a.ApplyCritMultiplier,
-                    UseSelf = a.UseSelf,
-                    Apply = a.Apply,
                     EffectLogName = a.EffectLogName,
                     TargetCountKey = a.TargetCountKey,
-                    Triggers = a.Triggers?.Select(e => new AbilityDefinition.TriggerEntry
-                    {
-                        TriggerName = e.TriggerName,
-                        Condition = Condition.Clone(e.Condition),
-                        SourceCondition = Condition.Clone(e.SourceCondition),
-                        InvokeTargetCondition = Condition.Clone(e.InvokeTargetCondition),
-                    }).ToList(),
                 };
-                def.SyncPrimaryTriggerEntryFromTopLevel();
                 return def;
             })],
-            Auras = t.Auras.Select(a => new AuraDefinition { AttributeName = a.AttributeName, Condition = Condition.Clone(a.Condition), SourceCondition = Condition.Clone(a.SourceCondition), Value = a.Value, Percent = a.Percent }).ToList(),
-            OverridableAttributes = t.OverridableAttributes != null ? new Dictionary<string, IntOrByTier>(t.OverridableAttributes) : null,
+            Auras = t.Auras.Select(a => new AuraDefinition
+            {
+                Attribute = a.Attribute,
+                Condition = a.Condition,
+                SourceCondition = a.SourceCondition,
+                Value = a.Value,
+                Percent = a.Percent,
+                GrantedTags = a.GrantedTags != null ? [.. a.GrantedTags] : null,
+            }).ToList(),
+            OverridableAttributes = t.OverridableAttributes != null ? new Dictionary<int, IntOrByTier>(t.OverridableAttributes) : null,
         };
         clone.SetIntsByTier(t.GetIntsByTierSnapshot());
         return clone;
     }
 
     /// <summary>condition ?? default：UseItem → SameAsSource，Freeze/Slow/Haste/Crit/Destroy/Burn → SameSide，BattleStart → Always。</summary>
-    private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
+    private static Formula EnsureTriggerCondition(int triggerName, Formula? condition)
     {
         if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
@@ -260,6 +268,6 @@ public class ItemDatabase : IItemTemplateResolver
         if (triggerName == Trigger.BattleStart) return condition ?? Condition.Always;
         if (triggerName == Trigger.Ammo) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.AboutToLose) return condition ?? Condition.SameSide;
-        return condition;
+        return condition ?? Condition.Always;
     }
 }

@@ -16,7 +16,7 @@ public static class Langxian
             Cooldown = 10.0,
             Damage = 40,
             Custom_0 = [40, 60, 80, 100],
-            OverridableAttributes = new Dictionary<string, IntOrByTier>
+            OverridableAttributes = new Dictionary<int, IntOrByTier>
             {
                 [Key.Custom_1] = [3, 6, 9, 12],
             },
@@ -28,7 +28,7 @@ public static class Langxian
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Damage,
+                    Attribute = Key.Damage,
                     Value = Formula.Source(Key.Custom_0) * Formula.Source(Key.Custom_1),
                 },
             ],

@@ -15,13 +15,13 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public IBattleLogSink LogSink { get; private set; } = null!;
     public List<BattleItemState>? ChargeInducedCastQueue { get; private set; }
     /// <summary>效果施加触发的触发器待处理队列（由模拟器传入）。冻结/减速/摧毁时追加 (TriggerName, SideIndex, ItemIndex)，模拟器在 Apply 后统一 InvokeTrigger 并处理 Destroyed。</summary>
-    public List<(string TriggerName, int SideIndex, int ItemIndex)>? EffectAppliedTriggerQueue { get; private set; }
+    public List<(int TriggerName, int SideIndex, int ItemIndex)>? EffectAppliedTriggerQueue { get; private set; }
 
     public string? EffectLogName { get; private set; }
-    public string? TargetCountKey { get; private set; }
+    public int? TargetCountKey { get; private set; }
     public BattleItemState? InvokeTargetItem { get; private set; }
 
-    public Condition? TargetCondition { get; private set; }
+    public Formula? TargetCondition { get; private set; }
 
     /// <summary>由 <see cref="BattleSimulatorThreadScratch"/> 按线程嵌套深度复用实例时写入。</summary>
     internal void Rebind(
@@ -34,10 +34,10 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         int timeMs,
         IBattleLogSink logSink,
         List<BattleItemState>? chargeInducedCastQueue,
-        List<(string TriggerName, int SideIndex, int ItemIndex)> effectAppliedTriggerQueue,
-        Condition? targetCondition,
+        List<(int TriggerName, int SideIndex, int ItemIndex)> effectAppliedTriggerQueue,
+        Formula? targetCondition,
         string? effectLogName,
-        string? targetCountKey,
+        int? targetCountKey,
         BattleItemState? invokeTargetItem)
     {
         Side = side;
@@ -56,10 +56,10 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         InvokeTargetItem = invokeTargetItem;
     }
 
-    public int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0)
+    public int GetResolvedValue(int key, bool applyCritMultiplier = false, int defaultValue = 0)
     {
         var auraContext = new BattleAuraContext(Side, Item, Opp);
-        int baseValue = Item.Template.GetInt(key, Item.Tier, defaultValue, auraContext);
+        int baseValue = Item.Template.GetInt(key, Item.Tier, defaultValue);
         return applyCritMultiplier ? baseValue * CritMultiplier : baseValue;
     }
 
@@ -106,25 +106,23 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     }
 
     /// <summary>从 fromSide 中选取至多 targetCount 个满足 condition 的目标（Source=施放者）；不放回随机选取。</summary>
-    private List<int> GetTargetIndices(BattleSide fromSide, int targetCount, Condition? condition)
+    private BattleContext BuildContext(BattleItemState item) => new()
+    {
+        BattleState = new BattleState(),
+        Item = item,
+        Caster = Item,
+        Source = Item,
+        InvokeTarget = InvokeTargetItem,
+    };
+
+    private List<int> GetTargetIndices(BattleSide fromSide, int targetCount, Formula? condition)
     {
         if (condition == null) return [];
         var pool = new List<int>();
-        BattleSide enemySide = fromSide == Side ? Opp : Side;
-        Func<BattleItemState, IReadOnlySet<string>> getTags = item => EffectiveTagHelper.GetEffectiveTags(Side, Opp, item);
         for (int i = 0; i < fromSide.Items.Count; i++)
         {
             var it = fromSide.Items[i];
-            var ctx = new ConditionContext
-            {
-                MySide = fromSide,
-                EnemySide = enemySide,
-                Item = it,
-                Source = Item,
-                InvokeTargetItem = InvokeTargetItem,
-                GetEffectiveTagsForItem = getTags,
-            };
-            if (!condition.Evaluate(ctx)) continue;
+            if (condition.Evaluate(BuildContext(it)) == 0) continue;
             pool.Add(i);
         }
         int take = Math.Min(targetCount, pool.Count);
@@ -138,26 +136,17 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     }
 
     /// <summary>从双方所有物品中选取至多 targetCount 个满足 condition 的目标（Source=施放者）；不放回随机选取。评估条件时传入 InvokeTargetItem 供 SameAsInvokeTarget 使用。</summary>
-    private List<(BattleSide side, int index)> GetTargetsFromBothSides(int targetCount, Condition? condition)
+    private List<(BattleSide side, int index)> GetTargetsFromBothSides(int targetCount, Formula? condition)
     {
         if (condition == null) return [];
         var pool = new List<(BattleSide side, int index)>();
-        Func<BattleItemState, IReadOnlySet<string>> getTags = item => EffectiveTagHelper.GetEffectiveTags(Side, Opp, item);
         foreach (var (fromSide, enemySide) in new[] { (Side, Opp), (Opp, Side) })
         {
             for (int i = 0; i < fromSide.Items.Count; i++)
             {
                 var it = fromSide.Items[i];
-                var ctx = new ConditionContext
-                {
-                    MySide = fromSide,
-                    EnemySide = enemySide,
-                    Item = it,
-                    Source = Item,
-                    InvokeTargetItem = InvokeTargetItem,
-                    GetEffectiveTagsForItem = getTags,
-                };
-                if (!condition.Evaluate(ctx)) continue;
+                _ = enemySide;
+                if (condition.Evaluate(BuildContext(it)) == 0) continue;
                 pool.Add((fromSide, i));
             }
         }
@@ -172,7 +161,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     }
 
     /// <summary>通用「按条件选目标→逐目标应用→记日志」；logValue 为 null 时记目标数。effectTriggerName 非空时将本次目标写入 EffectAppliedTriggerQueue 供模拟器统一触发。</summary>
-    private void ApplyToTargets(BattleSide fromSide, int targetCount, Condition? condition, string effectName, int? logValue, Func<BattleItemState, int, string> perTarget, string? effectTriggerName = null)
+    private void ApplyToTargets(BattleSide fromSide, int targetCount, Formula? condition, string effectName, int? logValue, Func<BattleItemState, int, string> perTarget, int? effectTriggerName = null)
     {
         var indices = GetTargetIndices(fromSide, targetCount, condition);
         if (indices.Count == 0) return;
@@ -187,12 +176,12 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         if (effectTriggerName != null && EffectAppliedTriggerQueue != null)
         {
             foreach (int i in indices)
-                EffectAppliedTriggerQueue.Add((effectTriggerName, fromSide.SideIndex, i));
+                EffectAppliedTriggerQueue.Add((effectTriggerName.Value, fromSide.SideIndex, i));
         }
     }
 
     /// <summary>从双方选目标后逐目标应用并记日志；perTarget 返回目标名称并负责施加效果；effectTriggerName 非空时写入 EffectAppliedTriggerQueue。</summary>
-    private void ApplyToTargetsBothSides(int targetCount, Condition? condition, string effectName, int? logValue, Func<BattleSide, int, string> perTarget, string? effectTriggerName = null)
+    private void ApplyToTargetsBothSides(int targetCount, Formula? condition, string effectName, int? logValue, Func<BattleSide, int, string> perTarget, int? effectTriggerName = null)
     {
         var targets = GetTargetsFromBothSides(targetCount, condition);
         if (targets.Count == 0) return;
@@ -204,7 +193,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         if (effectTriggerName != null && EffectAppliedTriggerQueue != null)
         {
             foreach (var (side, index) in targets)
-                EffectAppliedTriggerQueue.Add((effectTriggerName, side.SideIndex, index));
+                EffectAppliedTriggerQueue.Add((effectTriggerName.Value, side.SideIndex, index));
         }
     }
 
@@ -226,22 +215,21 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         return target.Template.Name;
     }
 
-    public void ApplyFreeze(int freezeMs, int targetCount, Condition? targetCondition = null)
+    public void ApplyFreeze(int freezeMs, int targetCount, Formula? targetCondition = null)
     {
         if (freezeMs <= 0 || targetCount <= 0) return;
         var cond = (targetCondition ?? Condition.DifferentSide) & Condition.NotDestroyed;
         ApplyToTargetsBothSides(targetCount, cond, "冻结", freezeMs, (side, index) =>
         {
             var t = side.Items[index];
-            var enemySide = side == Side ? Opp : Side;
-            int pct = Math.Clamp(t.Template.GetInt(Key.PercentFreezeReduction, t.Tier, 0, new BattleAuraContext(side, t, enemySide)), 0, 100);
+            int pct = Math.Clamp(t.Template.GetInt(Key.PercentFreezeReduction, t.Tier, 0), 0, 100);
             int effectiveMs = freezeMs - RatioUtil.PercentOf(freezeMs, pct);
             t.FreezeRemainingMs += effectiveMs;
             return t.Template.Name;
         }, Trigger.Freeze);
     }
 
-    public void ApplySlow(int slowMs, int targetCount, Condition? targetCondition = null)
+    public void ApplySlow(int slowMs, int targetCount, Formula? targetCondition = null)
     {
         if (slowMs <= 0 || targetCount <= 0) return;
         var cond = (targetCondition ?? Condition.DifferentSide) & Condition.NotDestroyed & Condition.HasCooldown;
@@ -253,14 +241,14 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }, Trigger.Slow);
     }
 
-    public void ApplyCharge(int chargeMs, int targetCount, Condition? targetCondition = null)
+    public void ApplyCharge(int chargeMs, int targetCount, Formula? targetCondition = null)
     {
         if (chargeMs <= 0 || targetCount <= 0) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.HasCooldown;
         ApplyToTargetsBothSides(targetCount, cond, "充能", chargeMs, (side, index) => ChargeItemAt(side, index, chargeMs), null);
     }
 
-    public void ApplyHaste(int hasteMs, int targetCount, Condition? targetCondition = null)
+    public void ApplyHaste(int hasteMs, int targetCount, Formula? targetCondition = null)
     {
         if (hasteMs <= 0 || targetCount <= 0) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.HasCooldown;
@@ -272,15 +260,14 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }, Trigger.Haste);
     }
 
-    public void ApplyReload(int amount, int targetCount, Condition? targetCondition = null)
+    public void ApplyReload(int amount, int targetCount, Formula? targetCondition = null)
     {
         if (amount <= 0 || targetCount <= 0) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.WithTag(Tag.Ammo);
         ApplyToTargetsBothSides(targetCount, cond, EffectLogName ?? "装填", amount, (side, index) =>
         {
             var t = side.Items[index];
-            var auraCtx = new BattleAuraContext(side, t, Opp);
-            int cap = t.Template.GetInt(Key.AmmoCap, t.Tier, 0, auraCtx);
+            int cap = t.Template.GetInt(Key.AmmoCap, t.Tier, 0);
             int add = Math.Min(amount, Math.Max(0, cap - t.AmmoRemaining));
             t.AmmoRemaining += add;
             // 装填后若充能已满且现有子弹，与充能满时一致：加入施放队列并清零已过冷却
@@ -297,7 +284,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }, null);
     }
 
-    public void ApplyRepair(int targetCount, Condition? targetCondition = null)
+    public void ApplyRepair(int targetCount, Formula? targetCondition = null)
     {
         if (targetCount <= 0) return;
         var condition = (targetCondition ?? Condition.SameSide) & Condition.Destroyed;
@@ -305,24 +292,16 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     }
 
     /// <summary>对一侧物品按条件筛选并逐项执行 perItem；收集返回的名称并统一记一条日志。perItem 返回 null 表示未施加。</summary>
-    private void ApplyToSideWithCondition(BattleSide fromSide, BattleSide enemySide, Condition? targetCondition, string logEffectName, int logValue, Func<BattleItemState, int, string?> perItem)
+    private void ApplyToSideWithCondition(BattleSide fromSide, BattleSide enemySide, Formula? targetCondition, string logEffectName, int logValue, Func<BattleItemState, int, string?> perItem)
     {
         if (targetCondition == null) return;
         var targetNames = new List<string>();
-        Func<BattleItemState, IReadOnlySet<string>> getTags = item => EffectiveTagHelper.GetEffectiveTags(fromSide, enemySide, item);
+        _ = enemySide;
         for (int i = 0; i < fromSide.Items.Count; i++)
         {
             var wi = fromSide.Items[i];
             if (wi.Destroyed) continue;
-            var ctx = new ConditionContext
-            {
-                MySide = fromSide,
-                EnemySide = enemySide,
-                Item = wi,
-                Source = Item,
-                GetEffectiveTagsForItem = getTags,
-            };
-            if (!targetCondition.Evaluate(ctx)) continue;
+            if (targetCondition.Evaluate(BuildContext(wi)) == 0) continue;
             var name = perItem(wi, i);
             if (name != null) targetNames.Add(name);
         }
@@ -333,13 +312,13 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }
     }
 
-    public void AddAttributeToCasterSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0)
+    public void AddAttributeToCasterSide(int attributeKey, int value, Formula? targetCondition, int maxTargetCount = 0)
     {
         if (value <= 0 || targetCondition == null) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed;
-        if (attributeName == Key.CritRatePercent)
+        if (attributeKey == Key.CritRatePercent)
             cond &= Condition.CanCrit;
-        string logName = EffectLogName ?? (AttributeLogNames.Get(attributeName) + "提高");
+        string logName = EffectLogName ?? (AttributeLogNames.Get(attributeKey) + "提高");
         if (maxTargetCount > 0)
         {
             var indices = GetTargetIndices(Side, maxTargetCount, cond);
@@ -348,11 +327,11 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             foreach (int i in indices)
             {
                 var wi = Side.Items[i];
-                if (attributeName == Key.Damage) { wi.Template.Damage = wi.Template.Damage.Add(value); targetNames.Add(wi.Template.Name); }
-                else if (attributeName == Key.Poison) { wi.Template.Poison = wi.Template.Poison.Add(value); targetNames.Add(wi.Template.Name); }
-                else if (attributeName == Key.CritRatePercent) { wi.Template.CritRatePercent = wi.Template.CritRatePercent.Add(value); targetNames.Add(wi.Template.Name); }
-                else if (attributeName == Key.InFlight) { wi.InFlight = value != 0; targetNames.Add(wi.Template.Name); }
-                else { wi.Template.SetInt(attributeName, wi.Template.GetInt(attributeName, wi.Tier, 0) + value); targetNames.Add(wi.Template.Name); }
+                if (attributeKey == Key.Damage) { wi.Template.Damage = wi.Template.Damage.Add(value); targetNames.Add(wi.Template.Name); }
+                else if (attributeKey == Key.Poison) { wi.Template.Poison = wi.Template.Poison.Add(value); targetNames.Add(wi.Template.Name); }
+                else if (attributeKey == Key.CritRatePercent) { wi.Template.CritRatePercent = wi.Template.CritRatePercent.Add(value); targetNames.Add(wi.Template.Name); }
+                else if (attributeKey == Key.InFlight) { wi.InFlight = value != 0; targetNames.Add(wi.Template.Name); }
+                else { wi.Template.SetIntByKey(attributeKey, wi.Template.GetInt(attributeKey, wi.Tier, 0) + value); targetNames.Add(wi.Template.Name); }
             }
             if (targetNames.Count > 0 && !string.IsNullOrEmpty(logName))
                 LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
@@ -360,35 +339,35 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }
         ApplyToSideWithCondition(Side, Opp, cond, logName, value, (wi, _) =>
         {
-            if (attributeName == Key.Damage) { wi.Template.Damage = wi.Template.Damage.Add(value); return wi.Template.Name; }
-            if (attributeName == Key.Poison) { wi.Template.Poison = wi.Template.Poison.Add(value); return wi.Template.Name; }
-            if (attributeName == Key.CritRatePercent) { wi.Template.CritRatePercent = wi.Template.CritRatePercent.Add(value); return wi.Template.Name; }
-            if (attributeName == Key.InFlight) { wi.InFlight = value != 0; return wi.Template.Name; }
-            wi.Template.SetInt(attributeName, wi.Template.GetInt(attributeName, wi.Tier, 0) + value);
+            if (attributeKey == Key.Damage) { wi.Template.Damage = wi.Template.Damage.Add(value); return wi.Template.Name; }
+            if (attributeKey == Key.Poison) { wi.Template.Poison = wi.Template.Poison.Add(value); return wi.Template.Name; }
+            if (attributeKey == Key.CritRatePercent) { wi.Template.CritRatePercent = wi.Template.CritRatePercent.Add(value); return wi.Template.Name; }
+            if (attributeKey == Key.InFlight) { wi.InFlight = value != 0; return wi.Template.Name; }
+            wi.Template.SetIntByKey(attributeKey, wi.Template.GetInt(attributeKey, wi.Tier, 0) + value);
             return wi.Template.Name;
         });
     }
 
-    public void SetAttributeOnCasterSide(string attributeName, int value, Condition? targetCondition)
+    public void SetAttributeOnCasterSide(int attributeKey, int value, Formula? targetCondition)
     {
         if (targetCondition == null) return;
-        string logName = EffectLogName ?? (attributeName == Key.InFlight && value == 0 ? "结束飞行" : AttributeLogNames.Get(attributeName) + "变更");
+        string logName = EffectLogName ?? (attributeKey == Key.InFlight && value == 0 ? "结束飞行" : AttributeLogNames.Get(attributeKey) + "变更");
         ApplyToSideWithCondition(Side, Opp, targetCondition, logName, 0, (wi, _) =>
         {
-            if (attributeName == Key.InFlight) { wi.InFlight = value != 0; return wi.Template.Name; }
-            wi.Template.SetInt(attributeName, value);
+            if (attributeKey == Key.InFlight) { wi.InFlight = value != 0; return wi.Template.Name; }
+            wi.Template.SetIntByKey(attributeKey, value);
             return wi.Template.Name;
         });
     }
 
     /// <summary>对满足 targetCondition 的目标（从双方选取）减少指定属性（不低于 0）。目标数由 maxTargetCount 限制，0 表示不限制。隐性要求目标未摧毁（与 Freeze 等一致）。</summary>
-    public void ReduceAttributeToSide(string attributeName, int value, Condition? targetCondition, int maxTargetCount = 0, string? effectLogName = null)
+    public void ReduceAttributeToSide(int attributeKey, int value, Formula? targetCondition, int maxTargetCount = 0, string? effectLogName = null)
     {
         if (value <= 0 || targetCondition == null) return;
         var cond = (targetCondition ?? Condition.DifferentSide) & Condition.NotDestroyed;
-        if (attributeName == Key.CritRatePercent)
+        if (attributeKey == Key.CritRatePercent)
             cond = cond & Condition.CanCrit;
-        string logName = effectLogName ?? (AttributeLogNames.Get(attributeName) + "降低");
+        string logName = effectLogName ?? (AttributeLogNames.Get(attributeKey) + "降低");
         int take = maxTargetCount > 0 ? maxTargetCount : 100;
         var targets = GetTargetsFromBothSides(take, cond);
         if (targets.Count == 0) return;
@@ -397,17 +376,17 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         foreach (var (side, index) in targets)
         {
             var wi = side.Items[index];
-            int current = wi.Template.GetInt(attributeName, wi.Tier, 0);
+            int current = wi.Template.GetInt(attributeKey, wi.Tier, 0);
             int newVal = current - value;
-            if (attributeName == Key.CooldownMs)
+            if (attributeKey == Key.CooldownMs)
                 newVal = Math.Max(minCooldownMs, newVal);
             else
                 newVal = Math.Max(0, newVal);
-            wi.Template.SetInt(attributeName, newVal);
+            wi.Template.SetIntByKey(attributeKey, newVal);
             targetNames.Add(wi.Template.Name);
 
             // 冷却缩短后若充能已满，与充能效果一致：加入施放队列并清零已过冷却
-            if (attributeName == Key.CooldownMs && side == Side && wi.CooldownElapsedMs >= newVal && ChargeInducedCastQueue != null)
+            if (attributeKey == Key.CooldownMs && side == Side && wi.CooldownElapsedMs >= newVal && ChargeInducedCastQueue != null)
             {
                 int ammoCap = side.GetItemInt(index, "AmmoCap", 0);
                 if (ammoCap <= 0 || wi.AmmoRemaining > 0)
@@ -419,7 +398,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
     }
 
-    public void ReportTriggerCause(string triggerName) =>
+    public void ReportTriggerCause(int triggerName) =>
         EffectAppliedTriggerQueue?.Add((triggerName, Side.SideIndex, Item.ItemIndex));
       
     public void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false) =>
@@ -427,7 +406,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
 
     public void SetCasterInFlight(bool inFlight) => Item.InFlight = inFlight;
 
-    public void ApplyDestroy(int targetCount, Condition? targetCondition = null)
+    public void ApplyDestroy(int targetCount, Formula? targetCondition = null)
     {
         if (targetCount <= 0) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed;

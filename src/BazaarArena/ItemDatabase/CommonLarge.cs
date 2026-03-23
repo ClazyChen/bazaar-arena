@@ -85,7 +85,7 @@ public static class CommonLarge
             Cooldown = 11.0,
             Damage = 0,
             Custom_0 = [15, 30, 60, 100],
-            OverridableAttributes = new Dictionary<string, IntOrByTier> { [Key.StashParameter] = [1, 2, 3, 4] },
+            OverridableAttributes = new Dictionary<int, IntOrByTier> { [Key.StashParameter] = [1, 2, 3, 4] },
             Abilities =
             [
                 Ability.Damage,
@@ -94,7 +94,7 @@ public static class CommonLarge
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Damage,
+                    Attribute = Key.Damage,
                     Value = Formula.Source(Key.Custom_0) * (Formula.Source(Key.StashParameter) + Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Small))),
                 },
             ],
@@ -193,7 +193,7 @@ public static class CommonLarge
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.CritDamagePercent,
+                    Attribute = Key.CritDamagePercent,
                     Value = Formula.Constant(300),
                     Percent = true,
                 },

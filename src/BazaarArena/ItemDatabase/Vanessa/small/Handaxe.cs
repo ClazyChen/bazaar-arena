@@ -25,7 +25,7 @@ public static class Handaxe
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Damage,
+                    Attribute = Key.Damage,
                     Condition = Condition.SameSide & Condition.WithTag(Tag.Weapon),
                     Value = Formula.Source(Key.Custom_0),
                 },

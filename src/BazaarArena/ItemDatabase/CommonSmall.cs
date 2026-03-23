@@ -145,7 +145,7 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.CritRatePercent,
+                    Attribute = Key.CritRatePercent,
                     Condition = Condition.AdjacentToSource,
                     Value = Formula.Source(Key.Custom_0),
                 },
@@ -171,7 +171,7 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.CritDamagePercent,
+                    Attribute = Key.CritDamagePercent,
                     Value = Formula.Constant(100),
                     Percent = true,
                 },
@@ -278,7 +278,7 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Heal,
+                    Attribute = Key.Heal,
                     Value = Formula.Opp(BattleSide.KeyPoison),
                 },
             ],
@@ -377,7 +377,7 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Multicast,
+                    Attribute = Key.Multicast,
                     SourceCondition = Condition.InFlight,
                     Value = Formula.Source(Key.Custom_0),
                 },
@@ -408,7 +408,7 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Burn,
+                    Attribute = Key.Burn,
                     Value = Formula.Source(Key.Damage),
                 },
             ],
@@ -457,12 +457,12 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Damage,
+                    Attribute = Key.Damage,
                     Value = Formula.Source(Key.Custom_0) * Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Friend)),
                 },
                 new AuraDefinition
                 {
-                    AttributeName = Key.CooldownMs,
+                    Attribute = Key.CooldownMs,
                     Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToSource & Condition.WithTag(Tag.Friend)),
                 },
             ],
@@ -524,7 +524,7 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.CritRatePercent,
+                    Attribute = Key.CritRatePercent,
                     SourceCondition = Condition.OnlyCompanion,
                     Value = Formula.Source(Key.Custom_0),
                 },
@@ -554,7 +554,7 @@ public static class CommonSmall
                 Ability.Damage.Override(
                     trigger: Trigger.Destroy,
                     condition: Condition.SameAsSource,
-                    invokeTargetCondition: Condition.WithTag(Tag.Large) | Condition.InFlight
+                    additionalCondition: Condition.WithTag(Tag.Large) | Condition.InFlight
                 ),
             ],
         };
@@ -601,7 +601,7 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.CooldownMs,
+                    Attribute = Key.CooldownMs,
                     Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToSource & (Condition.WithTag(Tag.Aquatic) | Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Relic))),
                 },
             ],
@@ -625,7 +625,7 @@ public static class CommonSmall
             Auras = [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Damage,
+                    Attribute = Key.Damage,
                     Value = Formula.Source(Key.AmmoRemaining),
                 },
             ]
@@ -646,13 +646,13 @@ public static class CommonSmall
             [
                 Ability.Slow.Override(
                     trigger: Trigger.Haste,
-                    invokeTargetCondition: Condition.DifferentSide,
+                    condition: Condition.DifferentSide,
                     additionalTargetCondition: Condition.SameAsInvokeTarget,
                     priority: AbilityPriority.High
                 ),
                 Ability.Haste.Override(
                     trigger: Trigger.Slow,
-                    invokeTargetCondition: Condition.SameSide,
+                    condition: Condition.SameSide,
                     additionalTargetCondition: Condition.SameAsInvokeTarget,
                     priority: AbilityPriority.High
                 ),

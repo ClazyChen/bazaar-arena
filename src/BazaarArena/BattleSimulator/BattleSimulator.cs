@@ -120,8 +120,8 @@ public class BattleSimulator
                 foreach (var item in toProcess)
                 {
                     var side = item.SideIndex == 0 ? side0 : side1;
-                    int ammoCap = side.GetItemInt(item.ItemIndex, Key.AmmoCap, 0);
-                    int multicast = side.GetItemInt(item.ItemIndex, Key.Multicast, 1);
+                    int ammoCap = side.GetItemInt(item.ItemIndex, "AmmoCap", 0);
+                    int multicast = side.GetItemInt(item.ItemIndex, "Multicast", 1);
                     InvokeTrigger(Trigger.UseItem, item, new TriggerInvokeContext { Multicast = multicast, UsedTemplate = item.Template, InvokeTargetItem = item }, timeMs, side0, side1, abilityCurrent, abilityNext,
                         executeImmediate: (owner, abilityIdx, ability) =>
                         {
@@ -165,11 +165,11 @@ public class BattleSimulator
                             else
                             {
                                 var auraContext = new BattleAuraContext(side, item, opp);
-                                int critRate = item.Template.GetInt(Key.CritRatePercent, item.Tier, 0, auraContext);
+                                int critRate = item.Template.GetInt(Key.CritRatePercent, item.Tier, 0);
                                 if (critRate > 0 && ThreadLocalRandom.Next100() < critRate)
                                 {
                                     isCrit = true;
-                                    critDamagePercent = item.Template.GetInt(Key.CritDamagePercent, item.Tier, 200, auraContext);
+                                    critDamagePercent = item.Template.GetInt(Key.CritDamagePercent, item.Tier, 200);
                                 }
                                 item.CritTimeMs = timeMs;
                                 item.IsCritThisUse = isCrit;
@@ -249,10 +249,9 @@ public class BattleSimulator
     /// <summary>物品是否具备可暴击的六类数值之一；依据模板的 Tag（护盾/伤害/灼烧/剧毒/治疗/再生）。</summary>
     private static bool ItemHasAnyCrittableField(BattleItemState item)
     {
-        var tags = item.Template.Tags;
-        if (tags == null) return false;
-        return tags.Contains(Tag.Damage) || tags.Contains(Tag.Burn) || tags.Contains(Tag.Poison)
-            || tags.Contains(Tag.Heal) || tags.Contains(Tag.Shield) || tags.Contains(Tag.Regen);
+        int tags = item.Template.GetInt(Key.Tags, item.Tier, 0) | item.Template.GetInt(Key.DerivedTags, item.Tier, 0);
+        return (tags & Tag.Damage) != 0 || (tags & Tag.Burn) != 0 || (tags & Tag.Poison) != 0
+            || (tags & Tag.Heal) != 0 || (tags & Tag.Shield) != 0 || (tags & Tag.Regen) != 0;
     }
 
     private static BattleSide? BuildSide(Deck deck, IItemTemplateResolver resolver)
@@ -275,7 +274,7 @@ public class BattleSimulator
     }
 
     /// <summary>condition ?? default：UseItem → SameAsSource，Freeze/Slow/Crit/Destroy → SameSide，BattleStart → Always。</summary>
-    private static Condition? EnsureTriggerCondition(string triggerName, Condition? condition)
+    private static Formula? EnsureTriggerCondition(int triggerName, Formula? condition)
     {
         if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsSource;
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
@@ -392,13 +391,11 @@ public class BattleSimulator
     }
 
     /// <summary>统一触发器调用：给定触发器名、引起触发的物品与上下文，遍历双方所有物品；条件匹配的能力入队（Immediate→current，其余→next）。若传入 executeImmediate，则 Immediate 能力不入队、当场执行。onlyForSideIndex 非空时仅遍历该侧（用于即将落败等仅对单侧触发）。</summary>
-    private void InvokeTrigger(string triggerName, BattleItemState? causeItem, TriggerInvokeContext? context, int timeMs,
+    private void InvokeTrigger(int triggerName, BattleItemState? causeItem, TriggerInvokeContext? context, int timeMs,
         BattleSide side0, BattleSide side1, AbilityQueueBuckets current, AbilityQueueBuckets next,
         Action<BattleItemState, int, AbilityDefinition>? executeImmediate = null, int? onlyForSideIndex = null)
     {
         int pendingCount = (triggerName == Trigger.UseItem || triggerName == Trigger.Freeze || triggerName == Trigger.Slow || triggerName == Trigger.Haste || triggerName == Trigger.Burn || triggerName == Trigger.Poison) && context?.Multicast is int m ? m : 1;
-        Func<BattleItemState, IReadOnlySet<string>> getEffectiveTags = item => EffectiveTagHelper.GetEffectiveTags(side0, side1, item);
-
         // 规定次序：onlyForSideIndex 指定时仅该侧；有 causeItem 时先处理 causeItem 所在侧；无 causeItem 时按 (0, side0), (1, side1) 顺序。
         BattleSimulatorThreadScratch.BeginInvokeTrigger();
         try
@@ -427,88 +424,19 @@ public class BattleSimulator
                     for (int a = 0; a < abilityOwner.Template.Abilities.Count; a++)
                     {
                         var ab = abilityOwner.Template.Abilities[a];
-                        if (ab.Triggers == null || ab.Triggers.Count == 0)
-                        {
-                            if (ab.TriggerName != triggerName) continue;
-                            var conditionCtx = new ConditionContext
-                            {
-                                MySide = mySide,
-                                EnemySide = enemySide,
-                                Item = causeItem,
-                                Source = abilityOwner,
-                                GetEffectiveTagsForItem = getEffectiveTags,
-                            };
-                            if (ab.Condition != null && !ab.Condition.Evaluate(conditionCtx)) continue;
-                            if (ab.SourceCondition != null)
-                            {
-                                var sourceConditionCtx = new ConditionContext
-                                {
-                                    MySide = mySide,
-                                    EnemySide = enemySide,
-                                    Item = abilityOwner,
-                                    Source = abilityOwner,
-                                    GetEffectiveTagsForItem = getEffectiveTags,
-                                };
-                                if (!ab.SourceCondition.Evaluate(sourceConditionCtx)) continue;
-                            }
-                            if (ab.InvokeTargetCondition != null && context?.InvokeTargetItem is { } invokeTargetItem0)
-                            {
-                                var invokeTargetCtx = new ConditionContext
-                                {
-                                    MySide = mySide,
-                                    EnemySide = enemySide,
-                                    Item = invokeTargetItem0,
-                                    Source = abilityOwner,
-                                    GetEffectiveTagsForItem = getEffectiveTags,
-                                };
-                                if (!ab.InvokeTargetCondition.Evaluate(invokeTargetCtx)) continue;
-                            }
-                            if (ab.Priority == AbilityPriority.Immediate && executeImmediate != null)
-                            {
-                                executeImmediate(abilityOwner, a, ab);
-                                continue;
-                            }
-                            AddOrMergeAbility(abilityOwner, a, ab, pendingCount, current, next, context?.InvokeTargetItem?.SideIndex, context?.InvokeTargetItem?.ItemIndex);
-                            continue;
-                        }
-
                         bool matched = false;
-                        foreach (var entry in ab.Triggers)
+                        foreach (var entry in ab.TriggerEntries)
                         {
-                            if (entry.TriggerName != triggerName) continue;
-                            var conditionCtx = new ConditionContext
+                            if (entry.Trigger != triggerName) continue;
+                            var triggerCtx = new BattleContext
                             {
-                                MySide = mySide,
-                                EnemySide = enemySide,
-                                Item = causeItem,
-                                Source = abilityOwner,
-                                GetEffectiveTagsForItem = getEffectiveTags,
+                                BattleState = new BattleState(),
+                                Item = abilityOwner,
+                                Caster = abilityOwner,
+                                Source = causeItem ?? abilityOwner,
+                                InvokeTarget = context?.InvokeTargetItem,
                             };
-                            if (entry.Condition != null && !entry.Condition.Evaluate(conditionCtx)) continue;
-                            if (entry.SourceCondition != null)
-                            {
-                                var sourceConditionCtx = new ConditionContext
-                                {
-                                    MySide = mySide,
-                                    EnemySide = enemySide,
-                                    Item = abilityOwner,
-                                    Source = abilityOwner,
-                                    GetEffectiveTagsForItem = getEffectiveTags,
-                                };
-                                if (!entry.SourceCondition.Evaluate(sourceConditionCtx)) continue;
-                            }
-                            if (entry.InvokeTargetCondition != null && context?.InvokeTargetItem is { } invokeTargetItem)
-                            {
-                                var invokeTargetCtx = new ConditionContext
-                                {
-                                    MySide = mySide,
-                                    EnemySide = enemySide,
-                                    Item = invokeTargetItem,
-                                    Source = abilityOwner,
-                                    GetEffectiveTagsForItem = getEffectiveTags,
-                                };
-                                if (!entry.InvokeTargetCondition.Evaluate(invokeTargetCtx)) continue;
-                            }
+                            if (entry.Condition.Evaluate(triggerCtx) == 0) continue;
                             matched = true;
                             break;
                         }
@@ -562,7 +490,7 @@ public class BattleSimulator
         int value = 0;
         if (ability.ValueKey != null)
         {
-            int baseValue = ability.ResolveValue(item.Template, item.Tier, ability.ValueKey);
+            int baseValue = ability.ResolveValue(item.Template, item.Tier, ability.ValueKey ?? Key.Custom_0);
             bool applyCrit = ItemHasAnyCrittableField(item) && ability.ApplyCritMultiplier;
             value = applyCrit ? baseValue * critMultiplier : baseValue;
         }
@@ -585,7 +513,14 @@ public class BattleSimulator
                 ability.EffectLogName,
                 ability.TargetCountKey,
                 invokeTargetItem);
-            ability.Apply(ctx);
+            ability.Apply(new BattleContext
+            {
+                BattleState = new BattleState(),
+                Item = item,
+                Caster = item,
+                Source = item,
+                InvokeTarget = invokeTargetItem,
+            });
             foreach (var (triggerName, sideIndex, itemIndex) in effectAppliedTriggerQueue)
             {
                 var target = (sideIndex == side0.SideIndex ? side0 : side1).Items[itemIndex];

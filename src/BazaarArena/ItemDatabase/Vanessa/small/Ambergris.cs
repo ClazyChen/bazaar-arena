@@ -17,7 +17,7 @@ public static class Ambergris
             Cooldown = 4.0,
             Custom_0 = [1, 2, 3, 4],
             Custom_1 = [1, 2, 3, 4],
-            OverridableAttributes = new Dictionary<string, IntOrByTier>
+            OverridableAttributes = new Dictionary<int, IntOrByTier>
             {
                 [Key.Custom_2] = [5, 10, 15, 20],
             },
@@ -29,7 +29,7 @@ public static class Ambergris
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Heal,
+                    Attribute = Key.Heal,
                     Value = (Formula.Source(Key.Price) + Formula.Source(Key.Custom_1) * Formula.Source(Key.Custom_2)) * Formula.Source(Key.Custom_0),
                 },
             ],

@@ -4,6 +4,29 @@
 
 ---
 
+## Ability/Aura 硬切收敛经验（2026-03-24）
+
+### 关键收敛路径
+
+- **先收敛 P0 编译入口，再扩散到调用侧**：优先处理 `ItemDatabase/ItemDatabase.cs`、`Formula` 缺失 API、`AuraDefinition.AttributeName` 残留，能快速把错误簇从 Core/ItemDatabase 缩到少数模块。
+- **减少物品定义改动面**：对历史 API（如 `Formula.Opp/Side/SideSelect`）优先补兼容入口，再逐步迁移调用点，避免一次性改动大量物品文件引入新偏差。
+- **类型收敛优先于语义优化**：先统一为 `int key + int tag bitmask + TriggerEntries`，待编译稳定后再处理行为优化（如日志、性能、上下文复用）。
+
+### 本轮高频易错点
+
+- **`invokeTargetCondition` 已删除**：调用点需迁移到 `condition` / `additionalCondition`（触发条件）或 `additionalTargetCondition`（效果目标条件），不可继续透传旧参数名。
+- **`OverridableAttributes` 已是 `Dictionary<int, IntOrByTier>`**：GUI/Deck 序列化仍用 `Dictionary<string,int>` 时，需要通过 `Key.GetName(int)` / `Key.TryGetKey(string, out int)` 做桥接，不要回退成 string key 主路径。
+- **`MainWindow` 中 `Key` 名称冲突**：存在 `System.Windows.Input.Key` 时，引用核心 key 需显式写 `BazaarArena.Core.Key`，避免 CS0104 二义性。
+- **`BattleAuraContext` 构建 `BattleContext` 时要携带 BattleState**：否则 Formula 侧读取 `Side/Opp` 时可能退化；同时可避免未使用参数与临时对象噪音。
+
+### 验证节奏
+
+- 每个阶段完成后固定执行：`dotnet build src/BazaarArena/BazaarArena.csproj`。
+- 中间允许失败，但要保证**错误总量单调下降**且模块聚焦；本轮收敛轨迹：33 → 23 → 19 → 18 → 11 → 3 → 0。
+- 最终目标不仅是“可编译”，还要做到 **0 warning / 0 error**，避免把可空性与未使用参数债务留到下一窗口。
+
+---
+
 ## 对战模拟器：能力队列的帧边界
 
 ### 规则要求

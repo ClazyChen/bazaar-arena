@@ -109,7 +109,7 @@ public partial class MainWindow
     /// <summary>根据尺寸/最低档位/英雄单选框更新可拖入卡组的物品列表；选「全部」表示该维度不限制。</summary>
     private void RefreshItemPoolFilter()
     {
-        var sizeAllowed = new HashSet<ItemSize>();
+        var sizeAllowed = new HashSet<int>();
         if (FilterSizeAll?.IsChecked != true)
         {
             if (FilterSizeSmall?.IsChecked == true) sizeAllowed.Add(ItemSize.Small);
@@ -126,7 +126,7 @@ public partial class MainWindow
             if (FilterTierDiamond?.IsChecked == true) tierAllowed.Add(ItemTier.Diamond);
         }
 
-        var heroAllowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var heroAllowed = new HashSet<int>();
         if (FilterHeroAll?.IsChecked != true)
         {
             if (FilterHeroCommon?.IsChecked == true) heroAllowed.Add(Hero.Common);
@@ -141,7 +141,7 @@ public partial class MainWindow
             if (t == null) continue;
             if (sizeAllowed.Count > 0 && !sizeAllowed.Contains(t.Size)) continue;
             if (tierAllowed.Count > 0 && !tierAllowed.Contains(t.MinTier)) continue;
-            if (heroAllowed.Count > 0 && !heroAllowed.Contains(t.Hero ?? Hero.Common)) continue;
+            if (heroAllowed.Count > 0 && !heroAllowed.Contains(t.Hero)) continue;
             _filteredItemPoolEntries.Add(new ItemPoolEntryViewModel(name, name));
         }
     }
@@ -478,7 +478,7 @@ public partial class MainWindow
             int listIndex = (int)tier - minIdx;
             if (listIndex < 0) listIndex = 0;
             int val = listIndex < list.Count ? list[listIndex] : (list.Count > 0 ? list[0] : 0);
-            row.SetOverride(kv.Key, val);
+            row.SetOverride(BazaarArena.Core.Key.GetName(kv.Key), val);
         }
     }
 
@@ -558,7 +558,7 @@ public partial class MainWindow
         var tagsLine = new TextBlock { Foreground = ItemUiHelper.ToolTipForeground, FontStyle = FontStyles.Italic };
         tagsLine.Inlines.Add(new Run(ItemUiHelper.BuildTagsLine(template)));
         panel.Children.Add(tagsLine);
-        bool hasCooldown = Enumerable.Range(0, 4).Any(i => template.GetInt("CooldownMs", (ItemTier)i) > 0);
+        bool hasCooldown = Enumerable.Range(0, 4).Any(i => template.GetInt(BazaarArena.Core.Key.CooldownMs, (ItemTier)i) > 0);
         if (hasCooldown)
         {
             var (line2, ranges2) = ItemDescHelper.ReplacePlaceholdersAllTiers(template, "冷却时间：{Cooldown} 秒", ItemUiHelper.ToolTipForeground);
@@ -857,7 +857,7 @@ public partial class MainWindow
                 var list = kv.Value.ToList();
                 int listIndex = (int)tier - minIdx;
                 if (listIndex < 0) listIndex = 0;
-                overrides[kv.Key] = listIndex < list.Count ? list[listIndex] : (list.Count > 0 ? list[0] : 0);
+                overrides[BazaarArena.Core.Key.GetName(kv.Key)] = listIndex < list.Count ? list[listIndex] : (list.Count > 0 ? list[0] : 0);
             }
             newRow.Overrides = overrides;
         }

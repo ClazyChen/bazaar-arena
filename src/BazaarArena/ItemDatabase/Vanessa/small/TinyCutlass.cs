@@ -25,7 +25,7 @@ public static class TinyCutlass
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.CritDamagePercent,
+                    Attribute = Key.CritDamagePercent,
                     Value = Formula.Constant(100),
                     Percent = true,
                 },

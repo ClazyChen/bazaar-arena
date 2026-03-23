@@ -31,12 +31,13 @@ public partial class OverrideAttributeDialog
 
     private void AttributeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (AttributeCombo.SelectedItem is not string key) return;
-        int current = _row.Overrides != null && _row.Overrides.TryGetValue(key, out var v) ? v : GetDefaultForTier(key);
+        if (AttributeCombo.SelectedItem is not int key) return;
+        string keyName = Key.GetName(key);
+        int current = _row.Overrides != null && _row.Overrides.TryGetValue(keyName, out var v) ? v : GetDefaultForTier(key);
         ValueBox.Text = current.ToString();
     }
 
-    private int GetDefaultForTier(string key)
+    private int GetDefaultForTier(int key)
     {
         if (!_template.OverridableAttributes!.TryGetValue(key, out var byTier)) return 0;
         var list = byTier.ToList();
@@ -46,7 +47,7 @@ public partial class OverrideAttributeDialog
 
     private void Ok_Click(object sender, RoutedEventArgs e)
     {
-        if (AttributeCombo.SelectedItem is not string key)
+        if (AttributeCombo.SelectedItem is not int key)
         {
             MessageBox.Show("请选择要复写的属性。", "复写", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
@@ -56,7 +57,7 @@ public partial class OverrideAttributeDialog
             MessageBox.Show("请输入有效的整数。", "复写", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        _row.SetOverride(key, value);
+        _row.SetOverride(Key.GetName(key), value);
         DialogResult = true;
         Close();
     }

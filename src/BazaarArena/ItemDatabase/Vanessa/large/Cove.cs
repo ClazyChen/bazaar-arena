@@ -16,7 +16,7 @@ public static class Cove
             Cooldown = 4.0,
             Custom_0 = [1, 2, 3, 4],
             Custom_2 = [1, 1, 1, 2],
-            OverridableAttributes = new Dictionary<string, IntOrByTier>
+            OverridableAttributes = new Dictionary<int, IntOrByTier>
             {
                 [Key.Custom_1] = [10, 20, 40, 80],
             },
@@ -28,7 +28,7 @@ public static class Cove
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Shield,
+                    Attribute = Key.Shield,
                     Value = (Formula.Source(Key.Price) + Formula.Source(Key.Custom_1) * Formula.Source(Key.Custom_2)) * Formula.Source(Key.Custom_0),
                 },
             ],

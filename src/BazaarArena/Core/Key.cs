@@ -1,59 +1,117 @@
 namespace BazaarArena.Core;
 
-/// <summary>物品模板字段名常量，与 ItemTemplate 属性一致，供能力/物品定义与 GetInt(key)、GetResolvedValue(key) 使用。</summary>
+/// <summary>物品模板 Key 常量，用于将 Key 转换为下标，在更新的 ItemState 中使用。</summary>
 public static class Key
 {
-    // 数值/类型属性
-    public const string Damage = nameof(ItemTemplate.Damage);
-    public const string Shield = nameof(ItemTemplate.Shield);
-    public const string Heal = nameof(ItemTemplate.Heal);
-    public const string Burn = nameof(ItemTemplate.Burn);
-    public const string Poison = nameof(ItemTemplate.Poison);
-    public const string Gold = nameof(ItemTemplate.Gold);
-    public const string Custom_0 = nameof(ItemTemplate.Custom_0);
-    public const string Custom_1 = nameof(ItemTemplate.Custom_1);
-    public const string Custom_2 = nameof(ItemTemplate.Custom_2);
-    /// <summary>物品价值（用于龙涎香等治疗公式）；注册时按尺寸自动设置默认值。</summary>
-    public const string Price = nameof(ItemTemplate.Price);
+    private static readonly Dictionary<string, int> KeyByName = typeof(Key)
+        .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+        .Where(f => f.FieldType == typeof(int))
+        .ToDictionary(f => f.Name, f => (int)f.GetValue(null)!);
+    private static readonly Dictionary<int, string> NameByKey = KeyByName
+        .GroupBy(kv => kv.Value)
+        .ToDictionary(g => g.Key, g => g.First().Key);
 
-    // 冷却与暴击
-    public const string CooldownMs = nameof(ItemTemplate.CooldownMs);
-    public const string CritRatePercent = nameof(ItemTemplate.CritRatePercent);
-    public const string CritDamagePercent = nameof(ItemTemplate.CritDamagePercent);
+    public static bool TryGetKey(string name, out int key) => KeyByName.TryGetValue(name, out key);
+    public static bool TryGetName(int key, out string name) => NameByKey.TryGetValue(key, out name!);
+    public static string GetName(int key) => TryGetName(key, out var name) ? name : key.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-    // 施放与弹药
-    public const string Multicast = nameof(ItemTemplate.Multicast);
-    public const string AmmoCap = nameof(ItemTemplate.AmmoCap);
-    /// <summary>剩余弹药数，运行时存于物品模板字典（与 ItemTemplate.KeyAmmoRemaining 一致）。</summary>
-    public const string AmmoRemaining = "AmmoRemaining";
+    // 伤害
+    public const int Damage = 0;
+    // 灼烧
+    public const int Burn = Damage + 1;
+    // 剧毒
+    public const int Poison = Burn + 1;
+    // 护盾
+    public const int Shield = Poison + 1;
+    // 治疗
+    public const int Heal = Shield + 1;
+    // 生命再生
+    public const int Regen = Heal + 1;
+    // 暴击率
+    public const int CritRate = Regen + 1;
+    public const int CritRatePercent = CritRate;
+    // 暴击伤害
+    public const int CritDamage = CritRate + 1;
+    public const int CritDamagePercent = CritDamage;
+    // 多重释放
+    public const int Multicast = CritDamage + 1;
+    // 弹药上限
+    public const int AmmoCap = Multicast + 1;
+    // 充能
+    public const int Charge = AmmoCap + 1;
+    // 充能目标数量
+    public const int ChargeTargetCount = Charge + 1;
+    // 加速
+    public const int Haste = ChargeTargetCount + 1;
+    // 加速目标数量
+    public const int HasteTargetCount = Haste + 1;
+    // 装填
+    public const int Reload = HasteTargetCount + 1;
+    // 装填目标数量
+    public const int ReloadTargetCount = Reload + 1;
+    // 修复
+    public const int Repair = ReloadTargetCount + 1;
+    // 修复目标数量
+    public const int RepairTargetCount = Repair + 1;
+    // 冻结
+    public const int Freeze = RepairTargetCount + 1;
+    // 冻结目标数量
+    public const int FreezeTargetCount = Freeze + 1;
+    // 冻结时长减免百分比
+    public const int PercentFreezeReduction = FreezeTargetCount + 1;
+    // 减速
+    public const int Slow = PercentFreezeReduction + 1;
+    // 减速目标数量
+    public const int SlowTargetCount = Slow + 1;
+    // 减速时长减免百分比
+    public const int PercentSlowReduction = SlowTargetCount + 1;
+    // 摧毁目标数量
+    public const int DestroyTargetCount = PercentSlowReduction + 1;
+    // 冷却时间
+    public const int CooldownMs = DestroyTargetCount + 1;
+    // 冷却时间缩短百分比
+    public const int PercentCooldownReduction = CooldownMs + 1;
+    // 吸血
+    public const int LifeSteal = PercentCooldownReduction + 1;
+    // 修改属性目标数量
+    public const int ModifyAttributeTargetCount = LifeSteal + 1;
+    // 价值
+    public const int Value = ModifyAttributeTargetCount + 1;
+    // 标签
+    public const int Tags = Value + 1;
+    // 推导标签
+    public const int DerivedTags = Tags + 1;
+    // 尺寸
+    public const int Size = DerivedTags + 1;
+    // 英雄
+    public const int Hero = Size + 1;
+    public const int Custom_0 = Hero + 1;
+    public const int Custom_1 = Custom_0 + 1;
+    public const int Custom_2 = Custom_1 + 1;
+    public const int Custom_3 = Custom_2 + 1;
+    // 过渡期别名：复用自定义槽位，避免扩容 Attributes。
+    public const int Price = Custom_0;
+    public const int StashParameter = Custom_1;
+    public const int AmmoRemaining = Custom_2;
+    public const int ItemTemplateAttributeCount = Custom_3 + 1;
 
-    // 充能 / 冻结 / 减速 / 加速
-    public const string Charge = nameof(ItemTemplate.Charge);
-    public const string ChargeTargetCount = nameof(ItemTemplate.ChargeTargetCount);
-    public const string Freeze = nameof(ItemTemplate.Freeze);
-    public const string FreezeTargetCount = nameof(ItemTemplate.FreezeTargetCount);
-    /// <summary>剩余冻结时间（毫秒），运行时存于物品模板字典。</summary>
-    public const string FreezeRemainingMs = "FreezeRemainingMs";
-    /// <summary>冻结时长减免百分比（0–100）；施加冻结时有效时长 = 原始时长 × (100 - 此值) / 100。默认 0。</summary>
-    public const string PercentFreezeReduction = nameof(ItemTemplate.PercentFreezeReduction);
-    /// <summary>冷却时间缩短百分比（0–100）；由光环提供，有效冷却 = 原冷却 × (100 - 此值) / 100，至少 1 秒。</summary>
-    public const string PercentCooldownReduction = "PercentCooldownReduction";
-    public const string Slow = nameof(ItemTemplate.Slow);
-    public const string SlowTargetCount = nameof(ItemTemplate.SlowTargetCount);
-    public const string Haste = nameof(ItemTemplate.Haste);
-    public const string HasteTargetCount = nameof(ItemTemplate.HasteTargetCount);
-    /// <summary>装填弹药目标数量（默认 1）；效果层 GetResolvedValue(ReloadTargetCount, defaultValue: 1)。</summary>
-    public const string ReloadTargetCount = "ReloadTargetCount";
+    // 运行时字段
+    public const int InFlight = ItemTemplateAttributeCount;
+    public const int Destroyed = ItemTemplateAttributeCount + 1;
+    public const int ChargedTimeMs = InFlight + 1;
+    public const int FreezeRemainingMs = ChargedTimeMs + 1;
+    public const int SlowRemainingMs = FreezeRemainingMs + 1;
+    public const int HasteRemainingMs = SlowRemainingMs + 1;
+    public const int SideIndex = HasteRemainingMs + 1;
+    public const int ItemIndex = SideIndex + 1;
+    public const int Tier = ItemIndex + 1;
+    public const int CritTimeMs = Tier + 1;
+    public const int IsCritThisUse = CritTimeMs + 1;
+    public const int ItemStateAttributeCount = IsCritThisUse + 1;
 
-    // 修复 / 摧毁 / 吸血等
-    public const string RepairTargetCount = nameof(ItemTemplate.RepairTargetCount);
-    public const string DestroyTargetCount = nameof(ItemTemplate.DestroyTargetCount);
-    public const string ModifyAttributeTargetCount = nameof(ItemTemplate.ModifyAttributeTargetCount);
-    public const string LifeSteal = nameof(ItemTemplate.LifeSteal);
-
-    // 其他
-    public const string StashParameter = nameof(ItemTemplate.StashParameter);
-
-    /// <summary>运行时飞行状态（与 ItemTemplate.KeyInFlight 一致）。</summary>
-    public const string InFlight = "InFlight";
+    // Side 状态
+    public const int MaxHp = Damage;
+    public const int Hp = Heal;
+    public const int Gold = Regen + 1;
+    public const int SideStateAttributeCount = Gold + 1;
 }

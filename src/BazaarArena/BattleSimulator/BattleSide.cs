@@ -44,6 +44,6 @@ public class BattleSide
     public int GetItemInt(int itemIndex, string key, int defaultValue = 0)
     {
         var item = Items[itemIndex];
-        return item.Template.GetInt(key, item.Tier, defaultValue, new BattleAuraContext(this, item));
+        return item.Template.GetInt(key, item.Tier, defaultValue);
     }
 }

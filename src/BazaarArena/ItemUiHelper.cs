@@ -26,12 +26,39 @@ internal static class ItemUiHelper
         };
     }
 
+    private static string SizeToDisplayName(int size) => size switch
+    {
+        1 => "小型",
+        2 => "中型",
+        3 => "大型",
+        _ => "小型",
+    };
+
+    private static string? TagToDisplayName(int tag) => tag switch
+    {
+        Tag.Weapon => "武器",
+        Tag.Tool => "工具",
+        Tag.Apparel => "服饰",
+        Tag.Friend => "伙伴",
+        Tag.Food => "食物",
+        Tag.Tech => "科技",
+        Tag.Property => "地产",
+        Tag.Vehicle => "载具",
+        Tag.Relic => "遗物",
+        Tag.Dragon => "巨龙",
+        Tag.Drone => "无人机",
+        Tag.Toy => "玩具",
+        Tag.Aquatic => "水系",
+        Tag.Ray => "射线",
+        _ => null,
+    };
+
     /// <summary>构建物品标签行：尺寸（小型/中型/大型）+ 现有 Tags，用空格连接。</summary>
     public static string BuildTagsLine(ItemTemplate template)
     {
         // UI 只显示 1 次尺寸；并隐藏注册时自动补充的“尺寸/效果类型”标签（伤害/护盾/治疗等）。
         // 这些标签主要用于 Condition/可暴击判定等内部逻辑，展示出来会显得冗余且容易造成尺寸重复。
-        var hiddenAutoTags = new HashSet<string>
+        var hiddenAutoTags = new HashSet<int>
         {
             Tag.Small,
             Tag.Medium,
@@ -49,22 +76,20 @@ internal static class ItemUiHelper
             Tag.Slow,
             Tag.Haste,
             Tag.Reload,
-            Tag.Repair,
-            Tag.Destroy,
-            Tag.StartFlying,
-            Tag.StopFlying,
             Tag.Ammo,
         };
 
-        var parts = new List<string> { template.Size.GetDisplayName() };
-        if (template.Tags?.Count > 0)
+        var parts = new List<string> { SizeToDisplayName(template.Size) };
+        int tags = template.GetInt(Key.Tags, template.MinTier, 0) | template.GetInt(Key.DerivedTags, template.MinTier, 0);
+        for (int bit = 0; bit < 31; bit++)
         {
-            foreach (var tag in template.Tags)
-            {
-                if (hiddenAutoTags.Contains(tag)) continue;
-                if (!parts.Contains(tag))
-                    parts.Add(tag);
-            }
+            int tag = 1 << bit;
+            if ((tags & tag) == 0) continue;
+            if (hiddenAutoTags.Contains(tag)) continue;
+            var name = TagToDisplayName(tag);
+            if (string.IsNullOrEmpty(name)) continue;
+            if (!parts.Contains(name))
+                parts.Add(name);
         }
         return string.Join(" ", parts);
     }
@@ -79,7 +104,7 @@ internal static class ItemUiHelper
         var tagsLine = new TextBlock { Foreground = ToolTipForeground, FontStyle = FontStyles.Italic };
         tagsLine.Inlines.Add(new Run(BuildTagsLine(template)));
         panel.Children.Add(tagsLine);
-        if (template.GetInt("CooldownMs", tier) > 0)
+        if (template.GetInt(Key.CooldownMs, tier) > 0)
         {
             var (line2, ranges2) = ItemDescHelper.ReplacePlaceholdersSingle(template, tier, "冷却时间：{Cooldown} 秒");
             var tb2 = new TextBlock { Foreground = ToolTipForeground };

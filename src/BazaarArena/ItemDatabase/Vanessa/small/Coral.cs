@@ -17,7 +17,7 @@ public static class Coral
             Cooldown = 5.0,
             Heal = 20,
             Custom_0 = [5, 10, 15, 20],
-            OverridableAttributes = new Dictionary<string, IntOrByTier> {
+            OverridableAttributes = new Dictionary<int, IntOrByTier> {
                  [Key.Custom_1] = [5, 10, 15, 20] 
             },
             Abilities =
@@ -28,7 +28,7 @@ public static class Coral
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Heal,
+                    Attribute = Key.Heal,
                     Value = Formula.Source(Key.Custom_0) * Formula.Source(Key.Custom_1),
                 },
             ],

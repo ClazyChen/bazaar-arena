@@ -32,7 +32,7 @@ public static class ShoeBlade
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.CritRatePercent,
+                    Attribute = Key.CritRatePercent,
                     Value = Formula.Constant(100),
                     SourceCondition = Condition.SourceCustom0IsZero,
                 },

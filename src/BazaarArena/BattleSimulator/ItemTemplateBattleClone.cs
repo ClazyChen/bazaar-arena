@@ -5,6 +5,26 @@ namespace BazaarArena.BattleSimulator;
 /// <summary>战斗实例模板克隆：按指定 tier 扁平化 _intsByTier，并尽可能共享只读结构以降低 BuildSide 分配。</summary>
 internal static class ItemTemplateBattleClone
 {
+    private static readonly Dictionary<string, int> KeyByName = typeof(Key)
+        .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+        .Where(f => f.FieldType == typeof(int))
+        .ToDictionary(f => f.Name, f => (int)f.GetValue(null)!);
+
+    private static IReadOnlyDictionary<int, int>? ResolveOverrides(IReadOnlyDictionary<string, int>? overrides)
+    {
+        if (overrides == null || overrides.Count == 0) return null;
+        var resolved = new Dictionary<int, int>();
+        foreach (var kv in overrides)
+        {
+            if (KeyByName.TryGetValue(kv.Key, out int key))
+                resolved[key] = kv.Value;
+        }
+        return resolved;
+    }
+
+    public static ItemTemplate Create(ItemTemplate source, ItemTier tier, IReadOnlyDictionary<string, int>? overrides) =>
+        Create(source, tier, ResolveOverrides(overrides));
+
     /// <summary>
     /// 生成战斗内可写的模板实例：
     /// - Name/Desc/MinTier/Size/Hero 拷贝
@@ -12,7 +32,7 @@ internal static class ItemTemplateBattleClone
     /// - _intsByTier 扁平化为单值（每个 key 存为长度 1 的列表）
     /// - 仅对 source.OverridableAttributes 声明的 key 应用 overrides
     /// </summary>
-    public static ItemTemplate Create(ItemTemplate source, ItemTier tier, IReadOnlyDictionary<string, int>? overrides)
+    public static ItemTemplate Create(ItemTemplate source, ItemTier tier, IReadOnlyDictionary<int, int>? overrides)
     {
         var battle = new ItemTemplate
         {
@@ -27,13 +47,13 @@ internal static class ItemTemplateBattleClone
             // OverridableAttributes/协同先验等对战内不需要；保留在 source 侧即可
         };
 
-        foreach (var kv in source.GetIntsByTierView())
+        foreach (var kv in source.GetIntsByTierSnapshot())
         {
-            string key = kv.Key;
+            int key = kv.Key;
             // 若 source 已是“扁平化模板”（每个 key 仅一个值），则直接取 list[0]，避免 tier 映射与 GetInt 分支。
             // 否则按 tier 取值扁平化为单值。
             int v = kv.Value.Count == 1 ? kv.Value[0] : source.GetInt(key, tier, defaultValue: 0);
-            battle.SetInt(key, v);
+            battle.SetIntByKey(key, v);
         }
 
         if (overrides != null && source.OverridableAttributes != null)
@@ -41,7 +61,7 @@ internal static class ItemTemplateBattleClone
             foreach (var kv in overrides)
             {
                 if (source.OverridableAttributes.ContainsKey(kv.Key))
-                    battle.SetInt(kv.Key, kv.Value);
+                    battle.SetIntByKey(kv.Key, kv.Value);
             }
         }
 

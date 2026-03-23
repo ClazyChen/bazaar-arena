@@ -6,7 +6,7 @@ namespace BazaarArena.ItemDatabase.Vanessa.Small;
 /// <summary>鹦鹉皮特（Pesky Pete）及其历史版本：海盗小型伙伴；造成灼烧，每有一个相邻的伙伴或地产则 +1 多重释放；S1 另有「每有一个相邻伙伴或地产此物品获得 4/8 灼烧」光环。</summary>
 public static class PeskyPete
 {
-    private static readonly Condition AdjacentFriendOrProperty =
+    private static readonly Formula AdjacentFriendOrProperty =
         Condition.AdjacentToSource & (Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Property));
 
     /// <summary>鹦鹉皮特（最新版，铜）：8 » 7 » 6 » 5s 小 铜 伙伴；▶ 造成 2 灼烧；每有一个相邻的伙伴或地产，此物品 +1 多重释放。</summary>
@@ -24,7 +24,7 @@ public static class PeskyPete
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Multicast,
+                    Attribute = Key.Multicast,
                     Value = Formula.Count(AdjacentFriendOrProperty),
                 },
             ],
@@ -46,7 +46,7 @@ public static class PeskyPete
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Multicast,
+                    Attribute = Key.Multicast,
                     Value = Formula.Count(AdjacentFriendOrProperty),
                 },
             ],
@@ -69,12 +69,12 @@ public static class PeskyPete
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.Multicast,
+                    Attribute = Key.Multicast,
                     Value = Formula.Count(AdjacentFriendOrProperty),
                 },
                 new AuraDefinition
                 {
-                    AttributeName = Key.Burn,
+                    Attribute = Key.Burn,
                     Value = Formula.Source(Key.Custom_0) * Formula.Count(AdjacentFriendOrProperty),
                 },
             ],

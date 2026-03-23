@@ -25,7 +25,7 @@ public static class PetRock
             [
                 new AuraDefinition
                 {
-                    AttributeName = Key.CritRatePercent,
+                    Attribute = Key.CritRatePercent,
                     Condition = Condition.SameSide,
                     SourceCondition = Condition.OnlyCompanion,
                     Value = Formula.Source(Key.Custom_0),

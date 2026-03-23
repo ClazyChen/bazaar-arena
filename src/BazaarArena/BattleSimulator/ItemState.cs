@@ -2,81 +2,43 @@ using BazaarArena.Core;
 
 namespace BazaarArena.BattleSimulator;
 
-/// <summary>
-/// 战斗中单件物品的运行时状态（字段直存版本）。
-/// 设计目标：替代 BattleItemState 的 Key 字典读写路径，减少热路径间接访问。
-/// </summary>
+/// <summary>战斗中单件物品的运行时状态（Attribute[Key.xxx]）。</summary>
 public class ItemState
 {
-    /// <summary>静态模板定义（只读语义，运行时状态不再回写模板 Key）。</summary>
-    public ItemTemplate Template;
+    public ItemTemplate Template { get; init; }
+    public int[] Attributes { get; init; } = new int[Key.ItemStateAttributeCount];
 
-    /// <summary>阵营与槽位索引。</summary>
-    public int SideIndex;
-    public int ItemIndex;
+    public int GetAttribute(int key) => Attributes[key];
+    public void SetAttribute(int key, int value) => Attributes[key] = value;
+    public bool GetBoolAttribute(int key) => Attributes[key] != 0;
+    public void SetBoolAttribute(int key, bool value) => Attributes[key] = value ? 1 : 0;
 
-    /// <summary>物品档位。</summary>
-    public ItemTier Tier;
-
-    /// <summary>冷却与状态字段（毫秒）。</summary>
-    public int CooldownElapsedMs;
-    public int HasteRemainingMs;
-    public int SlowRemainingMs;
-    public int FreezeRemainingMs;
-
-    /// <summary>战斗状态字段。</summary>
-    public bool InFlight;
-    public bool Destroyed;
-    public int AmmoRemaining;
-
-    /// <summary>
-    /// 每个能力上次触发时间（毫秒），替代 LastTriggerMs_{index} 动态 Key。
-    /// </summary>
-    public int[] LastTriggerMsByAbility;
-
-    /// <summary>按帧缓存暴击判定，避免同帧重复掷骰。</summary>
-    public int CritTimeMs;
-    public bool IsCritThisUse;
-    public int CritDamagePercentThisUse;
+    public int SideIndex { get => Attributes[Key.SideIndex]; set => Attributes[Key.SideIndex] = value; }
+    public int ItemIndex { get => Attributes[Key.ItemIndex]; set => Attributes[Key.ItemIndex] = value; }
+    public ItemTier Tier { get => (ItemTier)Attributes[Key.Tier]; set => Attributes[Key.Tier] = (int)value; }
+    public int ChargedTimeMs { get => Attributes[Key.ChargedTimeMs]; set => Attributes[Key.ChargedTimeMs] = value; }
+    public int CooldownElapsedMs { get => Attributes[Key.ChargedTimeMs]; set => Attributes[Key.ChargedTimeMs] = value; }
+    public int FreezeRemainingMs { get => Attributes[Key.FreezeRemainingMs]; set => Attributes[Key.FreezeRemainingMs] = value; }
+    public int SlowRemainingMs { get => Attributes[Key.SlowRemainingMs]; set => Attributes[Key.SlowRemainingMs] = value; }
+    public int HasteRemainingMs { get => Attributes[Key.HasteRemainingMs]; set => Attributes[Key.HasteRemainingMs] = value; }
+    public bool InFlight { get => Attributes[Key.InFlight] != 0; set => Attributes[Key.InFlight] = value ? 1 : 0; }
+    public bool Destroyed { get => Attributes[Key.Destroyed] != 0; set => Attributes[Key.Destroyed] = value ? 1 : 0; }
+    public int CritTimeMs { get => Attributes[Key.CritTimeMs]; set => Attributes[Key.CritTimeMs] = value; }
+    public bool IsCritThisUse { get => Attributes[Key.IsCritThisUse] != 0; set => Attributes[Key.IsCritThisUse] = value ? 1 : 0; }
+    public int CritDamagePercentThisUse { get => Attributes[Key.CritDamage]; set => Attributes[Key.CritDamage] = value; }
+    public int AmmoRemaining { get => Attributes[Key.Custom_2]; set => Attributes[Key.Custom_2] = value; }
+    private readonly Dictionary<int, int> _lastTriggerMsByAbility = [];
 
     public ItemState(ItemTemplate template, ItemTier tier)
     {
         Template = template;
-        Tier = tier;
-
-        SideIndex = 0;
-        ItemIndex = 0;
-
-        CooldownElapsedMs = 0;
-        HasteRemainingMs = 0;
-        SlowRemainingMs = 0;
-        FreezeRemainingMs = 0;
-
-        InFlight = false;
-        Destroyed = false;
-        AmmoRemaining = template.GetInt(Key.AmmoCap, tier);
-
-        LastTriggerMsByAbility = new int[template.Abilities.Count];
-        for (int i = 0; i < LastTriggerMsByAbility.Length; i++)
-            LastTriggerMsByAbility[i] = -1000;
-
-        CritTimeMs = -1;
-        IsCritThisUse = false;
-        CritDamagePercentThisUse = 200;
+        for (int i = 0; i < Attributes.Length; i++)
+            Attributes[i] = template.GetInt(i, tier, 0);
     }
 
-    public int GetLastTriggerMs(int abilityIndex)
-    {
-        if ((uint)abilityIndex >= (uint)LastTriggerMsByAbility.Length)
-            return -1000;
-        return LastTriggerMsByAbility[abilityIndex];
-    }
+    public int GetLastTriggerMs(int abilityIndex) =>
+        _lastTriggerMsByAbility.TryGetValue(abilityIndex, out int v) ? v : int.MinValue;
 
-    public void SetLastTriggerMs(int abilityIndex, int timeMs)
-    {
-        if ((uint)abilityIndex >= (uint)LastTriggerMsByAbility.Length)
-            return;
-        LastTriggerMsByAbility[abilityIndex] = timeMs;
-    }
+    public void SetLastTriggerMs(int abilityIndex, int timeMs) =>
+        _lastTriggerMsByAbility[abilityIndex] = timeMs;
 }
-
