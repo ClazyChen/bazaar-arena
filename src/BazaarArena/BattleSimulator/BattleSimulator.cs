@@ -1,4 +1,3 @@
-using System.Linq;
 using BazaarArena.Core;
 using BazaarArena.ItemDatabase;
 
@@ -46,8 +45,8 @@ public class BattleSimulator
 
         int timeMs = 0;
         List<BattleItemState> castQueue = [];
-        List<AbilityQueueEntry> currentAbilityQueue = [];
-        List<AbilityQueueEntry> nextAbilityQueue = [];
+        var abilityCurrent = new AbilityQueueBuckets();
+        var abilityNext = new AbilityQueueBuckets();
 
         // 沙尘暴状态：设计文档 30s 开始，首次 tick 300ms，然后间隔递减 20ms 至 140ms 后改为伤害+2，120s 结束
         int sandstormNextTickMs = SandstormStartMs;
@@ -62,7 +61,7 @@ public class BattleSimulator
 
             // 1. 第 0 帧触发「战斗开始」：统一 invoke 入队，仅 Immediate 入 current、其余入 next，步骤 8 再执行
             if (frame == 0)
-                InvokeTrigger(Trigger.BattleStart, null, null, 0, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                InvokeTrigger(Trigger.BattleStart, null, null, 0, side0, side1, abilityCurrent, abilityNext);
 
             // 2. 处理冷却，充能完成则加入施放队列（冻结时冷却不推进）
             castQueue.Clear();
@@ -112,7 +111,7 @@ public class BattleSimulator
                 sandstormNextTickMs = timeMs + sandstormIntervalMs;
             }
 
-            // 7-8. 施放队列产生的能力加入 nextAbilityQueue（下一帧才处理）；步骤 8 只处理 currentAbilityQueue；延后/未消耗的入 nextAbilityQueue；仅步骤 9 将 nextAbilityQueue 移入 currentAbilityQueue
+            // 7-8. 施放队列产生的能力入 next 各桶（下一帧才处理）；步骤 8 只处理 current 六桶；延后/未消耗的入 next；仅步骤 9 对调 current/next 引用
             do
             {
                 var toProcess = new List<BattleItemState>(castQueue);
@@ -123,92 +122,97 @@ public class BattleSimulator
                     var side = item.SideIndex == 0 ? side0 : side1;
                     int ammoCap = side.GetItemInt(item.ItemIndex, Key.AmmoCap, 0);
                     int multicast = side.GetItemInt(item.ItemIndex, Key.Multicast, 1);
-                    InvokeTrigger(Trigger.UseItem, item, new TriggerInvokeContext { Multicast = multicast, UsedTemplate = item.Template, InvokeTargetItem = item }, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue,
+                    InvokeTrigger(Trigger.UseItem, item, new TriggerInvokeContext { Multicast = multicast, UsedTemplate = item.Template, InvokeTargetItem = item }, timeMs, side0, side1, abilityCurrent, abilityNext,
                         executeImmediate: (owner, abilityIdx, ability) =>
                         {
                             var entry = new AbilityQueueEntry { Owner = owner, AbilityIndex = abilityIdx, PendingCount = 1 };
-                            ExecuteOneEffect(owner, ability, entry, false, 200, side0, side1, timeMs, logSink, castQueue, currentAbilityQueue, nextAbilityQueue);
+                            ExecuteOneEffect(owner, ability, entry, false, 200, side0, side1, timeMs, logSink, castQueue, abilityCurrent, abilityNext);
                         });
                     if (ammoCap > 0)
                         item.AmmoRemaining = Math.Max(0, item.AmmoRemaining - 1);
                     logSink.OnCast(item, item.Template.Name, timeMs, ammoCap > 0 ? item.AmmoRemaining : null);
                     if (ammoCap > 0)
-                        InvokeTrigger(Trigger.Ammo, item, null, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                        InvokeTrigger(Trigger.Ammo, item, null, timeMs, side0, side1, abilityCurrent, abilityNext);
                 }
 
-                // 8. 处理能力队列（只处理 currentAbilityQueue）；仅按优先级排序，同优先级保持入队顺序。与上次触发间隔不足 250ms 的条目直接加入 next 留到下一帧再判。
-                var toProcessAbilities = currentAbilityQueue
-                    .OrderBy(e => (int)e.Owner.Template.Abilities[e.AbilityIndex].Priority)
-                    .ToList();
-                currentAbilityQueue.Clear();
-                foreach (var entry in toProcessAbilities)
+                // 8. 处理能力队列（只处理 current 六桶）；桶序 = Immediate→Lowest，桶内 FIFO。与上次触发间隔不足 250ms 的条目写入 next 对应桶留到下一帧再判。
+                for (int pbi = 0; pbi < AbilityQueueBuckets.BucketCount; pbi++)
                 {
-                    var item = entry.Owner;
-                    if (timeMs - item.GetLastTriggerMs(entry.AbilityIndex) < TriggerIntervalMs)
+                    var bucket = abilityCurrent.Bucket(pbi);
+                    for (int bj = 0; bj < bucket.Count; bj++)
                     {
-                        nextAbilityQueue.Add(entry);
-                        continue;
-                    }
-                    var side = item.SideIndex == 0 ? side0 : side1;
-                    var opp = item.SideIndex == 0 ? side1 : side0;
-                    item.SetLastTriggerMs(entry.AbilityIndex, timeMs);
-                    var ability = item.Template.Abilities[entry.AbilityIndex];
-                    bool canCrit = ItemHasAnyCrittableField(item) && ability.Apply != null && ability.ApplyCritMultiplier && ability.UseSelf;
-                    bool isCrit = false;
-                    int critDamagePercent = 200;
-                    if (canCrit)
-                    {
-                        if (item.CritTimeMs == timeMs)
+                        var entry = bucket[bj];
+                        var item = entry.Owner;
+                        if (timeMs - item.GetLastTriggerMs(entry.AbilityIndex) < TriggerIntervalMs)
                         {
-                            isCrit = item.IsCritThisUse;
-                            critDamagePercent = item.CritDamagePercentThisUse;
+                            AddEntryToBucketsByAbilityPriority(abilityNext, entry);
+                            continue;
                         }
-                        else
+                        var side = item.SideIndex == 0 ? side0 : side1;
+                        var opp = item.SideIndex == 0 ? side1 : side0;
+                        item.SetLastTriggerMs(entry.AbilityIndex, timeMs);
+                        var ability = item.Template.Abilities[entry.AbilityIndex];
+                        bool canCrit = ItemHasAnyCrittableField(item) && ability.Apply != null && ability.ApplyCritMultiplier && ability.UseSelf;
+                        bool isCrit = false;
+                        int critDamagePercent = 200;
+                        if (canCrit)
                         {
-                            var auraContext = new BattleAuraContext(side, item, opp);
-                            int critRate = item.Template.GetInt(Key.CritRatePercent, item.Tier, 0, auraContext);
-                            if (critRate > 0 && ThreadLocalRandom.Next100() < critRate)
+                            if (item.CritTimeMs == timeMs)
                             {
-                                isCrit = true;
-                                critDamagePercent = item.Template.GetInt(Key.CritDamagePercent, item.Tier, 200, auraContext);
+                                isCrit = item.IsCritThisUse;
+                                critDamagePercent = item.CritDamagePercentThisUse;
                             }
-                            item.CritTimeMs = timeMs;
-                            item.IsCritThisUse = isCrit;
-                            item.CritDamagePercentThisUse = critDamagePercent;
-                            if (isCrit)
-                                InvokeTrigger(Trigger.Crit, item, null, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                            else
+                            {
+                                var auraContext = new BattleAuraContext(side, item, opp);
+                                int critRate = item.Template.GetInt(Key.CritRatePercent, item.Tier, 0, auraContext);
+                                if (critRate > 0 && ThreadLocalRandom.Next100() < critRate)
+                                {
+                                    isCrit = true;
+                                    critDamagePercent = item.Template.GetInt(Key.CritDamagePercent, item.Tier, 200, auraContext);
+                                }
+                                item.CritTimeMs = timeMs;
+                                item.IsCritThisUse = isCrit;
+                                item.CritDamagePercentThisUse = critDamagePercent;
+                                if (isCrit)
+                                    InvokeTrigger(Trigger.Crit, item, null, timeMs, side0, side1, abilityCurrent, abilityNext);
+                            }
                         }
+                        ExecuteOneEffect(item, ability, entry, isCrit, critDamagePercent, side0, side1, timeMs, logSink, castQueue, abilityCurrent, abilityNext);
+                        entry.PendingCount--;
+                        if (entry.PendingCount > 0)
+                            AddEntryToBucketsByAbilityPriority(abilityNext, entry);
                     }
-                    ExecuteOneEffect(item, ability, entry, isCrit, critDamagePercent, side0, side1, timeMs, logSink, castQueue, currentAbilityQueue, nextAbilityQueue);
-                    entry.PendingCount--;
-                    if (entry.PendingCount > 0)
-                        nextAbilityQueue.Add(entry);
+                    bucket.Clear();
                 }
             } while (castQueue.Count > 0);
 
-            // 9. 能力队列更新到下一帧（移入 currentAbilityQueue，供下一帧步骤 8 处理）
-            currentAbilityQueue.Clear();
-            foreach (var e in nextAbilityQueue) currentAbilityQueue.Add(e);
-            nextAbilityQueue.Clear();
+            // 9. 能力队列更新到下一帧：对调 current/next，下一帧步骤 8 直接处理原 next 各桶；清空新的 next（原 current 已空桶，Clear 仅复位容量语义）
+            (abilityCurrent, abilityNext) = (abilityNext, abilityCurrent);
+            abilityNext.Clear();
 
             // 10. 胜负判定（先输出本帧结算后的最终生命，再通知结果）。即将落败时触发 AboutToLose（Hp≤0 即触发），「首次」由物品 Custom_0 保证（参考靴里剑），仅执行 Immediate 能力后重判。
             bool dead0 = side0.Hp <= 0;
             bool dead1 = side1.Hp <= 0;
-            var aboutToLoseCurrent = new List<AbilityQueueEntry>();
-            var aboutToLoseNext = new List<AbilityQueueEntry>();
+            var aboutToLoseCurrent = new AbilityQueueBuckets();
+            var aboutToLoseNext = new AbilityQueueBuckets();
             if (dead0)
                 InvokeTrigger(Trigger.AboutToLose, null, null, timeMs, side0, side1, aboutToLoseCurrent, aboutToLoseNext, null, 0);
             if (dead1)
                 InvokeTrigger(Trigger.AboutToLose, null, null, timeMs, side0, side1, aboutToLoseCurrent, aboutToLoseNext, null, 1);
-            while (aboutToLoseCurrent.Count > 0)
+            while (!aboutToLoseCurrent.IsEmpty)
             {
-                var toProcess = aboutToLoseCurrent.OrderBy(e => (int)e.Owner.Template.Abilities[e.AbilityIndex].Priority).ToList();
-                aboutToLoseCurrent.Clear();
-                foreach (var entry in toProcess)
+                for (int pbi = 0; pbi < AbilityQueueBuckets.BucketCount; pbi++)
                 {
-                    var item = entry.Owner;
-                    var ability = item.Template.Abilities[entry.AbilityIndex];
-                    ExecuteOneEffect(item, ability, entry, false, 200, side0, side1, timeMs, logSink, null, aboutToLoseCurrent, aboutToLoseNext);
+                    var bucket = aboutToLoseCurrent.Bucket(pbi);
+                    for (int bj = 0; bj < bucket.Count; bj++)
+                    {
+                        var entry = bucket[bj];
+                        var item = entry.Owner;
+                        var ability = item.Template.Abilities[entry.AbilityIndex];
+                        ExecuteOneEffect(item, ability, entry, false, 200, side0, side1, timeMs, logSink, null, aboutToLoseCurrent, aboutToLoseNext);
+                    }
+                    bucket.Clear();
                 }
             }
             dead0 = side0.Hp <= 0;
@@ -286,6 +290,13 @@ public class BattleSimulator
         return condition;
     }
 
+    /// <summary>按条目对应能力的优先级将 <paramref name="entry"/> 写入 <paramref name="buckets"/> 的桶尾（FIFO）。</summary>
+    private static void AddEntryToBucketsByAbilityPriority(AbilityQueueBuckets buckets, AbilityQueueEntry entry)
+    {
+        var p = entry.Owner.Template.Abilities[entry.AbilityIndex].Priority;
+        buckets.AddToBucket(AbilityQueueBuckets.BucketIndex(p), entry);
+    }
+
     private static void ProcessCooldown(BattleSide side, int timeMs, List<BattleItemState> castQueue)
     {
         for (int i = 0; i < side.Items.Count; i++)
@@ -342,11 +353,12 @@ public class BattleSimulator
         _ = BattleSideDamage.ApplyDamageToSide(side, damage, isBurn: false);
     }
 
-    /// <summary>将能力加入队列或合并 PendingCount：先查 currentAbilityQueue，再查 nextAbilityQueue；都没有则新建，仅 Immediate 入 current，其余入 next。当 invokeTargetSideIndex 与 invokeTargetItemIndex 均非 null 时不合并，新建条目且效果应对该 invoke 目标施加。</summary>
-    private static void AddOrMergeAbility(BattleItemState owner, int abilityIdx, AbilityDefinition ability, int pendingCount,
-        List<AbilityQueueEntry> current, List<AbilityQueueEntry> next,
+    /// <summary>将能力加入队列或合并 PendingCount：先查 current 各桶，再查 next 各桶；都没有则新建并按优先级入对应桶，仅 Immediate 入 current。当 invokeTargetSideIndex 与 invokeTargetItemIndex 均非 null 时不合并，新建条目且效果应对该 invoke 目标施加。</summary>
+    private void AddOrMergeAbility(BattleItemState owner, int abilityIdx, AbilityDefinition ability, int pendingCount,
+        AbilityQueueBuckets current, AbilityQueueBuckets next,
         int? invokeTargetSideIndex = null, int? invokeTargetItemIndex = null)
     {
+        int b = AbilityQueueBuckets.BucketIndex(ability.Priority);
         if (invokeTargetSideIndex is int si && invokeTargetItemIndex is int ii)
         {
             var entry = new AbilityQueueEntry
@@ -358,15 +370,15 @@ public class BattleSimulator
                 InvokeTargetItemIndex = ii,
             };
             if (ability.Priority == AbilityPriority.Immediate)
-                current.Add(entry);
+                current.AddToBucket(b, entry);
             else
-                next.Add(entry);
+                next.AddToBucket(b, entry);
             return;
         }
-        var existing = current.FirstOrDefault(e => e.Owner == owner && e.AbilityIndex == abilityIdx && e.InvokeTargetSideIndex == null);
-        if (existing != null) { existing.PendingCount += pendingCount; return; }
-        existing = next.FirstOrDefault(e => e.Owner == owner && e.AbilityIndex == abilityIdx && e.InvokeTargetSideIndex == null);
-        if (existing != null) { existing.PendingCount += pendingCount; return; }
+        if (current.TryMergePending(owner, abilityIdx, pendingCount))
+            return;
+        if (next.TryMergePending(owner, abilityIdx, pendingCount))
+            return;
         var newEntry = new AbilityQueueEntry
         {
             Owner = owner,
@@ -374,50 +386,47 @@ public class BattleSimulator
             PendingCount = pendingCount,
         };
         if (ability.Priority == AbilityPriority.Immediate)
-            current.Add(newEntry);
+            current.AddToBucket(b, newEntry);
         else
-            next.Add(newEntry);
+            next.AddToBucket(b, newEntry);
     }
 
     /// <summary>统一触发器调用：给定触发器名、引起触发的物品与上下文，遍历双方所有物品；条件匹配的能力入队（Immediate→current，其余→next）。若传入 executeImmediate，则 Immediate 能力不入队、当场执行。onlyForSideIndex 非空时仅遍历该侧（用于即将落败等仅对单侧触发）。</summary>
-    private static void InvokeTrigger(string triggerName, BattleItemState? causeItem, TriggerInvokeContext? context, int timeMs,
-        BattleSide side0, BattleSide side1, List<AbilityQueueEntry> current, List<AbilityQueueEntry> next,
+    private void InvokeTrigger(string triggerName, BattleItemState? causeItem, TriggerInvokeContext? context, int timeMs,
+        BattleSide side0, BattleSide side1, AbilityQueueBuckets current, AbilityQueueBuckets next,
         Action<BattleItemState, int, AbilityDefinition>? executeImmediate = null, int? onlyForSideIndex = null)
     {
         int pendingCount = (triggerName == Trigger.UseItem || triggerName == Trigger.Freeze || triggerName == Trigger.Slow || triggerName == Trigger.Haste || triggerName == Trigger.Burn || triggerName == Trigger.Poison) && context?.Multicast is int m ? m : 1;
         Func<BattleItemState, IReadOnlySet<string>> getEffectiveTags = item => EffectiveTagHelper.GetEffectiveTags(side0, side1, item);
 
         // 规定次序：onlyForSideIndex 指定时仅该侧；有 causeItem 时先处理 causeItem 所在侧；无 causeItem 时按 (0, side0), (1, side1) 顺序。
-        var sideOrder = onlyForSideIndex is int ofs
-            ? new[] { (ofs, ofs == 0 ? side0 : side1) }
-            : causeItem != null && !causeItem.Destroyed
-                ? new[] { (causeItem.SideIndex, causeItem.SideIndex == 0 ? side0 : side1), (1 - causeItem.SideIndex, causeItem.SideIndex == 0 ? side1 : side0) }
-                : new[] { (0, side0), (1, side1) };
-
-        foreach (var (ownerSideIndex, ownerSide) in sideOrder)
+        BattleSimulatorThreadScratch.BeginInvokeTrigger();
+        try
         {
-            BattleSide mySide = ownerSide;
-            BattleSide enemySide = ownerSideIndex == 0 ? side1 : side0;
-            // 该侧物品下标顺序：有 causeItem 且本侧为 cause 所在侧时，先 causeItem.ItemIndex，再其余下标；否则 0..Count-1。
-            var indices = new List<int>();
-            if (causeItem != null && !causeItem.Destroyed && ownerSideIndex == causeItem.SideIndex && causeItem.ItemIndex < ownerSide.Items.Count)
+            void VisitOwnerSide(int ownerSideIndex, BattleSide ownerSide)
             {
-                indices.Add(causeItem.ItemIndex);
-                for (int i = 0; i < ownerSide.Items.Count; i++)
-                    if (i != causeItem.ItemIndex) indices.Add(i);
-            }
-            else
-            {
-                for (int i = 0; i < ownerSide.Items.Count; i++) indices.Add(i);
-            }
-
-            foreach (int ownerItemIndex in indices)
-            {
-                var abilityOwner = ownerSide.Items[ownerItemIndex];
-                if (abilityOwner.Destroyed) continue;
-                for (int a = 0; a < abilityOwner.Template.Abilities.Count; a++)
+                BattleSide mySide = ownerSide;
+                BattleSide enemySide = ownerSideIndex == 0 ? side1 : side0;
+                var indices = BattleSimulatorThreadScratch.CurrentInvokeIndices();
+                indices.Clear();
+                if (causeItem != null && !causeItem.Destroyed && ownerSideIndex == causeItem.SideIndex && causeItem.ItemIndex < ownerSide.Items.Count)
                 {
-                    var ab = abilityOwner.Template.Abilities[a];
+                    indices.Add(causeItem.ItemIndex);
+                    for (int i = 0; i < ownerSide.Items.Count; i++)
+                        if (i != causeItem.ItemIndex) indices.Add(i);
+                }
+                else
+                {
+                    for (int i = 0; i < ownerSide.Items.Count; i++) indices.Add(i);
+                }
+
+                foreach (int ownerItemIndex in indices)
+                {
+                    var abilityOwner = ownerSide.Items[ownerItemIndex];
+                    if (abilityOwner.Destroyed) continue;
+                    for (int a = 0; a < abilityOwner.Template.Abilities.Count; a++)
+                    {
+                        var ab = abilityOwner.Template.Abilities[a];
                         if (ab.Triggers == null || ab.Triggers.Count == 0)
                         {
                             if (ab.TriggerName != triggerName) continue;
@@ -511,15 +520,33 @@ public class BattleSimulator
                             continue;
                         }
                         AddOrMergeAbility(abilityOwner, a, ab, pendingCount, current, next, context?.InvokeTargetItem?.SideIndex, context?.InvokeTargetItem?.ItemIndex);
+                    }
                 }
             }
+
+            if (onlyForSideIndex is int ofs)
+                VisitOwnerSide(ofs, ofs == 0 ? side0 : side1);
+            else if (causeItem != null && !causeItem.Destroyed)
+            {
+                VisitOwnerSide(causeItem.SideIndex, causeItem.SideIndex == 0 ? side0 : side1);
+                VisitOwnerSide(1 - causeItem.SideIndex, causeItem.SideIndex == 0 ? side1 : side0);
+            }
+            else
+            {
+                VisitOwnerSide(0, side0);
+                VisitOwnerSide(1, side1);
+            }
+        }
+        finally
+        {
+            BattleSimulatorThreadScratch.EndInvokeTrigger();
         }
     }
 
     /// <summary>暴击时最终倍率 = CritDamagePercent/100，默认 200 即 2 倍；利爪翻倍为 400 即 4 倍。chargeInducedCastQueue 非 null 时充能导致满会加入该队列。执行过程中引发的新能力通过 AddOrMergeAbility/Invoke*Trigger 加入 current/next（仅 Immediate 入 current）。</summary>
     private void ExecuteOneEffect(BattleItemState item, AbilityDefinition ability, AbilityQueueEntry queueEntry, bool isCrit, int critDamagePercent,
         BattleSide side0, BattleSide side1, int timeMs, IBattleLogSink logSink, List<BattleItemState>? chargeInducedCastQueue,
-        List<AbilityQueueEntry> currentAbilityQueue, List<AbilityQueueEntry> nextAbilityQueue)
+        AbilityQueueBuckets currentAbilityQueue, AbilityQueueBuckets nextAbilityQueue)
     {
         if (ability.Apply == null) return;
         var side = item.SideIndex == 0 ? side0 : side1;
@@ -539,34 +566,40 @@ public class BattleSimulator
             bool applyCrit = ItemHasAnyCrittableField(item) && ability.ApplyCritMultiplier;
             value = applyCrit ? baseValue * critMultiplier : baseValue;
         }
-        var effectAppliedTriggerQueue = new List<(string TriggerName, int SideIndex, int ItemIndex)>();
-        var ctx = new EffectApplyContextImpl
+
+        BattleSimulatorThreadScratch.BeginExecuteOneEffect(out var effectAppliedTriggerQueue, out var ctx);
+        try
         {
-            Side = side,
-            Opp = opp,
-            Item = item,
-            Value = value,
-            CritMultiplier = critMultiplier,
-            IsCrit = isCrit,
-            TimeMs = timeMs,
-            LogSink = logSink,
-            ChargeInducedCastQueue = chargeInducedCastQueue,
-            EffectAppliedTriggerQueue = effectAppliedTriggerQueue,
-            TargetCondition = ability.TargetCondition,
-            EffectLogName = ability.EffectLogName,
-            TargetCountKey = ability.TargetCountKey,
-            InvokeTargetItem = invokeTargetItem,
-        };
-        ability.Apply(ctx);
-        foreach (var (triggerName, sideIndex, itemIndex) in effectAppliedTriggerQueue)
+            ctx.Rebind(
+                side,
+                opp,
+                item,
+                value,
+                critMultiplier,
+                isCrit,
+                timeMs,
+                logSink,
+                chargeInducedCastQueue,
+                effectAppliedTriggerQueue,
+                ability.TargetCondition,
+                ability.EffectLogName,
+                ability.TargetCountKey,
+                invokeTargetItem);
+            ability.Apply(ctx);
+            foreach (var (triggerName, sideIndex, itemIndex) in effectAppliedTriggerQueue)
+            {
+                var target = (sideIndex == side0.SideIndex ? side0 : side1).Items[itemIndex];
+                // Burn/Poison/Shield 的 queue 存的是施加者（己方），故 causeItem = target；Freeze/Slow/Destroy 存的是目标，causeItem = item（施放者）
+                var causeItem = (triggerName == Trigger.Burn || triggerName == Trigger.Poison || triggerName == Trigger.Shield) ? target : item;
+                var context = new TriggerInvokeContext { InvokeTargetItem = (triggerName == Trigger.Burn || triggerName == Trigger.Poison || triggerName == Trigger.Shield) ? null : target, Multicast = triggerName == Trigger.Destroy ? null : 1 };
+                InvokeTrigger(triggerName, causeItem, context, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+                if (triggerName == Trigger.Destroy)
+                    target.Destroyed = true;
+            }
+        }
+        finally
         {
-            var target = (sideIndex == side0.SideIndex ? side0 : side1).Items[itemIndex];
-            // Burn/Poison/Shield 的 queue 存的是施加者（己方），故 causeItem = target；Freeze/Slow/Destroy 存的是目标，causeItem = item（施放者）
-            var causeItem = (triggerName == Trigger.Burn || triggerName == Trigger.Poison || triggerName == Trigger.Shield) ? target : item;
-            var context = new TriggerInvokeContext { InvokeTargetItem = (triggerName == Trigger.Burn || triggerName == Trigger.Poison || triggerName == Trigger.Shield) ? null : target, Multicast = triggerName == Trigger.Destroy ? null : 1 };
-            InvokeTrigger(triggerName, causeItem, context, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
-            if (triggerName == Trigger.Destroy)
-                target.Destroyed = true;
+            BattleSimulatorThreadScratch.EndExecuteOneEffect();
         }
     }
 }

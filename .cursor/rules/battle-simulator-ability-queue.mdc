@@ -10,9 +10,9 @@ alwaysApply: false
 
 ## 双队列语义
 
-- **currentAbilityQueue**：本帧步骤 8 **唯一**处理的对象；内容来自上一帧步骤 9 从 next 移入的条目。
-- **nextAbilityQueue**：本帧延后（未到 250ms）、未消耗完 Pending 的条目写回此处；**本帧施放产生的新能力也只加入此处**（见下）。
-- **唯一允许「next → current」的位置**：**仅步骤 9**。在步骤 8 开头、循环前或任何其他地方做「把 next 移入 current」都是错误。
+- **currentAbilityQueue**（类型 `AbilityQueueBuckets`）：本帧步骤 8 **唯一**处理的对象；内容来自上一帧步骤 9 **对调 current/next 引用**后，原 next 各优先级桶中的条目。
+- **nextAbilityQueue**（类型 `AbilityQueueBuckets`）：本帧延后（未到 250ms）、未消耗完 Pending 的条目写回对应优先级桶；**本帧施放产生的新能力也只加入此处**（见下）。
+- **唯一允许「next → current」的位置**：**仅步骤 9**（对调两个 `AbilityQueueBuckets` 引用并 `Clear` 新的 next）。在步骤 8 开头、循环前或任何其他地方做「把 next 并入 current」都是错误。
 
 ## 施放队列（castQueue）触发的能力与步骤 7 顺序
 
@@ -35,13 +35,13 @@ alwaysApply: false
 - **条件语义**：评估时 **Source=能力持有者**、**Item=被评估对象**（Condition 时=引起触发的物品，InvokeTargetCondition 时=触发器指向的物品，TargetCondition 时=候选目标）。`Condition` = 引起触发的物品（Item）需满足；`InvokeTargetCondition` = 触发器所指向的物品（Item）需满足；`TargetCondition` = 候选目标（Item）需满足。
 - **PendingCount 合并顺序（AddOrMergeAbility）**：
   1. 当 **InvokeTargetItem** 非空（context 提供 invokeTargetSideIndex + invokeTargetItemIndex）时**不合并**，直接新建条目并写入 `InvokeTargetSideIndex`/`InvokeTargetItemIndex`；**新建条目的 PendingCount 必须为传入的 pendingCount**（如 UseItem 的 Multicast），不得写死为 1，否则多重释放失效（见 implementation-notes「AddOrMergeAbility 带 InvokeTarget 时 PendingCount」）。效果应对该单一目标施加（见 docs/implementation-notes.md「InvokeTarget 与 SameAsInvokeTarget」）。
-  2. 否则先在 **currentAbilityQueue** 中查找同 (Owner, AbilityIndex) 且条目无 InvokeTarget 的，找到则只做 `PendingCount += pendingCount`，不新建。
-  3. 再在 **nextAbilityQueue** 中查找同上，找到则只做 `PendingCount += pendingCount`，不新建。
-  4. 都没有则新建条目：**Immediate → currentAbilityQueue**，**非 Immediate → nextAbilityQueue**。`AbilityQueueEntry` 持有多元组 (Owner, AbilityIndex, PendingCount, 可选 InvokeTargetSideIndex/InvokeTargetItemIndex)。**250ms 节流状态**存于物品（GetLastTriggerMs/SetLastTriggerMs），不存于条目。
+  2. 否则先在 **current** 全部优先级桶中查找同 (Owner, AbilityIndex) 且条目无 InvokeTarget 的，找到则只做 `PendingCount += pendingCount`，不新建。
+  3. 再在 **next** 全部优先级桶中查找同上，找到则只做 `PendingCount += pendingCount`，不新建。
+  4. 都没有则新建条目并按优先级入桶：**Immediate → current 对应桶**，**非 Immediate → next 对应桶**。`AbilityQueueEntry` 持有多元组 (Owner, AbilityIndex, PendingCount, 可选 InvokeTargetSideIndex/InvokeTargetItemIndex)。**250ms 节流状态**存于物品（GetLastTriggerMs/SetLastTriggerMs），不存于条目。
 
 ## 步骤 8 执行顺序：仅按能力优先级
 
-- 步骤 8 在遍历处理 `currentAbilityQueue` 前，**仅按能力优先级排序**：`AbilityPriority` 枚举值升序（Immediate → Highest → High → Medium → Low → Lowest）；**同优先级按入队顺序**，不再按 (SideIndex, ItemIndex, AbilityIndex) 等二次排序。
+- 步骤 8 遍历处理 **current** 的 **6 个优先级桶**（`AbilityQueueBuckets`）：`AbilityPriority` 枚举值升序（Immediate → Highest → High → Medium → Low → Lowest）；**同优先级按入队顺序**，不再按 (SideIndex, ItemIndex, AbilityIndex) 等二次排序。`AddOrMergeAbility` 入队时直接写入对应桶；与原先先整表分桶再遍历的次序一致。
 - 这样同一帧内触发的多条能力会按「高优先级先于低优先级」执行，同优先级则按入队次序处理（例如裂盾刀裂盾 High 先于姜饼人护盾 Low）。
 
 ## 效果数值与光环

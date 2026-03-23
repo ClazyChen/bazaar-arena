@@ -38,7 +38,7 @@ public static class Program
         var simulator = new SimulatorClass();
         var rng = config.Seed.HasValue ? new Random(config.Seed.Value) : new Random();
         var perf = new PerfStats();
-        var evaluator = new BattleEvaluator(simulator, resolver, rng, config.BestOf, config.Workers, config.PlayerLevel, perf);
+        var evaluator = new BattleEvaluator(simulator, resolver, rng, config.BestOf, config.Workers, config.PlayerLevel, perf, config.Seed);
         var searcher = new GreedySearcher(config, pool, resolver, evaluator, rng, perf);
 
         Console.WriteLine($"[GreedyDeckFinder] 玩家等级：{config.PlayerLevel}");
@@ -47,7 +47,7 @@ public static class Program
             Console.WriteLine($"[GreedyDeckFinder] 排除物品：{string.Join("、", config.ExcludedItems)}");
         var topBySize = searcher.Run(config.AnchorItem, (size, top) => PrintSizeResult(size, top));
         if (config.Perf)
-            Console.WriteLine(perf.BuildSummary());
+            Console.WriteLine(perf.BuildSummary(config.Workers));
         if (!string.IsNullOrWhiteSpace(config.OutputPath))
             WriteResult(config.OutputPath, config.AnchorItem, topBySize);
         return 0;

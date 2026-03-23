@@ -95,19 +95,19 @@ public class Condition
     public static Condition WithTag(string tag) => new(ctx =>
     {
         if (ctx.Item == null) return false;
-        var tags = ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? new HashSet<string>(ctx.Item.Template.Tags ?? []);
+        var tags = ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? TemplateTagsReadOnlySet.ForList(ctx.Item.Template.Tags);
         return tags.Contains(tag);
     });
 
     /// <summary>被评估对象不带指定标签（Item 为 null 或有效标签不包含 tag 时为 true）。用于「非武器」「非工具」等目标筛选。</summary>
     public static Condition NotWithTag(string tag) => new(ctx =>
-        ctx.Item == null || !(ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? new HashSet<string>(ctx.Item.Template.Tags ?? [])).Contains(tag));
+        ctx.Item == null || !(ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? TemplateTagsReadOnlySet.ForList(ctx.Item.Template.Tags)).Contains(tag));
 
     /// <summary>被评估对象具备可暴击的六类数值之一（护盾/伤害/灼烧/剧毒/治疗/再生）；用于 AddAttribute/ReduceAttribute 暴击率时的隐含目标条件。</summary>
     public static Condition HasAnyCrittableTag { get; } = new(ctx =>
     {
         if (ctx.Item == null) return false;
-        var tags = ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? new HashSet<string>(ctx.Item.Template.Tags ?? []);
+        var tags = ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? TemplateTagsReadOnlySet.ForList(ctx.Item.Template.Tags);
         return tags.Contains(Tag.Damage) || tags.Contains(Tag.Burn) || tags.Contains(Tag.Poison)
             || tags.Contains(Tag.Heal) || tags.Contains(Tag.Shield) || tags.Contains(Tag.Regen);
     });
@@ -170,14 +170,14 @@ public class Condition
     public static Condition OnlyCompanion { get; } = new(ctx =>
     {
         if (ctx.Item == null || ctx.Item.Destroyed) return false;
-        var itemTags = ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? new HashSet<string>(ctx.Item.Template.Tags ?? []);
+        var itemTags = ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? TemplateTagsReadOnlySet.ForList(ctx.Item.Template.Tags);
         if (!itemTags.Contains(Tag.Friend)) return false;
         int count = 0;
         for (int j = 0; j < ctx.MySide.Items.Count; j++)
         {
             var it = ctx.MySide.Items[j];
             if (it.Destroyed) continue;
-            var t = ctx.GetEffectiveTagsForItem?.Invoke(it) ?? new HashSet<string>(it.Template.Tags ?? []);
+            var t = ctx.GetEffectiveTagsForItem?.Invoke(it) ?? TemplateTagsReadOnlySet.ForList(it.Template.Tags);
             if (t.Contains(Tag.Friend)) count++;
         }
         return count == 1;
@@ -187,7 +187,7 @@ public class Condition
     public static Condition OnlyWeaponWithCooldown { get; } = new(ctx =>
     {
         if (ctx.Item == null || ctx.Item.Destroyed) return false;
-        var itemTags = ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? new HashSet<string>(ctx.Item.Template.Tags ?? []);
+        var itemTags = ctx.GetEffectiveTagsForItem?.Invoke(ctx.Item) ?? TemplateTagsReadOnlySet.ForList(ctx.Item.Template.Tags);
         if (!itemTags.Contains(Tag.Weapon)) return false;
         if (ctx.MySide.GetItemInt(ctx.Item.ItemIndex, "CooldownMs", 0) <= 0) return false;
         int count = 0;
@@ -195,7 +195,7 @@ public class Condition
         {
             var it = ctx.MySide.Items[j];
             if (it.Destroyed) continue;
-            var t = ctx.GetEffectiveTagsForItem?.Invoke(it) ?? new HashSet<string>(it.Template.Tags ?? []);
+            var t = ctx.GetEffectiveTagsForItem?.Invoke(it) ?? TemplateTagsReadOnlySet.ForList(it.Template.Tags);
             if (!t.Contains(Tag.Weapon)) continue;
             if (ctx.MySide.GetItemInt(it.ItemIndex, "CooldownMs", 0) <= 0) continue;
             count++;

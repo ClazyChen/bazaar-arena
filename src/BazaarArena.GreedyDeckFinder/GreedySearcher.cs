@@ -61,6 +61,7 @@ public sealed class GreedySearcher
                 var names = _pool.NamesForSize(q);
                 foreach (var prev in prevTop)
                 {
+                    long tBucket0 = System.Diagnostics.Stopwatch.GetTimestamp();
                     var used = new HashSet<string>(prev.Representative.ItemNames, StringComparer.Ordinal);
                     var repJobs = new List<List<DeckRep>>();
                     foreach (var item in names)
@@ -68,6 +69,8 @@ public sealed class GreedySearcher
                         if (used.Contains(item)) continue;
                         repJobs.Add(BuildInsertionReps(prev.Representative, item));
                     }
+                    _perf.AddExpandBucketGlueTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tBucket0);
+
                     var tRep0 = System.Diagnostics.Stopwatch.GetTimestamp();
                     var reps = RunBatchedKnockoutMany(
                         repJobs,
@@ -75,6 +78,7 @@ public sealed class GreedySearcher
                         onBoCount: count => _perf.AddRepBoSeries(count));
                     _perf.AddRepTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tRep0);
 
+                    long tBucket1 = System.Diagnostics.Stopwatch.GetTimestamp();
                     foreach (var rep in reps)
                     {
                         var key = ComboKeyUtil.BuildComboKey(rep.ItemNames);
@@ -89,6 +93,7 @@ public sealed class GreedySearcher
                         else
                             list.Add(state);
                     }
+                    _perf.AddExpandBucketGlueTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tBucket1);
                 }
             }
 
@@ -102,7 +107,11 @@ public sealed class GreedySearcher
             var stage1 = SwissTournament.RunSwissAndPickTop(candidates, rounds, topKm, _evaluator, _rng, _perf);
             var stage2 = SwissTournament.RunRoundRobinAndPickTop(stage1, _config.TopK, _config.BestOf, _evaluator, _rng, _perf);
             if (s == maxSizeSum)
+            {
+                long tPlayoff = System.Diagnostics.Stopwatch.GetTimestamp();
                 stage2 = ResolveFinalTopTieByPlayoff(stage2);
+                _perf.AddPlayoffTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tPlayoff);
+            }
             topBySize[s] = stage2;
             onSizeCompleted?.Invoke(s, stage2);
             if (_config.Perf)
@@ -114,10 +123,20 @@ public sealed class GreedySearcher
 
     private List<CandidateState> ResolveFinalTopTieByPlayoff(List<CandidateState> stage2)
     {
-        if (stage2.Count <= 1) return stage2;
+        long tGlue = System.Diagnostics.Stopwatch.GetTimestamp();
+        if (stage2.Count <= 1)
+        {
+            _perf.AddPlayoffGlueTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tGlue);
+            return stage2;
+        }
+
         double topScore = stage2.Max(x => x.RoundRobinScore);
         var tied = stage2.Where(x => x.RoundRobinScore == topScore).ToList();
-        if (tied.Count <= 1) return stage2;
+        if (tied.Count <= 1)
+        {
+            _perf.AddPlayoffGlueTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tGlue);
+            return stage2;
+        }
 
         var playoffScore = new Dictionary<string, double>(StringComparer.Ordinal);
         foreach (var c in tied) playoffScore[c.ComboKey] = 0;
@@ -128,19 +147,25 @@ public sealed class GreedySearcher
             for (int j = i + 1; j < tied.Count; j++)
                 pairs.Add((i, j));
         }
+        _perf.AddPlayoffGlueTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tGlue);
 
         if (pairs.Count > 0)
         {
+            long tSel = System.Diagnostics.Stopwatch.GetTimestamp();
             var pairList = pairs.Select(p => (tied[p.i].Representative, tied[p.j].Representative)).ToList();
+            _perf.AddPlayoffGlueTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tSel);
             var points = _evaluator.PlaySeriesBatch(pairList, 20);
+            long tGlue2 = System.Diagnostics.Stopwatch.GetTimestamp();
             for (int idx = 0; idx < pairs.Count; idx++)
             {
                 var (i, j) = pairs[idx];
                 playoffScore[tied[i].ComboKey] += points[idx].A;
                 playoffScore[tied[j].ComboKey] += points[idx].B;
             }
+            _perf.AddPlayoffGlueTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tGlue2);
         }
 
+        long tGlue3 = System.Diagnostics.Stopwatch.GetTimestamp();
         var tiedOrder = tied
             .OrderByDescending(x => playoffScore[x.ComboKey])
             .ThenByDescending(x => x.SwissScore)
@@ -149,11 +174,14 @@ public sealed class GreedySearcher
 
         var tiedSet = new HashSet<string>(tied.Select(x => x.ComboKey), StringComparer.Ordinal);
         var others = stage2.Where(x => !tiedSet.Contains(x.ComboKey)).ToList();
-        return tiedOrder.Concat(others).ToList();
+        var merged = tiedOrder.Concat(others).ToList();
+        _perf.AddPlayoffGlueTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tGlue3);
+        return merged;
     }
 
     private List<CandidateState> ResolveConflictBuckets(Dictionary<string, List<CandidateState>> candidateBuckets)
     {
+        long tGlue = System.Diagnostics.Stopwatch.GetTimestamp();
         var singletons = new List<CandidateState>(candidateBuckets.Count);
         var multiBuckets = new List<List<CandidateState>>();
         foreach (var bucket in candidateBuckets.Values)
@@ -163,6 +191,7 @@ public sealed class GreedySearcher
             else
                 multiBuckets.Add(bucket);
         }
+        _perf.AddExpandBucketGlueTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tGlue);
 
         if (multiBuckets.Count == 0) return singletons;
         var winners = RunBatchedKnockoutMany(
@@ -190,6 +219,7 @@ public sealed class GreedySearcher
         Func<T, DeckRep> getRep,
         Action<int>? onBoCount = null)
     {
+        long tInit = System.Diagnostics.Stopwatch.GetTimestamp();
         var tournaments = new List<TournamentState<T>>(sources.Count);
         for (int i = 0; i < sources.Count; i++)
         {
@@ -197,9 +227,11 @@ public sealed class GreedySearcher
             ShuffleInPlace(alive);
             tournaments.Add(new TournamentState<T>(i, alive));
         }
+        _perf.AddKnockoutInitGlueTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tInit);
 
         while (true)
         {
+            long tWave0 = System.Diagnostics.Stopwatch.GetTimestamp();
             var pairs = new List<(DeckRep a, DeckRep b)>();
             var pairMembers = new List<(int tIndex, T a, T b)>();
             int aliveTournamentCount = 0;
@@ -215,12 +247,14 @@ public sealed class GreedySearcher
                     pairs.Add((getRep(a), getRep(b)));
                 }
             }
+            _perf.AddKnockoutWaveGlueTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tWave0);
 
             if (aliveTournamentCount == 0) break;
             if (pairs.Count > 0)
             {
                 onBoCount?.Invoke(pairs.Count);
                 var winners = _evaluator.PlayBoNBatch(pairs);
+                long tWave1 = System.Diagnostics.Stopwatch.GetTimestamp();
                 var nextByTournament = new List<T>[tournaments.Count];
                 for (int i = 0; i < nextByTournament.Length; i++)
                     nextByTournament[i] = [];
@@ -236,6 +270,7 @@ public sealed class GreedySearcher
                         nextByTournament[t.Index].Add(t.Alive[^1]);
                     t.Alive = nextByTournament[t.Index];
                 }
+                _perf.AddKnockoutWaveGlueTicks(System.Diagnostics.Stopwatch.GetTimestamp() - tWave1);
             }
         }
 

@@ -54,3 +54,6 @@ __pycache__/
 
 # Greedy 批量脚本临时输出目录
 **/.tmp_greedy_vanessa_top1*/
+
+# BenchmarkDotNet 本地产物
+BenchmarkDotNet.Artifacts/

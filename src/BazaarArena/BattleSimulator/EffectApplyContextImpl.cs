@@ -5,21 +5,56 @@ namespace BazaarArena.BattleSimulator;
 /// <summary>效果应用上下文：实现 IEffectApplyContext，供 AbilityDefinition.Apply 委托使用。</summary>
 internal sealed class EffectApplyContextImpl : IEffectApplyContext
 {
-    public required BattleSide Side { get; init; }
-    public required BattleSide Opp { get; init; }
-    public required BattleItemState Item { get; init; }
-    public int Value { get; init; }
-    public int CritMultiplier { get; init; }
-    public bool IsCrit { get; init; }
-    public int TimeMs { get; init; }
-    public required IBattleLogSink LogSink { get; init; }
-    public List<BattleItemState>? ChargeInducedCastQueue { get; init; }
+    public BattleSide Side { get; private set; } = null!;
+    public BattleSide Opp { get; private set; } = null!;
+    public BattleItemState Item { get; private set; } = null!;
+    public int Value { get; private set; }
+    public int CritMultiplier { get; private set; }
+    public bool IsCrit { get; private set; }
+    public int TimeMs { get; private set; }
+    public IBattleLogSink LogSink { get; private set; } = null!;
+    public List<BattleItemState>? ChargeInducedCastQueue { get; private set; }
     /// <summary>效果施加触发的触发器待处理队列（由模拟器传入）。冻结/减速/摧毁时追加 (TriggerName, SideIndex, ItemIndex)，模拟器在 Apply 后统一 InvokeTrigger 并处理 Destroyed。</summary>
-    public List<(string TriggerName, int SideIndex, int ItemIndex)>? EffectAppliedTriggerQueue { get; init; }
+    public List<(string TriggerName, int SideIndex, int ItemIndex)>? EffectAppliedTriggerQueue { get; private set; }
 
-    public string? EffectLogName { get; init; }
-    public string? TargetCountKey { get; init; }
-    public BattleItemState? InvokeTargetItem { get; init; }
+    public string? EffectLogName { get; private set; }
+    public string? TargetCountKey { get; private set; }
+    public BattleItemState? InvokeTargetItem { get; private set; }
+
+    public Condition? TargetCondition { get; private set; }
+
+    /// <summary>由 <see cref="BattleSimulatorThreadScratch"/> 按线程嵌套深度复用实例时写入。</summary>
+    internal void Rebind(
+        BattleSide side,
+        BattleSide opp,
+        BattleItemState item,
+        int value,
+        int critMultiplier,
+        bool isCrit,
+        int timeMs,
+        IBattleLogSink logSink,
+        List<BattleItemState>? chargeInducedCastQueue,
+        List<(string TriggerName, int SideIndex, int ItemIndex)> effectAppliedTriggerQueue,
+        Condition? targetCondition,
+        string? effectLogName,
+        string? targetCountKey,
+        BattleItemState? invokeTargetItem)
+    {
+        Side = side;
+        Opp = opp;
+        Item = item;
+        Value = value;
+        CritMultiplier = critMultiplier;
+        IsCrit = isCrit;
+        TimeMs = timeMs;
+        LogSink = logSink;
+        ChargeInducedCastQueue = chargeInducedCastQueue;
+        EffectAppliedTriggerQueue = effectAppliedTriggerQueue;
+        TargetCondition = targetCondition;
+        EffectLogName = effectLogName;
+        TargetCountKey = targetCountKey;
+        InvokeTargetItem = invokeTargetItem;
+    }
 
     public int GetResolvedValue(string key, bool applyCritMultiplier = false, int defaultValue = 0)
     {
@@ -27,8 +62,6 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         int baseValue = Item.Template.GetInt(key, Item.Tier, defaultValue, auraContext);
         return applyCritMultiplier ? baseValue * CritMultiplier : baseValue;
     }
-
-    public Condition? TargetCondition { get; init; }
 
     public int ApplyDamageToOpp(int value, bool isBurn) => BattleSideDamage.ApplyDamageToSide(Opp, value, isBurn);
     public void HealCaster(int amount) { Side.Hp = Math.Min(Side.MaxHp, Side.Hp + amount); }
@@ -388,7 +421,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
 
     public void ReportTriggerCause(string triggerName) =>
         EffectAppliedTriggerQueue?.Add((triggerName, Side.SideIndex, Item.ItemIndex));
-
+      
     public void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false) =>
         LogSink.OnEffect(Item, Item.Template.Name, effectName, value, TimeMs, showCrit, extraSuffix);
 
