@@ -1,64 +1,15 @@
-using BazaarArena.Core;
+using BazaarArena.BattleSimulator;
 
-namespace BazaarArena.BattleSimulator;
+namespace BazaarArena.Core;
 
-/// <summary>效果应用上下文：实现 IEffectApplyContext，供 AbilityDefinition.Apply 委托使用。</summary>
-internal sealed class EffectApplyContextImpl : IEffectApplyContext
+public sealed partial class BattleContext
 {
-    public BattleSide Side { get; private set; } = null!;
-    public BattleSide Opp { get; private set; } = null!;
-    public BattleItemState Item { get; private set; } = null!;
-    public int Value { get; private set; }
-    public int CritMultiplier { get; private set; }
-    public bool IsCrit { get; private set; }
-    public int TimeMs { get; private set; }
-    public IBattleLogSink LogSink { get; private set; } = null!;
-    public List<BattleItemState>? ChargeInducedCastQueue { get; private set; }
-    /// <summary>效果施加触发的触发器待处理队列（由模拟器传入）。冻结/减速/摧毁时追加 (TriggerName, SideIndex, ItemIndex)，模拟器在 Apply 后统一 InvokeTrigger 并处理 Destroyed。</summary>
-    public List<(int TriggerName, int SideIndex, int ItemIndex)>? EffectAppliedTriggerQueue { get; private set; }
-
-    public string? EffectLogName { get; private set; }
-    public int? TargetCountKey { get; private set; }
-    public BattleItemState? InvokeTargetItem { get; private set; }
-
-    public Formula? TargetCondition { get; private set; }
-
-    /// <summary>由 <see cref="BattleSimulatorThreadScratch"/> 按线程嵌套深度复用实例时写入。</summary>
-    internal void Rebind(
-        BattleSide side,
-        BattleSide opp,
-        BattleItemState item,
-        int value,
-        int critMultiplier,
-        bool isCrit,
-        int timeMs,
-        IBattleLogSink logSink,
-        List<BattleItemState>? chargeInducedCastQueue,
-        List<(int TriggerName, int SideIndex, int ItemIndex)> effectAppliedTriggerQueue,
-        Formula? targetCondition,
-        string? effectLogName,
-        int? targetCountKey,
-        BattleItemState? invokeTargetItem)
-    {
-        Side = side;
-        Opp = opp;
-        Item = item;
-        Value = value;
-        CritMultiplier = critMultiplier;
-        IsCrit = isCrit;
-        TimeMs = timeMs;
-        LogSink = logSink;
-        ChargeInducedCastQueue = chargeInducedCastQueue;
-        EffectAppliedTriggerQueue = effectAppliedTriggerQueue;
-        TargetCondition = targetCondition;
-        EffectLogName = effectLogName;
-        TargetCountKey = targetCountKey;
-        InvokeTargetItem = invokeTargetItem;
-    }
+    public BattleItemState CasterItem => (BattleItemState)Caster;
+    public BattleItemState? InvokeTargetItem => InvokeTarget as BattleItemState;
 
     public int GetResolvedValue(int key, bool applyCritMultiplier = false, int defaultValue = 0)
     {
-        int baseValue = Item.GetAttribute(key);
+        int baseValue = CasterItem.GetAttribute(key);
         return applyCritMultiplier ? baseValue * CritMultiplier : baseValue;
     }
 
@@ -69,7 +20,6 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public void AddPoisonToCaster(int value) => Side.Poison += value;
     public void AddShieldToCaster(int value) => Side.Shield += value;
 
-    /// <summary>实际加血 = min(请求量, 当前可接受量)；清除灼烧/剧毒按请求治疗量的 5%。</summary>
     public int HealCasterWithDebuffClear(int requestedHeal)
     {
         int room = Math.Max(0, Side.MaxHp - Side.Hp);
@@ -87,31 +37,33 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     public void ChargeCasterItem(int chargeMs, out bool fullAndShouldCast)
     {
         fullAndShouldCast = false;
-        int cooldownMs = Side.GetItemInt(Item.ItemIndex, "CooldownMs", 0);
+        int cooldownMs = Side.GetItemInt(CasterItem.ItemIndex, "CooldownMs", 0);
         if (cooldownMs <= 0) return;
-        int newElapsed = Math.Min(cooldownMs, Item.CooldownElapsedMs + chargeMs);
-        int added = newElapsed - Item.CooldownElapsedMs;
-        Item.CooldownElapsedMs = newElapsed;
+        int newElapsed = Math.Min(cooldownMs, CasterItem.CooldownElapsedMs + chargeMs);
+        int added = newElapsed - CasterItem.CooldownElapsedMs;
+        CasterItem.CooldownElapsedMs = newElapsed;
         if (added > 0)
-            LogSink.OnEffect(Item, Item.Template.Name, "充能", added, TimeMs, isCrit: false);
-        if (Item.CooldownElapsedMs >= cooldownMs && ChargeInducedCastQueue != null)
+            LogSink.OnEffect(CasterItem, CasterItem.Template.Name, "充能", added, TimeMs, isCrit: false);
+        if (CasterItem.CooldownElapsedMs >= cooldownMs && ChargeInducedCastQueue != null)
         {
-            int ammoCap = Side.GetItemInt(Item.ItemIndex, "AmmoCap", 0);
-            if (ammoCap <= 0 || Item.AmmoRemaining > 0)
-                ChargeInducedCastQueue.Add(Item);
+            int ammoCap = Side.GetItemInt(CasterItem.ItemIndex, "AmmoCap", 0);
+            if (ammoCap <= 0 || CasterItem.AmmoRemaining > 0)
+                ChargeInducedCastQueue.Add(CasterItem);
             fullAndShouldCast = true;
-            Item.CooldownElapsedMs = 0;
+            CasterItem.CooldownElapsedMs = 0;
         }
     }
 
-    /// <summary>从 fromSide 中选取至多 targetCount 个满足 condition 的目标（Source=施放者）；不放回随机选取。</summary>
     private BattleContext BuildContext(BattleItemState item) => new()
     {
-        BattleState = new BattleState(),
+        BattleState = BattleState,
+        Side = Side,
+        Opp = Opp,
         Item = item,
-        Caster = Item,
-        Source = Item,
+        Caster = CasterItem,
+        Source = CasterItem,
         InvokeTarget = InvokeTargetItem,
+        TimeMs = TimeMs,
     };
 
     private List<int> GetTargetIndices(BattleSide fromSide, int targetCount, Formula? condition)
@@ -134,17 +86,15 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         return pool.Take(take).ToList();
     }
 
-    /// <summary>从双方所有物品中选取至多 targetCount 个满足 condition 的目标（Source=施放者）；不放回随机选取。评估条件时传入 InvokeTargetItem 供 SameAsInvokeTarget 使用。</summary>
     private List<(BattleSide side, int index)> GetTargetsFromBothSides(int targetCount, Formula? condition)
     {
         if (condition == null) return [];
         var pool = new List<(BattleSide side, int index)>();
-        foreach (var (fromSide, enemySide) in new[] { (Side, Opp), (Opp, Side) })
+        foreach (var fromSide in new[] { Side, Opp })
         {
             for (int i = 0; i < fromSide.Items.Count; i++)
             {
                 var it = fromSide.Items[i];
-                _ = enemySide;
                 if (condition.Evaluate(BuildContext(it)) == 0) continue;
                 pool.Add((fromSide, i));
             }
@@ -159,7 +109,6 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         return pool.Take(take).ToList();
     }
 
-    /// <summary>通用「按条件选目标→逐目标应用→记日志」；logValue 为 null 时记目标数。effectTriggerName 非空时将本次目标写入 EffectAppliedTriggerQueue 供模拟器统一触发。</summary>
     private void ApplyToTargets(BattleSide fromSide, int targetCount, Formula? condition, string effectName, int? logValue, Func<BattleItemState, int, string> perTarget, int? effectTriggerName = null)
     {
         var indices = GetTargetIndices(fromSide, targetCount, condition);
@@ -171,7 +120,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             targetNames.Add(perTarget(target, i));
         }
         string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
-        LogSink.OnEffect(Item, Item.Template.Name, effectName, logValue ?? indices.Count, TimeMs, isCrit: false, extraSuffix);
+        LogSink.OnEffect(CasterItem, CasterItem.Template.Name, effectName, logValue ?? indices.Count, TimeMs, isCrit: false, extraSuffix);
         if (effectTriggerName != null && EffectAppliedTriggerQueue != null)
         {
             foreach (int i in indices)
@@ -179,7 +128,6 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }
     }
 
-    /// <summary>从双方选目标后逐目标应用并记日志；perTarget 返回目标名称并负责施加效果；effectTriggerName 非空时写入 EffectAppliedTriggerQueue。</summary>
     private void ApplyToTargetsBothSides(int targetCount, Formula? condition, string effectName, int? logValue, Func<BattleSide, int, string> perTarget, int? effectTriggerName = null)
     {
         var targets = GetTargetsFromBothSides(targetCount, condition);
@@ -188,7 +136,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         foreach (var (side, index) in targets)
             targetNames.Add(perTarget(side, index));
         string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
-        LogSink.OnEffect(Item, Item.Template.Name, effectName, logValue ?? targets.Count, TimeMs, isCrit: false, extraSuffix);
+        LogSink.OnEffect(CasterItem, CasterItem.Template.Name, effectName, logValue ?? targets.Count, TimeMs, isCrit: false, extraSuffix);
         if (effectTriggerName != null && EffectAppliedTriggerQueue != null)
         {
             foreach (var (side, index) in targets)
@@ -196,7 +144,6 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         }
     }
 
-    /// <summary>为指定阵营、下标的物品充能 chargeMs；若为己方且满则加入施放队列。返回该物品名称。</summary>
     private string ChargeItemAt(BattleSide side, int itemIndex, int chargeMs)
     {
         var target = side.Items[itemIndex];
@@ -269,7 +216,6 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             int cap = t.GetAttribute(Key.AmmoCap);
             int add = Math.Min(amount, Math.Max(0, cap - t.AmmoRemaining));
             t.AmmoRemaining += add;
-            // 装填后若充能已满且现有子弹，与充能满时一致：加入施放队列并清零已过冷却
             if (side == Side && ChargeInducedCastQueue != null)
             {
                 int cooldownMs = side.GetItemInt(index, "CooldownMs", 0);
@@ -290,12 +236,10 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         ApplyToTargets(Side, targetCount, condition, "修复", null, (t, _) => { t.Destroyed = false; t.CooldownElapsedMs = 0; return t.Template.Name; }, null);
     }
 
-    /// <summary>对一侧物品按条件筛选并逐项执行 perItem；收集返回的名称并统一记一条日志。perItem 返回 null 表示未施加。</summary>
-    private void ApplyToSideWithCondition(BattleSide fromSide, BattleSide enemySide, Formula? targetCondition, string logEffectName, int logValue, Func<BattleItemState, int, string?> perItem)
+    private void ApplyToSideWithCondition(BattleSide fromSide, Formula? targetCondition, string logEffectName, int logValue, Func<BattleItemState, int, string?> perItem)
     {
         if (targetCondition == null) return;
         var targetNames = new List<string>();
-        _ = enemySide;
         for (int i = 0; i < fromSide.Items.Count; i++)
         {
             var wi = fromSide.Items[i];
@@ -333,10 +277,10 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
                 else { wi.SetAttribute(attributeKey, wi.GetAttribute(attributeKey) + value); targetNames.Add(wi.Template.Name); }
             }
             if (targetNames.Count > 0 && !string.IsNullOrEmpty(logName))
-                LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
+                LogSink.OnEffect(CasterItem, CasterItem.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
             return;
         }
-        ApplyToSideWithCondition(Side, Opp, cond, logName, value, (wi, _) =>
+        ApplyToSideWithCondition(Side, cond, logName, value, (wi, _) =>
         {
             if (attributeKey == Key.Damage) { wi.SetAttribute(Key.Damage, wi.GetAttribute(Key.Damage) + value); return wi.Template.Name; }
             if (attributeKey == Key.Poison) { wi.SetAttribute(Key.Poison, wi.GetAttribute(Key.Poison) + value); return wi.Template.Name; }
@@ -351,7 +295,7 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
     {
         if (targetCondition == null) return;
         string logName = EffectLogName ?? (attributeKey == Key.InFlight && value == 0 ? "结束飞行" : AttributeLogNames.Get(attributeKey) + "变更");
-        ApplyToSideWithCondition(Side, Opp, targetCondition, logName, 0, (wi, _) =>
+        ApplyToSideWithCondition(Side, targetCondition, logName, 0, (wi, _) =>
         {
             if (attributeKey == Key.InFlight) { wi.InFlight = value != 0; return wi.Template.Name; }
             wi.SetAttribute(attributeKey, value);
@@ -359,13 +303,12 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
         });
     }
 
-    /// <summary>对满足 targetCondition 的目标（从双方选取）减少指定属性（不低于 0）。目标数由 maxTargetCount 限制，0 表示不限制。隐性要求目标未摧毁（与 Freeze 等一致）。</summary>
     public void ReduceAttributeToSide(int attributeKey, int value, Formula? targetCondition, int maxTargetCount = 0, string? effectLogName = null)
     {
         if (value <= 0 || targetCondition == null) return;
         var cond = (targetCondition ?? Condition.DifferentSide) & Condition.NotDestroyed;
         if (attributeKey == Key.CritRatePercent)
-            cond = cond & Condition.CanCrit;
+            cond &= Condition.CanCrit;
         string logName = effectLogName ?? (AttributeLogNames.Get(attributeKey) + "降低");
         int take = maxTargetCount > 0 ? maxTargetCount : 100;
         var targets = GetTargetsFromBothSides(take, cond);
@@ -384,7 +327,6 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             wi.SetAttribute(attributeKey, newVal);
             targetNames.Add(wi.Template.Name);
 
-            // 冷却缩短后若充能已满，与充能效果一致：加入施放队列并清零已过冷却
             if (attributeKey == Key.CooldownMs && side == Side && wi.CooldownElapsedMs >= newVal && ChargeInducedCastQueue != null)
             {
                 int ammoCap = side.GetItemInt(index, "AmmoCap", 0);
@@ -394,16 +336,16 @@ internal sealed class EffectApplyContextImpl : IEffectApplyContext
             }
         }
         if (targetNames.Count > 0 && !string.IsNullOrEmpty(logName))
-            LogSink.OnEffect(Item, Item.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
+            LogSink.OnEffect(CasterItem, CasterItem.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
     }
 
     public void ReportTriggerCause(int triggerName) =>
-        EffectAppliedTriggerQueue?.Add((triggerName, Side.SideIndex, Item.ItemIndex));
-      
-    public void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false) =>
-        LogSink.OnEffect(Item, Item.Template.Name, effectName, value, TimeMs, showCrit, extraSuffix);
+        EffectAppliedTriggerQueue?.Add((triggerName, Side.SideIndex, CasterItem.ItemIndex));
 
-    public void SetCasterInFlight(bool inFlight) => Item.InFlight = inFlight;
+    public void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false) =>
+        LogSink.OnEffect(CasterItem, CasterItem.Template.Name, effectName, value, TimeMs, showCrit, extraSuffix);
+
+    public void SetCasterInFlight(bool inFlight) => CasterItem.InFlight = inFlight;
 
     public void ApplyDestroy(int targetCount, Formula? targetCondition = null)
     {

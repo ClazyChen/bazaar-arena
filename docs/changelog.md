@@ -1,8 +1,18 @@
 # 变更记录
 
+## BattleContext 统一效果应用、光环接口收敛与文档规则同步（2026-03-24）
+
+- **移除**：**`IEffectApplyContext`**、**`Core/IEffectApplyContext.cs`**、**`Core/Effect.cs`**、**`BattleSimulator/EffectApplyContextImpl.cs`**、**`IAuraContext`**、**`Core/TimeUtil.cs`**（无引用）。
+- **效果应用**：**`AbilityDefinition.Apply`** 为 **`Action<BattleContext>?`**；**`ExecuteOneEffect`** 通过 **`BattleSimulatorThreadScratch`** 复用 **`BattleContext` + `BattleState`**，填充 **Side0/Side1/TimeMs** 后 **`ctx.Rebind`**，**`ability.Apply(ctx)`**。**`Core/Apply.cs`** 内委托**仅使用传入的 `ctx`**。**`Core/BattleContext.EffectApply.cs`**（**`partial BattleContext`**）承载 **GetResolvedValue**、多目标效果、**EffectAppliedTriggerQueue** 上报等。
+- **光环**：**`BattleSimulator/BattleAuraModifiers.cs`** 提供静态 **`Accumulate`**；**`ItemTemplate.GetInt` 无 aura 重载**时，**`BattleSide.GetItemInt`** 尚未合并光环（文档已标明接回路径）。
+- **其它**：**`AttributeLogNames`** 迁至 **`Core/AttributeLogNames.cs`**；**`ItemState`** 上能力 **250ms** 节流改为 **`int[Abilities.Count]`**（**`int.MinValue`** 表示未触发）。
+- **文档与规则**：**`docs/implementation-notes.md`**、**`docs/simulator-rebuild-phase1-execution.md`**、**`.cursor/rules/battle-simulator-ability-queue.mdc`**、**`.cursor/rules/project-conventions.mdc`** 同步上述约定。
+
+---
+
 ## 类型 Tag 与机制 Tag 统一（历史：曾新增协同先验数据，现已移除）
 
-- **EnsureTypeTags 改为按 Apply 打标**：类型 Tag（Damage/Burn/Poison/Heal/Shield/Regen）不再根据模板数值属性，改为根据 **Ability.Apply** 与 `Effect.*Apply` 对应关系打标；SameAsSource 光环仍按 AttributeName 补六类 Tag。
+- **EnsureTypeTags 改为按 AbilityType 打标**：类型 **DerivedTag**（Damage/Burn/Poison/Heal/Shield/Regen）由 **`AbilityTypeToTypeTag(a.AbilityType)`** 映射；SameAsSource 光环仍按 **Attribute** 补六类 Tag。
 - **Tag.Crit / Tag.Cooldown**：具备六类可暴击 Tag 之一且存在 UseItem+UseSelf+ApplyCritMultiplier 能力时打 Tag.Crit；任意档位 CooldownMs>0 时打 Tag.Cooldown。
 - **机制 Tag**：按 Apply 打 Tag.Charge、Freeze、Slow、Haste、Reload、Repair、Destroy、StopFlying；StartFlying 通过 EffectLogName=="开始飞行" 识别。AddAttribute/ReduceAttribute、GainGold 不参与自动打标。
 - **协同先验（已移除，见 implementation-notes 说明）**：历史上 ItemTemplate 曾含 **UpstreamRequirements**、**DownstreamRequirements**、**NeighborPreference** 与 **SynergyClause**；现已删除字段、Core 类型、物品声明。下列路径曾为协同先验配套内容，**当前仓库中已不存在**，本changelog 仅作历史索引：`docs/vanessa-synergy-prior.txt`、`.cursor/rules/synergy-prior.mdc`。
@@ -44,7 +54,7 @@
 ## 弹药消耗触发器、InvokeTarget 单目标施加、能力队列节流与冷却缩短联动
 
 - **Trigger.Ammo 与 Condition.AmmoDepleted**：新增 **Trigger.Ammo**（「弹药消耗」），在步骤 7 每次 `AmmoRemaining--` 后调用；默认 Condition 为 SameSide。「仅耗尽当次」用 **additionalCondition: Condition.AmmoDepleted**（Item 满足 AmmoCap>0 且 AmmoRemaining==0）。新增 **Condition.HasAmmoCap** 用于「弹药物品」筛选。**左侧**仅相邻用 **LeftOfSource**，所有严格左侧用 **StrictlyLeftOfSource**（同理右侧）。生体融合臂：Trigger.Ammo + AmmoDepleted 造成伤害；左侧相邻弹药物品光环 +100% 暴击率、+1 最大弹药。
-- **InvokeTarget 与 SameAsInvokeTarget**：能力由触发器指向的**单一目标**触发时（如月光宝珠「敌方加速时令其减速」、Freeze/Slow 每目标一次），**AbilityQueueEntry** 可带 **InvokeTargetSideIndex/InvokeTargetItemIndex**，**不参与 PendingCount 合并**；**IEffectApplyContext.InvokeTargetItem** 非空时效果对该物品施加。**ConditionContext** 增加 **InvokeTargetItem**，**Condition.SameAsInvokeTarget** 表示候选目标与触发器指向目标相同。Burn/Poison/Shield 的 queue 存施加者，InvokeTargetItem 传 null。
+- **InvokeTarget 与 SameAsInvokeTarget**：能力由触发器指向的**单一目标**触发时（如月光宝珠「敌方加速时令其减速」、Freeze/Slow 每目标一次），**AbilityQueueEntry** 可带 **InvokeTargetSideIndex/InvokeTargetItemIndex**，**不参与 PendingCount 合并**；**`BattleContext.InvokeTargetItem`** 非空时效果对该物品施加。**ConditionContext** 增加 **InvokeTargetItem**，**Condition.SameAsInvokeTarget** 表示候选目标与触发器指向目标相同。Burn/Poison/Shield 的 queue 存施加者，InvokeTargetItem 传 null。
 - **250ms 节流状态挂在物品上**：**AbilityQueueEntry** 移除 LastTriggerMs；节流状态存于物品（**GetLastTriggerMs**/ **SetLastTriggerMs**），步骤 8 用 `item.GetLastTriggerMs(entry.AbilityIndex)` 判断间隔。条目合并时仅合并同 (Owner, AbilityIndex) 且无 InvokeTarget 的条目。
 - **冷却缩短与充能联动**：**ReduceAttribute(Key.CooldownMs)** 目标隐性 NotDestroyed；冷却下限 1000ms。缩短后若目标已过冷却已满，加入 ChargeInducedCastQueue 并清零 CooldownElapsedMs（与充能满一致）。护盾施加上报 **Trigger.Shield**；**Trigger.Haste** 纳入 PendingCount 与 EnsureTriggerCondition。加速效果日志用 **EffectLogName**，写入 EffectAppliedTriggerQueue 时用 Trigger.Haste。
 - **其他**：破冰尖镐解除冻结目标条件加 **IsFrozen**；AddAttribute/ReduceAttribute 目标隐性未摧毁；ItemTemplate 冷却光环下限 1 秒；**Key.AmmoRemaining**；Tag.Ray；AttributeLogNames/EffectLogFormat 支持冷却缩短、解除冻结；TextBoxBattleLogSink 不再输出施放行。中型银/金物品（仿生手臂、时光指针、祖特笛、虚空射线、生体融合臂）、大型银（废品场弹射机、巨型冰棒）等新增或注册。

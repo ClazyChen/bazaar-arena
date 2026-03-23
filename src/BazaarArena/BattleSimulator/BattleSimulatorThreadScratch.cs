@@ -12,7 +12,8 @@ internal static class BattleSimulatorThreadScratch
 
     [ThreadStatic] private static int s_execDepth;
     [ThreadStatic] private static List<(int TriggerName, int SideIndex, int ItemIndex)>?[]? s_execTriggerLists;
-    [ThreadStatic] private static EffectApplyContextImpl?[]? s_execContexts;
+    [ThreadStatic] private static Core.BattleContext?[]? s_execContexts;
+    [ThreadStatic] private static BattleState?[]? s_execBattleStates;
 
     internal static void BeginInvokeTrigger()
     {
@@ -34,18 +35,22 @@ internal static class BattleSimulatorThreadScratch
 
     internal static void BeginExecuteOneEffect(
         out List<(int TriggerName, int SideIndex, int ItemIndex)> triggerList,
-        out EffectApplyContextImpl ctx)
+        out Core.BattleContext ctx,
+        out BattleState battleState)
     {
         s_execTriggerLists ??= new List<(int, int, int)>[MaxNesting];
-        s_execContexts ??= new EffectApplyContextImpl[MaxNesting];
+        s_execContexts ??= new Core.BattleContext[MaxNesting];
+        s_execBattleStates ??= new BattleState[MaxNesting];
         if (s_execDepth >= MaxNesting)
             throw new InvalidOperationException("ExecuteOneEffect 嵌套超过上限，请检查效果委托是否意外同步递归。");
         int d = s_execDepth++;
         s_execTriggerLists[d] ??= new List<(int, int, int)>(12);
         s_execTriggerLists[d]!.Clear();
         triggerList = s_execTriggerLists[d]!;
-        s_execContexts[d] ??= new EffectApplyContextImpl();
+        s_execContexts[d] ??= new Core.BattleContext();
+        s_execBattleStates[d] ??= new BattleState();
         ctx = s_execContexts[d]!;
+        battleState = s_execBattleStates[d]!;
     }
 
     internal static void EndExecuteOneEffect()
@@ -54,13 +59,4 @@ internal static class BattleSimulatorThreadScratch
         s_execDepth--;
     }
 
-    internal static Core.IEffectApplyContext CurrentEffectApplyContextOrThrow()
-    {
-        if (s_execDepth <= 0 || s_execContexts == null)
-            throw new InvalidOperationException("当前不在效果应用上下文内，无法执行 Apply。");
-        var ctx = s_execContexts[s_execDepth - 1];
-        if (ctx == null)
-            throw new InvalidOperationException("效果应用上下文未初始化。");
-        return ctx;
-    }
 }

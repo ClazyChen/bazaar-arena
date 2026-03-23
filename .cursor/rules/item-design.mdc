@@ -1,7 +1,7 @@
 ---
 description: 物品与效果设计经验：触发器、数值、效果委托、光环、Desc 与战斗内修改
 alwaysApply: false
-globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/ItemTemplate.cs","**/Core/Aura*.cs","**/Core/IEffectApplyContext.cs","**/Core/Condition.cs","**/Core/Formula.cs","**/Core/Key.cs"
+globs: "**/ItemDatabase/**","**/Core/BattleContext*.cs","**/Core/Apply.cs","**/Core/Ability*.cs","**/Core/ItemTemplate.cs","**/Core/Aura*.cs","**/Core/AttributeLogNames.cs","**/Core/Condition.cs","**/Core/Formula.cs","**/Core/Key.cs"
 ---
 
 # 物品设计经验
@@ -10,7 +10,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 
 ### 基础与注册
 
-- **基础字段**：`Name`、`Desc`、`Tags`。Tags 使用 `Tag.Weapon`、`Tag.Friend`、`Tag.Tool`、`Tag.Apparel`、`Tag.Food`、`Tag.Tech`、`Tag.Property`、`Tag.Vehicle`、`Tag.Relic`、`Tag.Dragon`、`Tag.Drone`、`Tag.Toy` 等。**尺寸 Tag**（`Tag.Small`、`Tag.Medium`、`Tag.Large`）与**类型/机制 Tag**（Damage、Burn、Poison、Heal、Shield、Regen、Charge、Freeze、Slow、Haste、Reload、Repair、Destroy、StartFlying、StopFlying、Crit、Cooldown、Ammo）由 **Register** 内 **EnsureTypeTags** 按 Ability.Apply 与光环等自动添加，无需手写。
+- **基础字段**：`Name`、`Desc`、`Tags`。Tags 使用 `Tag.Weapon`、`Tag.Friend`、`Tag.Tool`、`Tag.Apparel`、`Tag.Food`、`Tag.Tech`、`Tag.Property`、`Tag.Vehicle`、`Tag.Relic`、`Tag.Dragon`、`Tag.Drone`、`Tag.Toy` 等。**尺寸 Tag**（`Tag.Small`、`Tag.Medium`、`Tag.Large`）与**类型/机制 DerivedTag**（Damage、Burn、Poison、Heal、Shield、Regen、Charge、Freeze、Slow、Haste、Reload、Repair、Destroy、StartFlying、StopFlying、Crit、Cooldown、Ammo）由 **Register** 内 **EnsureTypeTags** 按 **AbilityType** 与 SameAsSource 光环等自动添加，无需手写。
 - **MinTier、Size**：**不在物品工厂中设置**；在 **RegisterAll** 中通过 `db.DefaultSize`、`db.DefaultMinTier` 按批次设置，`Register` 时写入模板。
 
 ### 数值与时间
@@ -32,7 +32,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
   - **SourceCondition**：光环提供者需满足的条件（如 `Condition.InFlight`、`Condition.OnlyCompanion`），评估时 Item=Source=提供者。
   - **Value**：`Formula?`，由 `Formula.Evaluate` 计算。如 `Formula.Source(Key.Custom_0)`、`Formula.Opp(BattleSide.KeyPoison)`、`Formula.Source(Key.Custom_0) * Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Friend))`。`FixedValueKey` / `FixedValueFormula` / `PercentValueKey` 已废弃，统一为 **Value + Percent**。
   - **Percent**：`bool`，默认 false。为 true 时公式结果为百分比加成（+N% 加算），如利爪暴击伤害 +100%。
-- **公式**：使用 **Formula.Source(key)**、**Formula.Side(key)**、**Formula.Opp(key)**、**Formula.Count(condition)** 与 `+`/`-`/`*`、一元负号、`int * Formula` 组合；可用 **RatioUtil.PercentFloor(Formula, percent)**。战斗内读属性走 **BattleSide.GetItemInt(itemIndex, key, default)**，统一带光环上下文。
+- **公式**：使用 **Formula.Source(key)**、**Formula.Side(key)**、**Formula.Opp(key)**、**Formula.Count(condition)** 与 `+`/`-`/`*`、一元负号、`int * Formula` 组合；可用 **RatioUtil.PercentFloor(Formula, percent)**。战斗内读属性优先 **BattleSide.GetItemInt(itemIndex, key, default)**；**当前** **`GetItemInt`** 尚未合并 **`BattleAuraModifiers.Accumulate`**，接回前勿假设读数已含光环（见 **implementation-notes**「光环（Aura）与属性读取」）。
 
 ### 可复写属性与其它
 
@@ -59,7 +59,7 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 - **无参属性**（`Core/Ability.cs`）：**Damage**、**Shield**、**Heal**、**Burn**、**Poison**、**Charge**、**Haste**、**Slow**、**Freeze**、**StartFlying**、**StopFlying**、**Destroy**、**Repair**。返回带默认值的 `AbilityDefinition`。
 - **方法**：**AddAttribute(attributeName, amountKey?)**、**ReduceAttribute(attributeName, amountKey?)**，需指定属性 key（如 **Key.Damage**、**Key.Shield**）。
 - **数值/属性 key**：一律用 **Key.***（`Core/Key.cs`），如 Key.Damage、Key.Custom_0、Key.CooldownMs、Key.InFlight 等。
-- **定制**：统一用 **Ability.xxx.Override(...)**，参数顺序见 **ability-override-format.mdc**。多效果或特殊 Condition 可用 `new AbilityDefinition { ..., Apply = Effect.XXXApply, ... }`，但优先用工厂 + Override。
+- **定制**：统一用 **Ability.xxx.Override(...)**，参数顺序见 **ability-override-format.mdc**。多效果或特殊 Condition 可用 `new AbilityDefinition { ..., Apply = Apply.XXX, ... }`（**`Core/Apply.cs`** 内 **`Action<BattleContext>`**），但优先用工厂 + Override。
 
 ### 飞行（InFlight）
 
@@ -70,16 +70,16 @@ globs: "**/ItemDatabase/**","**/Core/Effect*.cs","**/Core/Ability*.cs","**/Core/
 - **Condition**：引起触发的物品（Item）需满足；UseItem 默认 SameAsSource。
 - **TargetCondition**：效果施加给谁；AddAttribute 默认 SameSide，ReduceAttribute 默认 DifferentSide。
 - **「此物品获得 X」**：TargetCondition 须为 **SameAsSource**，Condition 描述谁触发（如 AdjacentToSource）。
-- **InvokeTargetCondition**：触发器指向的物品（如被摧毁、被减速）需满足；牵引光束「被毁物品为大型或飞行」用 **Condition.WithTag(Tag.Large) | Condition.InFlight**。
+- **触发器指向目标**：在效果层用 **`additionalTargetCondition: Condition.SameAsInvokeTarget`** 等表达（**`AbilityDefinition.Override` 已无 `invokeTargetCondition` 参数**）。牵引光束「被毁物品为大型或飞行」用 **Condition.WithTag(Tag.Large) | Condition.InFlight**。
 
 ---
 
 ## 效果与数值
 
-- **Apply**：`AbilityDefinition.Apply` 为 `Action<IEffectApplyContext>`；预定义在 **Core/Effect.cs**。只读效果用 `ctx.GetResolvedValue(Key.xxx, ...)` 取值，**必须带光环上下文**。
-- **ValueKey 与 ctx.Value**：指定了 ValueKey 的能力由模拟器解析并填入 `ctx.Value`；AddAttribute(Key.InFlight) 等可用 **value: 1** 在 Override 中指定。
+- **Apply**：**`AbilityDefinition.Apply`** 为 **`Action<BattleContext>?`**；预定义委托在 **`Core/Apply.cs`**。只读效果用 **`ctx.GetResolvedValue(Key.xxx, ...)`** 取值；**光环合并**须在 **`GetResolvedValue` / `GetItemInt`** 路径显式接 **`BattleAuraModifiers`**（**当前** **`GetItemInt`** 尚未接线，见 implementation-notes）。
+- **ValueKey 与 ctx.Value**：指定了 ValueKey 的能力由模拟器解析并填入 **`ctx.Value`**；AddAttribute(Key.InFlight) 等可用 **value: 1** 在 Override 中指定。
 - **AddAttribute / ReduceAttribute**：目标默认己方/敌方；用 **additionalTargetCondition** 收窄（如 `Condition.WithTag(Tag.Weapon)`），或 **targetCondition** 完全自定义。定义时在默认目标上**仅追加条件**时优先用 **additionalTargetCondition**，避免写完整 targetCondition（如「己方且飞行」用 `additionalTargetCondition: Condition.InFlight`）。
-- **SetAttributeOnCasterSide**：对己方目标将属性设为某值（如 StopFlying 设 Key.InFlight 为 0），用于 **Effect.StopFlyingApply**。
+- **SetAttributeOnCasterSide**：对己方目标将属性设为某值（如 StopFlying 设 Key.InFlight 为 0），对应 **`Apply.StopFlying`**（**`Core/Apply.cs`**）。
 - **摧毁**：**Ability.Destroy**，目标默认己方未摧毁；「右侧第一个未摧毁」用 **additionalTargetCondition: Condition.FirstNonDestroyedRightOfSource**。先触发 Destroy 再标记 Destroyed。
 - **物品类型 Tag**：由 **EnsureTypeTags** 按 Damage/Burn/Poison/Heal/Shield/Regen 及 SameAsSource 光环自动补充，无需手写。
 

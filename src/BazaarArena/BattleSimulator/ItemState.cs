@@ -10,8 +10,6 @@ public class ItemState
 
     public int GetAttribute(int key) => Attributes[key];
     public void SetAttribute(int key, int value) => Attributes[key] = value;
-    public bool GetBoolAttribute(int key) => Attributes[key] != 0;
-    public void SetBoolAttribute(int key, bool value) => Attributes[key] = value ? 1 : 0;
 
     public int SideIndex { get => Attributes[Key.SideIndex]; set => Attributes[Key.SideIndex] = value; }
     public int ItemIndex { get => Attributes[Key.ItemIndex]; set => Attributes[Key.ItemIndex] = value; }
@@ -27,11 +25,14 @@ public class ItemState
     public bool IsCritThisUse { get => Attributes[Key.IsCritThisUse] != 0; set => Attributes[Key.IsCritThisUse] = value ? 1 : 0; }
     public int CritDamagePercentThisUse { get => Attributes[Key.CritDamage]; set => Attributes[Key.CritDamage] = value; }
     public int AmmoRemaining { get => Attributes[Key.Custom_2]; set => Attributes[Key.Custom_2] = value; }
-    private readonly Dictionary<int, int> _lastTriggerMsByAbility = [];
+    /// <summary>各能力下标与 <see cref="ItemTemplate.Abilities"/> 对齐；未触发过为 <see cref="int.MinValue"/>。</summary>
+    private readonly int[] _lastTriggerMsByAbility;
 
     public ItemState(ItemTemplate template, ItemTier tier)
     {
         Template = template;
+        _lastTriggerMsByAbility = new int[template.Abilities.Count];
+        Array.Fill(_lastTriggerMsByAbility, int.MinValue);
         for (int i = 0; i < Attributes.Length; i++)
             Attributes[i] = template.GetInt(i, tier, 0);
     }
@@ -41,13 +42,18 @@ public class ItemState
         Template = source.Template;
         Attributes = new int[Key.ItemStateAttributeCount];
         Array.Copy(source.Attributes, Attributes, Attributes.Length);
-        foreach (var kv in source._lastTriggerMsByAbility)
-            _lastTriggerMsByAbility[kv.Key] = kv.Value;
+        _lastTriggerMsByAbility = new int[source._lastTriggerMsByAbility.Length];
+        Array.Copy(source._lastTriggerMsByAbility, _lastTriggerMsByAbility, _lastTriggerMsByAbility.Length);
     }
 
     public int GetLastTriggerMs(int abilityIndex) =>
-        _lastTriggerMsByAbility.TryGetValue(abilityIndex, out int v) ? v : int.MinValue;
+        (uint)abilityIndex < (uint)_lastTriggerMsByAbility.Length
+            ? _lastTriggerMsByAbility[abilityIndex]
+            : int.MinValue;
 
-    public void SetLastTriggerMs(int abilityIndex, int timeMs) =>
-        _lastTriggerMsByAbility[abilityIndex] = timeMs;
+    public void SetLastTriggerMs(int abilityIndex, int timeMs)
+    {
+        if ((uint)abilityIndex < (uint)_lastTriggerMsByAbility.Length)
+            _lastTriggerMsByAbility[abilityIndex] = timeMs;
+    }
 }

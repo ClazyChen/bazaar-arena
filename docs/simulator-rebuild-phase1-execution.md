@@ -88,20 +88,19 @@
 - 步骤 7/8/9 语义与规则一致；
 - 热路径无显式托管分配。
 
-### Task D：重写 Effect 应用上下文为索引化读取
+### Task D：效果应用上下文索引化（进展说明）
 
-**建议修改**
-- `src/BazaarArena/BattleSimulator/EffectApplyContextImpl.cs`
-- `src/BazaarArena/BattleSimulator/BattleAuraContext.cs`（若存在）
+**当前代码路径**
+- **`src/BazaarArena/Core/BattleContext.cs`** + **`src/BazaarArena/Core/BattleContext.EffectApply.cs`**：**`partial BattleContext`** 承载效果应用；**`ExecuteOneEffect`** 复用 **`BattleContext`**（见 **`BattleSimulatorThreadScratch`**）。
+- **`src/BazaarArena/BattleSimulator/BattleAuraModifiers.cs`**：光环累加静态方法（**`Accumulate`**）；与读数路径的完全接线见 **implementation-notes**「光环（Aura）与属性读取」。
 
-**目标**
-- `GetResolvedValue` 等热调用改为索引化读取；
-- 保留光环数值结算语义；
-- 减少字典和字符串 key 的热读。
+**目标（阶段 1 后续）**
+- **`GetResolvedValue` / `GetItemInt`** 等热调用进一步索引化、减少分配；
+- 保留光环数值结算语义。
 
 **完成标准**
-- 关键效果（伤害/护盾/灼烧/中毒/治疗）行为不回退；
-- 上下文对象不在热路径重复分配。
+- 关键效果行为不回退；
+- 热路径不重复 **`new BattleContext()`**（嵌套外）。
 
 ### Task E：构建第1阶段最小验证入口（仅内核）
 

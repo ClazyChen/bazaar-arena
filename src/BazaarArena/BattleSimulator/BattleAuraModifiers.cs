@@ -2,10 +2,12 @@ using BazaarArena.Core;
 
 namespace BazaarArena.BattleSimulator;
 
-/// <summary>战斗内光环上下文：持有己方与目标物品，在 GetAuraModifiers 中遍历己方未摧毁物品的光环并累加。可选传入敌方阵营供公式（如 OpponentPoison）使用。</summary>
-internal sealed class BattleAuraContext(BattleSide side, BattleItemState targetItem, BattleSide? opp = null) : IAuraContext
+/// <summary>战斗内光环：遍历己方未摧毁物品的模板 Auras，累加对某属性的固定/百分比加成。可选传入敌方阵营供公式使用。</summary>
+internal static class BattleAuraModifiers
 {
-    public void GetAuraModifiers(string attributeName, out int fixedSum, out int percentSum)
+    /// <param name="attributeName">属性名或整型 key 的字符串形式（与 AuraDefinition.Attribute 一致）。</param>
+    public static void Accumulate(BattleSide side, BattleItemState targetItem, BattleSide? opp,
+        string attributeName, out int fixedSum, out int percentSum)
     {
         fixedSum = 0;
         percentSum = 0;

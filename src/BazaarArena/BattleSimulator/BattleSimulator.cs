@@ -508,10 +508,14 @@ public class BattleSimulator
             value = applyCrit ? baseValue * critMultiplier : baseValue;
         }
 
-        BattleSimulatorThreadScratch.BeginExecuteOneEffect(out var effectAppliedTriggerQueue, out var ctx);
+        BattleSimulatorThreadScratch.BeginExecuteOneEffect(out var effectAppliedTriggerQueue, out var ctx, out var battleState);
         try
         {
+            battleState.Side0 = side0;
+            battleState.Side1 = side1;
+            battleState.TimeMs = timeMs;
             ctx.Rebind(
+                battleState,
                 side,
                 opp,
                 item,
@@ -526,14 +530,7 @@ public class BattleSimulator
                 ability.EffectLogName,
                 ability.TargetCountKey,
                 invokeTargetItem);
-            ability.Apply(new BattleContext
-            {
-                BattleState = new BattleState(),
-                Item = item,
-                Caster = item,
-                Source = item,
-                InvokeTarget = invokeTargetItem,
-            });
+            ability.Apply(ctx);
             foreach (var (triggerName, sideIndex, itemIndex) in effectAppliedTriggerQueue)
             {
                 var target = (sideIndex == side0.SideIndex ? side0 : side1).Items[itemIndex];

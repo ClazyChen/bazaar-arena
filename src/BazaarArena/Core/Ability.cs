@@ -25,53 +25,53 @@ public static class Ability
         };
     }
 
-    /// <summary>造成伤害（Effect.DamageApply）。默认触发器 UseItem；定制用 .Override(...)。</summary>
+    /// <summary>造成伤害（Apply.Damage）。默认触发器 UseItem；定制用 .Override(...)。</summary>
     public static AbilityDefinition Damage => CreateBase(AbilityType.Damage, Core.Apply.Damage).Override(valueKey: Key.Damage, applyCritMultiplier: true);
 
-    /// <summary>获得护盾（Effect.ShieldApply）。默认触发器 UseItem；定制用 .Override(...)。</summary>
+    /// <summary>获得护盾（Apply.Shield）。默认触发器 UseItem；定制用 .Override(...)。</summary>
     public static AbilityDefinition Shield => CreateBase(AbilityType.Shield, Core.Apply.Shield).Override(valueKey: Key.Shield, applyCritMultiplier: true);
 
-    /// <summary>治疗（Effect.HealApply）。默认触发器 UseItem；定制用 .Override(...)。</summary>
+    /// <summary>治疗（Apply.Heal）。默认触发器 UseItem；定制用 .Override(...)。</summary>
     public static AbilityDefinition Heal => CreateBase(AbilityType.Heal, Core.Apply.Heal).Override(valueKey: Key.Heal, applyCritMultiplier: true);
 
-    /// <summary>造成灼烧（Effect.BurnApply）。默认触发器 UseItem；定制用 .Override(...)。</summary>
+    /// <summary>造成灼烧（Apply.Burn）。默认触发器 UseItem；定制用 .Override(...)。</summary>
     public static AbilityDefinition Burn => CreateBase(AbilityType.Burn, Core.Apply.Burn).Override(valueKey: Key.Burn, applyCritMultiplier: true);
 
-    /// <summary>造成剧毒（Effect.PoisonApply）。默认触发器 UseItem；定制用 .Override(...)。</summary>
+    /// <summary>造成剧毒（Apply.Poison）。默认触发器 UseItem；定制用 .Override(...)。</summary>
     public static AbilityDefinition Poison => CreateBase(AbilityType.Poison, Core.Apply.Poison).Override(valueKey: Key.Poison, applyCritMultiplier: true);
 
     /// <summary>对自身施加剧毒（过渡兼容，当前临时复用 Poison 行为）。</summary>
     public static AbilityDefinition PoisonSelf => Poison;
 
-    /// <summary>获取金币（Effect.GainGoldApply）。默认触发器 UseItem；数值来自模板的 Gold，不参与暴击。</summary>
+    /// <summary>获取金币（Apply.GainGold）。默认触发器 UseItem；数值来自模板的 Gold，不参与暴击。</summary>
     public static AbilityDefinition GainGold => CreateBase(AbilityType.GainGold, Core.Apply.GainGold).Override(valueKey: Key.Gold, applyCritMultiplier: false);
 
-    /// <summary>充能（Effect.ChargeApply）。默认触发器 UseItem；目标默认己方、未摧毁且有冷却；定制用 .Override(...)。</summary>
+    /// <summary>充能（Apply.Charge）。默认触发器 UseItem；目标默认己方、未摧毁且有冷却；定制用 .Override(...)。</summary>
     public static AbilityDefinition Charge => CreateBase(AbilityType.Charge, Core.Apply.Charge).Override(
         applyCritMultiplier: false,
         targetCondition: WithCooldownTarget(Condition.SameSide),
         targetCountKey: Key.ChargeTargetCount);
 
-    /// <summary>加速（Effect.HasteApply）。默认触发器 UseItem；目标默认己方、未摧毁且有冷却；定制用 .Override(...)。</summary>
+    /// <summary>加速（Apply.Haste）。默认触发器 UseItem；目标默认己方、未摧毁且有冷却；定制用 .Override(...)。</summary>
     public static AbilityDefinition Haste => CreateBase(AbilityType.Haste, Core.Apply.Haste).Override(
         applyCritMultiplier: false,
         targetCondition: WithCooldownTarget(Condition.SameSide),
         targetCountKey: Key.HasteTargetCount);
 
-    /// <summary>装填弹药（Effect.ReloadApply）。默认触发器 UseItem；目标默认己方、未摧毁且为弹药物品；数值取自 ValueKey（默认 Custom_0）。定制用 .Override(...)。</summary>
+    /// <summary>装填弹药（Apply.Reload）。默认触发器 UseItem；目标默认己方、未摧毁且为弹药物品；数值取自 ValueKey（默认 Custom_0）。定制用 .Override(...)。</summary>
     public static AbilityDefinition Reload => CreateBase(AbilityType.Reload, Core.Apply.Reload).Override(
         valueKey: Key.Custom_0,
         applyCritMultiplier: false,
         targetCondition: WithAmmoTarget(Condition.SameSide),
         targetCountKey: Key.ReloadTargetCount);
 
-    /// <summary>减速（Effect.SlowApply）。默认触发器 UseItem；目标默认敌方、未摧毁且有冷却；定制用 .Override(...)。</summary>
+    /// <summary>减速（Apply.Slow）。默认触发器 UseItem；目标默认敌方、未摧毁且有冷却；定制用 .Override(...)。</summary>
     public static AbilityDefinition Slow => CreateBase(AbilityType.Slow, Core.Apply.Slow).Override(
         applyCritMultiplier: false,
         targetCondition: WithCooldownTarget(Condition.DifferentSide),
         targetCountKey: Key.SlowTargetCount);
 
-    /// <summary>冻结（Effect.FreezeApply）。默认触发器 UseItem；目标默认敌方、未摧毁且有冷却；定制用 .Override(...)。</summary>
+    /// <summary>冻结（Apply.Freeze）。默认触发器 UseItem；目标默认敌方、未摧毁且有冷却；定制用 .Override(...)。</summary>
     public static AbilityDefinition Freeze => CreateBase(AbilityType.Freeze, Core.Apply.Freeze).Override(
         applyCritMultiplier: false,
         targetCondition: WithCooldownTarget(Condition.DifferentSide),
@@ -80,13 +80,13 @@ public static class Ability
     /// <summary>开始飞行：对己方满足目标条件且未飞行的物品设为飞行（等价于 AddAttribute(Key.InFlight) 设 1）。默认 additionalTargetCondition 为 NotInFlight；日志显示「开始飞行」。</summary>
     public static AbilityDefinition StartFlying => AddAttribute(Key.InFlight).Override(value: 1, additionalTargetCondition: Condition.NotInFlight, effectLogName: "开始飞行");
 
-    /// <summary>摧毁（Effect.DestroyApply）。默认触发器 UseItem；目标默认己方、未摧毁；定制用 .Override(...)。</summary>
+    /// <summary>摧毁（Apply.Destroy）。默认触发器 UseItem；目标默认己方、未摧毁；定制用 .Override(...)。</summary>
     public static AbilityDefinition Destroy => CreateBase(AbilityType.Destroy, Core.Apply.Destroy).Override(
         applyCritMultiplier: false,
         targetCondition: WithNotDestroyedTarget(Condition.SameSide),
         targetCountKey: Key.DestroyTargetCount);
 
-    /// <summary>修复（Effect.RepairApply）。默认触发器 UseItem；目标默认己方（实现内与 Condition.Destroyed 组合）；定制用 .Override(...)。</summary>
+    /// <summary>修复（Apply.Repair）。默认触发器 UseItem；目标默认己方（实现内与 Condition.Destroyed 组合）；定制用 .Override(...)。</summary>
     public static AbilityDefinition Repair => CreateBase(AbilityType.Repair, Core.Apply.Repair).Override(
         applyCritMultiplier: false,
         targetCondition: Condition.SameSide,
