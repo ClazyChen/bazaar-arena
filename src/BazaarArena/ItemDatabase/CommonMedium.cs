@@ -286,6 +286,7 @@ public static class CommonMedium
             Cooldown = 7.0,
             Shield = [40, 60, 80],
             Charge = 2.0,
+            Custom_0 = 1,
             Custom_1 = 1,
             Abilities =
             [

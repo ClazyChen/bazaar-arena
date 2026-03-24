@@ -59,7 +59,7 @@ public class Formula
         foreach (var item in ctx.CurrentSide.Items)
         {
             if (item.Destroyed) continue;
-            int value = item.GetAttribute(key);
+            int value = ctx.BattleState.GetItemInt(item, key);
             if (!hasAny)
             {
                 selected = value;

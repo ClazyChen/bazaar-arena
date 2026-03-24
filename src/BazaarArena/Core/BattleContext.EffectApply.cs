@@ -30,7 +30,7 @@ public sealed partial class BattleContext
     public void ChargeCasterItem(int chargeMs, out bool fullAndShouldCast)
     {
         fullAndShouldCast = false;
-        int cooldownMs = CurrentSide.GetItemInt(Caster.ItemIndex, Key.CooldownMs);
+        int cooldownMs = BattleState.GetItemInt(Caster, Key.CooldownMs);
         if (cooldownMs <= 0) return;
         int newElapsed = Math.Min(cooldownMs, Caster.ChargedTimeMs + chargeMs);
         int added = newElapsed - Caster.ChargedTimeMs;
@@ -39,7 +39,7 @@ public sealed partial class BattleContext
             BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, "充能", added, BattleState.TimeMs, isCrit: false);
         if (Caster.ChargedTimeMs >= cooldownMs)
         {
-            int ammoCap = CurrentSide.GetItemInt(Caster.ItemIndex, Key.AmmoCap);
+            int ammoCap = BattleState.GetItemInt(Caster, Key.AmmoCap);
             if (AllowCastQueueEnqueue && (ammoCap <= 0 || Caster.AmmoRemaining > 0))
                 BattleState.CastQueue.Add(Caster);
             fullAndShouldCast = true;
@@ -141,13 +141,13 @@ public sealed partial class BattleContext
     private string ChargeItemAt(BattleSide side, int itemIndex, int chargeMs)
     {
         var target = side.Items[itemIndex];
-        int cooldownMs = side.GetItemInt(itemIndex, Key.CooldownMs);
+        int cooldownMs = BattleState.GetItemInt(target, Key.CooldownMs);
         if (cooldownMs <= 0) return target.Template.Name;
         int newElapsed = Math.Min(cooldownMs, target.ChargedTimeMs + chargeMs);
         target.ChargedTimeMs = newElapsed;
         if (target.ChargedTimeMs >= cooldownMs && side == CurrentSide)
         {
-            int ammoCap = side.GetItemInt(itemIndex, Key.AmmoCap);
+            int ammoCap = BattleState.GetItemInt(target, Key.AmmoCap);
             if (AllowCastQueueEnqueue && (ammoCap <= 0 || target.AmmoRemaining > 0))
                 BattleState.CastQueue.Add(target);
             target.ChargedTimeMs = 0;
@@ -207,12 +207,12 @@ public sealed partial class BattleContext
         ApplyToTargetsBothSides(targetCount, cond, effectLogName ?? "装填", amount, (side, index) =>
         {
             var t = side.Items[index];
-            int cap = t.GetAttribute(Key.AmmoCap);
+            int cap = BattleState.GetItemInt(t, Key.AmmoCap);
             int add = Math.Min(amount, Math.Max(0, cap - t.AmmoRemaining));
             t.AmmoRemaining += add;
             if (side == CurrentSide)
             {
-                int cooldownMs = side.GetItemInt(index, Key.CooldownMs);
+                int cooldownMs = BattleState.GetItemInt(t, Key.CooldownMs);
                 if (cooldownMs > 0 && t.ChargedTimeMs >= cooldownMs && (cap <= 0 || t.AmmoRemaining > 0))
                 {
                     if (AllowCastQueueEnqueue)
@@ -324,7 +324,7 @@ public sealed partial class BattleContext
 
             if (attributeKey == Key.CooldownMs && side == CurrentSide && wi.ChargedTimeMs >= newVal)
             {
-                int ammoCap = side.GetItemInt(index, Key.AmmoCap);
+                int ammoCap = BattleState.GetItemInt(wi, Key.AmmoCap);
                 if (AllowCastQueueEnqueue && (ammoCap <= 0 || wi.AmmoRemaining > 0))
                     BattleState.CastQueue.Add(wi);
                 wi.ChargedTimeMs = 0;

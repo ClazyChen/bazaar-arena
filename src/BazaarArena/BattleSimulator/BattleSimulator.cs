@@ -115,8 +115,8 @@ public class BattleSimulator
 
             // 2. 处理冷却，充能完成则加入施放队列（冻结时冷却不推进）
             battleState.CastQueue.Clear();
-            ProcessCooldown(side0, battleState.TimeMs, battleState.CastQueue);
-            ProcessCooldown(side1, battleState.TimeMs, battleState.CastQueue);
+            ProcessCooldown(battleState, side0, battleState.TimeMs, battleState.CastQueue);
+            ProcessCooldown(battleState, side1, battleState.TimeMs, battleState.CastQueue);
 
             // 3. 加速、减速、冻结剩余时间减少 50ms（放在冷却之后，保证持续时间足额）
             foreach (var side in new[] { side0, side1 })
@@ -169,9 +169,9 @@ public class BattleSimulator
                 // 7. 遍历本轮施放队列，用触发器调用方式加入能力队列（先合并 current 再 next，都没有则入 next；仅 Immediate 入 current）
                 foreach (var item in toProcess)
                 {
-                    var side = item.SideIndex == 0 ? side0 : side1;
-                    int ammoCap = side.GetItemInt(item.ItemIndex, Key.AmmoCap);
-                    int multicast = side.GetItemInt(item.ItemIndex, Key.Multicast);
+                    // 多重释放、弹药上限可被光环修改，须走 BattleContext.GetItemInt，不可仅用 BattleSide 原始槽位读数
+                    int ammoCap = battleState.GetItemInt(item, Key.AmmoCap);
+                    int multicast = battleState.GetItemInt(item, Key.Multicast);
                     battleState.InvokeTrigger(Trigger.UseItem, item, item, multicast, ExecuteImmediateAbility);
                     battleState.InvokeTrigger(Trigger.UseOtherItem, item, item, multicast, ExecuteImmediateAbility);
                     if (ammoCap > 0)
@@ -409,7 +409,7 @@ public class BattleSimulator
                         continue;
                     }
                     state.LastTriggerMs = battleState.TimeMs;
-                    bool canCrit = item.GetAttribute(Key.CanCrit) != 0
+                    bool canCrit = battleState.GetItemInt(item, Key.CanCrit) != 0
                         && ability.Apply != null
                         && ability.ApplyCritMultiplier
                         && ability.TriggerEntries.Any(e => e.Trigger == Trigger.UseItem);
@@ -454,13 +454,13 @@ public class BattleSimulator
         }
     }
 
-    private static void ProcessCooldown(BattleSide side, int timeMs, List<ItemState> castQueue)
+    private static void ProcessCooldown(BattleState battleState, BattleSide side, int timeMs, List<ItemState> castQueue)
     {
         for (int i = 0; i < side.Items.Count; i++)
         {
             var item = side.Items[i];
             if (item.Destroyed) continue;
-            int cooldownMs = side.GetItemInt(i, Key.CooldownMs);
+            int cooldownMs = battleState.GetItemInt(item, Key.CooldownMs);
             if (cooldownMs <= 0) continue;
             if (item.FreezeRemainingMs > 0) continue; // 冰冻不推进冷却
             int advanceMs = FrameMs;
@@ -471,7 +471,7 @@ public class BattleSimulator
             item.ChargedTimeMs += advanceMs;
             if (item.ChargedTimeMs >= cooldownMs)
             {
-                int ammoCap = side.GetItemInt(i, Key.AmmoCap);
+                int ammoCap = battleState.GetItemInt(item, Key.AmmoCap);
                 if (ammoCap > 0 && item.AmmoRemaining <= 0) continue;
                 item.ChargedTimeMs = 0;
                 castQueue.Add(item);

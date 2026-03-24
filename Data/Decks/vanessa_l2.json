@@ -1,0 +1,136 @@
+{
+  "version": "1.0",
+  "decks": [
+    {
+      "id": "标准鲨齿爪",
+      "deck": {
+        "playerLevel": 2,
+        "slots": [
+          { "itemName": "鲨齿爪", "tier": 0 },
+          { "itemName": "手斧", "tier": 0 },
+          { "itemName": "迷你弯刀", "tier": 0 },
+          { "itemName": "刺刀", "tier": 0 },
+          { "itemName": "左轮手枪", "tier": 0 }
+        ]
+      }
+    },
+    {
+      "id": "斩杀鲨齿爪",
+      "deck": {
+        "playerLevel": 2,
+        "slots": [
+          { "itemName": "鲨齿爪", "tier": 0 },
+          { "itemName": "手斧", "tier": 0 },
+          { "itemName": "迷你弯刀", "tier": 0 },
+          { "itemName": "靴里剑", "tier": 0 },
+          { "itemName": "流星索", "tier": 0 }
+        ]
+      }
+    },
+    {
+      "id": "双成长多武器",
+      "deck": {
+        "playerLevel": 2,
+        "slots": [
+          { "itemName": "独角鲸", "tier": 0 },
+          { "itemName": "手斧", "tier": 0 },
+          { "itemName": "淬锋钢", "tier": 0 },
+          { "itemName": "鲨齿爪", "tier": 0 },
+          { "itemName": "左轮手枪", "tier": 0 }
+        ]
+      }
+    },
+    {
+      "id": "武士刀刺刀",
+      "deck": {
+        "playerLevel": 2,
+        "slots": [
+          { "itemName": "淬锋钢", "tier": 0 },
+          { "itemName": "木桶", "tier": 0 },
+          { "itemName": "武士刀", "tier": 0 },
+          { "itemName": "刺刀", "tier": 0 }
+        ]
+      }
+    },
+    {
+      "id": "双管霰弹枪",
+      "deck": {
+        "playerLevel": 2,
+        "slots": [
+          { "itemName": "火药角", "tier": 0 },
+          { "itemName": "双管霰弹枪", "tier": 0 },
+          { "itemName": "木桶", "tier": 0 },
+          { "itemName": "淬锋钢", "tier": 0 }
+        ]
+      }
+    },
+    {
+      "id": "剧毒混伤",
+      "deck": {
+        "playerLevel": 2,
+        "slots": [
+          { "itemName": "水草", "tier": 0 },
+          { "itemName": "毒须鲶", "tier": 0 },
+          { "itemName": "雪怪蟹", "tier": 0 },
+          { "itemName": "水母", "tier": 0 },
+          { "itemName": "独角鲸", "tier": 0 },
+          { "itemName": "淬锋钢", "tier": 0 }
+        ]
+      }
+    },
+    {
+      "id": "标准剧毒",
+      "deck": {
+        "playerLevel": 2,
+        "slots": [
+          { "itemName": "水草", "tier": 0 },
+          { "itemName": "毒须鲶", "tier": 0 },
+          { "itemName": "雪怪蟹", "tier": 0 },
+          { "itemName": "水母", "tier": 0 },
+          { "itemName": "珍珠", "tier": 0 },
+          { "itemName": "海螺壳", "tier": 0 }
+        ]
+      }
+    },
+    {
+      "id": "标准灼烧",
+      "deck": {
+        "playerLevel": 2,
+        "slots": [
+          { "itemName": "打火机", "tier": 0 },
+          { "itemName": "棉鳚", "tier": 0 },
+          { "itemName": "海底热泉", "tier": 0 },
+          { "itemName": "燃烧响炮", "tier": 0 },
+          { "itemName": "珊瑚", "tier": 0, "overrides": { "Custom_1": 2 } }
+        ]
+      }
+    },
+    {
+      "id": "火炮灼烧",
+      "deck": {
+        "playerLevel": 2,
+        "slots": [
+          { "itemName": "打火机", "tier": 0 },
+          { "itemName": "棉鳚", "tier": 0 },
+          { "itemName": "燃烧响炮", "tier": 0 },
+          { "itemName": "火炮", "tier": 0 },
+          { "itemName": "珊瑚", "tier": 0, "overrides": { "Custom_1": 2 } }
+        ]
+      }
+    },
+    {
+      "id": "皮皮虾减速火",
+      "deck": {
+        "playerLevel": 2,
+        "slots": [
+          { "itemName": "打火机", "tier": 0 },
+          { "itemName": "棉鳚", "tier": 0 },
+          { "itemName": "鹦鹉皮特", "tier": 0 },
+          { "itemName": "迷幻蝠鲼", "tier": 0 },
+          { "itemName": "皮皮虾", "tier": 0 },
+          { "itemName": "燃烧响炮", "tier": 0 }
+        ]
+      }
+    }
+  ]
+}

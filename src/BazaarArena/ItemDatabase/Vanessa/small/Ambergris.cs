@@ -3,10 +3,10 @@ using BazaarArena.Core;
 
 namespace BazaarArena.ItemDatabase.Vanessa.Small;
 
-/// <summary>龙涎香（Ambergris）：海盗小型水系、遗物；治疗 = (价值 + Custom_1×Custom_2) × Custom_0（光环）；购买水系物品时价值提高 Custom_1。</summary>
+/// <summary>龙涎香（Ambergris）：海盗小型水系、遗物；治疗 = (Value 默认价格 + Custom_1×Custom_2) × Custom_0（光环）；购买水系物品时价值提高 Custom_1。</summary>
 public static class Ambergris
 {
-    /// <summary>龙涎香（版本 5）：4s 小 铜 水系 遗物；▶ 获得治疗，等量于此物品价值的 1 » 2 » 3 » 4 倍（公式 (Price + Custom_1×Custom_2) × Custom_0）；购买水系物品时，此物品的价值提高 1 » 2 » 3 » 4。Custom_2 可覆盖，默认 5 » 10 » 15 » 20。</summary>
+    /// <summary>龙涎香（版本 5）：4s 小 铜 水系 遗物；▶ 获得治疗，等量于此物品价值的 1 » 2 » 3 » 4 倍（公式 (Value + Custom_1×Custom_2) × Custom_0，Value 为注册时默认价格）；购买水系物品时，此物品的价值提高 1 » 2 » 3 » 4。Custom_2 可覆盖，默认 5 » 10 » 15 » 20。</summary>
     public static ItemTemplate Template()
     {
         return new ItemTemplate
@@ -30,7 +30,7 @@ public static class Ambergris
                 new AuraDefinition
                 {
                     Attribute = Key.Heal,
-                    Value = (Formula.Caster(Key.Price) + Formula.Caster(Key.Custom_1) * Formula.Caster(Key.Custom_2)) * Formula.Caster(Key.Custom_0),
+                    Value = (Formula.Caster(Key.Value) + Formula.Caster(Key.Custom_1) * Formula.Caster(Key.Custom_2)) * Formula.Caster(Key.Custom_0),
                 },
             ],
         };

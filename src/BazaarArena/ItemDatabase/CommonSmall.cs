@@ -391,6 +391,7 @@ public static class CommonSmall
             Cooldown = [9.0, 8.0, 7.0],
             Damage = 5,
             Burn = 0,
+            Custom_0 = 1,
             Abilities =
             [
                 Ability.Damage,

@@ -47,8 +47,9 @@ alwaysApply: false
 
 ## 效果数值与光环
 
-- 执行效果时，`BattleContext.GetResolvedValue` 通过 `BattleContext.GetItemInt` 读取运行时属性并可叠加光环。
-- **默认值回退不可丢**：从 `Template.GetInt(key, defaultValue)` 迁移到 `ItemState` 后，`BattleSide.GetItemInt` / `BattleContext.GetItemInt` 需保留“值为 0 且 defaultValue 非 0 时返回默认值”的语义（如 Multicast、TargetCount 默认 1）。
+- 执行效果时，`Apply` 通过 `ctx.GetItemInt` / `ctx.GetItemInt(ctx.Caster, ability.ValueKey!.Value)` 读取运行时属性并叠加光环（`BattleContext.GetItemInt`）。
+- **规则判定与效果读数一致**：冷却是否跑满、弹药上限、暴击 CanCrit、`Formula.SideSelect` 等与光环相关的判定，须用 **`BattleState.GetItemInt(item, key)`**，勿在战斗主路径上仅用 **`BattleSide.GetItemInt`** / **`GetAttribute`** 做阈值判断（详见 **`docs/implementation-notes.md`**「规则读数统一」）。
+- **默认值回退不可丢**：`BattleSide.GetItemInt` / `BattleContext.GetItemInt` 在“值为 0 且 defaultValue 非 0”时的语义须保留（如 Multicast、TargetCount 默认 1）。
 
 ## BuildSide 与模板使用边界
 

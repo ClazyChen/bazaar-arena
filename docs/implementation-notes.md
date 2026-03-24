@@ -129,13 +129,40 @@
 
 ### 迁移经验
 
-- `StartFlying/StopFlying` 这类“实际不依赖数值”的能力，为保持 `ValueKey` 一致性可指定 `Key.Custom_0`，但效果语义仍由对应 `Apply` 分支控制（如 StopFlying 直接置 0）。
+- **`Ability.StartFlying`**：`valueKey` 为 **`Key.Custom_0`**，`Apply.AddAttribute` 在 **`value <= 0` 时直接 return**，故模板须保证 **`Custom_0` 初值大于 0**（无别的用途时写 **`Custom_0 = 1`**，同宇宙护符；宇宙炫羽复用 `Custom_0` 作暴击率时自然为正）。漏配会导致无「开始飞行」日志且难查。
+- `StopFlying` 等分支的效果语义由对应 `Apply` 控制（如置 0）。
 - 当去掉运行时 fallback 后，所有能力定义必须保证 `ValueKey` 可用；新增能力时若漏配 `ValueKey`，应尽早在测试中暴露而非默默回退。
 
 ### 回归记录
 
 - 迁移后 `dotnet build` 通过。
 - 小型铜脚本 `姜饼人_gingerbread` 的“未出现充能日志”问题已修复：根因是 `Tags` 被按档位列表写法误用，导致 `Tag.Tool` 条件未命中；改为位掩码后回归通过（不放松断言）。
+
+---
+
+## 规则读数统一：`BattleState.GetItemInt`（2026-03-25）
+
+### 目标
+
+凡用于**规则判定**（能否进施放队列、是否参与暴击掷骰、充能/装填是否凑满冷却、公式取己方多物品极值、「首次」条件等），且该 **key 可被光环改写**的，读数须与效果执行路径一致，走 **`BattleState.GetItemInt(ItemState, key)`**（内部构造 **`BattleContext`** 并调用 **`BattleContext.GetItemInt`**，叠加 `AurasByAttribute`）。
+
+### 已接入的主路径（示例）
+
+| 区域 | 原绕过 | 现统一 |
+|------|--------|--------|
+| `BattleSimulator.ProcessCooldown` | `BattleSide.GetItemInt(i, CooldownMs/AmmoCap)` | `battleState.GetItemInt(item, …)` |
+| `DrainCurrentAbilityBuckets`（暴击门闩） | `item.GetAttribute(CanCrit)` | `battleState.GetItemInt(item, CanCrit)` |
+| `ChargeCasterItem` / `ChargeItemAt` / `ApplyReload` / `ReduceAttributeToSide`（仅入队阈值处的 **AmmoCap**、**CooldownMs**） | `side.GetItemInt` / `GetAttribute` | `BattleState.GetItemInt(目标 ItemState, …)` |
+| `Formula.SideSelect` | `item.GetAttribute(key)` | `ctx.BattleState.GetItemInt(item, key)` |
+| `Condition.CasterCustom0IsZero` | `Caster.GetAttribute(Custom_0)` | `ctx.GetItemInt(Caster, Custom_0)` |
+
+### 明确不改为「有效值再写回」的路径
+
+- **`AddAttributeToCasterSide` / `ReduceAttributeToSide`** 中对 **`wi.GetAttribute` + `SetAttribute`** 的累加、递减：表示 **ItemState 槽位底数**，若改为读有效值再写回会破坏「底数 + 光环」模型。**仅**「减 Cooldown 后是否入队」等**判定分支**改用 `GetItemInt`（见上表）。
+
+### 物品测试断言
+
+- 期望伤害/护盾等数值时，按**当前模板**计算（如獠牙铜 **5** + 外骨骼相邻 **+5** → 日志 **「伤害 10」**），避免脚本与 `items-list` 与实现对不齐。
 
 ---
 
@@ -186,6 +213,7 @@
   - 自动推导标签（`Damage/Shield/Ammo/Burn/Poison/Heal/Regen/Crit/Cooldown/...`）放 **`DerivedTag`**，写入 **`Key.DerivedTags`**。
   - `DerivedTag` 从 **`1 << 0`** 重新编号，独立于 `Tag`。
 - **条件判定**：`Condition.WithTag` 与 `Condition.WithDerivedTag` 已按语义拆分：前者只检查 `Key.Tags`，后者只检查 `Key.DerivedTags`；两者均通过 `GetItemInt` 读取以感知光环带来的动态标签变化。
+- **`CasterCustom0IsZero`**：对 `Custom_0` 使用 `GetItemInt` 读**有效值**（含光环），与仅读 `ItemState` 槽位不同；若存在修改 `Custom_0` 的光环，「首次」类条件以有效值为准。
 
 ### 2) Apply 作为能力执行入口，效果逻辑挂在 BattleContext 上
 
@@ -705,7 +733,7 @@
 
 ### 飞行（In Flight）
 
-- **飞行为属性**：运行时状态存于模板字典（**Key.InFlight**）。**开始飞行** = 对己方满足目标条件且**未飞行**的物品设为飞行：**Ability.StartFlying**（等价于 `AddAttribute(Key.InFlight).Override(value: 1, additionalTargetCondition: ~Condition.InFlight)`），效果走 AddAttributeToCasterSide，内部对 Key.InFlight 设 `wi.InFlight = (value != 0)`。**结束飞行** 已改名为 **StopFlying**（**Ability.StopFlying**），目标默认己方且 **InFlight**，效果为 **SetAttributeOnCasterSide(Key.InFlight, 0, ctx.TargetCondition)**。
+- **飞行为属性**：运行时状态存于 **Key.InFlight**（与 `ItemState.InFlight` 一致）。**开始飞行**：**`Ability.StartFlying`** = **`AddAttribute(Key.InFlight).Override(valueKey: Key.Custom_0, additionalTargetCondition: ~Condition.InFlight, …)`**；`Apply` 读取的 **`Custom_0` 必须大于 0**，否则整条不执行；对 Key.InFlight 设 **`wi.InFlight = (value != 0)`**。 **`StopFlying`**：目标默认己方且 **InFlight**，效果为 **SetAttributeOnCasterSide(Key.InFlight, 0, …)**。
 - **光环条件**：`Condition.InFlight` 表示被评估对象（Item）在飞行；“不在飞行”统一写 `~Condition.InFlight`，不再维护 `Condition.NotInFlight` 常量条件。
 - **日志与 UI**：「开始飞行」「结束飞行」日志与 **EffectKeywordFormatting** 中「飞行」与护盾同色。
 
@@ -717,11 +745,11 @@
 - **语义**：与 Freeze/Slow 统一——**任意物品造成暴击时触发**；默认 `Condition.SameSide` 表现为己方暴击时触发，可重写 Condition 实现对方暴击时触发。
 - **条件**：`EnsureTriggerCondition(Trigger.Crit)` 默认 `Condition.SameSide`。
 
-### 战斗内属性读取（BattleSide.GetItemInt）
+### 战斗内属性读取（BattleSide.GetItemInt 与 BattleState.GetItemInt）
 
-- **原则**：依赖变量的光环在读模板/读运行时字段时都应一致；**接回光环后**宜在 **`GetItemInt`** 或 **`GetResolvedValue`** 单点合并 **`BattleAuraModifiers`**。
-- **当前实现**：**`BattleSide.GetItemInt(itemIndex, key, default)`** — **`key` 为 int**；若 **`key < ItemState.Attributes.Length`** 则 **`Items[itemIndex].GetAttribute(key)`**，否则 **`Template.GetInt(key, ...)`**（**无**光环叠加）。
-- **调用点**：BattleSimulator 步骤 7（Multicast、AmmoCap 等）、ProcessCooldown；**`BattleContext.EffectApply`** 内充能/选目标等。**吸血**由 **`ctx.GetResolvedValue(Key.LifeSteal, ...)`** 判断。
+- **原则**：依赖光环的属性在**规则判定**与**效果读数**上应一致；有会话表时以 **`BattleState.GetItemInt` / `BattleContext.GetItemInt`** 为合并入口（见上节「规则读数统一」）。
+- **`BattleSide.GetItemInt(itemIndex, key, default)`**：热路径仍可用；语义为 **`Items[itemIndex].GetAttribute(key)`** 与模板默认（**不**叠加光环）。不宜单独用于「冷却是否已满、弹药上限、CanCrit、SideSelect」等须含光环的判定（应改用 **`BattleState.GetItemInt(item, key)`**）。
+- **调用点补充**：施放步骤 7 的 Multicast、AmmoCap 等已用 **`battleState.GetItemInt`**；**ProcessCooldown**、**EffectApply** 内充能/装填入队判定等同上。历史文档中 **`GetResolvedValue`** 已移除，以 **`GetItemInt`** 为准。
 
 ### 依赖变量的光环（Formula.Source）
 

@@ -49,4 +49,8 @@ alwaysApply: true
 
 - **ValueKey 与运行时读值（2026-03）**：能力执行路径统一由 **`Apply`** 通过 `ctx.GetItemInt(ctx.Caster, ability.ValueKey!.Value)` 读取数值；`AbilityDefinition.Value` 与 `Override(value: ...)` 已移除，不再允许新增。常量效果请改为模板属性（通常 `Custom_x`）并在能力上设置 `valueKey`。`BattleContext.GetResolvedValue` 已移除；默认值应在 `ItemDatabase.Register` 阶段补齐（如 `ModifyAttributeTargetCount=20`），运行时仅保留最小兼容兜底（如目标数为 0 时按 1）。
 
+- **规则判定与光环（2026-03）**：战斗主路径上用于冷却/弹药/暴击门闩、`Formula.SideSelect` 极值、`CasterCustom0IsZero` 等、且 key 可被套光环的读数，须用 **`BattleState.GetItemInt(item, key)`**（或已有上下文时用 **`ctx.GetItemInt`**）。**例外**：`AddAttribute` / `ReduceAttribute` 对槽位 **`GetAttribute`/`SetAttribute`** 的累加减表示底数，不得改为「读有效值再写回」。详见 **`docs/implementation-notes.md`**「规则读数统一：BattleState.GetItemInt」。
+
+- **StartFlying 与 Custom_0**：**`Ability.StartFlying`** 固定 **`valueKey: Key.Custom_0`**，`Apply.AddAttribute` 在 **`value≤0` 时不执行**；除「`Custom_0` 已承担其他正值语义」（如宇宙炫羽暴击率）外，模板须显式 **`Custom_0 = 1`**（或等价正数），否则无「开始飞行」日志。
+
 - **PoisonSelf 语义**：`Ability.PoisonSelf` 为独立能力语义（对自身施加剧毒），不得与 `Ability.Poison` 互相替代；区别在施加目标（自身 vs 对方），触发上报均为 `Trigger.Poison`。

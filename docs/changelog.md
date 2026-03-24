@@ -1,5 +1,14 @@
 # 变更记录
 
+## GetItemInt 规则读数统一、StartFlying 与物品测试文档（2026-03-25）
+
+- **模拟器 / Core**：`ProcessCooldown`、`DrainCurrentAbilityBuckets`（CanCrit）、`BattleContext.EffectApply`
+  中充能/装填/减 CD 后入队判定等处，对可被套光环的 key 改用 **`BattleState.GetItemInt`**；**`Formula.SideSelect`**、**`Condition.CasterCustom0IsZero`** 同步走合并读数。
+- **物品**：**巨龙翼**、**巨龙崽崽** 补 **`Custom_0 = 1`**，否则 **`Ability.StartFlying`**（`valueKey: Custom_0`）因 **`value≤0`** 不执行；**`Ability.StartFlying`** 注释补全约定。
+- **测试与文档**：外骨骼用例断言改为「伤害 **10**」（铜獠牙 5+5）；**implementation-notes** 增「规则读数统一」专节，修正飞行/InFlight 与 **`BattleSide.GetItemInt`** 说明；**project-conventions**、**battle-simulator-ability-queue**、**cli-and-testing**（docs + rules）同步。
+
+---
+
 ## Condition 扩展、Destroy 默认敌方、物品语义修正（2026-03-25）
 
 - **AbilityDefinition.Override(trigger)**：不再按触发器类型重置 **TargetCondition**；目标筛选默认值完全由 **Ability.xxx** 工厂与显式 **targetCondition** / **additionalTargetCondition** 决定（曾用 **DefaultTargetConditionByTrigger** 的 **Ammo→DifferentSide** 已移除）。月光宝珠改为 **targetCondition: SameAsInvokeTarget & ~Destroyed & HasCooldown**。

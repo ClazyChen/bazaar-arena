@@ -61,7 +61,6 @@ public static class Key
     public const int Custom_1 = Custom_0 + 1;
     public const int Custom_2 = Custom_1 + 1;
     public const int Custom_3 = Custom_2 + 1;
-    public const int Price = Custom_0;
     public const int StashParameter = Custom_1;
     public const int AmmoRemaining = Custom_2;
     public const int ItemTemplateAttributeCount = Custom_3 + 1;

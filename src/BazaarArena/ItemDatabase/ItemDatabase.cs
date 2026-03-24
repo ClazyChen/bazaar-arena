@@ -59,7 +59,7 @@ public class ItemDatabase : IItemTemplateResolver
         return list;
     }
 
-    /// <summary>按尺寸返回 Price 默认值：小 [1,2,4,8]、中 [2,4,8,16]、大 [3,6,12,24]，供 Register 自动设置。</summary>
+    /// <summary>按尺寸返回 <see cref="Key.Value"/>（局外/模板默认价值）默认值：小 [1,2,4,8]、中 [2,4,8,16]、大 [3,6,12,24]，由 <see cref="EnsureDefaultAttributes"/> 在注册时写入。</summary>
     private static IntOrByTier GetDefaultPriceBySize(int size) => size switch
     {
         ItemSize.Small => [1, 2, 4, 8],
@@ -101,13 +101,12 @@ public class ItemDatabase : IItemTemplateResolver
         EnsureDefaultIfUndefined(template, Key.Value, TrimByMinTier(GetDefaultPriceBySize(defaultSize), template.MinTier));
     }
 
-    /// <summary>注册物品模板；会将当前 DefaultSize、DefaultMinTier、DefaultHero 写入模板后存入，并根据属性自动补充类型 Tag（护盾/伤害/灼烧等）。若存在 OverridableAttributes，将其默认值同步到模板对应 key，避免在模板上重复定义同一数值。Price 在注册时按 DefaultSize 自动设置默认值。</summary>
+    /// <summary>注册物品模板；会将当前 DefaultSize、DefaultMinTier、DefaultHero 写入模板后存入，并根据属性自动补充类型 Tag（护盾/伤害/灼烧等）。若存在 OverridableAttributes，将其默认值同步到模板对应 key，避免在模板上重复定义同一数值。默认「价值」由 <see cref="EnsureDefaultAttributes"/> 写入 <see cref="Key.Value"/>（见 <see cref="GetDefaultPriceBySize"/>），与 <see cref="Key.Custom_0"/> 等 gameplay 字段分离。</summary>
     public void Register(ItemTemplate template)
     {
         template.Size = DefaultSize;
         template.MinTier = DefaultMinTier;
         template.Hero = DefaultHero;
-        template.SetIntOrByTierByKey(Key.Price, GetDefaultPriceBySize(DefaultSize));
         EnsureDefaultAttributes(template, DefaultSize);
         if (template.OverridableAttributes != null)
         {

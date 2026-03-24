@@ -90,9 +90,9 @@ public static class Condition
     public static Formula OnlyWeaponWithCooldown { get; } =
         IsWeaponWithCooldownCandidate & Formula.Apply(Formula.Count(IsWeaponWithCooldownCandidate), n => n == 1 ? 1 : 0);
 
-    /// <summary>能力持有者（Caster）的 Custom_0 为 0；用于「首次」等，与光环 SourceCondition 一致。</summary>
+    /// <summary>能力持有者（Caster）的有效 Custom_0 为 0（含光环）；用于「首次」等。</summary>
     public static Formula CasterCustom0IsZero { get; } = new(ctx =>
-        ctx.Caster.GetAttribute(Key.Custom_0) == 0 ? 1 : 0);
+        ctx.GetItemInt(ctx.Caster, Key.Custom_0) == 0 ? 1 : 0);
 
     /// <summary>能力持有者（Caster）所在阵营生命值小于等于 0；用于 AboutToLose 单侧语义。</summary>
     public static Formula CasterSideHpLEZero { get; } = new(ctx =>
