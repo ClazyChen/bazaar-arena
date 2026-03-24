@@ -11,7 +11,7 @@ public static class FishingNet
         return new ItemTemplate
         {
             Name = "渔网",
-            Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
+            Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；每天开始时，获得 1 件来自任意英雄的小型水系或战利品物品",
             Tags = Tag.Aquatic | Tag.Tool,
             Cooldown = 6.0,
             Slow = 2.0,
@@ -29,7 +29,7 @@ public static class FishingNet
         return new ItemTemplate
         {
             Name = "渔网_S7",
-            Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
+            Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；每天开始时，获得 1 条食人鱼",
             Tags = Tag.Aquatic | Tag.Tool,
             Cooldown = 6.0,
             Slow = 2.0,
@@ -47,7 +47,7 @@ public static class FishingNet
         return new ItemTemplate
         {
             Name = "渔网_S1",
-            Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
+            Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；每天开始时，获得 1 条食人鱼",
             Tags = Tag.Aquatic | Tag.Tool,
             Cooldown = 9.0,
             Slow = 3.0,

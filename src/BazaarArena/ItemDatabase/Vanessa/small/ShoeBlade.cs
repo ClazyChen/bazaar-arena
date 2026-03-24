@@ -47,7 +47,7 @@ public static class ShoeBlade
         return new ItemTemplate
         {
             Name = "靴里剑_S1",
-            Desc = "▶ 造成 {Damage} 伤害；暴击率：{CritRate}%",
+            Desc = "▶ 造成 {Damage} 伤害；暴击率：{CritRate%}",
             Tags = Tag.Weapon | Tag.Apparel,
             Cooldown = 7.0,
             Damage = [20, 40, 60, 80],

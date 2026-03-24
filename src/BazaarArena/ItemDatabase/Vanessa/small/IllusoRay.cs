@@ -12,7 +12,7 @@ public static class IllusoRay
         return new ItemTemplate
         {
             Name = "迷幻蝠鲼",
-            Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；每有一个相邻的伙伴或射线，此物品 +1 多重释放",
+            Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；每有 1 件相邻的伙伴或射线，此物品 +1 多重释放",
             Tags = Tag.Aquatic | Tag.Ray | Tag.Friend,
             Cooldown = 6.0,
             Slow = [1.0, 2.0, 3.0, 4.0],
@@ -25,7 +25,7 @@ public static class IllusoRay
                 new AuraDefinition
                 {
                     Attribute = Key.Multicast,
-                    Value = Formula.Count(Condition.AdjacentToCaster & (Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Ray))),
+                    Value = Formula.Count(Condition.AdjacentToCaster & (Condition.WithTag(Tag.Friend | Tag.Ray))),
                 },
             ],
         };

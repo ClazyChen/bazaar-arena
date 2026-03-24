@@ -19,7 +19,7 @@ public static class BeachBall
             Abilities =
             [
                 Ability.Haste.Override(
-                    additionalTargetCondition: Condition.WithTag(Tag.Aquatic) | Condition.WithTag(Tag.Toy),
+                    additionalTargetCondition: Condition.WithTag(Tag.Aquatic | Tag.Toy),
                     priority: AbilityPriority.High
                 ),
             ],

@@ -26,6 +26,7 @@ public static class ConcealedDagger
                 ),
                 Ability.GainGold.Override(
                     trigger: Trigger.BattleStart,
+                    condition: Condition.Always,
                     valueKey: Key.Custom_0
                 )
             ],

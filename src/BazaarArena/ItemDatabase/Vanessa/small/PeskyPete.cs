@@ -7,7 +7,7 @@ namespace BazaarArena.ItemDatabase.Vanessa.Small;
 public static class PeskyPete
 {
     private static readonly Formula AdjacentFriendOrProperty =
-        Condition.AdjacentToCaster & (Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Property));
+        Condition.AdjacentToCaster & (Condition.WithTag(Tag.Friend | Tag.Property));
 
     /// <summary>鹦鹉皮特（最新版，铜）：8 » 7 » 6 » 5s 小 铜 伙伴；▶ 造成 2 灼烧；每有一个相邻的伙伴或地产，此物品 +1 多重释放。</summary>
     public static ItemTemplate Template()
@@ -15,7 +15,7 @@ public static class PeskyPete
         return new ItemTemplate
         {
             Name = "鹦鹉皮特",
-            Desc = "▶ 造成 {Burn} 灼烧；每有一个相邻的伙伴或地产，此物品 +1 多重释放",
+            Desc = "▶ 造成 {Burn} 灼烧；每有 1 件相邻的伙伴或地产，此物品 +1 多重释放",
             Tags = Tag.Friend,
             Cooldown = [8.0, 7.0, 6.0, 5.0],
             Burn = 2,
@@ -37,7 +37,7 @@ public static class PeskyPete
         return new ItemTemplate
         {
             Name = "鹦鹉皮特_S5",
-            Desc = "▶ 造成 {Burn} 灼烧；每有一个相邻的伙伴或地产，此物品 +1 多重释放",
+            Desc = "▶ 造成 {Burn} 灼烧；每有 1 件相邻的伙伴或地产，此物品 +1 多重释放",
             Tags = Tag.Friend,
             Cooldown = 7.0,
             Burn = [2, 4, 6],
@@ -59,7 +59,7 @@ public static class PeskyPete
         return new ItemTemplate
         {
             Name = "鹦鹉皮特_S1",
-            Desc = "▶ 造成 {Burn} 灼烧；每有一个相邻的伙伴或地产，此物品 +1 多重释放、并获得 {Custom_0} 灼烧",
+            Desc = "▶ 造成 {Burn} 灼烧；每有 1 件相邻的伙伴或地产，此物品 +1 多重释放；每有 1 件相邻的伙伴或地产，此物品 {+Custom_0} 灼烧",
             Tags = Tag.Friend,
             Cooldown = 7.0,
             Burn = [4, 6],

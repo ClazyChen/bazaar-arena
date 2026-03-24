@@ -11,7 +11,7 @@ public static class Wetware
         return new ItemTemplate
         {
             Name = "湿件战服",
-            Desc = "▶ 获得 {Shield} 护盾；▶ 使用武器时，此物品的护盾提高 {Custom_0}（限本场战斗）；若拥有另一件科技物品，此物品的冷却时间缩短 2 秒",
+            Desc = "▶ 获得 {Shield} 护盾；▶ 使用武器时，此物品的护盾提高 {Custom_0}（限本场战斗）；如果有 1 件其他的科技物品，此物品的冷却时间缩短 2 秒",
             Tags = Tag.Aquatic | Tag.Apparel | Tag.Tech,
             Cooldown = 8.0,
             Shield = 10,
@@ -20,7 +20,8 @@ public static class Wetware
             [
                 Ability.Shield,
                 Ability.AddAttribute(Key.Shield).Override(
-                    condition: Condition.SameSide & Condition.WithTag(Tag.Weapon),
+                    trigger: Trigger.UseOtherItem,
+                    additionalCondition: Condition.WithTag(Tag.Weapon),
                     targetCondition: Condition.SameAsCaster
                 ),
             ],

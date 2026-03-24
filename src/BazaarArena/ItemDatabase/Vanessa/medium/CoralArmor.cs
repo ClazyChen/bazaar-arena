@@ -12,7 +12,7 @@ public static class CoralArmor
         return new ItemTemplate
         {
             Name = "珊瑚护甲",
-            Desc = "▶ 获得 {Shield} 护盾；购买水系物品时，此物品的护盾提高 {Custom_0}（已购买 {Custom_1} 件水系物品）",
+            Desc = "▶ 获得 {Shield} 护盾；购买水系物品时，此物品的护盾提高 {Custom_0}",
             Tags = Tag.Aquatic | Tag.Apparel | Tag.Relic,
             Cooldown = 6.0,
             Shield = 50,

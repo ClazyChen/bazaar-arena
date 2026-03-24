@@ -23,10 +23,11 @@ public static class Pearl
                     priority: AbilityPriority.Low
                 ),
                 Ability.Charge.Override(
-                    condition: Condition.SameSide & Condition.WithTag(Tag.Aquatic) & Condition.DifferentFromCaster,
+                    trigger: Trigger.UseOtherItem,
+                    additionalCondition: Condition.WithTag(Tag.Aquatic),
                     targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
-                ),
+                )
             ],
         };
     }

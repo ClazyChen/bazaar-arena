@@ -21,9 +21,10 @@ public static class Piranha
             [
                 Ability.Damage,
                 Ability.Charge.Override(
-                    condition: Condition.SameSide & (Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Food)) & Condition.DifferentFromCaster,
+                    trigger: Trigger.UseOtherItem,
+                    additionalCondition: Condition.WithTag(Tag.Friend | Tag.Food),
                     targetCondition: Condition.SameAsCaster
-                ),
+                )
             ],
         };
     }
@@ -34,7 +35,7 @@ public static class Piranha
         return new ItemTemplate
         {
             Name = "食人鱼_S1",
-            Desc = "▶ 造成 {Damage} 伤害；暴击率：{CritRate}%；此物品能造成双倍暴击伤害",
+            Desc = "▶ 造成 {Damage} 伤害；暴击率：{CritRate%}；此物品能造成双倍暴击伤害",
             Tags = Tag.Weapon | Tag.Aquatic | Tag.Friend,
             Cooldown = 6.0,
             Damage = [6, 12, 18, 24],

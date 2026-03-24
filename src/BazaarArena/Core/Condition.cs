@@ -24,6 +24,7 @@ public static class Condition
     public static Formula DifferentSide { get; } = new(ctx =>
         ctx.Source.SideIndex != ctx.Caster.SideIndex ? 1 : 0);
 
+    /// <summary> 受到触发（InvokeTarget）的物品和当前物品（Item）为同一件。</summary>
     public static Formula SameAsInvokeTarget { get; } = new(ctx =>
         ctx.InvokeTarget != null
         && ctx.Item.SideIndex == ctx.InvokeTarget.SideIndex

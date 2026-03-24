@@ -21,8 +21,9 @@ public static class Switchblade
             [
                 Ability.Damage,
                 Ability.AddAttribute(Key.Damage).Override(
-                    condition: Condition.SameSide & Condition.AdjacentToCaster & Condition.WithTag(Tag.Weapon) & Condition.DifferentFromCaster,
-                    additionalTargetCondition: Condition.SameAsInvokeTarget,
+                    trigger: Trigger.UseOtherItem,
+                    additionalCondition: Condition.WithTag(Tag.Weapon) & Condition.AdjacentToCaster,
+                    targetCondition: Condition.SameAsInvokeTarget,
                     valueKey: Key.Custom_0
                 ),
             ],
@@ -44,8 +45,9 @@ public static class Switchblade
             [
                 Ability.Damage,
                 Ability.AddAttribute(Key.Damage).Override(
-                    condition: Condition.SameSide & Condition.AdjacentToCaster & Condition.WithTag(Tag.Weapon) & Condition.DifferentFromCaster,
-                    additionalTargetCondition: Condition.SameAsInvokeTarget,
+                    trigger: Trigger.UseOtherItem,
+                    additionalCondition: Condition.WithTag(Tag.Weapon) & Condition.AdjacentToCaster,
+                    targetCondition: Condition.SameAsInvokeTarget,
                     valueKey: Key.Custom_0
                 ),
             ],

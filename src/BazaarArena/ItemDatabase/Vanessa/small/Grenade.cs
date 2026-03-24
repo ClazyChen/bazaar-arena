@@ -12,7 +12,7 @@ public static class Grenade
         return new ItemTemplate
         {
             Name = "手雷",
-            Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；暴击率 {CritRate}%",
+            Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；暴击率：{CritRate%}",
             Tags = Tag.Weapon,
             Cooldown = 5.0,
             Damage = [50, 100, 150, 200],

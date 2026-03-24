@@ -12,7 +12,7 @@ public static class PetRock
         return new ItemTemplate
         {
             Name = "宠物石",
-            Desc = "▶ 造成 {Damage} 伤害；若此为唯一伙伴，己方物品暴击率 {+Custom_0%}",
+            Desc = "▶ 造成 {Damage} 伤害；若此物品是己方唯一的伙伴，己方物品 {+Custom_0%} 暴击率",
             Tags = Tag.Weapon | Tag.Friend | Tag.Toy,
             Cooldown = 6.0,
             Damage = [8, 16, 24, 32],

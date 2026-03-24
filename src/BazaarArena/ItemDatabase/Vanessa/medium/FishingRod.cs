@@ -11,7 +11,7 @@ public static class FishingRod
         return new ItemTemplate
         {
             Name = "钓鱼竿",
-            Desc = "▶ 加速此物品右侧的水系物品 {HasteSeconds} 秒；每天开始时，获得 1 小型水系物品",
+            Desc = "▶ 加速此物品右侧的水系物品 {HasteSeconds} 秒；每天开始时，获得 1 件小型水系物品",
             Tags = Tag.Aquatic | Tag.Tool,
             Cooldown = 5.0,
             Haste = 2.0,

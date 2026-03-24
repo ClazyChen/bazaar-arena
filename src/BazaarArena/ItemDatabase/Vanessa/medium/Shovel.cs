@@ -11,7 +11,7 @@ public static class Shovel
         return new ItemTemplate
         {
             Name = "铲子",
-            Desc = "▶ 造成 {Damage} 伤害；每天开始时，获得 1 来自任意英雄的小型物品",
+            Desc = "▶ 造成 {Damage} 伤害；每天开始时，获得 1 件来自任意英雄的小型物品",
             Tags = Tag.Weapon | Tag.Tool,
             Cooldown = 5.0,
             Damage = [20, 40, 60, 70],
@@ -28,7 +28,7 @@ public static class Shovel
         return new ItemTemplate
         {
             Name = "铲子_S1",
-            Desc = "▶ 造成 {Damage} 伤害；每天开始时，获得 1 来自任意英雄的小型物品",
+            Desc = "▶ 造成 {Damage} 伤害；每天开始时，获得 1 件来自任意英雄的小型物品",
             Tags = Tag.Weapon | Tag.Tool,
             Cooldown = 10.0,
             Damage = [50, 75, 100, 125],

@@ -12,7 +12,7 @@ public static class HoningSteel
         return new ItemTemplate
         {
             Name = "淬锋钢",
-            Desc = "▶ 己方最左侧和最右侧的武器伤害提高 {Custom_0}（限本场战斗）",
+            Desc = "▶ 己方最左侧的武器伤害提高 {Custom_0}（限本场战斗）；▶ 己方最右侧的武器伤害提高 {Custom_0}（限本场战斗）",
             Tags = Tag.Tool,
             Cooldown = 3.0,
             Custom_0 = [5, 10, 15, 20],

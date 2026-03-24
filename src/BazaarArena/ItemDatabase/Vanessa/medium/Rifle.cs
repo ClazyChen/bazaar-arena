@@ -22,7 +22,6 @@ public static class Rifle
                 Ability.Damage,
                 Ability.AddAttribute(Key.Damage).Override(
                     targetCondition: Condition.SameAsCaster,
-                    valueKey: Key.Custom_0,
                     priority: AbilityPriority.Low
                 ),
             ],
@@ -35,7 +34,7 @@ public static class Rifle
         return new ItemTemplate
         {
             Name = "步枪_S1",
-            Desc = "▶ 造成 {Damage} 伤害；若这是你唯一有冷却时间的武器，为此物品装填 1 弹药；弹药：{AmmoCap}",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 若此物品是己方唯一有冷却时间的武器，为此物品装填 1 发弹药；弹药：{AmmoCap}",
             Tags = Tag.Weapon,
             Cooldown = 3.0,
             Damage = [8, 16, 30, 48],

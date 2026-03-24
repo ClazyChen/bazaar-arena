@@ -12,7 +12,7 @@ public static class Handaxe
         return new ItemTemplate
         {
             Name = "手斧",
-            Desc = "▶ 造成 {Damage} 伤害；己方武器伤害 +{Custom_0}（限本场战斗）",
+            Desc = "▶ 造成 {Damage} 伤害；己方武器 {+Custom_0} 伤害",
             Tags = Tag.Weapon,
             Cooldown = 6.0,
             Damage = [10, 15, 20, 25],

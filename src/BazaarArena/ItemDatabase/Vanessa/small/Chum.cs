@@ -12,14 +12,14 @@ public static class Chum
         return new ItemTemplate
         {
             Name = "鱼饵",
-            Desc = "▶ 水系物品暴击率提高 +{Custom_0}%（限本场战斗）",
+            Desc = "▶ 水系物品暴击率提高 {+Custom_0%}（限本场战斗）",
             Tags = Tag.Aquatic | Tag.Food,
             Cooldown = 4.0,
             Custom_0 = [3, 6, 9, 12],
             Abilities =
             [
                 Ability.AddAttribute(Key.CritRate).Override(
-                    additionalTargetCondition: Condition.WithTag(Tag.Aquatic),
+                    additionalTargetCondition: Condition.WithTag(Tag.Aquatic) & Condition.CanCrit,
                     priority: AbilityPriority.High
                 ),
             ],

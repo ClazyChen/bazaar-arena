@@ -12,7 +12,7 @@ public static class MantisShrimp
         return new ItemTemplate
         {
             Name = "皮皮虾",
-            Desc = "▶ 造成 {Damage} 伤害、{Burn} 灼烧；弹药：{AmmoCap}；触发减速时，此物品伤害提高 {Custom_0}；触发减速时，灼烧提高 {Custom_1}（限本场战斗）",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 造成 {Burn} 灼烧；弹药：{AmmoCap}；触发减速时，此物品伤害提高 {Custom_0}（限本场战斗）；触发减速时，灼烧提高 {Custom_1}（限本场战斗）",
             Tags = Tag.Weapon | Tag.Aquatic | Tag.Friend,
             Cooldown = 9.0,
             Damage = 20,

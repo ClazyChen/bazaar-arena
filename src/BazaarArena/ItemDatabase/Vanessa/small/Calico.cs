@@ -21,7 +21,8 @@ public static class Calico
             [
                 Ability.Damage,
                 Ability.AddAttribute(Key.CritRate).Override(
-                    condition: Condition.SameSide & Condition.WithTag(Tag.Weapon) & Condition.DifferentFromCaster,
+                    trigger: Trigger.UseOtherItem,
+                    additionalCondition: Condition.WithTag(Tag.Weapon),
                     targetCondition: Condition.SameAsCaster
                 ),
             ],
@@ -43,7 +44,8 @@ public static class Calico
             [
                 Ability.Damage,
                 Ability.AddAttribute(Key.CritRate).Override(
-                    condition: Condition.SameSide & Condition.WithTag(Tag.Weapon) & Condition.DifferentFromCaster,
+                    trigger: Trigger.UseOtherItem,
+                    additionalCondition: Condition.WithTag(Tag.Weapon),
                     targetCondition: Condition.SameAsCaster
                 ),
             ],

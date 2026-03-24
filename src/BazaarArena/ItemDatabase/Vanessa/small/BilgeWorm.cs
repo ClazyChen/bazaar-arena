@@ -32,7 +32,7 @@ public static class BilgeWorm
         return new ItemTemplate
         {
             Name = "舱底蠕虫_S10",
-            Desc = "▶ 己方物品获得 {+Custom_0} 暴击率（限本场战斗）；▶ 对自己造成 {Poison} 剧毒；造成暴击时，为此物品充能 1 秒",
+            Desc = "▶ 己方物品获得 {+Custom_0%} 暴击率（限本场战斗）；▶ 对自己造成 {Poison} 剧毒；造成暴击时，为此物品充能 1 秒",
             Cooldown = 5.0,
             Poison = 1,
             Custom_0 = [4, 8, 12],
@@ -56,7 +56,7 @@ public static class BilgeWorm
         return new ItemTemplate
         {
             Name = "舱底蠕虫_S9",
-            Desc = "▶ 己方物品获得 {+Custom_0} 暴击率（限本场战斗）；造成暴击时，对自己造成 {Poison} 剧毒",
+            Desc = "▶ 己方物品获得 {+Custom_0%} 暴击率（限本场战斗）；造成暴击时，对自己造成 {Poison} 剧毒",
             Cooldown = 4.0,
             Poison = 1,
             Custom_0 = [4, 8, 12],

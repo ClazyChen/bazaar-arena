@@ -19,10 +19,11 @@ public static class Barrel
             [
                 Ability.Shield,
                 Ability.AddAttribute(Key.Shield).Override(
-                    condition: Condition.SameSide & Condition.AdjacentToCaster,
+                    trigger: Trigger.UseOtherItem,
+                    additionalCondition: Condition.AdjacentToCaster,
                     targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.High
-                ),
+                )
             ],
         };
     }
@@ -41,10 +42,11 @@ public static class Barrel
             [
                 Ability.Shield,
                 Ability.AddAttribute(Key.Shield).Override(
-                    condition: Condition.SameSide & Condition.AdjacentToCaster,
+                    trigger: Trigger.UseOtherItem,
+                    additionalCondition: Condition.AdjacentToCaster,
                     targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.High
-                ),
+                )
             ],
         };
     }

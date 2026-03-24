@@ -22,7 +22,7 @@ public static class Catfish
                 Ability.Poison,
                 Ability.AddAttribute(Key.Poison).Override(
                     trigger: Trigger.Haste,
-                    condition: Condition.SameAsInvokeTarget,
+                    condition: Condition.InvokeTargetSameAsCaster,
                     targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ),

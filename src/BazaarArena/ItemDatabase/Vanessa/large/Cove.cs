@@ -11,14 +11,14 @@ public static class Cove
         return new ItemTemplate
         {
             Name = "温馨海湾",
-            Desc = "▶ 获得护盾，等量于此物品价值的 {Custom_0} 倍；出售物品时，此物品的价值提高 {Custom_2}（已出售 {Custom_1} 件）",
+            Desc = "▶ 获得护盾，等量于此物品价值的 {Custom_0} 倍；出售物品时，此物品的价值提高 {Custom_2}",
             Tags = Tag.Aquatic | Tag.Property,
             Cooldown = 4.0,
             Custom_0 = [1, 2, 3, 4],
             Custom_2 = [1, 1, 1, 2],
             OverridableAttributes = new Dictionary<int, IntOrByTier>
             {
-                [Key.Custom_1] = [10, 20, 40, 80],
+                [Key.Custom_1] = [6, 12, 18, 24],
             },
             Abilities =
             [
@@ -29,7 +29,7 @@ public static class Cove
                 new AuraDefinition
                 {
                     Attribute = Key.Shield,
-                    Value = (Formula.Caster(Key.Price) + Formula.Caster(Key.Custom_1) * Formula.Caster(Key.Custom_2)) * Formula.Caster(Key.Custom_0),
+                    Value = (Formula.Caster(Key.Value) + Formula.Caster(Key.Custom_1) * Formula.Caster(Key.Custom_2)) * Formula.Caster(Key.Custom_0),
                 },
             ],
         };

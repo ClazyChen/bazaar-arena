@@ -151,6 +151,7 @@ public class ItemTemplate
     public IntOrByTier SlowTargetCount { get => GetIntOrByTier(Key.SlowTargetCount); set => SetIntOrByTier(Key.SlowTargetCount, value); }
     public SecondsOrByTier Haste { get => SecondsOrByTier.FromMilliseconds(GetIntOrByTier(Key.Haste).ToList()); set => SetIntOrByTier(Key.Haste, [.. value.ToMilliseconds()]); }
     public IntOrByTier HasteTargetCount { get => GetIntOrByTier(Key.HasteTargetCount); set => SetIntOrByTier(Key.HasteTargetCount, value); }
+    public IntOrByTier Reload { get => GetIntOrByTier(Key.Reload); set => SetIntOrByTier(Key.Reload, value); }
     public IntOrByTier ReloadTargetCount { get => GetIntOrByTier(Key.ReloadTargetCount); set => SetIntOrByTier(Key.ReloadTargetCount, value); }
     public IntOrByTier RepairTargetCount { get => GetIntOrByTier(Key.RepairTargetCount); set => SetIntOrByTier(Key.RepairTargetCount, value); }
     public IntOrByTier DestroyTargetCount { get => GetIntOrByTier(Key.DestroyTargetCount); set => SetIntOrByTier(Key.DestroyTargetCount, value); }
