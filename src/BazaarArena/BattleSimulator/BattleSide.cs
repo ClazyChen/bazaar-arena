@@ -38,12 +38,13 @@ public class BattleSide
 
     public List<ItemState> Items { get; set; } = [];
 
-    /// <summary>战斗内读物品属性：下标在 ItemState 范围内走运行时数组，否则走模板。</summary>
+    /// <summary>战斗内读物品属性：统一读取运行时数组。</summary>
     public int GetItemInt(int itemIndex, int key, int defaultValue = 0)
     {
         var item = Items[itemIndex];
-        if ((uint)key < (uint)item.Attributes.Length)
-            return item.GetAttribute(key);
-        return item.Template.GetInt(key, item.Tier, defaultValue);
+        if ((uint)key >= (uint)item.Attributes.Length)
+            return defaultValue;
+        int value = item.GetAttribute(key);
+        return value == 0 ? defaultValue : value;
     }
 }

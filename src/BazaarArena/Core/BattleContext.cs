@@ -24,7 +24,8 @@ public sealed partial class BattleContext
     public int TimeMs { get; set; }
     public IBattleLogSink LogSink { get; set; } = null!;
     public List<ItemState>? ChargeInducedCastQueue { get; set; }
-    public List<(int TriggerName, int SideIndex, int ItemIndex)>? EffectAppliedTriggerQueue { get; set; }
+    public BattleSessionTables? SessionTables { get; set; }
+    public Action<int, ItemState?, ItemState?, int?>? TriggerInvoker { get; set; }
     public Formula? TargetCondition { get; set; }
     public string? EffectLogName { get; set; }
     public int? TargetCountKey { get; set; }
@@ -40,7 +41,7 @@ public sealed partial class BattleContext
         int timeMs,
         IBattleLogSink logSink,
         List<ItemState>? chargeInducedCastQueue,
-        List<(int TriggerName, int SideIndex, int ItemIndex)>? effectAppliedTriggerQueue,
+        Action<int, ItemState?, ItemState?, int?>? triggerInvoker,
         Formula? targetCondition,
         string? effectLogName,
         int? targetCountKey,
@@ -59,9 +60,44 @@ public sealed partial class BattleContext
         TimeMs = timeMs;
         LogSink = logSink;
         ChargeInducedCastQueue = chargeInducedCastQueue;
-        EffectAppliedTriggerQueue = effectAppliedTriggerQueue;
+        TriggerInvoker = triggerInvoker;
         TargetCondition = targetCondition;
         EffectLogName = effectLogName;
         TargetCountKey = targetCountKey;
+    }
+
+    public int GetItemInt(ItemState item, int key, int defaultValue = 0)
+    {
+        int baseValue = (uint)key < (uint)item.Attributes.Length ? item.GetAttribute(key) : defaultValue;
+        if (baseValue == 0 && defaultValue != 0)
+            baseValue = defaultValue;
+        if (SessionTables == null) return baseValue;
+        if (!SessionTables.AurasByAttribute.TryGetValue(key, out var auras) || auras.Count == 0) return baseValue;
+        int fixedSum = 0;
+        int percentSum = 0;
+        foreach (var (source, aura) in auras)
+        {
+            if (source.Destroyed) continue;
+            var auraCtx = new BattleContext
+            {
+                BattleState = BattleState,
+                SessionTables = SessionTables,
+                Item = item,
+                Caster = source,
+                Source = source,
+                InvokeTarget = InvokeTarget,
+            };
+            if (aura.Condition.Evaluate(auraCtx) == 0) continue;
+            if (aura.SourceCondition != null)
+            {
+                auraCtx.Item = source;
+                if (aura.SourceCondition.Evaluate(auraCtx) == 0) continue;
+            }
+            if (aura.Value == null) continue;
+            int v = aura.Value.Evaluate(auraCtx);
+            if (aura.Percent) percentSum += v;
+            else fixedSum += v;
+        }
+        return RatioUtil.PercentFloor(baseValue + fixedSum, 100 + percentSum);
     }
 }

@@ -10,13 +10,13 @@ internal sealed class AbilityQueueBuckets
 {
     public const int BucketCount = 6;
 
-    private readonly List<AbilityQueueEntry>[] _buckets;
+    private readonly List<RuntimeAbilityRef>[] _buckets;
 
     public AbilityQueueBuckets()
     {
-        _buckets = new List<AbilityQueueEntry>[BucketCount];
+        _buckets = new List<RuntimeAbilityRef>[BucketCount];
         for (int i = 0; i < BucketCount; i++)
-            _buckets[i] = new List<AbilityQueueEntry>(4);
+            _buckets[i] = new List<RuntimeAbilityRef>(8);
     }
 
     public static int BucketIndex(AbilityPriority p)
@@ -27,9 +27,9 @@ internal sealed class AbilityQueueBuckets
         return b;
     }
 
-    public List<AbilityQueueEntry> Bucket(int index) => _buckets[index];
+    public List<RuntimeAbilityRef> Bucket(int index) => _buckets[index];
 
-    public void AddToBucket(int bucketIndex, AbilityQueueEntry entry) => _buckets[bucketIndex].Add(entry);
+    public void AddToBucket(int bucketIndex, RuntimeAbilityRef abilityRef) => _buckets[bucketIndex].Add(abilityRef);
 
     public void Clear()
     {
@@ -51,22 +51,4 @@ internal sealed class AbilityQueueBuckets
         }
     }
 
-    /// <summary>在全部桶中自尾向前查找同 (Owner, AbilityIndex) 且无 InvokeTarget 的条目并累加 PendingCount；找到则 true。</summary>
-    public bool TryMergePending(ItemState owner, int abilityIdx, int pendingToAdd)
-    {
-        for (int bi = 0; bi < BucketCount; bi++)
-        {
-            var list = _buckets[bi];
-            for (int i = list.Count - 1; i >= 0; i--)
-            {
-                var e = list[i];
-                if (e.Owner == owner && e.AbilityIndex == abilityIdx && e.InvokeTargetSideIndex == null)
-                {
-                    e.PendingCount += pendingToAdd;
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 }

@@ -4,9 +4,11 @@ namespace BazaarArena.Core;
 
 public sealed partial class BattleContext
 {
-    public int GetResolvedValue(int key, bool applyCritMultiplier = false, int defaultValue = 0)
+    public int GetResolvedValue(int key, bool applyCritMultiplier = false, int defaultValue = 0, int fallbackValue = 0)
     {
-        int baseValue = Caster.GetAttribute(key);
+        int baseValue = GetItemInt(Caster, key, defaultValue);
+        if (baseValue == 0 && fallbackValue != 0)
+            baseValue = fallbackValue;
         return applyCritMultiplier ? baseValue * CritMultiplier : baseValue;
     }
 
@@ -118,10 +120,10 @@ public sealed partial class BattleContext
         }
         string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
         LogSink.OnEffect(Caster, Caster.Template.Name, effectName, logValue ?? indices.Count, TimeMs, isCrit: false, extraSuffix);
-        if (effectTriggerName != null && EffectAppliedTriggerQueue != null)
+        if (effectTriggerName != null && TriggerInvoker != null)
         {
             foreach (int i in indices)
-                EffectAppliedTriggerQueue.Add((effectTriggerName.Value, fromSide.SideIndex, i));
+                TriggerInvoker(effectTriggerName.Value, Caster, fromSide.Items[i], 1);
         }
     }
 
@@ -134,10 +136,10 @@ public sealed partial class BattleContext
             targetNames.Add(perTarget(side, index));
         string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
         LogSink.OnEffect(Caster, Caster.Template.Name, effectName, logValue ?? targets.Count, TimeMs, isCrit: false, extraSuffix);
-        if (effectTriggerName != null && EffectAppliedTriggerQueue != null)
+        if (effectTriggerName != null && TriggerInvoker != null)
         {
             foreach (var (side, index) in targets)
-                EffectAppliedTriggerQueue.Add((effectTriggerName.Value, side.SideIndex, index));
+                TriggerInvoker(effectTriggerName.Value, Caster, side.Items[index], 1);
         }
     }
 
@@ -165,7 +167,7 @@ public sealed partial class BattleContext
         ApplyToTargetsBothSides(targetCount, cond, "冻结", freezeMs, (side, index) =>
         {
             var t = side.Items[index];
-            int pct = Math.Clamp(t.Template.GetInt(Key.PercentFreezeReduction, t.Tier, 0), 0, 100);
+            int pct = Math.Clamp(GetItemInt(t, Key.PercentFreezeReduction, 0), 0, 100);
             int effectiveMs = freezeMs - RatioUtil.PercentOf(freezeMs, pct);
             t.FreezeRemainingMs += effectiveMs;
             return t.Template.Name;
@@ -337,7 +339,7 @@ public sealed partial class BattleContext
     }
 
     public void ReportTriggerCause(int triggerName) =>
-        EffectAppliedTriggerQueue?.Add((triggerName, Side.SideIndex, Caster.ItemIndex));
+        TriggerInvoker?.Invoke(triggerName, Caster, null, 1);
 
     public void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false) =>
         LogSink.OnEffect(Caster, Caster.Template.Name, effectName, value, TimeMs, showCrit, extraSuffix);
@@ -365,15 +367,11 @@ public sealed partial class BattleContext
         var targetNames = indices.Select(i => targetSide.Items[i].Template.Name).ToList();
         string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
         LogEffect("摧毁", indices.Count, extraSuffix, showCrit: false);
-        if (EffectAppliedTriggerQueue != null)
+        foreach (int i in indices)
         {
-            foreach (int i in indices)
-                EffectAppliedTriggerQueue.Add((Trigger.Destroy, targetSide.SideIndex, i));
-        }
-        else
-        {
-            foreach (int i in indices)
-                targetSide.Items[i].Destroyed = true;
+            var target = targetSide.Items[i];
+            TriggerInvoker?.Invoke(Trigger.Destroy, Caster, target, null);
+            target.Destroyed = true;
         }
     }
 }

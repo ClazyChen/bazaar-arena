@@ -13,8 +13,8 @@ public static class Condition
 
     private static bool HasTemplateTag(BattleContext ctx, int tagMask)
     {
-        return (ctx.Item.Template.GetInt(Key.Tags, ctx.Item.Tier, 0) & tagMask) != 0
-            || (ctx.Item.Template.GetInt(Key.DerivedTags, ctx.Item.Tier, 0) & tagMask) != 0;
+        return (ctx.GetItemInt(ctx.Item, Key.Tags, 0) & tagMask) != 0
+            || (ctx.GetItemInt(ctx.Item, Key.DerivedTags, 0) & tagMask) != 0;
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ public static class Condition
     public static Formula NotDestroyed { get; } = new(ctx => !ctx.Item.Destroyed ? 1 : 0);
     public static Formula Destroyed { get; } = new(ctx => ctx.Item.Destroyed ? 1 : 0);
     public static Formula HasCooldown { get; } = new(ctx =>
-        ctx.Item.Template.GetInt(Key.CooldownMs, ctx.Item.Tier, 0) > 0 ? 1 : 0);
+        ctx.GetItemInt(ctx.Item, Key.CooldownMs, 0) > 0 ? 1 : 0);
     public static Formula AmmoDepleted { get; } = new(ctx => ctx.Item.AmmoRemaining == 0 ? 1 : 0);
     public static Formula IsFrozen { get; } = new(ctx => ctx.Item.FreezeRemainingMs > 0 ? 1 : 0);
     public static Formula Leftmost { get; } = new(ctx => ctx.Item.ItemIndex == 0 ? 1 : 0);

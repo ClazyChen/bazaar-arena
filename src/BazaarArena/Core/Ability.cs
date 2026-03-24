@@ -7,7 +7,7 @@ public static class Ability
     private static Formula WithNotDestroyedTarget(Formula baseCondition) => baseCondition & Condition.NotDestroyed;
     private static Formula WithAmmoTarget(Formula baseCondition) => baseCondition & Condition.NotDestroyed & Condition.WithTag(DerivedTag.Ammo);
 
-    private static AbilityDefinition CreateBase(AbilityType abilityType, Action<BattleContext>? apply)
+    private static AbilityDefinition CreateBase(AbilityType abilityType, Action<BattleContext, AbilityDefinition>? apply)
     {
         return new AbilityDefinition
         {

@@ -13,6 +13,7 @@ alwaysApply: false
 - **currentAbilityQueue**（类型 `AbilityQueueBuckets`）：本帧步骤 8 **唯一**处理的对象；内容来自上一帧步骤 9 **对调 current/next 引用**后，原 next 各优先级桶中的条目。
 - **nextAbilityQueue**（类型 `AbilityQueueBuckets`）：本帧延后（未到 250ms）、未消耗完 Pending 的条目写回对应优先级桶；**本帧施放产生的新能力也只加入此处**（见下）。
 - **唯一允许「next → current」的位置**：**仅步骤 9**（对调两个 `AbilityQueueBuckets` 引用并 `Clear` 新的 next）。在步骤 8 开头、循环前或任何其他地方做「把 next 并入 current」都是错误。
+- 队列桶内元素为**运行时能力引用**（`RuntimeAbilityRef`，绑定 Owner+Ability），而非 `AbilityQueueEntry`；`PendingCount`/`LastTriggerMs` 存于 `AbilityState`。
 
 ## 施放队列（castQueue）触发的能力与步骤 7 顺序
 
@@ -34,10 +35,10 @@ alwaysApply: false
 - **UseItem / Freeze / Slow / Haste / Crit / Destroy / Burn / Poison / Shield / Ammo / BattleStart / AboutToLose**：能力定义在**注册阶段**会被规范化：补齐主字段的默认 Condition（`UseItem→SameAsSource`，其余多为 `SameSide`，BattleStart→Always），并保证 `Triggers` 非空且首条与主字段一致（见 `ItemDatabase.NormalizeAbilities` 与 `AbilityDefinition.SyncPrimaryTriggerEntryFromTopLevel`）。战斗运行期不得做「触发器延迟初始化」写共享对象，也不依赖 `EnsureTriggersInitializedFromTopLevel()` 之类方法。步骤 7 在 `AmmoRemaining = max(0, AmmoRemaining - 1)` 之后若 ammoCap > 0 则调用 `InvokeTrigger(Trigger.Ammo, item, ...)`。**步骤 10** 胜负判定前：若某方 Hp≤0 则对该方调用 `InvokeTrigger(Trigger.AboutToLose, null, null, ..., onlyForSideIndex: 该侧)`，仅执行入队的 Immediate 能力（救生圈治疗等）后重算 Hp 再判胜负；「首次」由物品 Custom_0 限定。**Freeze/Slow/Destroy** 的触发来源：**`BattleContext`**（效果应用 partial）不持有回调，向模拟器传入的 **EffectAppliedTriggerQueue** 追加 `(TriggerName, SideIndex, ItemIndex)`；**`ability.Apply(ctx)`** 返回后模拟器统一遍历该队列、按目标解析 **`ItemState`** 并调用 **`InvokeTrigger`**，**Destroy** 时在调用后再设 **`target.Destroyed = true`**。**Freeze/Slow** 为任意物品施加时触发；**Destroy** 与 Slow 同构（**InvokeTargetItem** 等语义不变）。**Crit** 为任意物品造成暴击时触发；暴击按物品按帧统一判定：步骤 8 循环中，可暴击能力若本帧已为该物品判定过（`item.CritTimeMs == timeMs`）则复用结果；否则掷骰并写入物品状态，**若判定为暴击则在此处、ExecuteOneEffect 之前**调用一次 `InvokeTrigger(Trigger.Crit, item, null, ...)`。ExecuteOneEffect 内不再调用 Crit 触发。
 - **条件语义**：**InvokeTrigger** 内 **Condition** 求值时 **Item**/**Caster**=能力持有者、**Source**=引起触发者、**InvokeTarget**=触发器指向物品（若有）。效果层 **TargetCondition**/**additionalTargetCondition** 筛选施加目标时 **Item**=候选目标；需「仅对触发指向的那一件」时用 **SameAsInvokeTarget** 等（见 **project-conventions** 硬切约定）。
 - **PendingCount 合并顺序（AddOrMergeAbility）**：
-  1. 当 **InvokeTargetItem** 非空（context 提供 invokeTargetSideIndex + invokeTargetItemIndex）时**不合并**，直接新建条目并写入 `InvokeTargetSideIndex`/`InvokeTargetItemIndex`；**新建条目的 PendingCount 必须为传入的 pendingCount**（如 UseItem 的 Multicast），不得写死为 1，否则多重释放失效（见 implementation-notes「AddOrMergeAbility 带 InvokeTarget 时 PendingCount」）。效果应对该单一目标施加（见 docs/implementation-notes.md「InvokeTarget 与 SameAsInvokeTarget」）。
-  2. 否则先在 **current** 全部优先级桶中查找同 (Owner, AbilityIndex) 且条目无 InvokeTarget 的，找到则只做 `PendingCount += pendingCount`，不新建。
-  3. 再在 **next** 全部优先级桶中查找同上，找到则只做 `PendingCount += pendingCount`，不新建。
-  4. 都没有则新建条目并按优先级入桶：**Immediate → current 对应桶**，**非 Immediate → next 对应桶**。`AbilityQueueEntry` 持有多元组 (Owner, AbilityIndex, PendingCount, 可选 InvokeTargetSideIndex/InvokeTargetItemIndex)。**250ms 节流状态**存于物品（GetLastTriggerMs/SetLastTriggerMs），不存于条目。
+  1. 运行态状态键必须是**Owner 维度能力引用**（如 `RuntimeAbilityRef.Id`），不能只用 `AbilityId`（模板能力共享时会 owner 覆盖）。
+  2. 命中同一运行时能力时，`PendingCount += pendingCount`；仅当从 0 变为正数时入队到对应优先级桶。
+  3. 当存在 `InvokeTargetItem` 时，将目标追加到 `AbilityState.InvokeTargets`（按次序消费），不可覆盖单一 index。
+  4. 入桶规则不变：**Immediate → current**，其余 → **next**。**250ms 节流状态**存于 `AbilityState.LastTriggerMs`。
 
 ## 步骤 8 执行顺序：仅按能力优先级
 
@@ -46,14 +47,13 @@ alwaysApply: false
 
 ## 效果数值与光环
 
-- 执行效果时，**`BattleContext.GetResolvedValue`** 读取 **`CasterItem.GetAttribute(key)`**（战斗内运行时属性），再按暴击倍率处理。若需「模板基础值 + 己方光环」合一，须在 **`GetResolvedValue` 或 `BattleSide.GetItemInt`** 路径显式合并 **`BattleAuraModifiers.Accumulate`**（见 **`docs/implementation-notes.md`**「光环（Aura）与属性读取」）；**当前** **`GetItemInt`** 尚未调用 **`BattleAuraModifiers`**，接回前勿假设读数已含光环。
-- **战斗内读属性**：凡有 (side, item) 的读数优先走 **`BattleSide.GetItemInt(item.ItemIndex, key, defaultValue)`**（解析为 **`GetAttribute`** 或 **`Template.GetInt`**）。施放队列 **castQueue** 为 **`List<ItemState>`**。
+- 执行效果时，`BattleContext.GetResolvedValue` 通过 `BattleContext.GetItemInt` 读取运行时属性并可叠加光环。
+- **默认值回退不可丢**：从 `Template.GetInt(key, defaultValue)` 迁移到 `ItemState` 后，`BattleSide.GetItemInt` / `BattleContext.GetItemInt` 需保留“值为 0 且 defaultValue 非 0 时返回默认值”的语义（如 Multicast、TargetCount 默认 1）。
 
-## BuildSide 与模板克隆（性能关键）
+## BuildSide 与模板使用边界
 
-- `ItemState` 的运行时变量（冷却、弹药、冻结、触发时间等）存于 `ItemTemplate` 的 `_intsByTier`（通过 `Template.SetInt` 写入），因此**每场战斗每件物品必须有独立可写的模板实例**，不能直接复用数据库模板对象。
-- 为降低分配与深拷贝成本，`BattleSimulator.BuildSide` 使用 `ItemTemplateBattleClone` 生成“战斗实例模板”：共享 `Tags/Abilities/Auras` 引用，且将 `_intsByTier` 扁平化为单值（每个 key 仅一档），再由 `ItemState` 写入运行时变量。
-- 在批量模拟/多线程跑局中，**禁止**在战斗热路径内深拷贝能力/条件树或做触发器延迟初始化写共享对象（否则会引入争用与竞态）。
+- 战斗过程仅允许读取 `ItemTemplate.Name`（日志）；其他战斗读数统一来自 `ItemState` 与会话索引（abilities/auras）。
+- `ItemState.Abilities` 可直接引用模板能力定义（不 clone），但 `AbilityState` 必须按 Owner 维度拆分（如 `RuntimeAbilityRef`），避免共享 `AbilityId` 造成状态串扰。
 
 ## 设计文档对照
 

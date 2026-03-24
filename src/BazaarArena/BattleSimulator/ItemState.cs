@@ -6,6 +6,7 @@ namespace BazaarArena.BattleSimulator;
 public class ItemState
 {
     public ItemTemplate Template { get; init; }
+    public AbilityDefinition[] Abilities { get; init; } = [];
     public int[] Attributes { get; init; } = new int[Key.ItemStateAttributeCount];
 
     public int GetAttribute(int key) => Attributes[key];
@@ -25,14 +26,10 @@ public class ItemState
     public bool IsCritThisUse { get => Attributes[Key.IsCritThisUse] != 0; set => Attributes[Key.IsCritThisUse] = value ? 1 : 0; }
     public int CritDamagePercentThisUse { get => Attributes[Key.CritDamage]; set => Attributes[Key.CritDamage] = value; }
     public int AmmoRemaining { get => Attributes[Key.Custom_2]; set => Attributes[Key.Custom_2] = value; }
-    /// <summary>各能力下标与 <see cref="ItemTemplate.Abilities"/> 对齐；未触发过为 <see cref="int.MinValue"/>。</summary>
-    private readonly int[] _lastTriggerMsByAbility;
-
     public ItemState(ItemTemplate template, ItemTier tier)
     {
         Template = template;
-        _lastTriggerMsByAbility = new int[template.Abilities.Count];
-        Array.Fill(_lastTriggerMsByAbility, int.MinValue);
+        Abilities = [.. template.Abilities];
         for (int i = 0; i < Attributes.Length; i++)
             Attributes[i] = template.GetInt(i, tier, 0);
     }
@@ -40,20 +37,8 @@ public class ItemState
     public ItemState(ItemState source)
     {
         Template = source.Template;
+        Abilities = source.Abilities;
         Attributes = new int[Key.ItemStateAttributeCount];
         Array.Copy(source.Attributes, Attributes, Attributes.Length);
-        _lastTriggerMsByAbility = new int[source._lastTriggerMsByAbility.Length];
-        Array.Copy(source._lastTriggerMsByAbility, _lastTriggerMsByAbility, _lastTriggerMsByAbility.Length);
-    }
-
-    public int GetLastTriggerMs(int abilityIndex) =>
-        (uint)abilityIndex < (uint)_lastTriggerMsByAbility.Length
-            ? _lastTriggerMsByAbility[abilityIndex]
-            : int.MinValue;
-
-    public void SetLastTriggerMs(int abilityIndex, int timeMs)
-    {
-        if ((uint)abilityIndex < (uint)_lastTriggerMsByAbility.Length)
-            _lastTriggerMsByAbility[abilityIndex] = timeMs;
     }
 }

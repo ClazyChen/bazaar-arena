@@ -11,7 +11,6 @@ internal static class BattleSimulatorThreadScratch
     [ThreadStatic] private static List<int>?[]? s_invokeIndexLists;
 
     [ThreadStatic] private static int s_execDepth;
-    [ThreadStatic] private static List<(int TriggerName, int SideIndex, int ItemIndex)>?[]? s_execTriggerLists;
     [ThreadStatic] private static Core.BattleContext?[]? s_execContexts;
     [ThreadStatic] private static BattleState?[]? s_execBattleStates;
 
@@ -34,19 +33,14 @@ internal static class BattleSimulatorThreadScratch
     }
 
     internal static void BeginExecuteOneEffect(
-        out List<(int TriggerName, int SideIndex, int ItemIndex)> triggerList,
         out Core.BattleContext ctx,
         out BattleState battleState)
     {
-        s_execTriggerLists ??= new List<(int, int, int)>[MaxNesting];
         s_execContexts ??= new Core.BattleContext[MaxNesting];
         s_execBattleStates ??= new BattleState[MaxNesting];
         if (s_execDepth >= MaxNesting)
             throw new InvalidOperationException("ExecuteOneEffect 嵌套超过上限，请检查效果委托是否意外同步递归。");
         int d = s_execDepth++;
-        s_execTriggerLists[d] ??= new List<(int, int, int)>(12);
-        s_execTriggerLists[d]!.Clear();
-        triggerList = s_execTriggerLists[d]!;
         s_execContexts[d] ??= new Core.BattleContext();
         s_execBattleStates[d] ??= new BattleState();
         ctx = s_execContexts[d]!;

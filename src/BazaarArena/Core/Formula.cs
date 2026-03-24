@@ -14,18 +14,18 @@ public class Formula
     public static Formula Source(int key) => new(ctx =>
     {
         if (ctx.Caster == null) return 0;
-        return ctx.Caster.Template.GetInt(key, ctx.Caster.Tier, 0);
+        return ctx.GetItemInt(ctx.Caster, key, 0);
     });
 
     public static Formula Caster(int key) => new(ctx =>
     {
         if (ctx.Caster == null) return 0;
-        return ctx.Caster.Template.GetInt(key, ctx.Caster.Tier, 0);
+        return ctx.GetItemInt(ctx.Caster, key, 0);
     });
 
     public static Formula Item(int key) => new(ctx =>
     {
-        return ctx.Item.Template.GetInt(key, ctx.Item.Tier, 0);
+        return ctx.GetItemInt(ctx.Item, key, 0);
     });
 
     /// <summary>常数。</summary>
@@ -52,6 +52,7 @@ public class Formula
                 var c = new BattleContext
                 {
                     BattleState = ctx.BattleState,
+                    SessionTables = ctx.SessionTables,
                     Item = it,
                     Caster = ctx.Caster,
                     Source = ctx.Source,
@@ -67,6 +68,7 @@ public class Formula
                 var c = new BattleContext
                 {
                     BattleState = ctx.BattleState,
+                    SessionTables = ctx.SessionTables,
                     Item = it,
                     Caster = ctx.Caster,
                     Source = ctx.Source,

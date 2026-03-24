@@ -2,11 +2,19 @@ namespace BazaarArena.Core;
 
 public class AbilityDefinition
 {
+    private static int s_nextAbilityId = 1;
+
+    public AbilityDefinition()
+    {
+        AbilityId = System.Threading.Interlocked.Increment(ref s_nextAbilityId);
+    }
+
+    public int AbilityId { get; }
     public List<TriggerEntry> TriggerEntries { get; set; } = [];
     public AbilityPriority Priority { get; set; } = AbilityPriority.Medium;
     public AbilityType AbilityType { get; set; } = AbilityType.None;
     public bool UseSelf { get; set; } = true;
-    public Action<BattleContext>? Apply { get; set; }
+    public Action<BattleContext, AbilityDefinition>? Apply { get; set; }
     public Formula? TargetCondition { get; set; }
     public int Value { get; set; }
     public int? ValueKey { get; set; }
@@ -27,7 +35,7 @@ public class AbilityDefinition
         int? valueKey = null,
         int? value = null,
         bool? applyCritMultiplier = null,
-        Action<BattleContext>? apply = null,
+        Action<BattleContext, AbilityDefinition>? apply = null,
         string? effectLogName = null,
         int? targetCountKey = null)
     {

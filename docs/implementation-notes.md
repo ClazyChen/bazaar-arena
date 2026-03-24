@@ -850,6 +850,43 @@
 
 ---
 
+## 战斗期模板只读 Name：索引化重构经验（2026-03）
+
+### 目标与落地
+
+- **约束**：战斗过程中仅允许读取 `ItemTemplate.Name`（日志），其他战斗读数全部走 `ItemState`/`BattleContext.GetItemInt`。
+- **触发索引**：`Trigger` 改为 **0 基连续编号**，并提供 `Trigger.Count`；Run 初始化构建 `triggerId -> abilities` 索引。
+- **光环索引**：Run 初始化构建 `attributeKey -> auras`（及 `AllAuras`），`BattleContext.GetItemInt(item,key)` 在运行时统一叠加光环。
+- **Apply 形态**：`AbilityDefinition.Apply` 从 `Action<BattleContext>` 改为 `Action<BattleContext, AbilityDefinition>`，减少把能力字段搬运到 `BattleContext`。
+- **触发调用链**：移除 `EffectAppliedTriggerQueue` 绕行；效果施加时通过 `BattleContext.TriggerInvoker` 直接调用 `InvokeTrigger`。
+
+### 250ms 节流与队列：AbilityState 的正确建模
+
+- **全局 AbilityId**：`AbilityDefinition` 在构造时分配全局 `AbilityId`（`Override/Also` 不变）。
+- **关键坑**：当 `ItemState.Abilities` 直接引用模板能力（不 clone）时，同一 `AbilityDefinition` 可能被多个物品共享；若 `AbilityId -> AbilityState` 一对一，会发生 owner 覆盖，表现为“有施放日志、无效果日志”。
+- **修复原则**：运行态必须按**能力持有者维度**拆开，不能仅按 `AbilityId` 聚合。
+  - 实现上使用 `RuntimeAbilityRef(Owner, Ability)`；
+  - 队列桶存 `RuntimeAbilityRef`（非 `AbilityQueueEntry`）；
+  - `AbilityState` 按 `RuntimeAbilityRef.Id` 维护 `LastTriggerMs/PendingCount/InvokeTargets`。
+- **收益**：保留“能力定义不可变且不 clone”的前提，同时避免共享状态串扰。
+
+### 默认值回退语义不可丢
+
+- 从 `Template.GetInt(key, default)` 切到 `ItemState.Attributes[key]` 后，若直接返回属性值，会丢失大量“0 表示未配置”的默认语义（如 `Multicast`、`*TargetCount` 默认应为 1）。
+- **必须补回退**：
+  - `BattleSide.GetItemInt(item,key,defaultValue)`：当读取值为 0 且 `defaultValue != 0` 时返回默认值；
+  - `BattleContext.GetItemInt` 保持同语义；
+  - `Apply.*` 在读取能力主值时，需支持 `ability.Value` 作为 `ValueKey` 之外的回退来源（否则常量能力值会丢失）。
+
+### 验收建议
+
+- 先用小铜回归脚本验证主链路（UseItem/伤害/护盾/冻结）再扩展档位。
+- 若出现“只施放不生效”，优先检查：
+  1) `PendingCount` 是否因默认值回退缺失变为 0；  
+  2) `AbilityState` key 是否误用共享 `AbilityId` 而未包含 owner 维度。
+
+---
+
 ## 伤害报表与效果类型（吸血、护盾降低、伤害提高）
 
 ### 问题：吸血伤害未统计

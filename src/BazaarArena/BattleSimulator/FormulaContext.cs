@@ -6,7 +6,7 @@ namespace BazaarArena.BattleSimulator;
 internal sealed class FormulaContext(ItemState source, BattleSide side, BattleSide? opp)
 {
     public int GetSourceInt(string key) =>
-        source.Template.GetInt(key, source.Tier, 0);
+        Key.TryGetKey(key, out int k) ? source.GetAttribute(k) : 0;
 
     public int GetSideInt(string key) => side.GetInt(key, 0);
     public int GetOppInt(string key) => opp?.GetInt(key, 0) ?? 0;
@@ -17,7 +17,7 @@ internal sealed class FormulaContext(ItemState source, BattleSide side, BattleSi
         foreach (var item in side.Items)
         {
             if (item.Destroyed) continue;
-            int v = item.Template.GetInt(key, item.Tier, 0);
+            int v = Key.TryGetKey(key, out int k) ? item.GetAttribute(k) : 0;
             if (v > max) max = v;
         }
         return max;
@@ -30,7 +30,7 @@ internal sealed class FormulaContext(ItemState source, BattleSide side, BattleSi
         foreach (var item in side.Items)
         {
             if (item.Destroyed) continue;
-            int v = item.Template.GetInt(key, item.Tier, 0);
+            int v = Key.TryGetKey(key, out int k) ? item.GetAttribute(k) : 0;
             if (!any) { min = v; any = true; }
             else if (v < min) min = v;
         }
