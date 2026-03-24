@@ -192,7 +192,6 @@ public static class CommonMedium
         {
             Name = "简易路障",
             Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
-            Tags = 0,
             Cooldown = 7.0,
             Slow = [1.0, 2.0, 3.0, 4.0],
             Abilities =
@@ -493,7 +492,6 @@ public static class CommonMedium
         {
             Name = "祖特笛",
             Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；相邻物品暴击率 {+Custom_0%}；造成暴击时，为此物品充能 {ChargeSeconds} 秒",
-            Tags = 0,
             Cooldown = 7.0,
             Slow = 2.0,
             SlowTargetCount = [2, 3],
@@ -602,7 +600,7 @@ public static class CommonMedium
             [
                 Ability.Damage.Override(
                     trigger: Trigger.Ammo,
-                    condition: Condition.SameSide & Condition.AmmoDepleted,
+                    additionalCondition: Condition.AmmoDepleted,
                     targetCondition: Condition.DifferentSide
                 ),
             ],

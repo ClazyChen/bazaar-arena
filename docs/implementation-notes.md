@@ -432,6 +432,7 @@
 
 - **Override 格式**：`Override(` 后换行、缩进，每行一个参数；参数顺序为 trigger → (additional)condition → invokeTargetCondition → sourceCondition → (additional)targetCondition → priority；最后换行、回退缩进、`)`。详见 **.cursor/rules/ability-override-format.mdc**。
 - **Override 简化**：当能力的默认 TargetCondition 已是 SameSide 或 DifferentSide 时，若只需在默认上**追加**条件，应使用 **additionalTargetCondition** 而非重写 **targetCondition**（如「己方且飞行」写 `additionalTargetCondition: Condition.InFlight`，勿写 `targetCondition: Condition.SameSide & Condition.InFlight`）。定义物品时能简化的要简化。
+- **condition 简化边界**：若 `condition` 仅等于当前 trigger 的默认条件，可直接省略；若要把 `condition` 改写为 `additionalCondition`，必须先确认该 trigger 的默认条件与现有写法一致。特别是 `Trigger.UseOtherItem` 默认含 `Condition.DifferentFromCaster`，盲目改写可能改变语义。
 - **AddAttribute / ReduceAttribute**：保留为方法，因需指定 attribute key，如 `Ability.AddAttribute(Key.Damage).Override(...)`、`Ability.ReduceAttribute(Key.Shield).Override(...)`。
 
 ### 小结

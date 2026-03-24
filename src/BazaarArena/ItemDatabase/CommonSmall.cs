@@ -31,7 +31,6 @@ public static class CommonSmall
         {
             Name = "岩浆核心",
             Desc = "战斗开始时，造成 {Burn} 灼烧",
-            Tags = 0,
             Burn = [6, 9, 12, 15],
             Abilities =
             [
@@ -202,7 +201,6 @@ public static class CommonSmall
         {
             Name = "冰锥",
             Desc = "战斗开始时，冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒",
-            Tags = 0,
             Freeze = [3.0, 4.0, 5.0, 6.0],
             Abilities =
             [
@@ -264,7 +262,6 @@ public static class CommonSmall
         {
             Name = "灵质",
             Desc = "▶ 造成 {Poison} 剧毒；▶ 获得治疗，等量于敌人的剧毒",
-            Tags = 0,
             Cooldown = 7.0,
             Poison = [10, 20, 30],
             Heal = 0,
@@ -290,7 +287,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "失落神祇",
-            Desc = "▶ 造成 {Poison} 剧毒；相邻物品触发减速时，此物品获得 {Custom_0} 剧毒（限本场战斗）",
+            Desc = "▶ 造成 {Poison} 剧毒；相邻物品触发减速时，此物品剧毒提高 {Custom_0} （限本场战斗）",
             Tags = Tag.Relic,
             Cooldown = 6.0,
             Poison = 4,
@@ -315,7 +312,6 @@ public static class CommonSmall
         {
             Name = "神经毒素",
             Desc = "使用相邻武器时，减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
-            Tags = 0,
             Slow = [1.0, 2.0, 3.0],
             Abilities =
             [
@@ -333,7 +329,6 @@ public static class CommonSmall
         {
             Name = "断裂镣铐",
             Desc = "▶ 武器伤害提高 {Custom_0}（限本场战斗）；使用武器时，为此物品充能 {ChargeSeconds} 秒",
-            Tags = 0,
             Cooldown = 8.0,
             Custom_0 = [4, 8, 12],
             Charge = 2.0,
@@ -344,7 +339,7 @@ public static class CommonSmall
                     priority: AbilityPriority.High
                 ),
                 Ability.Charge.Override(
-                    condition: Condition.SameSide & Condition.WithTag(Tag.Weapon),
+                    additionalCondition: Condition.WithTag(Tag.Weapon),
                     targetCondition: Condition.SameAsCaster
                 ),
             ],
@@ -367,7 +362,6 @@ public static class CommonSmall
                 Ability.Haste,
                 Ability.StartFlying.Override(
                     trigger: Trigger.Crit,
-                    condition: Condition.SameSide,
                     targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ),
@@ -498,7 +492,6 @@ public static class CommonSmall
             [
                 Ability.Damage.Override(
                     trigger: Trigger.Slow,
-                    condition: Condition.SameSide,
                     priority: AbilityPriority.Low
                 ),
             ],
@@ -662,7 +655,6 @@ public static class CommonSmall
                 ),
                 Ability.Haste.Override(
                     trigger: Trigger.Slow,
-                    condition: Condition.SameSide,
                     additionalTargetCondition: Condition.SameAsInvokeTarget,
                     priority: AbilityPriority.High
                 ),

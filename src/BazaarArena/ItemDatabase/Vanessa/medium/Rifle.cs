@@ -45,7 +45,7 @@ public static class Rifle
             [
                 Ability.Damage,
                 Ability.Reload.Override(
-                    condition: Condition.SameAsCaster & Condition.OnlyWeaponWithCooldown,
+                    additionalCondition: Condition.OnlyWeaponWithCooldown,
                     targetCondition: Condition.SameAsCaster,
                     valueKey: Key.Custom_0,
                     priority: AbilityPriority.Lowest

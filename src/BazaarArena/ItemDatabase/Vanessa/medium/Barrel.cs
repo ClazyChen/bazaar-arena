@@ -12,7 +12,6 @@ public static class Barrel
         {
             Name = "木桶",
             Desc = "▶ 获得 {Shield} 护盾；▶ 使用相邻物品时，此物品的护盾提高 {Custom_0}（限本场战斗）",
-            Tags = 0,
             Cooldown = 6.0,
             Shield = 20,
             Custom_0 = [10, 20, 30, 40],
@@ -35,7 +34,6 @@ public static class Barrel
         {
             Name = "木桶_S1",
             Desc = "▶ 获得 {Shield} 护盾；▶ 使用相邻物品时，此物品的护盾提高 {Custom_0}（限本场战斗）",
-            Tags = 0,
             Cooldown = 5.0,
             Shield = 20,
             Custom_0 = [10, 15, 20, 25],
