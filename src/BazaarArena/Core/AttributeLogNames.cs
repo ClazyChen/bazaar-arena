@@ -10,7 +10,7 @@ public static class AttributeLogNames
         [Key.Heal] = "治疗",
         [Key.Burn] = "灼烧",
         [Key.Poison] = "剧毒",
-        [Key.CritRatePercent] = "暴击率",
+        [Key.CritRate] = "暴击率",
         [Key.Gold] = "金币",
         [Key.InFlight] = "飞行",
         [Key.FreezeRemainingMs] = "冻结",

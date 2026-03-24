@@ -39,7 +39,7 @@ public static class BilgeWorm
             Custom_0 = [4, 8, 12],
             Abilities =
             [
-                Ability.AddAttribute(Key.CritRatePercent).Override(
+                Ability.AddAttribute(Key.CritRate).Override(
                     priority: AbilityPriority.High
                 ),
                 Ability.PoisonSelf,
@@ -64,7 +64,7 @@ public static class BilgeWorm
             Custom_0 = [4, 8, 12],
             Abilities =
             [
-                Ability.AddAttribute(Key.CritRatePercent).Override(
+                Ability.AddAttribute(Key.CritRate).Override(
                     priority: AbilityPriority.High
                 ),
                 Ability.PoisonSelf.Override(

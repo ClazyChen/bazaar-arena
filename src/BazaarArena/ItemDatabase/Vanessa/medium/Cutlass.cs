@@ -24,7 +24,7 @@ public static class Cutlass
             [
                 new AuraDefinition
                 {
-                    Attribute = Key.CritDamagePercent,
+                    Attribute = Key.CritDamage,
                     Value = Formula.Constant(100),
                     Percent = true,
                 },

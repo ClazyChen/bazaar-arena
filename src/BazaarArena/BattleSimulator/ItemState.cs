@@ -31,7 +31,7 @@ public class ItemState
         Template = template;
         Abilities = [.. template.Abilities];
         for (int i = 0; i < Attributes.Length; i++)
-            Attributes[i] = template.GetInt(i, tier, 0);
+            Attributes[i] = template.GetInt(i, tier);
     }
 
     public ItemState(ItemState source)

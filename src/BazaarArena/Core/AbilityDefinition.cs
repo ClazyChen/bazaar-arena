@@ -93,7 +93,7 @@ public class AbilityDefinition
     public int ResolveValue(ItemTemplate template, ItemTier tier, int defaultKey)
     {
         int key = ValueKey ?? defaultKey;
-        int v = template.GetInt(key, tier, 0);
+        int v = template.GetInt(key, tier);
         return v != 0 ? v : Value;
     }
 }

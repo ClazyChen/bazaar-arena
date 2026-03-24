@@ -20,7 +20,7 @@ public static class Calico
             Abilities =
             [
                 Ability.Damage,
-                Ability.AddAttribute(Key.CritRatePercent).Override(
+                Ability.AddAttribute(Key.CritRate).Override(
                     condition: Condition.SameSide & Condition.WithTag(Tag.Weapon) & Condition.DifferentFromCaster,
                     targetCondition: Condition.SameAsCaster
                 ),
@@ -42,7 +42,7 @@ public static class Calico
             Abilities =
             [
                 Ability.Damage,
-                Ability.AddAttribute(Key.CritRatePercent).Override(
+                Ability.AddAttribute(Key.CritRate).Override(
                     condition: Condition.SameSide & Condition.WithTag(Tag.Weapon) & Condition.DifferentFromCaster,
                     targetCondition: Condition.SameAsCaster
                 ),
@@ -51,7 +51,7 @@ public static class Calico
             [
                 new AuraDefinition
                 {
-                    Attribute = Key.CritDamagePercent,
+                    Attribute = Key.CritDamage,
                     Value = Formula.Constant(100),
                     Percent = true,
                 },

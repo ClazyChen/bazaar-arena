@@ -260,7 +260,7 @@ public static class CommonMedium
                 Ability.StartFlying.Override(
                     targetCountKey: Key.Custom_1
                 ),
-                Ability.AddAttribute(Key.CritRatePercent).Override(
+                Ability.AddAttribute(Key.CritRate).Override(
                     additionalTargetCondition: Condition.InFlight,
                     priority: AbilityPriority.Low
                 ),
@@ -511,7 +511,7 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    Attribute = Key.CritRatePercent,
+                    Attribute = Key.CritRate,
                     Condition = Condition.AdjacentToCaster,
                     Value = Formula.Source(Key.Custom_0),
                 },
@@ -607,7 +607,7 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
-                    Attribute = Key.CritRatePercent,
+                    Attribute = Key.CritRate,
                     Condition = Condition.LeftOfCaster & Condition.WithTag(DerivedTag.Ammo),
                     Value = Formula.Constant(100),
                     Percent = true,

@@ -39,12 +39,11 @@ public class BattleSide
     public List<ItemState> Items { get; set; } = [];
 
     /// <summary>战斗内读物品属性：统一读取运行时数组。</summary>
-    public int GetItemInt(int itemIndex, int key, int defaultValue = 0)
+    public int GetItemInt(int itemIndex, int key)
     {
         var item = Items[itemIndex];
         if ((uint)key >= (uint)item.Attributes.Length)
-            return defaultValue;
-        int value = item.GetAttribute(key);
-        return value == 0 ? defaultValue : value;
+            return 0;
+        return item.GetAttribute(key);
     }
 }

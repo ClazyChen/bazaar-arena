@@ -1,19 +1,12 @@
 namespace BazaarArena.Core;
 
-/// <summary>比例转化：向下取整、至少为 1；以及按百分比的数值计算（如减免量）。</summary>
+/// <summary>比例转化：按百分比向下取整。</summary>
 public static class RatioUtil
 {
-    /// <summary>计算 value 的 percent%（0–100），向下取整；用于如「减免量」「扣除量」等，结果可为 0。</summary>
-    public static int PercentOf(int value, int percent)
-    {
-        if (value <= 0 || percent <= 0) return 0;
-        return value * Math.Clamp(percent, 0, 100) / 100;
-    }
-
-    /// <summary>计算 value 的 percent%（0–100），向下取整，结果至少为 1（若 value 至少为 1）。</summary>
+    /// <summary>计算 value 的 percent%（0–100），向下取整；当 percent 小于等于 0 时返回 0。</summary>
     public static int PercentFloor(int value, int percent)
     {
-        if (value <= 0) return 0;
+        if (value <= 0 || percent <= 0) return 0;
         int result = value * percent / 100;
         return result < 1 ? 1 : result;
     }

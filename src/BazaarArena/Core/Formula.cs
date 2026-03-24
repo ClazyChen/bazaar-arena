@@ -11,21 +11,13 @@ public class Formula
     public int Evaluate(BattleContext ctx) => _evaluate(ctx);
 
     /// <summary>读取「能力持有者」模板整型；与上下文字段 <see cref="BattleContext.Source"/>（引起触发者）区分，此处固定走 <see cref="BattleContext.Caster"/>。</summary>
-    public static Formula Source(int key) => new(ctx =>
-    {
-        if (ctx.Caster == null) return 0;
-        return ctx.GetItemInt(ctx.Caster, key, 0);
-    });
+    public static Formula Source(int key) => new(ctx => ctx.GetItemInt(ctx.Caster, key));
 
-    public static Formula Caster(int key) => new(ctx =>
-    {
-        if (ctx.Caster == null) return 0;
-        return ctx.GetItemInt(ctx.Caster, key, 0);
-    });
+    public static Formula Caster(int key) => new(ctx => ctx.GetItemInt(ctx.Caster, key));
 
     public static Formula Item(int key) => new(ctx =>
     {
-        return ctx.GetItemInt(ctx.Item, key, 0);
+        return ctx.GetItemInt(ctx.Item, key);
     });
 
     /// <summary>常数。</summary>
@@ -41,54 +33,47 @@ public class Formula
 
     public static Formula Count(Formula condition) => new(ctx =>
     {
-        if (ctx.BattleState == null) return 0;
         int n = 0;
         var side0 = ctx.BattleState.Side0;
         var side1 = ctx.BattleState.Side1;
-        if (side0 != null)
+        foreach (var it in side0.Items)
         {
-            foreach (var it in side0.Items)
+            var c = new BattleContext
             {
-                var c = new BattleContext
-                {
-                    BattleState = ctx.BattleState,
-                    SessionTables = ctx.SessionTables,
-                    Item = it,
-                    Caster = ctx.Caster,
-                    Source = ctx.Source,
-                    InvokeTarget = ctx.InvokeTarget,
-                };
-                if (condition.Evaluate(c) != 0) n++;
-            }
+                BattleState = ctx.BattleState,
+                SessionTables = ctx.SessionTables,
+                Item = it,
+                Caster = ctx.Caster,
+                Source = ctx.Source,
+                InvokeTarget = ctx.InvokeTarget,
+            };
+            if (condition.Evaluate(c) != 0) n++;
         }
-        if (side1 != null)
+        foreach (var it in side1.Items)
         {
-            foreach (var it in side1.Items)
+            var c = new BattleContext
             {
-                var c = new BattleContext
-                {
-                    BattleState = ctx.BattleState,
-                    SessionTables = ctx.SessionTables,
-                    Item = it,
-                    Caster = ctx.Caster,
-                    Source = ctx.Source,
-                    InvokeTarget = ctx.InvokeTarget,
-                };
-                if (condition.Evaluate(c) != 0) n++;
-            }
+                BattleState = ctx.BattleState,
+                SessionTables = ctx.SessionTables,
+                Item = it,
+                Caster = ctx.Caster,
+                Source = ctx.Source,
+                InvokeTarget = ctx.InvokeTarget,
+            };
+            if (condition.Evaluate(c) != 0) n++;
         }
         return n;
     });
 
     private static BazaarArena.BattleSimulator.BattleSide CurrentSide(BattleContext ctx)
     {
-        int sideIndex = ctx.Caster?.SideIndex ?? ctx.Source?.SideIndex ?? ctx.Item.SideIndex;
+        int sideIndex = ctx.Caster.SideIndex;
         return sideIndex == 0 ? ctx.BattleState.Side0 : ctx.BattleState.Side1;
     }
 
     private static BazaarArena.BattleSimulator.BattleSide OppSide(BattleContext ctx)
     {
-        int sideIndex = ctx.Caster?.SideIndex ?? ctx.Source?.SideIndex ?? ctx.Item.SideIndex;
+        int sideIndex = ctx.Caster.SideIndex;
         return sideIndex == 0 ? ctx.BattleState.Side1 : ctx.BattleState.Side0;
     }
 

@@ -51,7 +51,7 @@ internal sealed class GreedyPreflattenedResolver : IItemTemplateResolver
         foreach (var kv in source.GetIntsByTierSnapshot())
         {
             int key = kv.Key;
-            int v = source.GetInt(key, ItemTier.Bronze, defaultValue: 0);
+            int v = source.GetInt(key, ItemTier.Bronze);
             flat.SetIntByKey(key, v);
         }
 
@@ -59,12 +59,12 @@ internal sealed class GreedyPreflattenedResolver : IItemTemplateResolver
         {
             foreach (var kv in source.OverridableAttributes)
             {
-                int bronzeVal = source.GetInt(kv.Key, ItemTier.Bronze, 0);
+                int bronzeVal = source.GetInt(kv.Key, ItemTier.Bronze);
                 int applied = playerLevel switch
                 {
                     2 => bronzeVal / 2,
                     3 => bronzeVal,
-                    4 => (bronzeVal + source.GetInt(kv.Key, ItemTier.Silver, bronzeVal)) / 2,
+                    4 => (bronzeVal + source.GetInt(kv.Key, ItemTier.Silver)) / 2,
                     _ => bronzeVal / 2,
                 };
                 flat.SetIntByKey(kv.Key, applied);

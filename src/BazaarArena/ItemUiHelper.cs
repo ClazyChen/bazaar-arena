@@ -66,7 +66,7 @@ internal static class ItemUiHelper
         };
 
         var parts = new List<string> { SizeToDisplayName(template.Size) };
-        int tags = template.GetInt(Key.Tags, template.MinTier, 0);
+        int tags = template.GetInt(Key.Tags, template.MinTier);
         for (int bit = 0; bit < 31; bit++)
         {
             int tag = 1 << bit;

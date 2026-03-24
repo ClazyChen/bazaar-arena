@@ -126,8 +126,8 @@ public class BattleSimulator
                 foreach (var item in toProcess)
                 {
                     var side = item.SideIndex == 0 ? side0 : side1;
-                    int ammoCap = side.GetItemInt(item.ItemIndex, Key.AmmoCap, 0);
-                    int multicast = side.GetItemInt(item.ItemIndex, Key.Multicast, 1);
+                    int ammoCap = side.GetItemInt(item.ItemIndex, Key.AmmoCap);
+                    int multicast = side.GetItemInt(item.ItemIndex, Key.Multicast);
                     InvokeTrigger(Trigger.UseItem, item, new TriggerInvokeContext { Multicast = multicast, InvokeTargetItem = item }, timeMs, side0, side1, abilityCurrent, abilityNext,
                         executeImmediate: (owner, abilityIdx, ability) =>
                         {
@@ -183,11 +183,11 @@ public class BattleSimulator
                             }
                             else
                             {
-                                int critRate = item.GetAttribute(Key.CritRatePercent);
+                                int critRate = item.GetAttribute(Key.CritRate);
                                 if (critRate > 0 && ThreadLocalRandom.Next100() < critRate)
                                 {
                                     isCrit = true;
-                                    critDamagePercent = item.GetAttribute(Key.CritDamagePercent);
+                                    critDamagePercent = item.GetAttribute(Key.CritDamage);
                                     if (critDamagePercent <= 0) critDamagePercent = 200;
                                 }
                                 item.CritTimeMs = timeMs;
@@ -394,7 +394,7 @@ public class BattleSimulator
         {
             var item = side.Items[i];
             if (item.Destroyed) continue;
-            int cooldownMs = side.GetItemInt(i, Key.CooldownMs, 0);
+            int cooldownMs = side.GetItemInt(i, Key.CooldownMs);
             if (cooldownMs <= 0) continue;
             if (item.FreezeRemainingMs > 0) continue; // 冰冻不推进冷却
             int advanceMs = FrameMs;
@@ -405,7 +405,7 @@ public class BattleSimulator
             item.CooldownElapsedMs += advanceMs;
             if (item.CooldownElapsedMs >= cooldownMs)
             {
-                int ammoCap = side.GetItemInt(i, Key.AmmoCap, 0);
+                int ammoCap = side.GetItemInt(i, Key.AmmoCap);
                 if (ammoCap > 0 && item.AmmoRemaining <= 0) continue;
                 item.CooldownElapsedMs = 0;
                 castQueue.Add(item);

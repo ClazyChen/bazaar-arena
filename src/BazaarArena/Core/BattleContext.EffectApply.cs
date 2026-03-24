@@ -6,7 +6,9 @@ public sealed partial class BattleContext
 {
     public int GetResolvedValue(int key, bool applyCritMultiplier = false, int defaultValue = 0, int fallbackValue = 0)
     {
-        int baseValue = GetItemInt(Caster, key, defaultValue);
+        int baseValue = GetItemInt(Caster, key);
+        if (baseValue == 0 && defaultValue != 0)
+            baseValue = defaultValue;
         if (baseValue == 0 && fallbackValue != 0)
             baseValue = fallbackValue;
         return applyCritMultiplier ? baseValue * CritMultiplier : baseValue;
@@ -36,7 +38,7 @@ public sealed partial class BattleContext
     public void ChargeCasterItem(int chargeMs, out bool fullAndShouldCast)
     {
         fullAndShouldCast = false;
-        int cooldownMs = Side.GetItemInt(Caster.ItemIndex, Key.CooldownMs, 0);
+        int cooldownMs = Side.GetItemInt(Caster.ItemIndex, Key.CooldownMs);
         if (cooldownMs <= 0) return;
         int newElapsed = Math.Min(cooldownMs, Caster.CooldownElapsedMs + chargeMs);
         int added = newElapsed - Caster.CooldownElapsedMs;
@@ -45,7 +47,7 @@ public sealed partial class BattleContext
             LogSink.OnEffect(Caster, Caster.Template.Name, "充能", added, TimeMs, isCrit: false);
         if (Caster.CooldownElapsedMs >= cooldownMs && ChargeInducedCastQueue != null)
         {
-            int ammoCap = Side.GetItemInt(Caster.ItemIndex, Key.AmmoCap, 0);
+            int ammoCap = Side.GetItemInt(Caster.ItemIndex, Key.AmmoCap);
             if (ammoCap <= 0 || Caster.AmmoRemaining > 0)
                 ChargeInducedCastQueue.Add(Caster);
             fullAndShouldCast = true;
@@ -146,13 +148,13 @@ public sealed partial class BattleContext
     private string ChargeItemAt(BattleSide side, int itemIndex, int chargeMs)
     {
         var target = side.Items[itemIndex];
-        int cooldownMs = side.GetItemInt(itemIndex, Key.CooldownMs, 0);
+        int cooldownMs = side.GetItemInt(itemIndex, Key.CooldownMs);
         if (cooldownMs <= 0) return target.Template.Name;
         int newElapsed = Math.Min(cooldownMs, target.CooldownElapsedMs + chargeMs);
         target.CooldownElapsedMs = newElapsed;
         if (target.CooldownElapsedMs >= cooldownMs && side == Side && ChargeInducedCastQueue != null)
         {
-            int ammoCap = side.GetItemInt(itemIndex, Key.AmmoCap, 0);
+            int ammoCap = side.GetItemInt(itemIndex, Key.AmmoCap);
             if (ammoCap <= 0 || target.AmmoRemaining > 0)
                 ChargeInducedCastQueue.Add(target);
             target.CooldownElapsedMs = 0;
@@ -167,8 +169,8 @@ public sealed partial class BattleContext
         ApplyToTargetsBothSides(targetCount, cond, "冻结", freezeMs, (side, index) =>
         {
             var t = side.Items[index];
-            int pct = Math.Clamp(GetItemInt(t, Key.PercentFreezeReduction, 0), 0, 100);
-            int effectiveMs = freezeMs - RatioUtil.PercentOf(freezeMs, pct);
+            int pct = Math.Clamp(GetItemInt(t, Key.PercentFreezeReduction), 0, 100);
+            int effectiveMs = freezeMs - RatioUtil.PercentFloor(freezeMs, pct);
             t.FreezeRemainingMs += effectiveMs;
             return t.Template.Name;
         }, Trigger.Freeze);
@@ -217,7 +219,7 @@ public sealed partial class BattleContext
             t.AmmoRemaining += add;
             if (side == Side && ChargeInducedCastQueue != null)
             {
-                int cooldownMs = side.GetItemInt(index, Key.CooldownMs, 0);
+                int cooldownMs = side.GetItemInt(index, Key.CooldownMs);
                 if (cooldownMs > 0 && t.CooldownElapsedMs >= cooldownMs && (cap <= 0 || t.AmmoRemaining > 0))
                 {
                     ChargeInducedCastQueue.Add(t);
@@ -258,7 +260,7 @@ public sealed partial class BattleContext
     {
         if (value <= 0 || targetCondition == null) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed;
-        if (attributeKey == Key.CritRatePercent)
+        if (attributeKey == Key.CritRate)
             cond &= Condition.CanCrit;
         string logName = EffectLogName ?? (AttributeLogNames.Get(attributeKey) + "提高");
         if (maxTargetCount > 0)
@@ -271,7 +273,7 @@ public sealed partial class BattleContext
                 var wi = Side.Items[i];
                 if (attributeKey == Key.Damage) { wi.SetAttribute(Key.Damage, wi.GetAttribute(Key.Damage) + value); targetNames.Add(wi.Template.Name); }
                 else if (attributeKey == Key.Poison) { wi.SetAttribute(Key.Poison, wi.GetAttribute(Key.Poison) + value); targetNames.Add(wi.Template.Name); }
-                else if (attributeKey == Key.CritRatePercent) { wi.SetAttribute(Key.CritRatePercent, wi.GetAttribute(Key.CritRatePercent) + value); targetNames.Add(wi.Template.Name); }
+                else if (attributeKey == Key.CritRate) { wi.SetAttribute(Key.CritRate, wi.GetAttribute(Key.CritRate) + value); targetNames.Add(wi.Template.Name); }
                 else if (attributeKey == Key.InFlight) { wi.InFlight = value != 0; targetNames.Add(wi.Template.Name); }
                 else { wi.SetAttribute(attributeKey, wi.GetAttribute(attributeKey) + value); targetNames.Add(wi.Template.Name); }
             }
@@ -283,7 +285,7 @@ public sealed partial class BattleContext
         {
             if (attributeKey == Key.Damage) { wi.SetAttribute(Key.Damage, wi.GetAttribute(Key.Damage) + value); return wi.Template.Name; }
             if (attributeKey == Key.Poison) { wi.SetAttribute(Key.Poison, wi.GetAttribute(Key.Poison) + value); return wi.Template.Name; }
-            if (attributeKey == Key.CritRatePercent) { wi.SetAttribute(Key.CritRatePercent, wi.GetAttribute(Key.CritRatePercent) + value); return wi.Template.Name; }
+            if (attributeKey == Key.CritRate) { wi.SetAttribute(Key.CritRate, wi.GetAttribute(Key.CritRate) + value); return wi.Template.Name; }
             if (attributeKey == Key.InFlight) { wi.InFlight = value != 0; return wi.Template.Name; }
             wi.SetAttribute(attributeKey, wi.GetAttribute(attributeKey) + value);
             return wi.Template.Name;
@@ -306,7 +308,7 @@ public sealed partial class BattleContext
     {
         if (value <= 0 || targetCondition == null) return;
         var cond = (targetCondition ?? Condition.DifferentSide) & Condition.NotDestroyed;
-        if (attributeKey == Key.CritRatePercent)
+        if (attributeKey == Key.CritRate)
             cond &= Condition.CanCrit;
         string logName = effectLogName ?? (AttributeLogNames.Get(attributeKey) + "降低");
         int take = maxTargetCount > 0 ? maxTargetCount : 100;
@@ -328,7 +330,7 @@ public sealed partial class BattleContext
 
             if (attributeKey == Key.CooldownMs && side == Side && wi.CooldownElapsedMs >= newVal && ChargeInducedCastQueue != null)
             {
-                int ammoCap = side.GetItemInt(index, Key.AmmoCap, 0);
+                int ammoCap = side.GetItemInt(index, Key.AmmoCap);
                 if (ammoCap <= 0 || wi.AmmoRemaining > 0)
                     ChargeInducedCastQueue.Add(wi);
                 wi.CooldownElapsedMs = 0;

@@ -66,11 +66,9 @@ public sealed partial class BattleContext
         TargetCountKey = targetCountKey;
     }
 
-    public int GetItemInt(ItemState item, int key, int defaultValue = 0)
+    public int GetItemInt(ItemState item, int key)
     {
-        int baseValue = (uint)key < (uint)item.Attributes.Length ? item.GetAttribute(key) : defaultValue;
-        if (baseValue == 0 && defaultValue != 0)
-            baseValue = defaultValue;
+        int baseValue = (uint)key < (uint)item.Attributes.Length ? item.GetAttribute(key) : 0;
         if (SessionTables == null) return baseValue;
         if (!SessionTables.AurasByAttribute.TryGetValue(key, out var auras) || auras.Count == 0) return baseValue;
         int fixedSum = 0;

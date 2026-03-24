@@ -30,12 +30,12 @@ public static class Revolver
         return new ItemTemplate
         {
             Name = "左轮手枪_S1",
-            Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；暴击率 {CritRatePercent}%；造成暴击时，为此物品装填 {Custom_0} 发弹药",
+            Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；暴击率 {CritRate}%；造成暴击时，为此物品装填 {Custom_0} 发弹药",
             Tags = [Tag.Weapon],
             Cooldown = 4.0,
             Damage = [8, 16, 24, 32],
             AmmoCap = 6,
-            CritRatePercent = 20,
+            CritRate = 20,
             Custom_0 = 2,
             Abilities =
             [

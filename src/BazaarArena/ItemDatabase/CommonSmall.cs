@@ -144,7 +144,7 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    Attribute = Key.CritRatePercent,
+                    Attribute = Key.CritRate,
                     Condition = Condition.AdjacentToCaster,
                     Value = Formula.Source(Key.Custom_0),
                 },
@@ -170,7 +170,7 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    Attribute = Key.CritDamagePercent,
+                    Attribute = Key.CritDamage,
                     Value = Formula.Constant(100),
                     Percent = true,
                 },
@@ -523,7 +523,7 @@ public static class CommonSmall
             [
                 new AuraDefinition
                 {
-                    Attribute = Key.CritRatePercent,
+                    Attribute = Key.CritRate,
                     SourceCondition = Condition.OnlyCompanion,
                     Value = Formula.Source(Key.Custom_0),
                 },

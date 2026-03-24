@@ -27,5 +27,8 @@ public static class Trigger
     public const int Ammo = 10;
     /// <summary>即将落败时触发（该方 Hp≤0 时，每场战斗每方最多触发一次，由模拟器步骤 10 用阵营标记保证「首次」）。默认 Condition 为 SameSide。</summary>
     public const int AboutToLose = 11;
+    // 新增触发器时写在这里
+    
+    // 触发器的数量
     public const int Count = 12;
 }

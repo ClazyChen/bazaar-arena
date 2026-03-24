@@ -68,6 +68,39 @@ public class ItemDatabase : IItemTemplateResolver
         _ => [1, 2, 4, 8],
     };
 
+    private static bool IsUndefined(ItemTemplate template, int key) =>
+        template.GetIntsByTierSnapshot().TryGetValue(key, out var values) && values.Count == 0;
+
+    private static IntOrByTier TrimByMinTier(IntOrByTier values, ItemTier minTier)
+    {
+        var list = values.ToList();
+        int skip = (int)minTier;
+        if (skip <= 0) return [.. list];
+        if (skip >= list.Count) return [list[^1]];
+        return [.. list.Skip(skip)];
+    }
+
+    private static void EnsureDefaultIfUndefined(ItemTemplate template, int key, IntOrByTier defaultValue)
+    {
+        if (IsUndefined(template, key))
+            template.SetIntOrByTierByKey(key, defaultValue);
+    }
+
+    private static void EnsureDefaultAttributes(ItemTemplate template, int defaultSize)
+    {
+        EnsureDefaultIfUndefined(template, Key.Multicast, 1);
+        EnsureDefaultIfUndefined(template, Key.CritDamage, 200);
+        EnsureDefaultIfUndefined(template, Key.ChargeTargetCount, 1);
+        EnsureDefaultIfUndefined(template, Key.HasteTargetCount, 1);
+        EnsureDefaultIfUndefined(template, Key.SlowTargetCount, 1);
+        EnsureDefaultIfUndefined(template, Key.FreezeTargetCount, 1);
+        EnsureDefaultIfUndefined(template, Key.ReloadTargetCount, 1);
+        EnsureDefaultIfUndefined(template, Key.RepairTargetCount, 1);
+        EnsureDefaultIfUndefined(template, Key.DestroyTargetCount, 1);
+        EnsureDefaultIfUndefined(template, Key.ModifyAttributeTargetCount, 1);
+        EnsureDefaultIfUndefined(template, Key.Value, TrimByMinTier(GetDefaultPriceBySize(defaultSize), template.MinTier));
+    }
+
     /// <summary>注册物品模板；会将当前 DefaultSize、DefaultMinTier、DefaultHero 写入模板后存入，并根据属性自动补充类型 Tag（护盾/伤害/灼烧等）。若存在 OverridableAttributes，将其默认值同步到模板对应 key，避免在模板上重复定义同一数值。Price 在注册时按 DefaultSize 自动设置默认值。</summary>
     public void Register(ItemTemplate template)
     {
@@ -75,6 +108,7 @@ public class ItemDatabase : IItemTemplateResolver
         template.MinTier = DefaultMinTier;
         template.Hero = DefaultHero;
         template.SetIntOrByTierByKey(Key.Price, GetDefaultPriceBySize(DefaultSize));
+        EnsureDefaultAttributes(template, DefaultSize);
         if (template.OverridableAttributes != null)
         {
             foreach (var kv in template.OverridableAttributes)
@@ -185,12 +219,12 @@ public class ItemDatabase : IItemTemplateResolver
     private static bool HasAnyTierPositive(ItemTemplate t, int key)
     {
         foreach (ItemTier tier in Enum.GetValues<ItemTier>())
-            if (t.GetInt(key, tier, 0) > 0) return true;
+            if (t.GetInt(key, tier) > 0) return true;
         return false;
     }
 
     private static int GetTagMask(ItemTemplate template) =>
-        template.GetInt(Key.Tags, template.MinTier, 0);
+        template.GetInt(Key.Tags, template.MinTier);
 
     private static void SetTagMask(ItemTemplate template, int tagMask) =>
         template.SetIntByKey(Key.Tags, tagMask);
@@ -201,7 +235,7 @@ public class ItemDatabase : IItemTemplateResolver
     }
 
     private static int GetDerivedTagMask(ItemTemplate template) =>
-        template.GetInt(Key.DerivedTags, template.MinTier, 0);
+        template.GetInt(Key.DerivedTags, template.MinTier);
 
     private static void SetDerivedTagMask(ItemTemplate template, int tagMask) =>
         template.SetIntByKey(Key.DerivedTags, tagMask);

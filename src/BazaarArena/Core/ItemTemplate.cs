@@ -69,15 +69,15 @@ public class ItemTemplate
     public ItemTier MinTier { get; set; }
     public IntOrByTier[] Attributes { get; private set; } = new IntOrByTier[Key.ItemTemplateAttributeCount];
 
-    public int GetInt(int key, ItemTier tier = ItemTier.Bronze, int defaultValue = 0)
+    public int GetInt(int key, ItemTier tier = ItemTier.Bronze)
     {
-        if ((uint)key >= (uint)Attributes.Length) return defaultValue;
+        if ((uint)key >= (uint)Attributes.Length) return 0;
         var list = Attributes[key].ToList();
-        if (list.Count == 0) return defaultValue;
+        if (list.Count == 0) return 0;
         if (list.Count == 1) return list[0];
-        if ((int)tier < (int)MinTier) return defaultValue;
+        if ((int)tier < (int)MinTier) return 0;
         var index = (int)tier - (int)MinTier;
-        return index < list.Count ? list[index] : defaultValue;
+        return index < list.Count ? list[index] : 0;
     }
 
     private void SetIntOrByTier(int key, IntOrByTier value)
@@ -94,8 +94,6 @@ public class ItemTemplate
     public void SetIntByKey(int key, int value) => SetIntOrByTier(key, value);
 
     public void SetIntOrByTierByKey(int key, IntOrByTier value) => SetIntOrByTier(key, value);
-
-    public static int GetDefaultValueForKey(int key) => 0;
 
     public Dictionary<int, List<int>> GetIntsByTierSnapshot()
     {
@@ -119,10 +117,10 @@ public class ItemTemplate
         return view;
     }
 
-    public int GetInt(string keyName, ItemTier tier = ItemTier.Bronze, int defaultValue = 0)
+    public int GetInt(string keyName, ItemTier tier = ItemTier.Bronze)
     {
-        if (!TryResolveKey(keyName, out int key)) return defaultValue;
-        return GetInt(key, tier, defaultValue);
+        if (!TryResolveKey(keyName, out int key)) return 0;
+        return GetInt(key, tier);
     }
 
     public void SetInt(string keyName, int value)
@@ -132,8 +130,8 @@ public class ItemTemplate
     }
 
     public SecondsOrByTier Cooldown { get => SecondsOrByTier.FromMilliseconds(GetIntOrByTier(Key.CooldownMs).ToList()); set => SetIntOrByTier(Key.CooldownMs, [.. value.ToMilliseconds()]); }
-    public IntOrByTier CritRatePercent { get => GetIntOrByTier(Key.CritRate); set => SetIntOrByTier(Key.CritRate, value); }
-    public IntOrByTier CritDamagePercent { get => GetIntOrByTier(Key.CritDamage); set => SetIntOrByTier(Key.CritDamage, value); }
+    public IntOrByTier CritRate { get => GetIntOrByTier(Key.CritRate); set => SetIntOrByTier(Key.CritRate, value); }
+    public IntOrByTier CritDamage { get => GetIntOrByTier(Key.CritDamage); set => SetIntOrByTier(Key.CritDamage, value); }
     public IntOrByTier Multicast { get => GetIntOrByTier(Key.Multicast); set => SetIntOrByTier(Key.Multicast, value); }
     public IntOrByTier AmmoCap { get => GetIntOrByTier(Key.AmmoCap); set => SetIntOrByTier(Key.AmmoCap, value); }
     public IntOrByTier Damage { get => GetIntOrByTier(Key.Damage); set => SetIntOrByTier(Key.Damage, value); }
@@ -159,12 +157,11 @@ public class ItemTemplate
     public IntOrByTier Custom_1 { get => GetIntOrByTier(Key.Custom_1); set => SetIntOrByTier(Key.Custom_1, value); }
     public IntOrByTier Custom_2 { get => GetIntOrByTier(Key.Custom_2); set => SetIntOrByTier(Key.Custom_2, value); }
     public IntOrByTier Custom_3 { get => GetIntOrByTier(Key.Custom_3); set => SetIntOrByTier(Key.Custom_3, value); }
-    public IntOrByTier Gold { get => GetIntOrByTier(Key.Gold); set => SetIntOrByTier(Key.Gold, value); }
     public IntOrByTier Value { get => GetIntOrByTier(Key.Value); set => SetIntOrByTier(Key.Value, value); }
     public IntOrByTier Tags { get => GetIntOrByTier(Key.Tags); set => SetIntOrByTier(Key.Tags, value); }
     public IntOrByTier DerivedTags { get => GetIntOrByTier(Key.DerivedTags); set => SetIntOrByTier(Key.DerivedTags, value); }
-    public int Size { get => GetInt(Key.Size, MinTier, ItemSize.Small); set => SetIntOrByTier(Key.Size, value); }
-    public int Hero { get => GetInt(Key.Hero, MinTier, Core.Hero.Common); set => SetIntOrByTier(Key.Hero, value); }
+    public int Size { get => GetInt(Key.Size, MinTier); set => SetIntOrByTier(Key.Size, value); }
+    public int Hero { get => GetInt(Key.Hero, MinTier); set => SetIntOrByTier(Key.Hero, value); }
 
     public Dictionary<int, IntOrByTier>? OverridableAttributes { get; set; }
     public List<AbilityDefinition> Abilities { get; set; } = [];

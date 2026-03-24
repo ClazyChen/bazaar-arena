@@ -482,8 +482,8 @@
 
 ### 冻结减免与百分比数值（RatioUtil）
 
-- **PercentFreezeReduction**：施加冻结时有效时长 = 原始时长 − 减免量。减免量用 **RatioUtil.PercentOf(freezeMs, pct)**（value 的 percent% 向下取整，结果可为 0），勿手写 `freezeMs * (100 - pct) / 100`。
-- **RatioUtil**：**PercentOf(value, percent)** 用于「按百分比的数值」（如减免量、扣除量）；**PercentFloor(value, percent)** 用于「至少为 1」的场景（如治疗清除 5% 灼烧）。见 **Core/RatioUtil.cs**。
+- **PercentFreezeReduction**：施加冻结时有效时长 = 原始时长 − 减免量。减免量用 **RatioUtil.PercentFloor(freezeMs, pct)**（value 的 percent% 向下取整；当 percent<=0 时返回 0），勿手写 `freezeMs * (100 - pct) / 100`。
+- **RatioUtil**：统一使用 **PercentFloor(value, percent)** 处理百分比向下取整（包括减免量、扣除量、至少为 1 的场景）；其中 percent<=0 时固定返回 0。见 **Core/RatioUtil.cs**。
 
 ### Override 经验
 

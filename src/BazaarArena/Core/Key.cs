@@ -25,13 +25,10 @@ public static class Key
     /// <summary>物品治疗量字段；阵营侧表示当前 <see cref="Hp"/>。</summary>
     public const int Heal = Shield + 1;
     public const int Regen = Heal + 1;
-    /// <summary>仅阵营使用；物品模板该槽无数据。</summary>
-    public const int Gold = Regen + 1;
-
-    public const int CritRate = Gold + 1;
-    public const int CritRatePercent = CritRate;
+    public const int CritRate = Regen + 1;
+    /// <summary>仅阵营使用；复用 <see cref="CritRate"/> 点位，避免物品属性额外占位。</summary>
+    public const int Gold = CritRate;
     public const int CritDamage = CritRate + 1;
-    public const int CritDamagePercent = CritDamage;
     public const int Multicast = CritDamage + 1;
     public const int AmmoCap = Multicast + 1;
     public const int Charge = AmmoCap + 1;
@@ -82,6 +79,6 @@ public static class Key
     public const int MaxHp = Damage;
     public const int Hp = Heal;
 
-    /// <summary>BattleSide.Attributes 长度；下标 0～7 与 SideIndex～Gold 一致。</summary>
+    /// <summary>BattleSide.Attributes 长度；下标 0～7 与 SideIndex～Gold（同 CritRate）一致。</summary>
     public const int SideStateAttributeCount = Gold + 1;
 }

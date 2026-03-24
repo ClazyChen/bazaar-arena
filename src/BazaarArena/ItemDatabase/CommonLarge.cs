@@ -156,12 +156,12 @@ public static class CommonLarge
             Charge = 1.0,
             Abilities =
             [
-                Ability.AddAttribute(Key.CritRatePercent).Override(
+                Ability.AddAttribute(Key.CritRate).Override(
                     trigger: Trigger.UseItem,
                     condition: Condition.SameSide & Condition.WithTag(Tag.Relic),
                     priority: AbilityPriority.Medium
                 ),
-                Ability.AddAttribute(Key.CritRatePercent).Override(
+                Ability.AddAttribute(Key.CritRate).Override(
                     trigger: Trigger.Poison,
                     condition: Condition.NotWithTag(Tag.Relic),
                     priority: AbilityPriority.Low
@@ -193,7 +193,7 @@ public static class CommonLarge
             [
                 new AuraDefinition
                 {
-                    Attribute = Key.CritDamagePercent,
+                    Attribute = Key.CritDamage,
                     Value = Formula.Constant(300),
                     Percent = true,
                 },

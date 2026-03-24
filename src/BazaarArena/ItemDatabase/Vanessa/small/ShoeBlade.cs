@@ -32,7 +32,7 @@ public static class ShoeBlade
             [
                 new AuraDefinition
                 {
-                    Attribute = Key.CritRatePercent,
+                    Attribute = Key.CritRate,
                     Value = Formula.Constant(100),
                     SourceCondition = Condition.CasterCustom0IsZero,
                 },
@@ -46,11 +46,11 @@ public static class ShoeBlade
         return new ItemTemplate
         {
             Name = "靴里剑_S1",
-            Desc = "▶ 造成 {Damage} 伤害；暴击率：{CritRatePercent}%",
+            Desc = "▶ 造成 {Damage} 伤害；暴击率：{CritRate}%",
             Tags = [Tag.Weapon, Tag.Apparel],
             Cooldown = 7.0,
             Damage = [20, 40, 60, 80],
-            CritRatePercent = [15, 30, 50, 100],
+            CritRate = [15, 30, 50, 100],
             Abilities =
             [
                 Ability.Damage,

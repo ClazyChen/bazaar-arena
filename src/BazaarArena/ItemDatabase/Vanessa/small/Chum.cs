@@ -18,7 +18,7 @@ public static class Chum
             Custom_0 = [3, 6, 9, 12],
             Abilities =
             [
-                Ability.AddAttribute(Key.CritRatePercent).Override(
+                Ability.AddAttribute(Key.CritRate).Override(
                     additionalTargetCondition: Condition.WithTag(Tag.Aquatic),
                     priority: AbilityPriority.High
                 ),
