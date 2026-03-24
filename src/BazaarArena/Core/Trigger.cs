@@ -17,7 +17,7 @@ public static class Trigger
     public const int Haste = 5;
     /// <summary>任意物品造成暴击时触发（默认 Condition 为 SameSide，可重写为实现对方暴击时触发）；来源=暴击施放者。</summary>
     public const int Crit = 6;
-    /// <summary>任意物品施加摧毁时触发，实现同 Slow：Condition 判定施加者，InvokeTargetCondition 判定被摧毁物品；须在将目标标记为 Destroyed 之前调用。</summary>
+    /// <summary>任意物品施加摧毁时触发，实现同 Slow：TriggerEntry.Condition 判定施加者，目标筛选可配合 SameAsInvokeTarget 判定被摧毁物品；须在将目标标记为 Destroyed 之前调用。</summary>
     public const int Destroy = 7;
     /// <summary>任意物品施加灼烧时触发（默认 Condition 为 SameSide）；来源=施加灼烧的物品。</summary>
     public const int Burn = 8;

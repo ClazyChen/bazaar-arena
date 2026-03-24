@@ -22,9 +22,11 @@ public sealed partial class BattleContext
         return heal;
     }
 
+    [Obsolete("兼容保留方法，优先通过 Ability/Apply 路径表达效果。")]
     public void AddRegenToCaster(int value) => CurrentSide.Regen += value;
     public void AddGoldToCaster(int value) => CurrentSide.Gold += value;
 
+    [Obsolete("兼容保留方法，优先使用 ApplyCharge 统一处理目标筛选与日志。")]
     public void ChargeCasterItem(int chargeMs, out bool fullAndShouldCast)
     {
         fullAndShouldCast = false;
@@ -338,6 +340,7 @@ public sealed partial class BattleContext
     public void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false) =>
         BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, effectName, value, BattleState.TimeMs, showCrit, extraSuffix);
 
+    [Obsolete("兼容保留方法，优先使用 SetAttributeOnCasterSide(Key.InFlight, ...) 统一路径。")]
     public void SetCasterInFlight(bool inFlight) => Caster.InFlight = inFlight;
 
     public void ApplyDestroy(int targetCount, Formula? targetCondition = null)

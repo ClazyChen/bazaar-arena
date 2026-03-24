@@ -69,10 +69,8 @@ public class BattleSimulator
             ability.Apply(ctx, ability);
         }
 
-        battleState.ExecuteImmediateAbility = (abilityId) =>
-        {
-            RunAbilityApply(abilityId, null, allowCastQueueEnqueue: true);
-        };
+        void ExecuteImmediateAbility(int abilityId, ItemState? invokeTargetItem) =>
+            RunAbilityApply(abilityId, invokeTargetItem, allowCastQueueEnqueue: true);
         var abilitySeen = new HashSet<int>();
         foreach (var list in _sessionTables.AbilitiesByTrigger)
         {
@@ -159,8 +157,8 @@ public class BattleSimulator
                     var side = item.SideIndex == 0 ? side0 : side1;
                     int ammoCap = side.GetItemInt(item.ItemIndex, Key.AmmoCap);
                     int multicast = side.GetItemInt(item.ItemIndex, Key.Multicast);
-                    battleState.InvokeTrigger(Trigger.UseItem, item, item, multicast);
-                    battleState.InvokeTrigger(Trigger.UseOtherItem, item, item, multicast);
+                    battleState.InvokeTrigger(Trigger.UseItem, item, item, multicast, ExecuteImmediateAbility);
+                    battleState.InvokeTrigger(Trigger.UseOtherItem, item, item, multicast, ExecuteImmediateAbility);
                     if (ammoCap > 0)
                         item.AmmoRemaining = Math.Max(0, item.AmmoRemaining - 1);
                     logSink.OnCast(item, item.Template.Name, battleState.TimeMs, ammoCap > 0 ? item.AmmoRemaining : null);
@@ -169,61 +167,11 @@ public class BattleSimulator
                 }
 
                 // 8. 处理能力队列（只处理 current 六桶）；桶序 = Immediate→Lowest，桶内 FIFO。与上次触发间隔不足 250ms 的条目写入 next 对应桶留到下一帧再判。
-                for (int pbi = 0; pbi < AbilityQueueBuckets.BucketCount; pbi++)
-                {
-                    var bucket = battleState.CurrentAbilityBuckets.Bucket(pbi);
-                    for (int bj = 0; bj < bucket.Count; bj++)
-                    {
-                        int abilityId = bucket[bj];
-                        if (!battleState.AbilityStates.TryGetValue(abilityId, out var state) || state.PendingCount <= 0)
-                            continue;
-                        var item = battleState.GetAbilityOwner(abilityId);
-                        var ability = battleState.GetAbility(abilityId);
-                        if (state.LastTriggerMs != int.MinValue && battleState.TimeMs - state.LastTriggerMs < TriggerIntervalMs)
-                        {
-                            AddEntryToBucketsByAbilityPriority(battleState, battleState.NextAbilityBuckets, abilityId);
-                            continue;
-                        }
-                        state.LastTriggerMs = battleState.TimeMs;
-                        bool canCrit = item.GetAttribute(Key.CanCrit) != 0 && ability.Apply != null && ability.ApplyCritMultiplier && ability.TriggerEntries.Any(e => e.Trigger == Trigger.UseItem);
-                        bool isCrit = false;
-                        int critDamagePercent = 200;
-                        if (canCrit)
-                        {
-                            if (item.CritTimeMs == battleState.TimeMs)
-                            {
-                                isCrit = item.IsCritThisUse;
-                                critDamagePercent = item.CritDamage;
-                            }
-                            else
-                            {
-                                int critRate = item.GetAttribute(Key.CritRate);
-                                if (critRate > 0 && ThreadLocalRandom.Next100() < critRate)
-                                {
-                                    isCrit = true;
-                                    critDamagePercent = item.GetAttribute(Key.CritDamage);
-                                    if (critDamagePercent <= 0) critDamagePercent = 200;
-                                }
-                                item.CritTimeMs = battleState.TimeMs;
-                                item.IsCritThisUse = isCrit;
-                                item.CritDamage = critDamagePercent;
-                                if (isCrit)
-                                    battleState.InvokeTrigger(Trigger.Crit, item, null, 1);
-                            }
-                        }
-                        ItemState? invokeTarget = null;
-                        if (state.InvokeTargets != null && state.InvokeTargets.Count > 0)
-                        {
-                            invokeTarget = state.InvokeTargets[0];
-                            state.InvokeTargets.RemoveAt(0);
-                        }
-                        RunAbilityApply(abilityId, invokeTarget, allowCastQueueEnqueue: true);
-                        state.PendingCount--;
-                        if (state.PendingCount > 0)
-                            AddEntryToBucketsByAbilityPriority(battleState, battleState.NextAbilityBuckets, abilityId);
-                    }
-                    bucket.Clear();
-                }
+                DrainCurrentAbilityBuckets(
+                    battleState,
+                    allowCastQueueEnqueue: true,
+                    withThrottleAndCrit: true,
+                    runAbilityApply: RunAbilityApply);
             } while (battleState.CastQueue.Count > 0);
 
             // 9. 胜负判定（先输出本帧结算后的最终生命，再通知结果）。即将落败时触发 AboutToLose（Hp≤0 即触发），「首次」由物品 Custom_0 保证（参考靴里剑）。
@@ -233,27 +181,11 @@ public class BattleSimulator
                 battleState.InvokeTrigger(Trigger.AboutToLose, null, null, 1);
             while (!battleState.CurrentAbilityBuckets.IsEmpty)
             {
-                for (int pbi = 0; pbi < AbilityQueueBuckets.BucketCount; pbi++)
-                {
-                    var bucket = battleState.CurrentAbilityBuckets.Bucket(pbi);
-                    for (int bj = 0; bj < bucket.Count; bj++)
-                    {
-                        int abilityId = bucket[bj];
-                        if (!battleState.AbilityStates.TryGetValue(abilityId, out var state))
-                            continue;
-                        ItemState? invokeTarget = null;
-                        if (state.InvokeTargets != null && state.InvokeTargets.Count > 0)
-                        {
-                            invokeTarget = state.InvokeTargets[0];
-                            state.InvokeTargets.RemoveAt(0);
-                        }
-                        RunAbilityApply(abilityId, invokeTarget, allowCastQueueEnqueue: false);
-                        state.PendingCount = Math.Max(0, state.PendingCount - 1);
-                        if (state.PendingCount > 0)
-                            AddEntryToBucketsByAbilityPriority(battleState, battleState.NextAbilityBuckets, abilityId);
-                    }
-                    bucket.Clear();
-                }
+                DrainCurrentAbilityBuckets(
+                    battleState,
+                    allowCastQueueEnqueue: false,
+                    withThrottleAndCrit: false,
+                    runAbilityApply: RunAbilityApply);
             }
             dead0 = side0.Hp <= 0;
             dead1 = side1.Hp <= 0;
@@ -277,7 +209,7 @@ public class BattleSimulator
             }
 
             // 10. 仅在本帧未结束时，对调 current/next，下一帧步骤 8 处理原 next；清空新的 next。
-            (battleState.CurrentAbilityBuckets, battleState.NextAbilityBuckets) = (battleState.NextAbilityBuckets, battleState.CurrentAbilityBuckets);
+            battleState.SwapAbilityBuckets();
             battleState.NextAbilityBuckets.Clear();
             battleState.CastQueue.Clear();
 
@@ -364,6 +296,67 @@ public class BattleSimulator
     {
         var ability = battleState.GetAbility(abilityId);
         buckets.AddToBucket(AbilityQueueBuckets.BucketIndex(ability.Priority), abilityId);
+    }
+
+    private static void DrainCurrentAbilityBuckets(
+        BattleState battleState,
+        bool allowCastQueueEnqueue,
+        bool withThrottleAndCrit,
+        Action<int, ItemState?, bool> runAbilityApply)
+    {
+        for (int pbi = 0; pbi < AbilityQueueBuckets.BucketCount; pbi++)
+        {
+            var bucket = battleState.CurrentAbilityBuckets.Bucket(pbi);
+            for (int bj = 0; bj < bucket.Count; bj++)
+            {
+                int abilityId = bucket[bj];
+                if (!battleState.AbilityStates.TryGetValue(abilityId, out var state) || state.PendingCount <= 0)
+                    continue;
+                var item = battleState.GetAbilityOwner(abilityId);
+                var ability = battleState.GetAbility(abilityId);
+                if (withThrottleAndCrit)
+                {
+                    if (state.LastTriggerMs != int.MinValue && battleState.TimeMs - state.LastTriggerMs < TriggerIntervalMs)
+                    {
+                        AddEntryToBucketsByAbilityPriority(battleState, battleState.NextAbilityBuckets, abilityId);
+                        continue;
+                    }
+                    state.LastTriggerMs = battleState.TimeMs;
+                    bool canCrit = item.GetAttribute(Key.CanCrit) != 0
+                        && ability.Apply != null
+                        && ability.ApplyCritMultiplier
+                        && ability.TriggerEntries.Any(e => e.Trigger == Trigger.UseItem);
+                    if (canCrit)
+                    {
+                        if (item.CritTimeMs != battleState.TimeMs)
+                        {
+                            bool isCrit = false;
+                            int critDamagePercent = 200;
+                            int critRate = item.GetAttribute(Key.CritRate);
+                            if (critRate > 0 && ThreadLocalRandom.Next100() < critRate)
+                            {
+                                isCrit = true;
+                                critDamagePercent = item.GetAttribute(Key.CritDamage);
+                                if (critDamagePercent <= 0) critDamagePercent = 200;
+                            }
+                            item.CritTimeMs = battleState.TimeMs;
+                            item.IsCritThisUse = isCrit;
+                            item.CritDamage = critDamagePercent;
+                            if (isCrit)
+                                battleState.InvokeTrigger(Trigger.Crit, item, null, 1);
+                        }
+                    }
+                }
+                ItemState? invokeTarget = null;
+                if (state.InvokeTargets != null && state.InvokeTargets.Count > 0)
+                    invokeTarget = state.InvokeTargets.Dequeue();
+                runAbilityApply(abilityId, invokeTarget, allowCastQueueEnqueue);
+                state.PendingCount = Math.Max(0, state.PendingCount - 1);
+                if (state.PendingCount > 0)
+                    AddEntryToBucketsByAbilityPriority(battleState, battleState.NextAbilityBuckets, abilityId);
+            }
+            bucket.Clear();
+        }
     }
 
     private static void ProcessCooldown(BattleSide side, int timeMs, List<ItemState> castQueue)

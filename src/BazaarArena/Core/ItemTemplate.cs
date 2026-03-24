@@ -109,6 +109,7 @@ public class ItemTemplate
             SetIntOrByTier(kv.Key, [.. kv.Value]);
     }
 
+    /// <summary>兼容视图：仅供 GUI/Deck string-key 边界使用；Core/BattleSimulator 新代码请使用 int-key 路径。</summary>
     public Dictionary<string, List<int>> GetIntsByTierView()
     {
         var view = new Dictionary<string, List<int>>(KeyByName.Count);
@@ -117,12 +118,14 @@ public class ItemTemplate
         return view;
     }
 
+    /// <summary>兼容入口：仅供 GUI/Deck string-key 边界使用；Core/BattleSimulator 新代码请使用 GetInt(int, tier)。</summary>
     public int GetInt(string keyName, ItemTier tier = ItemTier.Bronze)
     {
         if (!TryResolveKey(keyName, out int key)) return 0;
         return GetInt(key, tier);
     }
 
+    /// <summary>兼容入口：仅供 GUI/Deck string-key 边界使用；Core/BattleSimulator 新代码请使用 SetIntByKey。</summary>
     public void SetInt(string keyName, int value)
     {
         if (!TryResolveKey(keyName, out int key)) return;

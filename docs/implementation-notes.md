@@ -4,6 +4,39 @@
 
 ---
 
+## Core/Sim 收敛补记（2026-03-24）
+
+### 本轮化简落地
+
+- 删除过渡类型：`BattleSimulator/AbilityQueueEntry.cs`。
+- `BattleState` 删除反向执行字段，改为 `InvokeTrigger(..., executeImmediate)` 显式下传 Immediate 执行器。
+- 能力目标队列由 `List + RemoveAt(0)` 改为 `Queue + Dequeue`（`AbilityState.InvokeTargets`）。
+- `BattleSimulator` 抽取 `DrainCurrentAbilityBuckets(...)`，合并步骤 8 与 AboutToLose 后 drain 的重复逻辑。
+- `BattleState` 增加 `SwapAbilityBuckets()`，对调 current/next 的写入口收敛到状态对象内部。
+
+### 触发条件上下文修正（关键）
+
+- `InvokeTrigger` 中 **TriggerEntry.Condition** 的求值上下文应使用：
+  - `Caster` = 能力持有者；
+  - `Source` = 引起触发者（`causeItem`，无则能力持有者）；
+  - `Item` = 引起触发者（`causeItem`，无则能力持有者）；
+  - `InvokeTarget` = 触发器指向目标（若有）。
+- 若误把 `Item` 固定为能力持有者，会导致 `UseOtherItem` 下如 `LeftOfCaster/WithTag(...)` 等条件在错误对象上求值，出现“有施放但不触发效果”。
+
+### PoisonSelf 最终约定
+
+- `Ability.PoisonSelf` 为**独立能力语义**，不再视为过渡别名：
+  - 执行入口：`Apply.PoisonSelf`；
+  - 作用对象：对 `Caster` 所在侧施加剧毒（`AddPoisonToCaster`）；
+  - 触发上报：与 `Poison` 一致，上报 `Trigger.Poison`。
+- `PoisonSelf` 与 `Poison` 的核心差异是**施加目标**（自身 vs 对方），而非仅靠条件覆盖表达。
+
+### 同步说明
+
+- `BattleAuraModifiers.cs` 已删除（无运行时引用）；后续若恢复 Aura 累加入口，应直接接到 `GetItemInt`/`GetResolvedValue` 主路径，不再回引独立兼容层。
+
+---
+
 ## ExecuteOneEffect 移除与执行入口收敛（2026-03-24）
 
 ### 目标

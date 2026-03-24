@@ -40,8 +40,8 @@ public static class Ability
     /// <summary>造成剧毒（Apply.Poison）。默认触发器 UseItem；定制用 .Override(...)。</summary>
     public static AbilityDefinition Poison => CreateBase(AbilityType.Poison, Core.Apply.Poison).Override(valueKey: Key.Poison, applyCritMultiplier: true);
 
-    /// <summary>对自身施加剧毒（过渡兼容，当前临时复用 Poison 行为）。</summary>
-    public static AbilityDefinition PoisonSelf => Poison;
+    /// <summary>对自身施加剧毒（Apply.PoisonSelf）。默认触发器 UseItem；定制用 .Override(...)。</summary>
+    public static AbilityDefinition PoisonSelf => CreateBase(AbilityType.Poison, Core.Apply.PoisonSelf).Override(valueKey: Key.Poison, applyCritMultiplier: true);
 
     /// <summary>获取金币（Apply.GainGold）。默认触发器 UseItem；数值来自模板的 Gold，不参与暴击。</summary>
     public static AbilityDefinition GainGold => CreateBase(AbilityType.GainGold, Core.Apply.GainGold).Override(valueKey: Key.Gold, applyCritMultiplier: false);

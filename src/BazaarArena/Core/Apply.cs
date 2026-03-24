@@ -36,6 +36,15 @@ public static class Apply
         ctx.ReportTriggerCause(Trigger.Poison);
     };
 
+    public static readonly Action<BattleContext, AbilityDefinition> PoisonSelf = (ctx, ability) =>
+    {
+        int value = ctx.GetItemInt(ctx.Caster, ability.ValueKey!.Value);
+        if (ctx.IsCritNow) value *= ctx.CurrentCritMultiplier;
+        ctx.AddPoisonToCaster(value);
+        ctx.LogEffect("剧毒", value, showCrit: ctx.IsCritNow);
+        ctx.ReportTriggerCause(Trigger.Poison);
+    };
+
     public static readonly Action<BattleContext, AbilityDefinition> Shield = (ctx, ability) =>
     {
         int value = ctx.GetItemInt(ctx.Caster, ability.ValueKey!.Value);

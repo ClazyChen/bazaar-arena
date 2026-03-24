@@ -1,5 +1,15 @@
 # 变更记录
 
+## Core/BattleSimulator 收敛与文档规则同步（2026-03-24）
+
+- **收敛**：删除 `BattleSimulator/AbilityQueueEntry.cs`；`BattleState` 改为 `InvokeTrigger(..., executeImmediate)` 显式下传 Immediate 执行；`AbilityState.InvokeTargets` 从 `List` 迁移为 `Queue`；新增 `BattleState.SwapAbilityBuckets()`；`BattleSimulator` 提取 `DrainCurrentAbilityBuckets(...)` 去重步骤 8 与 AboutToLose 后 drain。
+- **触发条件上下文修正**：`InvokeTrigger` 中 `TriggerEntry.Condition` 求值时 `Item` 使用 `causeItem`（无则能力持有者），`Caster` 为能力持有者，`Source` 为引起触发者，`InvokeTarget` 为指向目标；修复 `UseOtherItem` 条件在错误对象上求值的问题。
+- **PoisonSelf 正式语义**：`Ability.PoisonSelf` 不再作为 `Poison` 别名，新增 `Apply.PoisonSelf`（对自身施加剧毒并上报 `Trigger.Poison`）。
+- **兼容边界标注**：`ItemTemplate` 的 string-key 入口补注释，明确仅 GUI/Deck 边界使用；`Trigger.Destroy` 注释术语改为现模型（`TriggerEntry.Condition` + `SameAsInvokeTarget`）。
+- **清理**：`BattleAuraModifiers.cs` 已移除（无运行时引用）。
+
+---
+
 ## BattleContext 统一效果应用、光环接口收敛与文档规则同步（2026-03-24）
 
 - **移除**：**`IEffectApplyContext`**、**`Core/IEffectApplyContext.cs`**、**`Core/Effect.cs`**、**`BattleSimulator/EffectApplyContextImpl.cs`**、**`IAuraContext`**、**`Core/TimeUtil.cs`**（无引用）。

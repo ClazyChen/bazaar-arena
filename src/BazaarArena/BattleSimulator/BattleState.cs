@@ -58,22 +58,35 @@ public sealed class BattleState
         itemId = (auraId % AuraStridePerIndex) / SideStridePerItem;
     }
 
-    internal AbilityQueueBuckets CurrentAbilityBuckets { get; set; } = new();
-    internal AbilityQueueBuckets NextAbilityBuckets { get; set; } = new();
-internal Action<int>? ExecuteImmediateAbility { get; set; }
+    internal AbilityQueueBuckets CurrentAbilityBuckets { get; private set; } = new();
+    internal AbilityQueueBuckets NextAbilityBuckets { get; private set; } = new();
 
-    public void InvokeTrigger(int triggerName, ItemState? causeItem, ItemState? invokeTargetItem, int? invokeCount = null) =>
-        InvokeTrigger(triggerName, causeItem, invokeTargetItem, null, invokeCount);
+    internal void SwapAbilityBuckets() =>
+        (CurrentAbilityBuckets, NextAbilityBuckets) = (NextAbilityBuckets, CurrentAbilityBuckets);
 
-    public void InvokeTriggerMany(int triggerName, ItemState? causeItem, IReadOnlyList<ItemState> invokeTargetItems, int? invokeCount = null) =>
-        InvokeTrigger(triggerName, causeItem, null, invokeTargetItems, invokeCount);
+    public void InvokeTrigger(
+        int triggerName,
+        ItemState? causeItem,
+        ItemState? invokeTargetItem,
+        int? invokeCount = null,
+        Action<int, ItemState?>? executeImmediate = null) =>
+        InvokeTrigger(triggerName, causeItem, invokeTargetItem, null, invokeCount, executeImmediate);
+
+    public void InvokeTriggerMany(
+        int triggerName,
+        ItemState? causeItem,
+        IReadOnlyList<ItemState> invokeTargetItems,
+        int? invokeCount = null,
+        Action<int, ItemState?>? executeImmediate = null) =>
+        InvokeTrigger(triggerName, causeItem, null, invokeTargetItems, invokeCount, executeImmediate);
 
     internal void InvokeTrigger(
         int triggerName,
         ItemState? causeItem,
         ItemState? invokeTargetItem,
         IReadOnlyList<ItemState>? invokeTargetItems,
-        int? invokeCount)
+        int? invokeCount,
+        Action<int, ItemState?>? executeImmediate)
     {
         if (SessionTables == null)
             return;
@@ -101,7 +114,7 @@ internal Action<int>? ExecuteImmediateAbility { get; set; }
                     foreach (var entry in ability.TriggerEntries)
                     {
                         if (entry.Trigger != triggerName) continue;
-                        triggerCtx.Item = abilityOwner;
+                        triggerCtx.Item = causeItem ?? abilityOwner;
                         triggerCtx.Caster = abilityOwner;
                         triggerCtx.Source = causeItem ?? abilityOwner;
                         triggerCtx.InvokeTarget = target;
@@ -120,7 +133,7 @@ internal Action<int>? ExecuteImmediateAbility { get; set; }
                 foreach (var entry in ability.TriggerEntries)
                 {
                     if (entry.Trigger != triggerName) continue;
-                    triggerCtx.Item = abilityOwner;
+                    triggerCtx.Item = causeItem ?? abilityOwner;
                     triggerCtx.Caster = abilityOwner;
                     triggerCtx.Source = causeItem ?? abilityOwner;
                     triggerCtx.InvokeTarget = invokeTargetItem;
@@ -131,9 +144,19 @@ internal Action<int>? ExecuteImmediateAbility { get; set; }
             }
 
             if (matchedTargetCount <= 0) continue;
-            if ((triggerName == Trigger.UseItem || triggerName == Trigger.UseOtherItem) && ability.Priority == AbilityPriority.Immediate && ExecuteImmediateAbility != null)
+            if ((triggerName == Trigger.UseItem || triggerName == Trigger.UseOtherItem)
+                && ability.Priority == AbilityPriority.Immediate
+                && executeImmediate != null)
             {
-                ExecuteImmediateAbility(abilityId);
+                if (matchedInvokeTargets != null && matchedInvokeTargets.Count > 0)
+                {
+                    for (int i = 0; i < matchedInvokeTargets.Count; i++)
+                        executeImmediate(abilityId, matchedInvokeTargets[i]);
+                }
+                else
+                {
+                    executeImmediate(abilityId, invokeTargetItem);
+                }
                 continue;
             }
 
@@ -159,15 +182,15 @@ internal Action<int>? ExecuteImmediateAbility { get; set; }
         state.PendingCount += pendingCount;
         if (invokeTargets != null && invokeTargets.Count > 0)
         {
-            state.InvokeTargets ??= new List<ItemState>(Math.Max(4, invokeTargets.Count));
+            state.InvokeTargets ??= new Queue<ItemState>(Math.Max(4, invokeTargets.Count));
             for (int i = 0; i < invokeTargets.Count; i++)
-                state.InvokeTargets.Add(invokeTargets[i]);
+                state.InvokeTargets.Enqueue(invokeTargets[i]);
         }
         else if (invokeTarget != null)
         {
-            state.InvokeTargets ??= new List<ItemState>(4);
+            state.InvokeTargets ??= new Queue<ItemState>(4);
             for (int i = 0; i < pendingCount; i++)
-                state.InvokeTargets.Add(invokeTarget);
+                state.InvokeTargets.Enqueue(invokeTarget);
         }
 
         if (!shouldEnqueue) return;

@@ -41,10 +41,12 @@ alwaysApply: true
 
 - **从表格添加物品**：列顺序为 **中文名、英文名、所属、版本、minTier、Size、CD、TAG、效果**；**英文名为第 2 列**（后续不再单独给出，从表格读取）；**版本为第 4 列**，数字对应 _Sx 或无后缀。**表格第一行**为最新版、名称**无后缀**（Template()、Name 不带 _Sx）；效果**未标注** (I)/(Hst)/(H)/(L)/(Lst) 则为 **Medium**，不猜测、不擅自写 priority。**▶** 与「**提高**」「造成」等主动动词 = **使用物品时**触发的 Ability，勿误写为被动光环；「购买时获得 X」等**局外成长**不实现。详见 **.cursor/rules/item-table-convention.mdc** 与 `docs/implementation-notes.md`「从表格添加物品的约定」。
 - **InvokeTrigger 次序**：调用触发器时按 **`SessionTables.AbilitiesByTrigger[triggerName]`** 直接遍历匹配能力，不再保证“先 causeItem 再同侧再异侧”。UseItem / UseOtherItem 时 context 仍传入 **InvokeTargetItem = 被使用物品**，便于「对被使用的那件物品施加效果」用 **SameAsInvokeTarget**。
-- **源文件长度与拆分**：除 `ItemDatabase/CommonSmall.cs`、`CommonMedium.cs` 等以数据定义为主的文件外，单文件不宜过长。可将嵌套类、静态辅助拆到同命名空间下的独立源文件（例如 BattleSimulator 下的 **`BattleSideDamage.cs`**、**`BattleAuraModifiers.cs`**、**`TriggerInvokeContext.cs`**；Core 下的 **`BattleContext.EffectApply.cs`**）。详见 **`docs/implementation-notes.md`**「BattleSimulator 文件拆分与代码结构」。
+- **源文件长度与拆分**：除 `ItemDatabase/CommonSmall.cs`、`CommonMedium.cs` 等以数据定义为主的文件外，单文件不宜过长。可将嵌套类、静态辅助拆到同命名空间下的独立源文件（例如 BattleSimulator 下的 **`BattleSideDamage.cs`**、**`TriggerInvokeContext.cs`**；Core 下的 **`BattleContext.EffectApply.cs`**）。详见 **`docs/implementation-notes.md`**「BattleSimulator 文件拆分与代码结构」。
 
 - **CLI 与测试**：完成任务后用 **CLI** 与物品测试脚本做验证；脚本位于 **`scripts/item_tests/`**，卡组集 JSON 位于 **`Data/Decks/item_tests/`**（如 `test_small_bronze.json`）。常用示例：小型铜 `run_item_tests_small_bronze.py`、中型银 `run_item_tests_medium_silver.py`、中型金/钻 `run_item_tests_medium_gold_diamond.py`、大型银/金/钻 `run_item_tests_large_silver_gold_diamond.py`、海盗小型/中型铜 `run_item_tests_vanessa_*` 等。**完整命令与档位列表**见 **docs/cli-and-testing.md** 与 **.cursor/rules/cli-and-testing.mdc**。测试未通过时在文档中标注「未通过测试」、不放松断言。
 
 - **Git 提交信息**：提交信息须符合 **.cursor/rules/git-commit-format.mdc**（`<type>(<scope>): <subject>`，中文主题，如 `feat(gui): 卡组 MinTier 显示与拖拽`）。
 
 - **ValueKey 与运行时读值（2026-03）**：能力执行路径统一由 **`Apply`** 通过 `ctx.GetItemInt(ctx.Caster, ability.ValueKey!.Value)` 读取数值；`AbilityDefinition.Value` 与 `Override(value: ...)` 已移除，不再允许新增。常量效果请改为模板属性（通常 `Custom_x`）并在能力上设置 `valueKey`。`BattleContext.GetResolvedValue` 已移除；默认值应在 `ItemDatabase.Register` 阶段补齐（如 `ModifyAttributeTargetCount=20`），运行时仅保留最小兼容兜底（如目标数为 0 时按 1）。
+
+- **PoisonSelf 语义**：`Ability.PoisonSelf` 为独立能力语义（对自身施加剧毒），不得与 `Ability.Poison` 互相替代；区别在施加目标（自身 vs 对方），触发上报均为 `Trigger.Poison`。

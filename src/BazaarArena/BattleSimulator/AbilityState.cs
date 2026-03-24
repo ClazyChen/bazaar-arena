@@ -7,6 +7,6 @@ public sealed class AbilityState
 {
     public int LastTriggerMs { get; set; } = int.MinValue;
     public int PendingCount { get; set; }
-    public List<ItemState>? InvokeTargets { get; set; }
+    public Queue<ItemState>? InvokeTargets { get; set; }
 }
 
