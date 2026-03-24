@@ -60,29 +60,7 @@ public sealed class BattleState
 
     internal AbilityQueueBuckets CurrentAbilityBuckets { get; set; } = new();
     internal AbilityQueueBuckets NextAbilityBuckets { get; set; } = new();
-    private int? _invokeOnlyForSideIndex;
-    private Action<int>? _invokeExecuteImmediate;
-    private AbilityQueueBuckets? _invokeCurrentBuckets;
-    private AbilityQueueBuckets? _invokeNextBuckets;
-
-    internal IDisposable BeginInvokeScope(
-        int? onlyForSideIndex = null,
-        Action<int>? executeImmediate = null,
-        AbilityQueueBuckets? current = null,
-        AbilityQueueBuckets? next = null)
-    {
-        var scope = new InvokeScope(
-            this,
-            _invokeOnlyForSideIndex,
-            _invokeExecuteImmediate,
-            _invokeCurrentBuckets,
-            _invokeNextBuckets);
-        _invokeOnlyForSideIndex = onlyForSideIndex;
-        _invokeExecuteImmediate = executeImmediate;
-        _invokeCurrentBuckets = current;
-        _invokeNextBuckets = next;
-        return scope;
-    }
+internal Action<int>? ExecuteImmediateAbility { get; set; }
 
     public void InvokeTrigger(int triggerName, ItemState? causeItem, ItemState? invokeTargetItem, int? invokeCount = null) =>
         InvokeTrigger(triggerName, causeItem, invokeTargetItem, null, invokeCount);
@@ -97,114 +75,69 @@ public sealed class BattleState
         IReadOnlyList<ItemState>? invokeTargetItems,
         int? invokeCount)
     {
-        var current = _invokeCurrentBuckets ?? CurrentAbilityBuckets;
-        var next = _invokeNextBuckets ?? NextAbilityBuckets;
-        var executeImmediate = _invokeExecuteImmediate;
-        var onlyForSideIndex = _invokeOnlyForSideIndex;
-        int pendingCount = (triggerName == Trigger.UseItem || triggerName == Trigger.Freeze || triggerName == Trigger.Slow || triggerName == Trigger.Haste || triggerName == Trigger.Burn || triggerName == Trigger.Poison) && invokeCount is int m ? m : 1;
+        if (SessionTables == null)
+            return;
+        var current = CurrentAbilityBuckets;
+        var next = NextAbilityBuckets;
+        int pendingCount = Math.Max(0, invokeCount ?? 1);
         var triggerCtx = new BattleContext
         {
             BattleState = this,
         };
-        var indices = new List<int>(32);
-
-        void VisitOwnerSide(int ownerSideIndex, BattleSide ownerSide)
+        var triggerAbilities = SessionTables.AbilitiesByTrigger[triggerName];
+        foreach (int abilityId in triggerAbilities)
         {
-            indices.Clear();
-            if (causeItem != null && !causeItem.Destroyed && ownerSideIndex == causeItem.SideIndex && causeItem.ItemIndex < ownerSide.Items.Count)
+            var abilityOwner = GetAbilityOwner(abilityId);
+            if (abilityOwner.Destroyed) continue;
+            var ability = GetAbility(abilityId);
+            int matchedTargetCount = 0;
+            List<ItemState>? matchedInvokeTargets = null;
+            if (invokeTargetItems != null && invokeTargetItems.Count > 0)
             {
-                indices.Add(causeItem.ItemIndex);
-                for (int i = 0; i < ownerSide.Items.Count; i++)
+                for (int ti = 0; ti < invokeTargetItems.Count; ti++)
                 {
-                    if (i != causeItem.ItemIndex)
-                        indices.Add(i);
+                    var target = invokeTargetItems[ti];
+                    bool matchedOneTarget = false;
+                    foreach (var entry in ability.TriggerEntries)
+                    {
+                        if (entry.Trigger != triggerName) continue;
+                        triggerCtx.Item = abilityOwner;
+                        triggerCtx.Caster = abilityOwner;
+                        triggerCtx.Source = causeItem ?? abilityOwner;
+                        triggerCtx.InvokeTarget = target;
+                        if (entry.Condition.Evaluate(triggerCtx) == 0) continue;
+                        matchedOneTarget = true;
+                        break;
+                    }
+                    if (!matchedOneTarget) continue;
+                    matchedInvokeTargets ??= new List<ItemState>(invokeTargetItems.Count);
+                    matchedInvokeTargets.Add(target);
+                    matchedTargetCount++;
                 }
             }
             else
             {
-                for (int i = 0; i < ownerSide.Items.Count; i++)
-                    indices.Add(i);
-            }
-
-            if (SessionTables == null)
-                return;
-            var triggerAbilities = SessionTables.AbilitiesByTrigger[triggerName];
-
-            foreach (int ownerItemIndex in indices)
-            {
-                var abilityOwner = ownerSide.Items[ownerItemIndex];
-                if (abilityOwner.Destroyed) continue;
-                foreach (int abilityId in triggerAbilities)
+                foreach (var entry in ability.TriggerEntries)
                 {
-                    var owner = GetAbilityOwner(abilityId);
-                    if (!ReferenceEquals(owner, abilityOwner))
-                        continue;
-                    var ability = GetAbility(abilityId);
-                    int matchedTargetCount = 0;
-                    List<ItemState>? matchedInvokeTargets = null;
-                    if (invokeTargetItems != null && invokeTargetItems.Count > 0)
-                    {
-                        for (int ti = 0; ti < invokeTargetItems.Count; ti++)
-                        {
-                            var target = invokeTargetItems[ti];
-                            bool matchedOneTarget = false;
-                            foreach (var entry in ability.TriggerEntries)
-                            {
-                                if (entry.Trigger != triggerName) continue;
-                                triggerCtx.Item = abilityOwner;
-                                triggerCtx.Caster = abilityOwner;
-                                triggerCtx.Source = causeItem ?? abilityOwner;
-                                triggerCtx.InvokeTarget = target;
-                                if (entry.Condition.Evaluate(triggerCtx) == 0) continue;
-                                matchedOneTarget = true;
-                                break;
-                            }
-                            if (!matchedOneTarget) continue;
-                            matchedInvokeTargets ??= new List<ItemState>(invokeTargetItems.Count);
-                            matchedInvokeTargets.Add(target);
-                            matchedTargetCount++;
-                        }
-                    }
-                    else
-                    {
-                        foreach (var entry in ability.TriggerEntries)
-                        {
-                            if (entry.Trigger != triggerName) continue;
-                            triggerCtx.Item = abilityOwner;
-                            triggerCtx.Caster = abilityOwner;
-                            triggerCtx.Source = causeItem ?? abilityOwner;
-                            triggerCtx.InvokeTarget = invokeTargetItem;
-                            if (entry.Condition.Evaluate(triggerCtx) == 0) continue;
-                            matchedTargetCount = pendingCount;
-                            break;
-                        }
-                    }
-
-                    if (matchedTargetCount <= 0) continue;
-                    if (ability.Priority == AbilityPriority.Immediate && executeImmediate != null)
-                    {
-                        executeImmediate(abilityId);
-                        continue;
-                    }
-
-                    AddOrMergeAbility(abilityId, matchedTargetCount, current, next, invokeTargetItem, matchedInvokeTargets);
+                    if (entry.Trigger != triggerName) continue;
+                    triggerCtx.Item = abilityOwner;
+                    triggerCtx.Caster = abilityOwner;
+                    triggerCtx.Source = causeItem ?? abilityOwner;
+                    triggerCtx.InvokeTarget = invokeTargetItem;
+                    if (entry.Condition.Evaluate(triggerCtx) == 0) continue;
+                    matchedTargetCount = pendingCount;
+                    break;
                 }
             }
-        }
 
-        if (onlyForSideIndex is int ofs)
-        {
-            VisitOwnerSide(ofs, Side[ofs]);
-        }
-        else if (causeItem != null && !causeItem.Destroyed)
-        {
-            VisitOwnerSide(causeItem.SideIndex, Side[causeItem.SideIndex]);
-            VisitOwnerSide(1 - causeItem.SideIndex, Side[1 - causeItem.SideIndex]);
-        }
-        else
-        {
-            VisitOwnerSide(0, Side[0]);
-            VisitOwnerSide(1, Side[1]);
+            if (matchedTargetCount <= 0) continue;
+            if ((triggerName == Trigger.UseItem || triggerName == Trigger.UseOtherItem) && ability.Priority == AbilityPriority.Immediate && ExecuteImmediateAbility != null)
+            {
+                ExecuteImmediateAbility(abilityId);
+                continue;
+            }
+
+            AddOrMergeAbility(abilityId, matchedTargetCount, current, next, invokeTargetItem, matchedInvokeTargets);
         }
     }
 
@@ -244,37 +177,4 @@ public sealed class BattleState
         else next.AddToBucket(b, abilityId);
     }
 
-    private sealed class InvokeScope : IDisposable
-    {
-        private readonly BattleState _state;
-        private readonly int? _previousOnlyForSideIndex;
-        private readonly Action<int>? _previousExecuteImmediate;
-        private readonly AbilityQueueBuckets? _previousCurrentBuckets;
-        private readonly AbilityQueueBuckets? _previousNextBuckets;
-        private bool _disposed;
-
-        public InvokeScope(
-            BattleState state,
-            int? previousOnlyForSideIndex,
-            Action<int>? previousExecuteImmediate,
-            AbilityQueueBuckets? previousCurrentBuckets,
-            AbilityQueueBuckets? previousNextBuckets)
-        {
-            _state = state;
-            _previousOnlyForSideIndex = previousOnlyForSideIndex;
-            _previousExecuteImmediate = previousExecuteImmediate;
-            _previousCurrentBuckets = previousCurrentBuckets;
-            _previousNextBuckets = previousNextBuckets;
-        }
-
-        public void Dispose()
-        {
-            if (_disposed) return;
-            _disposed = true;
-            _state._invokeOnlyForSideIndex = _previousOnlyForSideIndex;
-            _state._invokeExecuteImmediate = _previousExecuteImmediate;
-            _state._invokeCurrentBuckets = _previousCurrentBuckets;
-            _state._invokeNextBuckets = _previousNextBuckets;
-        }
-    }
 }

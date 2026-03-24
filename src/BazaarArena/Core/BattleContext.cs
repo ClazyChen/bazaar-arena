@@ -5,6 +5,7 @@ namespace BazaarArena.Core;
 public sealed partial class BattleContext
 {
     public BattleState BattleState { get; set; } = null!;
+    public bool AllowCastQueueEnqueue { get; set; } = true;
     /// <summary>
     /// 当前上下文正在判定/施加效果的目标物品。
     /// 光环判定时表示“正在判断是否能接受光环”的物品；

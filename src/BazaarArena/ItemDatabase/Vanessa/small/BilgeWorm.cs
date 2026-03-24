@@ -19,7 +19,7 @@ public static class BilgeWorm
             Abilities =
             [
                 Ability.Damage.Override(
-                    trigger: Trigger.UseItem,
+                    trigger: Trigger.UseOtherItem,
                     condition: Condition.DifferentSide & Condition.Leftmost
                 ),
             ],

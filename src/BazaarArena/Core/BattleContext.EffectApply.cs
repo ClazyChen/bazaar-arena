@@ -38,7 +38,7 @@ public sealed partial class BattleContext
         if (Caster.ChargedTimeMs >= cooldownMs)
         {
             int ammoCap = CurrentSide.GetItemInt(Caster.ItemIndex, Key.AmmoCap);
-            if (ammoCap <= 0 || Caster.AmmoRemaining > 0)
+            if (AllowCastQueueEnqueue && (ammoCap <= 0 || Caster.AmmoRemaining > 0))
                 BattleState.CastQueue.Add(Caster);
             fullAndShouldCast = true;
             Caster.ChargedTimeMs = 0;
@@ -146,7 +146,7 @@ public sealed partial class BattleContext
         if (target.ChargedTimeMs >= cooldownMs && side == CurrentSide)
         {
             int ammoCap = side.GetItemInt(itemIndex, Key.AmmoCap);
-            if (ammoCap <= 0 || target.AmmoRemaining > 0)
+            if (AllowCastQueueEnqueue && (ammoCap <= 0 || target.AmmoRemaining > 0))
                 BattleState.CastQueue.Add(target);
             target.ChargedTimeMs = 0;
         }
@@ -213,7 +213,8 @@ public sealed partial class BattleContext
                 int cooldownMs = side.GetItemInt(index, Key.CooldownMs);
                 if (cooldownMs > 0 && t.ChargedTimeMs >= cooldownMs && (cap <= 0 || t.AmmoRemaining > 0))
                 {
-                    BattleState.CastQueue.Add(t);
+                    if (AllowCastQueueEnqueue)
+                        BattleState.CastQueue.Add(t);
                     t.ChargedTimeMs = 0;
                 }
             }
@@ -322,7 +323,7 @@ public sealed partial class BattleContext
             if (attributeKey == Key.CooldownMs && side == CurrentSide && wi.ChargedTimeMs >= newVal)
             {
                 int ammoCap = side.GetItemInt(index, Key.AmmoCap);
-                if (ammoCap <= 0 || wi.AmmoRemaining > 0)
+                if (AllowCastQueueEnqueue && (ammoCap <= 0 || wi.AmmoRemaining > 0))
                     BattleState.CastQueue.Add(wi);
                 wi.ChargedTimeMs = 0;
             }
@@ -360,10 +361,13 @@ public sealed partial class BattleContext
         var targetNames = indices.Select(i => targetSide.Items[i].Template.Name).ToList();
         string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
         LogEffect("摧毁", indices.Count, extraSuffix, showCrit: false);
+        var triggerTargets = new List<ItemState>(indices.Count);
+        foreach (int i in indices)
+            triggerTargets.Add(targetSide.Items[i]);
+        BattleState.InvokeTriggerMany(Trigger.Destroy, Caster, triggerTargets, triggerTargets.Count);
         foreach (int i in indices)
         {
             var target = targetSide.Items[i];
-            BattleState.InvokeTrigger(Trigger.Destroy, Caster, target, null);
             target.Destroyed = true;
         }
     }

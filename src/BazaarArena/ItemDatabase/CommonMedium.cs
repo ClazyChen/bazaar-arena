@@ -269,7 +269,7 @@ public static class CommonMedium
                     targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ).Also(
-                    trigger: Trigger.UseItem,
+                    trigger: Trigger.UseOtherItem,
                     condition: Condition.SameSide & Condition.InFlight
                 ),
             ],
@@ -688,7 +688,7 @@ public static class CommonMedium
             Abilities =
             [
                 Ability.Shield.Override(
-                    trigger: Trigger.UseItem,
+                    trigger: Trigger.UseOtherItem,
                     condition: Condition.DifferentSide
                 ),
             ],
@@ -742,7 +742,7 @@ public static class CommonMedium
             [
                 Ability.Shield,
                 Ability.Burn.Override(
-                    trigger: Trigger.UseItem,
+                    trigger: Trigger.UseOtherItem,
                     condition: Condition.DifferentSide
                 ),
             ],

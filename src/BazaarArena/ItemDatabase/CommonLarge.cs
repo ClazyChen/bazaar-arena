@@ -157,7 +157,7 @@ public static class CommonLarge
             Abilities =
             [
                 Ability.AddAttribute(Key.CritRate).Override(
-                    trigger: Trigger.UseItem,
+                    trigger: Trigger.UseOtherItem,
                     condition: Condition.SameSide & Condition.WithTag(Tag.Relic),
                     priority: AbilityPriority.Medium
                 ),

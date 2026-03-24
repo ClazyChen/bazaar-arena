@@ -163,7 +163,7 @@ public class ItemDatabase : IItemTemplateResolver
         }
 
         bool canCrit = HasAnyCrittableTag(template) && HasUseItemSelfCritAbility(template);
-        // Tag.Crit：具备六类可暴击 Tag 之一且至少一条 UseItem+UseSelf+ApplyCritMultiplier 能力
+        // Tag.Crit：具备六类可暴击 Tag 之一且至少一条 UseItem+ApplyCritMultiplier 能力
         if (canCrit)
             TryAddDerivedTag(template, DerivedTag.Crit);
         template.SetIntByKey(Key.CanCrit, canCrit ? 1 : 0);
@@ -182,7 +182,7 @@ public class ItemDatabase : IItemTemplateResolver
     {
         foreach (var a in template.Abilities ?? [])
         {
-            if (a.Apply == null || !a.ApplyCritMultiplier || !a.UseSelf) continue;
+            if (a.Apply == null || !a.ApplyCritMultiplier) continue;
             if (a.TriggerEntries.Any(e => e.Trigger == Trigger.UseItem)) return true;
         }
         return false;
@@ -247,10 +247,11 @@ public class ItemDatabase : IItemTemplateResolver
         SetDerivedTagMask(template, GetDerivedTagMask(template) | tagMask);
     }
 
-    /// <summary>condition ?? default：UseItem → SameAsCaster，Freeze/Slow/Haste/Crit/Destroy/Burn → SameSide，BattleStart → Always。</summary>
+    /// <summary>condition ?? default：UseItem → SameAsCaster，UseOtherItem → SameSide&DifferentFromCaster，Freeze/Slow/Haste/Crit/Destroy/Burn → SameSide，BattleStart → Always。</summary>
     private static Formula EnsureTriggerCondition(int triggerName, Formula? condition)
     {
         if (triggerName == Trigger.UseItem) return condition ?? Condition.SameAsCaster;
+        if (triggerName == Trigger.UseOtherItem) return condition ?? (Condition.SameSide & Condition.DifferentFromCaster);
         if (triggerName == Trigger.Freeze) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Slow) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.Haste) return condition ?? Condition.SameSide;
@@ -261,7 +262,7 @@ public class ItemDatabase : IItemTemplateResolver
         if (triggerName == Trigger.Shield) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.BattleStart) return condition ?? Condition.Always;
         if (triggerName == Trigger.Ammo) return condition ?? Condition.SameSide;
-        if (triggerName == Trigger.AboutToLose) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.AboutToLose) return condition ?? Condition.CasterSideHpLEZero;
         return condition ?? Condition.Always;
     }
 }

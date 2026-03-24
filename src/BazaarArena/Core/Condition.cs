@@ -83,6 +83,10 @@ public static class Condition
     public static Formula CasterCustom0IsZero { get; } = new(ctx =>
         ctx.Caster.GetAttribute(Key.Custom_0) == 0 ? 1 : 0);
 
+    /// <summary>能力持有者（Caster）所在阵营生命值小于等于 0；用于 AboutToLose 单侧语义。</summary>
+    public static Formula CasterSideHpLEZero { get; } = new(ctx =>
+        ctx.BattleState.Side[ctx.Caster.SideIndex].Hp <= 0 ? 1 : 0);
+
     public static Formula CanCrit { get; } = new(ctx => ctx.GetItemInt(ctx.Item, Key.CanCrit) != 0 ? 1 : 0);
 
     /// <summary>候选（Item）为 Caster 同侧右侧第一个未摧毁物品（中间槽位须均已摧毁）。</summary>

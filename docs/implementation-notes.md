@@ -4,6 +4,59 @@
 
 ---
 
+## ExecuteOneEffect 移除与执行入口收敛（2026-03-24）
+
+### 目标
+
+- 移除 `BattleSimulator.ExecuteOneEffect`，避免每次执行能力都构造局部 `BattleState`。
+- 统一在主战斗状态上直接执行 `ability.Apply(ctx, ability)`。
+- 明确 `CastQueue` 生命周期：每帧内使用、帧末强制清空，不跨帧携带。
+
+### 最终约定
+
+- 能力执行入口统一为主循环内的 `RunAbilityApply`（局部函数），由它负责：
+  - 通过 `abilityId` 获取 owner 与 ability；
+  - 组装 `BattleContext`（`BattleState/Item/Caster/Source/InvokeTarget`）；
+  - 直接调用 `ability.Apply(ctx, ability)`。
+- `BattleContext` 新增 `AllowCastQueueEnqueue` 开关；`Charge/Reload/ReduceCooldown` 等路径写 `BattleState.CastQueue` 前统一判断该开关。
+- AboutToLose 阶段执行能力时 `AllowCastQueueEnqueue=false`，其“下一帧处理”仅依赖能力队列（`current/next`）而非 cast 跨帧。
+- 主循环在步骤 10（对调能力桶）后执行 `battleState.CastQueue.Clear()`，确保帧末无残留。
+
+---
+
+## invokeCount 统一语义与 Destroy 多目标触发（2026-03-24）
+
+### 最终约定
+
+- `BattleState.InvokeTrigger(...)` 中 `invokeCount` 统一表示触发次数，`pendingCount = invokeCount ?? 1`（并做非负保护）。
+- `InvokeTriggerMany(...)` 语义保持“每目标一次”，调用方传入 `invokeTargetItems.Count`。
+- `BattleStart` 等非多播触发统一显式传 `1`，不再使用 `0` 这种依赖历史分支兜底的写法。
+
+### Destroy 时序
+
+- `ApplyDestroy` 先收集目标列表，再对该列表调用 `InvokeTriggerMany(Trigger.Destroy, ...)`。
+- 全部 Destroy 触发完成后，才逐个将目标标记 `Destroyed = true`。
+- 这保证了 Destroy 条件评估与触发日志发生在目标被标记摧毁之前，行为与 Freeze/Slow 的多目标触发路径保持一致。
+
+---
+
+## 触发器语义与 InvokeTrigger 重构（2026-03-24）
+
+### 最终约定
+
+- `Trigger.UseItem` 仅表示“使用自己”。
+- `Trigger.UseOtherItem` 表示“其他物品被使用”，默认条件为 `SameSide & DifferentFromCaster`，可 override 到 `DifferentSide` 等语义。
+- 同一次使用事件中，触发顺序固定为：先 `UseItem`，后 `UseOtherItem`。
+- `InvokeTrigger` 不再按「causeItem/同侧/异侧」分层遍历，统一按 `SessionTables.AbilitiesByTrigger[triggerName]` 直接遍历。
+
+### 迁移说明
+
+- `AbilityDefinition.UseSelf` 已移除，不再用该字段区分“使用自己/使用其他”。
+- 物品定义中“当其他物品被使用时”统一改用 `Trigger.UseOtherItem` 表达。
+- 暴击可判定能力条件收敛为：能力含 `Trigger.UseItem` 且 `ApplyCritMultiplier=true`。
+
+---
+
 ## ValueKey 与属性读取路径收敛（2026-03-24）
 
 ### 目标

@@ -13,7 +13,6 @@ public class AbilityDefinition
     public List<TriggerEntry> TriggerEntries { get; set; } = [];
     public AbilityPriority Priority { get; set; } = AbilityPriority.Medium;
     public AbilityType AbilityType { get; set; } = AbilityType.None;
-    public bool UseSelf { get; set; } = true;
     public Action<BattleContext, AbilityDefinition>? Apply { get; set; }
     public Formula? TargetCondition { get; set; }
     public int? ValueKey { get; set; }
@@ -22,7 +21,11 @@ public class AbilityDefinition
     public int? TargetCountKey { get; set; }
 
     private static Formula DefaultConditionByTrigger(int trigger) =>
-        trigger == Trigger.UseItem ? Condition.SameAsCaster : Condition.SameSide;
+        trigger == Trigger.UseItem
+            ? Condition.SameAsCaster
+            : trigger == Trigger.UseOtherItem
+                ? (Condition.SameSide & Condition.DifferentFromCaster)
+                : Condition.SameSide;
 
     public AbilityDefinition Override(
         int? trigger = null,
@@ -53,12 +56,6 @@ public class AbilityDefinition
         {
             var baseCond = condition ?? TriggerEntries[0].Condition ?? DefaultConditionByTrigger(TriggerEntries[0].Trigger);
             TriggerEntries[0].Condition = additionalCondition != null ? (baseCond & additionalCondition) : baseCond;
-            if (condition != null || TriggerEntries[0].Trigger != Trigger.UseItem)
-                UseSelf = false;
-        }
-        else if (trigger != null && TriggerEntries[0].Trigger != Trigger.UseItem)
-        {
-            UseSelf = false;
         }
 
         if (targetCondition != null || additionalTargetCondition != null)
