@@ -56,6 +56,12 @@ alwaysApply: false
 - 战斗过程仅允许读取 `ItemTemplate.Name`（日志）；其他战斗读数统一来自 `ItemState` 与会话索引（abilities/auras）。
 - `ItemState.Abilities` 可直接引用模板能力定义（不 clone），但 `AbilityState` 必须按 Owner 维度拆分（如 `RuntimeAbilityRef`），避免共享 `AbilityId` 造成状态串扰。
 
+## 并行调用与实例状态
+
+- `BattleSimulator.Run` 可被 **GreedyDeckFinder**（`BattleEvaluator` + `Parallel.For`）等场景 **多线程同时调用**；修改 `Run` 或 `PrepareDeck` 时 **勿** 在类型实例字段上存放 **仅本场对局有效** 且会被下一场覆盖的状态（例如本场 `BattleSessionTables`），否则并发 `Run` 会串场，表现为光环/能力 id 与 `BattleState` 不一致甚至越界。
+- 可跨场共享的缓存（如 `PrepareDeck` 结果）若被并行访问，须 **加锁或使用并发集合**，保证线程安全。
+- Greedy 侧架构与经验见 **`.cursor/rules/greedy-deck-finder.mdc`**「架构与 `BattleSimulator` 线程安全」与 **`docs/greedy-deck-finder-performance-notes.md`** §3.6。
+
 ## 设计文档对照
 
 - 实现与 `docs/Bazaar Arena 设计文档.md` 中「每一帧的结算顺序」步骤 7、8、9 一致。

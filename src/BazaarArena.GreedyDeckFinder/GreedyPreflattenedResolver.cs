@@ -1,3 +1,4 @@
+using BazaarArena.BattleSimulator;
 using BazaarArena.Core;
 using BazaarArena.ItemDatabase;
 using ItemDb = BazaarArena.ItemDatabase.ItemDatabase;
@@ -7,12 +8,13 @@ namespace BazaarArena.GreedyDeckFinder;
 /// <summary>
 /// Greedy 专用 resolver：启动时对物品池模板做一次性扁平化（Bronze 单值化），并按玩家等级预应用 overridable
 /// （2 级铜档一半、3 级铜档满值、4 级铜档与银档的平均值，向下取整）。
-/// 目的是避免每局重复 tier 映射与 overrides 构造。
+/// 同时为池内每件物品构造铜档 <see cref="ItemState"/> 原型；<see cref="BattleSimulator"/> 构建卡组时可只拷贝属性数组，避免对同模板重复 GetInt。
 /// </summary>
-internal sealed class GreedyPreflattenedResolver : IItemTemplateResolver
+internal sealed class GreedyPreflattenedResolver : IItemBattlePrototypeResolver
 {
     private readonly ItemDb _baseDb;
     private readonly Dictionary<string, ItemTemplate> _flat = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ItemState> _battleProtoByName = new(StringComparer.Ordinal);
 
     /// <param name="playerLevel">2：overridable 铜档一半；3：铜档满值；4：铜档与银档平均。</param>
     public GreedyPreflattenedResolver(ItemDb baseDb, ItemPool pool, int playerLevel)
@@ -23,7 +25,9 @@ internal sealed class GreedyPreflattenedResolver : IItemTemplateResolver
         {
             var t = baseDb.GetTemplate(name);
             if (t == null) continue;
-            _flat[name] = FlattenBronzeWithOverrides(t, playerLevel);
+            var flat = FlattenBronzeWithOverrides(t, playerLevel);
+            _flat[name] = flat;
+            _battleProtoByName[name] = new ItemState(flat, ItemTier.Bronze);
         }
     }
 
@@ -32,6 +36,10 @@ internal sealed class GreedyPreflattenedResolver : IItemTemplateResolver
         if (_flat.TryGetValue(name, out var t)) return t;
         return _baseDb.GetTemplate(name);
     }
+
+    /// <inheritdoc />
+    public ItemState? TryGetBattlePrototype(string name) =>
+        _battleProtoByName.TryGetValue(name, out var p) ? p : null;
 
     private static ItemTemplate FlattenBronzeWithOverrides(ItemTemplate source, int playerLevel)
     {

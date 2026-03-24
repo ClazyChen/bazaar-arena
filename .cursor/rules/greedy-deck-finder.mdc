@@ -1,0 +1,30 @@
+---
+description: GreedyDeckFinder 并行、随机与性能结论（统计可接受、并行框架已较充分）
+globs: src/BazaarArena.GreedyDeckFinder/**/*.cs,docs/greedy-deck-finder*.md
+alwaysApply: false
+---
+
+# GreedyDeckFinder：并行、随机与性能
+
+## 随机与可复现
+
+- **目标**：贪心搜索以 **统计意义上** 的稳定性与吞吐为主；**不要求** 并行路径下每场对局的随机字节流与串行路径 **完全一致**，也 **不要求** 在调整并行调度（如批内打乱对局顺序）后仍保持 **比特级可复现**。
+- **不要为了「全进程可复现」** 在并行批上增加 **与性能冲突** 的约束（例如强制按固定下标绑定 RNG 以致无法做负载均衡相关的打乱）；若需可复现的 **基准**，应明确为 **独立微基准** 或接受 **仅主流程/瑞士子流** 级别的 seed 语义。
+- **`--seed`**：仍用于主 `Random`、瑞士子流等，使 **搜索随机性** 可调；并行批内派生 RNG 与 **批内调度顺序** 可随实现优化而变，**不** 作为对外承诺的严格契约。
+
+## 性能结论（后续改动的默认立场）
+
+- **`--perf` 下 `单局线程累计/perf墙钟`** 在 **`workers=8`**、**大规模搜索**（如 `--level 4`、默认 TopK/M）时，已观测到 **接近 workers 的量级**（约 **6.5～7**），说明 **批内多核叠跑已较充分**；**不宜** 再把「并行框架、胶水、`Parallel.For` 微调」当作 **首要** 优化方向，除非指标明确恶化（例如该比值在 `workers>1` 时长期接近 **1**、或 `[性能·批大小]` 显示 **对数\<workers 的并行批占比** 持续很高）。
+- **批大小**：在同类规模下 **BO 并行批对数/批均值** 常 **远大于** `workers`，**对数\<workers 的并行批占比** 常为 **个位数 %**；「批太小吃不满核」**不是** 当前主要矛盾（小批仍存在于擂台/瑞士末段等，属正常）。
+- **墙钟主路径**：阶段墙钟仍由 **多段对战批墙钟串联** 与 **单局模拟** 主导；**胶水占比小** 不等于 **批与批之间可重叠**。进一步缩墙钟应优先 **`BattleSimulator.Run` 热点**、**减少对战次数**（`top-k`、`top-multiplier`、`--bo`）、或 **硬件**，而非重复投入并行编排。
+- **同参数性能对比**：搜索路径可因随机分叉而变化，**墙钟与单局数** 会有波动；应用 **多次运行取中位数/区间**，避免单次对比下结论。
+
+详细指标解读、误判澄清与基线样例见 **`docs/greedy-deck-finder-performance-notes.md`**。
+
+## 架构与 `BattleSimulator` 线程安全（必读）
+
+- **不是「每线程一个模拟器」**：`Program` 只 `new` **一个** `BattleSimulator`，注入 `BattleEvaluator`；`workers>1` 时 **`Parallel.For` 内多线程同时调用同一实例的 `Run`**，用于共享 `PrepareDeck` 缓存、减少分配。见 `Program.cs` 与 `BattleEvaluator.PlayBoNBatch`。
+- **`Run` 必须可在多线程下安全重入**：**禁止** 把**仅属于单场对局**的可变状态（如本场 `BuildSessionTables` 结果、本场才有效的索引表）写入 **`BattleSimulator` 的实例字段**再被其他 `Run` 覆盖；应使用 **`Run` 内局部变量** 并赋给本场 `BattleState`（历史问题：实例字段存会话表会导致光环 id 与盘面错配、甚至 `GetAura` 越界）。
+- **共享缓存须线程安全**：同一模拟器上的 `_preparedDeckCache` 等若可能被并行 `PrepareDeck` 命中，读写须 **`lock` 或并发字典** 等，避免 `Dictionary` 并发写入损坏。
+- **Greedy 专用**：`GreedyPreflattenedResolver` 实现 `IItemBattlePrototypeResolver`，启动时为池内物品建铜档 **`ItemState` 原型**（只读）；`PrepareDeck` 在铜档且无槽位 overrides 时用 `new ItemState(proto)` 拷贝属性数组，减少重复 `GetInt`。原型 **不得** 在战斗过程中被写入。
+- **替代架构**：若改为每工作线程一个 `BattleSimulator`，可简化 `Run` 的跨调用隔离，但需权衡 **缓存是否分片/共享** 与内存；当前工程选择 **单实例 + 安全 `Run`**。

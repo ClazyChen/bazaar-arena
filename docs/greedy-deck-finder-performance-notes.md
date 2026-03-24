@@ -71,6 +71,13 @@
 - **线程累计 ≫ 墙钟**：批内多核叠跑，正常。
 - **线程累计 ≈ 墙钟**（在 `workers>1` 时）：说明墙钟上 **重叠很少**，常见于 **大批次极少、或大量串行批/单对批**。
 
+### 3.6 单实例 `BattleSimulator` 与 `Run` 的线程安全（架构经验）
+
+- **为何共用一个模拟器**：`Program` 只构造 **一个** `BattleSimulator` 交给 `BattleEvaluator`。并行来自 `PlayBoNBatch` / `PlaySeriesBatch` 里的 **`Parallel.For`**，每个任务仍调用 **同一 `_simulator` 上的 `Run`**，而不是「每线程 `new BattleSimulator()`」。目的是共享 **`PrepareDeck` 缓存**、控制分配；代价是 **`Run` 必须按多线程重入设计**。
+- **典型错误**：把 **`BuildSessionTables` 的结果**（或任何「本场对局专属」表）存进 **`BattleSimulator` 实例字段**，再赋给 `battleState`。并发两场 `Run` 时，后一场会覆盖字段，先一场若仍用错表遍历能力/光环，会出现 **id 与盘面不一致**、甚至 **`GetAura` 索引越界**。
+- **正确方向**：本场会话表用 **`Run` 内局部变量**，仅赋给本场 `BattleState.SessionTables`；共享的 `_preparedDeckCache` 用 **`lock`（或等价并发结构）** 保护读写。
+- **与优化的关系**：`ItemState` 原型（§4）减少构图成本；**会话表局部化 + 缓存加锁** 保证并行正确。若未来改为 **每线程一个 `BattleSimulator`**，可弱化对 `Run` 跨调用隔离的要求，但需单独设计缓存共享策略。
+
 ---
 
 ## 4. 已做过的优化（便于对照代码）
@@ -79,6 +86,8 @@
 - **瑞士单轮合并**：整轮所有分数桶对局 **一次** `PlayBoNBatch`，避免按桶小批无法并行。
 - **并行阈值**：`BattleEvaluator` 中 `ParallelPairsMinCount = 2`（≥2 对且 `workers>1` 才 `Parallel.For`）。
 - **随机数**：瑞士子流（主 `Random` 每进瑞士只取 1 个种子）；`--seed` 时并行批内对局可用 **派生 `Random`** 做先后手/平局掷币；**批内对局顺序随机打乱** 时槽位与种子对应关系会变。**不追求** 与串行/旧版比特级一致（见 `greedy-deck-finder.mdc`）。
+- **Greedy 物品 `ItemState` 原型**（`IItemBattlePrototypeResolver` + `GreedyPreflattenedResolver`）：搜索启动时对池内每件物品构造铜档 `ItemState` 原型；`BattleSimulator.PrepareDeck` 在「铜档、无 overrides、解析器提供原型」时用 `new ItemState(proto)`（`Array.Copy`）代替对扁平模板逐键 `GetInt`，减少卡组缓存未命中时的构造开销。
+- **并行 `Run` 正确性**：`BattleSimulator` 原先将 `BuildSessionTables` 结果写入实例字段后再赋给本场 `BattleState`，多线程共用一个模拟器时会发生表与战场错配；已改为 **每场对局的局部 `sessionTables` 变量**，且 **`PrepareDeck` 缓存读写加锁**，避免并行下字典损坏或未定义行为。
 
 ---
 
@@ -112,6 +121,8 @@
 | 瑞士/大循环胶水 | `src/BazaarArena.GreedyDeckFinder/SwissTournament.cs` |
 | 入口与 `PerfStats` 生命周期 | `src/BazaarArena.GreedyDeckFinder/Program.cs` |
 | 单局模拟 | `src/BazaarArena/BattleSimulator/BattleSimulator.cs` |
+| 铜档战斗原型解析器 | `src/BazaarArena/BattleSimulator/IItemBattlePrototypeResolver.cs` |
+| Greedy 扁平模板 + 原型 | `src/BazaarArena.GreedyDeckFinder/GreedyPreflattenedResolver.cs` |
 
 ---
 
@@ -129,7 +140,7 @@
 - **端到端墙钟** 仍受 **算法固有的批间顺序**、**总单局数**、**模拟器热点** 等约束；**胶水占比小** 不能理解为「批与批已并行」。
 - **同参数多次运行**：墙钟、单局数可能因路径分叉 **波动数个百分点级或更多**，对比优化应用 **多次中位数/区间**。
 
-**一次参考基线**（本仓库内 Release 实测，仅供参考；换机/版本后需重测）
+**历史参考基线**（异机或早期实测，**勿与同机优化前后对比墙钟绝对值**；并行语义修正后路径也可能与旧版不完全相同）
 
 | 项目 | 约值 |
 |------|------|
@@ -142,9 +153,25 @@
 | 对数\<8 的并行批占比 | ~9% |
 | BO 串行对占比 | ~0.3% |
 
+**L4 实测（2025-03-25，本机，`Release`，命令含 `--seed 42`）**：在 **ItemState 原型 + 并行 `Run` 会话表修复** 之后重跑同一命令，吞吐与并行度指标如下（墙钟随 CPU 与负载变化大，**同机**对比优化请以相邻 commit 各跑多次取中位数为准）。
+
+| 项目 | 测得值 |
+|------|--------|
+| 命令 | `--anchor-item 狼筅 --level 4 --perf --workers 8 --seed 42` |
+| 墙钟耗时（`PerfStats` 口径） | ~21.7 s |
+| 单局数 | 112110 |
+| 吞吐(墙钟) | ~5160 局/秒 |
+| 吞吐(线程累计) | ~728 局/秒 |
+| 单局线程累计/perf墙钟 | ~7.08 |
+| 胶水/阶段 | ~0.5% |
+| 并行 BO 墙钟/阶段 | ~85.6% |
+| BO 并行批 对数/批均值 | ~55.1 |
+| 对数\<workers 的并行批占比 | ~11.2% |
+| BO 串行对占比 | ~0.3% |
+
 ---
 
-## 6. `BattleSimulator.Run` 基准工程（`BazaarArena.Benchmarks`）
+## 9. `BattleSimulator.Run` 基准工程（`BazaarArena.Benchmarks`）
 
 - **工程**：`src/BazaarArena.Benchmarks`，已加入 `bazaar-arena.sln`。
 - **BDN**：主程序为 **net10.0-windows**（与 WPF 主工程一致），配置为 **InProcessEmit** + `ConfigUnionRule.AlwaysUseLocal`，避免默认子工程 `net10.0` 与主工程 **NU1201** 不兼容；勿依赖会并入 **Default 工具链** 的命令行 `--job`（若需改迭代次数，改 `BenchmarkConfig.cs` 内 `Job`）。

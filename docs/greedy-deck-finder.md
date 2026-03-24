@@ -37,7 +37,8 @@ dotnet run --project src/BazaarArena.GreedyDeckFinder/BazaarArena.GreedyDeckFind
 
 ## 性能实现说明
 
-- 启动时会对物品池模板做一次性预扁平化（Bronze 单值化 + half-overrides 预应用），减少单局构建开销。
+- 启动时会对物品池模板做一次性预扁平化（Bronze 单值化 + 按玩家等级的 overridable 预应用），并为池内每件物品构造铜档 **`ItemState` 只读原型**（`IItemBattlePrototypeResolver`）；`BattleSimulator.PrepareDeck` 在铜档且无槽位 overrides 时通过拷贝原型属性数组构图，减少重复 `GetInt`。
+- **并行架构**：进程内通常只有 **一个** `BattleSimulator` 实例；`workers>1` 时多个线程同时调用其 `Run`。因此 `Run` 不得依赖会跨调用互相覆盖的实例级本场状态；`PrepareDeck` 缓存须线程安全。详见 [greedy-deck-finder-performance-notes.md §3.6](./greedy-deck-finder-performance-notes.md) 与 `.cursor/rules/greedy-deck-finder.mdc`。
 - 对战评估器会缓存 `DeckRep.Signature()` 对应的 `Deck`，避免 BO 与系列赛内重复构建。
 - 代表排列阶段由全对全改为淘汰式，比赛数量从近 `O(n^2)` 降低到近 `O(n)`。
 - 瑞士轮：若至少 `K*M` 名其他选手的当前瑞士分已严格高于某候选的理论最高终分（当前分 + 剩余轮数，每轮至多 +1），该候选不可能进入瑞士结束后的前 `K*M` 名，移出后续配对；`--perf` 中「瑞士剪枝淘汰」为各 `size` 轮次上该移除人次的累计。

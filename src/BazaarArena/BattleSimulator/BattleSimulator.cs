@@ -14,7 +14,7 @@ public class BattleSimulator
     private const int SandstormEndMs = 120_000;
     private const int BurnTickIntervalMs = 500;
     private const int PoisonRegenTickIntervalMs = 1000;
-    private BattleSessionTables? _sessionTables;
+    private readonly object _prepareDeckLock = new();
     private readonly Dictionary<Deck, PreparedDeck> _preparedDeckCache = [];
 
     private sealed class PreparedDeck
@@ -57,12 +57,12 @@ public class BattleSimulator
             side1.Items[i].SideIndex = 1;
             side1.Items[i].ItemIndex = i;
         }
-        _sessionTables = BuildSessionTables(side0, side1);
+        var sessionTables = BuildSessionTables(side0, side1);
 
         var battleState = new BattleState();
         battleState.Side[0] = side0;
         battleState.Side[1] = side1;
-        battleState.SessionTables = _sessionTables;
+        battleState.SessionTables = sessionTables;
         battleState.AbilityStates.Clear();
         InitializeAmmoRemaining(side0, battleState);
         InitializeAmmoRemaining(side1, battleState);
@@ -87,7 +87,7 @@ public class BattleSimulator
         void ExecuteImmediateAbility(int abilityId, ItemState? invokeTargetItem) =>
             RunAbilityApply(abilityId, invokeTargetItem, allowCastQueueEnqueue: true);
         var abilitySeen = new HashSet<int>();
-        foreach (var list in _sessionTables.AbilitiesByTrigger)
+        foreach (var list in sessionTables.AbilitiesByTrigger)
         {
             for (int i = 0; i < list.Count; i++)
             {
@@ -241,37 +241,51 @@ public class BattleSimulator
     private PreparedDeck? PrepareDeck(Deck deck, IItemTemplateResolver resolver)
     {
         int signature = ComputeDeckSignature(deck);
-        if (_preparedDeckCache.TryGetValue(deck, out var cached)
-            && ReferenceEquals(cached.ResolverRef, resolver)
-            && cached.Signature == signature)
+        lock (_prepareDeckLock)
         {
-            return cached;
-        }
+            if (_preparedDeckCache.TryGetValue(deck, out var cached)
+                && ReferenceEquals(cached.ResolverRef, resolver)
+                && cached.Signature == signature)
+            {
+                return cached;
+            }
 
-        int maxHp = deck.PlayerOverrides?.GetValueOrDefault("MaxHp", LevelUpTable.GetMaxHp(deck.PlayerLevel)) ?? LevelUpTable.GetMaxHp(deck.PlayerLevel);
-        int shield = deck.PlayerOverrides?.GetValueOrDefault("Shield", 0) ?? 0;
-        int regen = deck.PlayerOverrides?.GetValueOrDefault("Regen", 0) ?? 0;
-        var flattened = new List<ItemState>(deck.Slots.Count);
-        foreach (var entry in deck.Slots)
-        {
-            var t = resolver.GetTemplate(entry.ItemName);
-            if (t == null) return null;
-            var item = new ItemState(t, entry.Tier);
-            ApplyOverrides(item, entry.Overrides);
-            flattened.Add(item);
-        }
+            int maxHp = deck.PlayerOverrides?.GetValueOrDefault("MaxHp", LevelUpTable.GetMaxHp(deck.PlayerLevel)) ?? LevelUpTable.GetMaxHp(deck.PlayerLevel);
+            int shield = deck.PlayerOverrides?.GetValueOrDefault("Shield", 0) ?? 0;
+            int regen = deck.PlayerOverrides?.GetValueOrDefault("Regen", 0) ?? 0;
+            var flattened = new List<ItemState>(deck.Slots.Count);
+            var protoResolver = resolver as IItemBattlePrototypeResolver;
+            foreach (var entry in deck.Slots)
+            {
+                var t = resolver.GetTemplate(entry.ItemName);
+                if (t == null) return null;
+                ItemState item;
+                var ov = entry.Overrides;
+                if (protoResolver != null
+                    && entry.Tier == ItemTier.Bronze
+                    && (ov == null || ov.Count == 0)
+                    && protoResolver.TryGetBattlePrototype(entry.ItemName) is { } proto)
+                {
+                    item = new ItemState(proto);
+                }
+                else
+                    item = new ItemState(t, entry.Tier);
+                ApplyOverrides(item, ov);
+                flattened.Add(item);
+            }
 
-        var prepared = new PreparedDeck
-        {
-            ResolverRef = resolver,
-            Signature = signature,
-            MaxHp = maxHp,
-            Shield = shield,
-            Regen = regen,
-            FlattenedItems = flattened,
-        };
-        _preparedDeckCache[deck] = prepared;
-        return prepared;
+            var prepared = new PreparedDeck
+            {
+                ResolverRef = resolver,
+                Signature = signature,
+                MaxHp = maxHp,
+                Shield = shield,
+                Regen = regen,
+                FlattenedItems = flattened,
+            };
+            _preparedDeckCache[deck] = prepared;
+            return prepared;
+        }
     }
 
     private static BattleSide BuildSide(PreparedDeck prepared)
