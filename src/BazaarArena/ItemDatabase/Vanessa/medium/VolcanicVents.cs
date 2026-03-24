@@ -12,7 +12,7 @@ public static class VolcanicVents
         {
             Name = "海底热泉",
             Desc = "▶ 造成 {Burn} 灼烧；多重释放：{Multicast}",
-            Tags = [Tag.Aquatic],
+            Tags = Tag.Aquatic,
             Cooldown = 7.0,
             Burn = [3, 6, 9, 12],
             Multicast = 3,

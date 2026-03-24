@@ -12,7 +12,7 @@ public static class CommonMedium
         {
             Name = "尖刺圆盾",
             Desc = "▶ 造成 {Damage} 伤害；▶ 获得 {Shield} 护盾",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 9.0,
             Damage = [10, 20, 40, 80],
             Shield = [10, 20, 40, 80],
@@ -31,7 +31,7 @@ public static class CommonMedium
         {
             Name = "临时钝器",
             Desc = "▶ 造成 {Damage} 伤害；▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 8.0,
             Damage = [20, 40, 80, 160],
             SlowTargetCount = 2,
@@ -51,7 +51,7 @@ public static class CommonMedium
         {
             Name = "暗影斗篷",
             Desc = "使用此物品右侧的物品时，使之加速 {HasteSeconds} 秒；若为武器则伤害提高 {Custom_0}（限本场战斗）",
-            Tags = [Tag.Apparel],
+            Tags = Tag.Apparel,
             Haste = [1.0, 2.0, 3.0, 4.0],
             Custom_0 = [3, 5, 7, 9],
             Abilities =
@@ -77,7 +77,7 @@ public static class CommonMedium
         {
             Name = "冰冻钝器",
             Desc = "▶ 造成 {Damage} 伤害；▶ 冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒；触发冻结时，己方武器伤害提高 {Custom_0}（限本场战斗）",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 9.0,
             Damage = [20, 40, 60, 80],
             Freeze = 1.0,
@@ -103,7 +103,7 @@ public static class CommonMedium
         {
             Name = "发条刀",
             Desc = "▶ 造成 {Damage} 伤害",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 4.0,
             Damage = [20, 40, 80, 160],
             Abilities =
@@ -120,7 +120,7 @@ public static class CommonMedium
         {
             Name = "大理石鳞甲",
             Desc = "▶ 获得 {Shield} 护盾",
-            Tags = [Tag.Apparel],
+            Tags = Tag.Apparel,
             Cooldown = 9.0,
             Shield = [20, 60, 120, 200],
             Abilities =
@@ -137,7 +137,7 @@ public static class CommonMedium
         {
             Name = "废品场大棒",
             Desc = "▶ 造成 {Damage} 伤害",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 11.0,
             Damage = [30, 60, 120, 240],
             Abilities =
@@ -154,7 +154,7 @@ public static class CommonMedium
         {
             Name = "火箭靴",
             Desc = "▶ 加速相邻物品 {HasteSeconds} 秒",
-            Tags = [Tag.Tool, Tag.Apparel],
+            Tags = Tag.Tool | Tag.Apparel,
             Cooldown = 5.0,
             Haste = [1.0, 2.0, 3.0, 4.0],
             HasteTargetCount = 2,
@@ -175,7 +175,7 @@ public static class CommonMedium
         {
             Name = "火蜥幼兽",
             Desc = "▶ 造成 {Burn} 灼烧",
-            Tags = [Tag.Friend],
+            Tags = Tag.Friend,
             Cooldown = 8.0,
             Burn = [4, 6, 8, 10],
             Abilities =
@@ -192,7 +192,7 @@ public static class CommonMedium
         {
             Name = "简易路障",
             Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
-            Tags = [],
+            Tags = 0,
             Cooldown = 7.0,
             Slow = [1.0, 2.0, 3.0, 4.0],
             Abilities =
@@ -209,7 +209,7 @@ public static class CommonMedium
         {
             Name = "外骨骼",
             Desc = "相邻武器 {+Custom_0} 伤害",
-            Tags = [Tag.Apparel],
+            Tags = Tag.Apparel,
             Custom_0 = [5, 10, 20, 40],
             Auras =
             [
@@ -230,7 +230,7 @@ public static class CommonMedium
         {
             Name = "废品场维修机器人",
             Desc = "▶ 修复 {RepairTargetCount} 件物品；▶ 治疗 {Heal} 生命值",
-            Tags = [Tag.Friend, Tag.Tech],
+            Tags = Tag.Friend | Tag.Tech,
             Cooldown = 5.0,
             Heal = [30, 60, 120, 240],
             Abilities =
@@ -250,7 +250,7 @@ public static class CommonMedium
         {
             Name = "宇宙炫羽",
             Desc = "▶ {Custom_1} 件物品开始飞行；▶ 飞行物品暴击率 {+Custom_0%}；造成暴击或使用飞行物品时，为此物品充能 {ChargeSeconds} 秒",
-            Tags = [Tag.Relic],
+            Tags = Tag.Relic,
             Cooldown = 4.0,
             Custom_0 = [5, 10, 15],
             Custom_1 = 1,
@@ -283,7 +283,7 @@ public static class CommonMedium
         {
             Name = "巨龙翼",
             Desc = "▶ 获得 {Shield} 护盾；▶ {Custom_1} 件物品开始飞行；触发灼烧时，为此物品充能 {ChargeSeconds} 秒",
-            Tags = [Tag.Dragon],
+            Tags = Tag.Dragon,
             Cooldown = 7.0,
             Shield = [40, 60, 80],
             Charge = 2.0,
@@ -310,7 +310,7 @@ public static class CommonMedium
         {
             Name = "碾骨爪",
             Desc = "▶ 造成伤害，等量于己方物品中最高的护盾值；▶ 护盾物品的护盾提高 {+Custom_0}（限本场战斗）",
-            Tags = [Tag.Weapon, Tag.Aquatic],
+            Tags = Tag.Weapon | Tag.Aquatic,
             Cooldown = 9.0,
             Custom_0 = [20, 40, 60],
             Auras =
@@ -339,7 +339,7 @@ public static class CommonMedium
         {
             Name = "寒冰特服",
             Desc = "▶ 冻结此物品以及相邻物品 {FreezeSeconds} 秒；任意物品冻结时，获得 {Shield} 护盾；己方物品受到的冻结效果时长减半",
-            Tags = [Tag.Apparel],
+            Tags = Tag.Apparel,
             Cooldown = 4.0,
             Freeze = 1.0,
             FreezeTargetCount = 3,
@@ -373,7 +373,7 @@ public static class CommonMedium
         {
             Name = "守护神之壳",
             Desc = "▶ 获得 {Shield} 护盾；触发剧毒时，为此物品充能 {ChargeSeconds} 秒",
-            Tags = [Tag.Relic],
+            Tags = Tag.Relic,
             Cooldown = 7.0,
             Shield = [40, 60, 80],
             Charge = 2.0,
@@ -396,7 +396,7 @@ public static class CommonMedium
         {
             Name = "破冰尖镐",
             Desc = "▶ 造成 {Damage} 伤害；▶ 解除己方物品的冻结效果；任意物品冻结时，为此物品充能 {ChargeSeconds} 秒；此物品冻结时，解除其冻结效果",
-            Tags = [Tag.Weapon, Tag.Tool],
+            Tags = Tag.Weapon | Tag.Tool,
             Cooldown = 7.0,
             Damage = [100, 200, 300],
             Charge = [1.0, 2.0, 3.0],
@@ -433,7 +433,7 @@ public static class CommonMedium
         {
             Name = "仿生手臂",
             Desc = "▶ 此物品左侧每有一件物品，造成 {Custom_0} 伤害；此物品右侧每有一件科技物品，此物品的冷却时间缩短 1 秒",
-            Tags = [Tag.Weapon, Tag.Tech],
+            Tags = Tag.Weapon | Tag.Tech,
             Cooldown = [8.0, 7.0, 6.0],
             Custom_0 = [50, 75, 100],
             Abilities =
@@ -463,7 +463,7 @@ public static class CommonMedium
         {
             Name = "时光指针",
             Desc = "▶ 另一件工具的冷却时间缩短 1 秒（限本场战斗）；每有一件相邻的工具，此物品的冷却时间缩短 1 秒",
-            Tags = [Tag.Relic, Tag.Tool],
+            Tags = Tag.Relic | Tag.Tool,
             Cooldown = [9.0, 8.0, 7.0],
             Custom_0 = 1000,
             ModifyAttributeTargetCount = 1,
@@ -493,7 +493,7 @@ public static class CommonMedium
         {
             Name = "祖特笛",
             Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；相邻物品暴击率 {+Custom_0%}；造成暴击时，为此物品充能 {ChargeSeconds} 秒",
-            Tags = [],
+            Tags = 0,
             Cooldown = 7.0,
             Slow = 2.0,
             SlowTargetCount = [2, 3],
@@ -527,7 +527,7 @@ public static class CommonMedium
         {
             Name = "虚空射线",
             Desc = "▶ 造成 {Burn} 灼烧；多重释放：{Multicast}；获得护盾时，此物品的灼烧提高 {Custom_0}（限本场战斗）",
-            Tags = [Tag.Ray, Tag.Relic],
+            Tags = Tag.Ray | Tag.Relic,
             Cooldown = 7.0,
             Burn = [4, 6],
             Multicast = 2,
@@ -552,7 +552,7 @@ public static class CommonMedium
         {
             Name = "曲速引擎",
             Desc = "▶ 摧毁此物品（限本场战斗）；相邻物品视为载具；己方载具冷却时间缩短 {Custom_0%}；此物品被摧毁时，为你的所有物品充能 {ChargeSeconds} 秒",
-            Tags = [Tag.Tech],
+            Tags = Tag.Tech,
             Cooldown = 8.0,
             Custom_0 = [10, 15],
             Charge = 2.0,
@@ -596,7 +596,7 @@ public static class CommonMedium
         {
             Name = "生体融合臂",
             Desc = "己方物品弹药耗尽时，造成 {Damage} 伤害；此物品左侧的弹药物品暴击率 +100%；此物品左侧的弹药物品最大弹药量 +1",
-            Tags = [Tag.Weapon, Tag.Tool],
+            Tags = Tag.Weapon | Tag.Tool,
             Damage = [100, 200],
             Abilities =
             [
@@ -632,7 +632,7 @@ public static class CommonMedium
         {
             Name = "分解射线",
             Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；此物品弹药耗尽时，摧毁 1 件敌方物品（Highest）",
-            Tags = [Tag.Weapon, Tag.Tech, Tag.Ray],
+            Tags = Tag.Weapon | Tag.Tech | Tag.Ray,
             Cooldown = [3.0, 2.0],
             Damage = [100, 200],
             AmmoCap = 3,
@@ -656,7 +656,7 @@ public static class CommonMedium
         {
             Name = "凡躯之缚",
             Desc = "▶ 造成 {Damage} 伤害；此物品左侧的武器获得吸血；吸血",
-            Tags = [Tag.Weapon, Tag.Relic],
+            Tags = Tag.Weapon | Tag.Relic,
             Cooldown = 9.0,
             Damage = [50, 100],
             LifeSteal = 1,
@@ -683,7 +683,7 @@ public static class CommonMedium
         {
             Name = "锡箔帽",
             Desc = "敌方使用物品时，获得 {Shield} 护盾",
-            Tags = [Tag.Apparel],
+            Tags = Tag.Apparel,
             Shield = 1,
             Abilities =
             [
@@ -702,7 +702,7 @@ public static class CommonMedium
         {
             Name = "虚空干扰器",
             Desc = "▶ 摧毁相邻物品（限本场战斗）；摧毁物品时，获得护盾，等量于你最大生命值的 {Custom_0}%",
-            Tags = [Tag.Tech],
+            Tags = Tag.Tech,
             Cooldown = 10.0,
             DestroyTargetCount = 2,
             Custom_0 = 25,
@@ -735,7 +735,7 @@ public static class CommonMedium
         {
             Name = "虚空护盾",
             Desc = "▶ 获得护盾，等量于敌人的灼烧；敌人使用物品时，造成 {Burn} 灼烧",
-            Tags = [Tag.Relic],
+            Tags = Tag.Relic,
             Cooldown = 8.0,
             Burn = 1,
             Abilities =

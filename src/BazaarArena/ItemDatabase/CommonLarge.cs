@@ -12,7 +12,7 @@ public static class CommonLarge
         {
             Name = "临时避难所",
             Desc = "▶ 获得 {Shield} 护盾",
-            Tags = [Tag.Property],
+            Tags = Tag.Property,
             Cooldown = 7.0,
             Shield = [10, 20, 40, 80],
             Abilities =
@@ -29,7 +29,7 @@ public static class CommonLarge
         {
             Name = "哈库维发射器",
             Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 3.0,
             Damage = [100, 200, 300, 400],
             AmmoCap = 1,
@@ -47,7 +47,7 @@ public static class CommonLarge
         {
             Name = "观光缆车",
             Desc = "▶ 获得 {Shield} 护盾",
-            Tags = [Tag.Vehicle],
+            Tags = Tag.Vehicle,
             Cooldown = 5.0,
             Shield = [20, 40, 80, 160],
             Abilities =
@@ -64,7 +64,7 @@ public static class CommonLarge
         {
             Name = "温泉",
             Desc = "▶ 治疗 {Heal} 生命值",
-            Tags = [Tag.Property],
+            Tags = Tag.Property,
             Cooldown = 6.0,
             Heal = [25, 50, 100, 200],
             Abilities =
@@ -81,7 +81,7 @@ public static class CommonLarge
         {
             Name = "废品场长枪",
             Desc = "▶ 每拥有一件小型物品（含储存箱等效）造成 {Custom_0} 伤害",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 11.0,
             Damage = 0,
             Custom_0 = [15, 30, 60, 100],
@@ -108,7 +108,7 @@ public static class CommonLarge
         {
             Name = "废品场弹射机",
             Desc = "▶ 造成 {Damage} 伤害；▶ 造成 {Burn} 灼烧；▶ 造成 {Poison} 剧毒；弹药：{AmmoCap}",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 7.0,
             Damage = [25, 50, 100],
             Burn = [6, 8, 10],
@@ -130,7 +130,7 @@ public static class CommonLarge
         {
             Name = "巨型冰棒",
             Desc = "▶ 造成 {Damage} 伤害；▶ 冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒",
-            Tags = [Tag.Weapon, Tag.Food],
+            Tags = Tag.Weapon | Tag.Food,
             Cooldown = 9.0,
             Damage = [50, 100, 200],
             FreezeTargetCount = 2,
@@ -150,7 +150,7 @@ public static class CommonLarge
         {
             Name = "以太能量导体",
             Desc = "触发剧毒或使用遗物时，己方物品暴击率 {+Custom_0%}（限本场战斗）；造成暴击时，为己方遗物充能 {ChargeSeconds} 秒",
-            Tags = [Tag.Relic],
+            Tags = Tag.Relic,
             Cooldown = 0,
             Custom_0 = [2, 4],
             Charge = 1.0,
@@ -182,7 +182,7 @@ public static class CommonLarge
         {
             Name = "焰形剑",
             Desc = "▶ 造成 {Damage} 伤害；此物品能造成四倍暴击伤害",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 9.0,
             Damage = 200,
             Abilities =

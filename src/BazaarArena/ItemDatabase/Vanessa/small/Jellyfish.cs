@@ -13,7 +13,7 @@ public static class Jellyfish
         {
             Name = "水母",
             Desc = "▶ 造成 {Poison} 剧毒；使用相邻的水系物品时，加速此物品 {HasteSeconds} 秒",
-            Tags = [Tag.Aquatic, Tag.Friend],
+            Tags = Tag.Aquatic | Tag.Friend,
             Cooldown = 7.0,
             Poison = [3, 6, 9, 12],
             Haste = [1.0, 2.0, 3.0, 4.0],

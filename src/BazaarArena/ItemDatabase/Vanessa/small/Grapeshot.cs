@@ -13,7 +13,7 @@ public static class Grapeshot
         {
             Name = "葡萄弹",
             Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；使用其他弹药物品时，为此物品装填 1 发",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 4.0,
             Damage = [15, 30, 60],
             AmmoCap = 2,
@@ -37,7 +37,7 @@ public static class Grapeshot
         {
             Name = "葡萄弹_S1",
             Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；使用其他弹药物品时，为此物品装填 1 发",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 4.0,
             Damage = [20, 30, 40, 50],
             AmmoCap = 1,

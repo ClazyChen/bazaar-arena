@@ -13,7 +13,7 @@ public static class Seaweed
         {
             Name = "水草",
             Desc = "▶ 治疗 {Heal} 生命值；使用水系物品时，此物品的治疗提高 {Custom_0}（限本场战斗）",
-            Tags = [Tag.Aquatic],
+            Tags = Tag.Aquatic,
             Cooldown = 7.0,
             Heal = 20,
             Custom_0 = [5, 10, 15, 20],

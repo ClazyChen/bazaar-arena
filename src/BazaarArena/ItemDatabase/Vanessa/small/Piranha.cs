@@ -13,7 +13,7 @@ public static class Piranha
         {
             Name = "食人鱼",
             Desc = "▶ 造成 {Damage} 伤害；使用其他伙伴或食物时，为此物品充能 1 秒",
-            Tags = [Tag.Weapon, Tag.Aquatic, Tag.Friend],
+            Tags = Tag.Weapon | Tag.Aquatic | Tag.Friend,
             Cooldown = [8.0, 7.0, 6.0, 5.0],
             Damage = 20,
             Charge = 1.0,
@@ -35,7 +35,7 @@ public static class Piranha
         {
             Name = "食人鱼_S1",
             Desc = "▶ 造成 {Damage} 伤害；暴击率：{CritRate}%；此物品能造成双倍暴击伤害",
-            Tags = [Tag.Weapon, Tag.Aquatic, Tag.Friend],
+            Tags = Tag.Weapon | Tag.Aquatic | Tag.Friend,
             Cooldown = 6.0,
             Damage = [6, 12, 18, 24],
             CritRate = 20,

@@ -13,7 +13,7 @@ public static class Bayonet
         {
             Name = "刺刀",
             Desc = "使用此物品左侧的武器时，造成 {Damage} 伤害",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 0,
             Damage = [10, 15, 20, 25],
             Abilities =

@@ -13,7 +13,7 @@ public static class Coral
         {
             Name = "珊瑚",
             Desc = "▶ 治疗 {Heal} 生命值；购买水系物品时，此物品的治疗量提高 {Custom_0}（已购买 {Custom_1} 件水系物品）",
-            Tags = [Tag.Aquatic, Tag.Relic],
+            Tags = Tag.Aquatic | Tag.Relic,
             Cooldown = 5.0,
             Heal = 20,
             Custom_0 = [5, 10, 15, 20],

@@ -13,7 +13,7 @@ public static class YetiCrab
         {
             Name = "雪怪蟹",
             Desc = "▶ 冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒；触发冻结时，相邻剧毒物品的剧毒提高 {Custom_0}（限本场战斗）",
-            Tags = [Tag.Aquatic, Tag.Friend],
+            Tags = Tag.Aquatic | Tag.Friend,
             Cooldown = 7.0,
             Freeze = 1.0,
             Custom_0 = [2, 4, 6, 8],

@@ -13,7 +13,7 @@ public static class Zoarcid
         {
             Name = "棉鳚",
             Desc = "▶ 造成 {Damage} 伤害；▶ 加速相邻物品 {HasteSeconds} 秒；触发灼烧时，为此物品充能 1 秒",
-            Tags = [Tag.Weapon, Tag.Aquatic, Tag.Friend],
+            Tags = Tag.Weapon | Tag.Aquatic | Tag.Friend,
             Cooldown = [8.0, 7.0, 6.0, 5.0],
             Damage = 20,
             Haste = 2.0,
@@ -41,7 +41,7 @@ public static class Zoarcid
         {
             Name = "棉鳚_S6",
             Desc = "▶ 造成 {Damage} 伤害；▶ 加速相邻物品 {HasteSeconds} 秒；触发灼烧时，为此物品充能 1 秒",
-            Tags = [Tag.Weapon, Tag.Aquatic, Tag.Friend],
+            Tags = Tag.Weapon | Tag.Aquatic | Tag.Friend,
             Cooldown = 6.0,
             Damage = [15, 30, 45, 60],
             Haste = 2.0,
@@ -69,7 +69,7 @@ public static class Zoarcid
         {
             Name = "棉鳚_S4",
             Desc = "▶ 造成 {Damage} 伤害；▶ 加速相邻物品 {HasteSeconds} 秒；触发灼烧时，为此物品充能 1 秒",
-            Tags = [Tag.Weapon, Tag.Aquatic, Tag.Friend],
+            Tags = Tag.Weapon | Tag.Aquatic | Tag.Friend,
             Cooldown = 7.0,
             Damage = [20, 30, 40, 50],
             Haste = [1.0, 2.0, 3.0, 4.0],

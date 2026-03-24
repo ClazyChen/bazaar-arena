@@ -13,7 +13,7 @@ public static class Shuriken
         {
             Name = "手里剑",
             Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；此物品的多重释放次数等于剩余弹药数量；使用此物品时，消耗全部弹药",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 8.0,
             Damage = [5, 10, 15, 20],
             AmmoCap = [3, 4, 5, 6],

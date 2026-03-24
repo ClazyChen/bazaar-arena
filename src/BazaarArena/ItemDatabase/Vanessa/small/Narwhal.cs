@@ -13,7 +13,7 @@ public static class Narwhal
         {
             Name = "独角鲸",
             Desc = "▶ 造成 {Damage} 伤害",
-            Tags = [Tag.Weapon, Tag.Aquatic, Tag.Friend],
+            Tags = Tag.Weapon | Tag.Aquatic | Tag.Friend,
             Cooldown = 3.0,
             Damage = [5, 10, 15, 20],
             Abilities =
@@ -30,7 +30,7 @@ public static class Narwhal
         {
             Name = "独角鲸_S1",
             Desc = "▶ 造成 {Damage} 伤害",
-            Tags = [Tag.Weapon, Tag.Aquatic, Tag.Friend],
+            Tags = Tag.Weapon | Tag.Aquatic | Tag.Friend,
             Cooldown = 4.0,
             Damage = [10, 20, 30, 40],
             Abilities =

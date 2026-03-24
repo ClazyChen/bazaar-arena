@@ -12,7 +12,7 @@ public static class SharkClaws
         {
             Name = "鲨齿爪",
             Desc = "▶ 造成 {Damage} 伤害；▶ 己方武器伤害提高 {Custom_0}（限本场战斗）",
-            Tags = [Tag.Weapon, Tag.Aquatic],
+            Tags = Tag.Weapon | Tag.Aquatic,
             Cooldown = 6.0,
             Damage = [10, 20, 30, 40],
             Custom_0 = [10, 20, 30, 40],
@@ -34,7 +34,7 @@ public static class SharkClaws
         {
             Name = "鲨齿爪_S2",
             Desc = "▶ 造成 {Damage} 伤害；▶ 己方其他武器伤害提高 {Custom_0}（限本场战斗）",
-            Tags = [Tag.Weapon, Tag.Aquatic],
+            Tags = Tag.Weapon | Tag.Aquatic,
             Cooldown = 5.0,
             Damage = [10, 20, 30, 40],
             Custom_0 = [10, 20, 30, 40],

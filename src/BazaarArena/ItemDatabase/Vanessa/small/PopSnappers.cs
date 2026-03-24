@@ -13,7 +13,7 @@ public static class PopSnappers
         {
             Name = "燃烧响炮",
             Desc = "▶ 造成 {Burn} 灼烧；弹药：{AmmoCap}",
-            Tags = [Tag.Toy],
+            Tags = Tag.Toy,
             Cooldown = 3.0,
             Burn = [4, 6, 8, 10],
             AmmoCap = 4,

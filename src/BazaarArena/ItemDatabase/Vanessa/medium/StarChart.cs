@@ -12,7 +12,7 @@ public static class StarChart
         {
             Name = "星图",
             Desc = "相邻物品暴击率 +{Custom_0}%；相邻物品冷却时间缩短 {Custom_1}%",
-            Tags = [Tag.Tool, Tag.Relic],
+            Tags = Tag.Tool | Tag.Relic,
             Cooldown = 5.0,
             Custom_0 = [10, 15, 20, 25],
             Custom_1 = [5, 10, 15, 20],

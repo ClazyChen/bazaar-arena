@@ -16,7 +16,7 @@ public static class PeskyPete
         {
             Name = "鹦鹉皮特",
             Desc = "▶ 造成 {Burn} 灼烧；每有一个相邻的伙伴或地产，此物品 +1 多重释放",
-            Tags = [Tag.Friend],
+            Tags = Tag.Friend,
             Cooldown = [8.0, 7.0, 6.0, 5.0],
             Burn = 2,
             Abilities = [Ability.Burn],
@@ -38,7 +38,7 @@ public static class PeskyPete
         {
             Name = "鹦鹉皮特_S5",
             Desc = "▶ 造成 {Burn} 灼烧；每有一个相邻的伙伴或地产，此物品 +1 多重释放",
-            Tags = [Tag.Friend],
+            Tags = Tag.Friend,
             Cooldown = 7.0,
             Burn = [2, 4, 6],
             Abilities = [Ability.Burn],
@@ -60,7 +60,7 @@ public static class PeskyPete
         {
             Name = "鹦鹉皮特_S1",
             Desc = "▶ 造成 {Burn} 灼烧；每有一个相邻的伙伴或地产，此物品 +1 多重释放、并获得 {Custom_0} 灼烧",
-            Tags = [Tag.Friend],
+            Tags = Tag.Friend,
             Cooldown = 7.0,
             Burn = [4, 6],
             Custom_0 = [4, 8],

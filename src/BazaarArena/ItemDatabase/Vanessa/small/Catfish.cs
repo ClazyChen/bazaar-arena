@@ -13,7 +13,7 @@ public static class Catfish
         {
             Name = "毒须鲶",
             Desc = "▶ 造成 {Poison} 剧毒；此物品被加速时，其剧毒提高 {Custom_0}（限本场战斗）",
-            Tags = [Tag.Aquatic, Tag.Friend],
+            Tags = Tag.Aquatic | Tag.Friend,
             Cooldown = 5.0,
             Poison = 3,
             Custom_0 = [2, 4, 6, 8],

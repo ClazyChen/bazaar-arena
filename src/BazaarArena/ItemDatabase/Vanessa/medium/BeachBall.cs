@@ -12,7 +12,7 @@ public static class BeachBall
         {
             Name = "沙滩充气球",
             Desc = "▶ 加速 {HasteTargetCount} 件水系或玩具物品 {HasteSeconds} 秒",
-            Tags = [Tag.Aquatic, Tag.Toy],
+            Tags = Tag.Aquatic | Tag.Toy,
             Cooldown = 5.0,
             Haste = 2.0,
             HasteTargetCount = [2, 3, 4, 5],

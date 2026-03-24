@@ -12,7 +12,7 @@ public static class FishingNet
         {
             Name = "渔网",
             Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
-            Tags = [Tag.Aquatic, Tag.Tool],
+            Tags = Tag.Aquatic | Tag.Tool,
             Cooldown = 6.0,
             Slow = 2.0,
             SlowTargetCount = [1, 2, 3, 4],
@@ -30,7 +30,7 @@ public static class FishingNet
         {
             Name = "渔网_S7",
             Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
-            Tags = [Tag.Aquatic, Tag.Tool],
+            Tags = Tag.Aquatic | Tag.Tool,
             Cooldown = 6.0,
             Slow = 2.0,
             SlowTargetCount = [1, 2, 3, 4],
@@ -48,7 +48,7 @@ public static class FishingNet
         {
             Name = "渔网_S1",
             Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
-            Tags = [Tag.Aquatic, Tag.Tool],
+            Tags = Tag.Aquatic | Tag.Tool,
             Cooldown = 9.0,
             Slow = 3.0,
             SlowTargetCount = [1, 2, 3, 4],

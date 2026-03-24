@@ -12,7 +12,7 @@ public static class Cove
         {
             Name = "温馨海湾",
             Desc = "▶ 获得护盾，等量于此物品价值的 {Custom_0} 倍；出售物品时，此物品的价值提高 {Custom_2}（已出售 {Custom_1} 件）",
-            Tags = [Tag.Aquatic, Tag.Property],
+            Tags = Tag.Aquatic | Tag.Property,
             Cooldown = 4.0,
             Custom_0 = [1, 2, 3, 4],
             Custom_2 = [1, 1, 1, 2],

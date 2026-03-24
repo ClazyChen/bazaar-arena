@@ -13,7 +13,7 @@ public static class GrapplingHook
         {
             Name = "抓钩",
             Desc = "▶ 造成 {Damage} 伤害；▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
-            Tags = [Tag.Weapon, Tag.Tool],
+            Tags = Tag.Weapon | Tag.Tool,
             Cooldown = 7.0,
             Damage = [20, 40, 60, 80],
             Slow = 1.0,
@@ -33,7 +33,7 @@ public static class GrapplingHook
         {
             Name = "抓钩_S1",
             Desc = "▶ 造成 {Damage} 伤害；▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒",
-            Tags = [Tag.Weapon, Tag.Tool],
+            Tags = Tag.Weapon | Tag.Tool,
             Cooldown = 7.0,
             Damage = [12, 18, 24, 32],
             Slow = [2.0, 3.0, 4.0, 5.0],

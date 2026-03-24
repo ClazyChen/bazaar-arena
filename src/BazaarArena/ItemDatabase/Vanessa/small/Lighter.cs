@@ -13,7 +13,7 @@ public static class Lighter
         {
             Name = "打火机",
             Desc = "▶ 造成 {Burn} 灼烧",
-            Tags = [Tag.Tool],
+            Tags = Tag.Tool,
             Cooldown = 3.0,
             Burn = [3, 5, 7, 9],
             Abilities =

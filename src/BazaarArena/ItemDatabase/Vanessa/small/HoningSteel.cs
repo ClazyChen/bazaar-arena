@@ -13,7 +13,7 @@ public static class HoningSteel
         {
             Name = "淬锋钢",
             Desc = "▶ 己方最左侧和最右侧的武器伤害提高 {Custom_0}（限本场战斗）",
-            Tags = [Tag.Tool],
+            Tags = Tag.Tool,
             Cooldown = 3.0,
             Custom_0 = [5, 10, 15, 20],
             Abilities =
@@ -37,7 +37,7 @@ public static class HoningSteel
         {
             Name = "淬锋钢_S9",
             Desc = "▶ 此物品右侧的武器伤害提高 {Custom_0}（限本场战斗）",
-            Tags = [Tag.Tool],
+            Tags = Tag.Tool,
             Cooldown = 4.0,
             Custom_0 = [6, 12, 18, 24],
             Abilities =
@@ -57,7 +57,7 @@ public static class HoningSteel
         {
             Name = "淬锋钢_S1",
             Desc = "▶ 此物品右侧的武器伤害提高 {Custom_0}（限本场战斗）",
-            Tags = [Tag.Tool],
+            Tags = Tag.Tool,
             Cooldown = 5.0,
             Custom_0 = [8, 12, 16, 20],
             Abilities =

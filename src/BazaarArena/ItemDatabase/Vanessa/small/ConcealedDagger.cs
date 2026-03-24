@@ -13,7 +13,7 @@ public static class ConcealedDagger
         {
             Name = "藏刃匕首",
             Desc = "▶ 造成 {Damage} 伤害；▶ 加速 {HasteTargetCount} 件物品 {HasteSeconds} 秒；战斗开始时，获得 {Custom_0} 金币",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 4.0,
             Damage = [10, 20, 30, 40],
             Haste = [1.0, 2.0, 3.0, 4.0],
@@ -39,7 +39,7 @@ public static class ConcealedDagger
         {
             Name = "藏刃匕首_S1",
             Desc = "▶ 造成 {Damage} 伤害；▶ 获得 {Custom_0} 金币",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 9.0,
             Damage = [30, 40, 50],
             Custom_0 = [1, 2, 3],

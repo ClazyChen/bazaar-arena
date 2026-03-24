@@ -13,7 +13,7 @@ public static class Calico
         {
             Name = "三花",
             Desc = "▶ 造成 {Damage} 伤害；使用其他武器时，此物品暴击率提高 {+Custom_0%}（限本场战斗）",
-            Tags = [Tag.Weapon, Tag.Friend],
+            Tags = Tag.Weapon | Tag.Friend,
             Cooldown = 6.0,
             Damage = [15, 30, 45, 60],
             Custom_0 = [5, 10, 15, 20],
@@ -35,7 +35,7 @@ public static class Calico
         {
             Name = "三花_S1",
             Desc = "▶ 造成 {Damage} 伤害；使用其他武器时，此物品暴击率提高 {+Custom_0%}（限本场战斗）；此物品能造成双倍暴击伤害",
-            Tags = [Tag.Weapon, Tag.Friend],
+            Tags = Tag.Weapon | Tag.Friend,
             Cooldown = 7.0,
             Damage = [15, 30, 45, 60],
             Custom_0 = [5, 10, 15, 20],

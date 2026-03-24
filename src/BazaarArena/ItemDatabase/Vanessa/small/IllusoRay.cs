@@ -13,7 +13,7 @@ public static class IllusoRay
         {
             Name = "迷幻蝠鲼",
             Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；每有一个相邻的伙伴或射线，此物品 +1 多重释放",
-            Tags = [Tag.Aquatic, Tag.Ray, Tag.Friend],
+            Tags = Tag.Aquatic | Tag.Ray | Tag.Friend,
             Cooldown = 6.0,
             Slow = [1.0, 2.0, 3.0, 4.0],
             Abilities =

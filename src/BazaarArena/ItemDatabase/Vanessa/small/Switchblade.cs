@@ -13,7 +13,7 @@ public static class Switchblade
         {
             Name = "弹簧刀",
             Desc = "▶ 造成 {Damage} 伤害；使用相邻武器时，使其伤害提高 {Custom_0}（限本场战斗）",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 4.0,
             Damage = [4, 8, 12, 16],
             Custom_0 = [4, 8, 12, 16],
@@ -36,7 +36,7 @@ public static class Switchblade
         {
             Name = "弹簧刀_S1",
             Desc = "▶ 造成 {Damage} 伤害；使用相邻武器时，使其伤害提高 {Custom_0}（限本场战斗）",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 9.0,
             Damage = [30, 45, 60, 75],
             Custom_0 = [3, 6, 9, 12],

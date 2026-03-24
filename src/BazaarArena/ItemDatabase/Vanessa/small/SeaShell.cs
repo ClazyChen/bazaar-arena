@@ -13,7 +13,7 @@ public static class SeaShell
         {
             Name = "海螺壳",
             Desc = "▶ 每拥有一件水系物品，获得 {Custom_0} 护盾",
-            Tags = [Tag.Aquatic],
+            Tags = Tag.Aquatic,
             Cooldown = 6.0,
             Custom_0 = [10, 15, 20, 25],
             Abilities =

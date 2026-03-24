@@ -13,7 +13,7 @@ public static class Chum
         {
             Name = "鱼饵",
             Desc = "▶ 水系物品暴击率提高 +{Custom_0}%（限本场战斗）",
-            Tags = [Tag.Aquatic, Tag.Food],
+            Tags = Tag.Aquatic | Tag.Food,
             Cooldown = 4.0,
             Custom_0 = [3, 6, 9, 12],
             Abilities =

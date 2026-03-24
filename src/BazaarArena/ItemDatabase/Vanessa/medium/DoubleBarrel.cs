@@ -12,7 +12,7 @@ public static class DoubleBarrel
         {
             Name = "双管霰弹枪",
             Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；多重释放：{Multicast}",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 4.0,
             Damage = [20, 40, 60, 80],
             AmmoCap = 2,

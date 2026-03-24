@@ -12,7 +12,7 @@ public static class Rifle
         {
             Name = "步枪",
             Desc = "▶ 造成 {Damage} 伤害；▶ 此物品的伤害提高 {Custom_0}（限本场战斗）；弹药：{AmmoCap}",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 3.0,
             Damage = [20, 40, 60, 80],
             Custom_0 = [20, 40, 60, 80],
@@ -36,7 +36,7 @@ public static class Rifle
         {
             Name = "步枪_S1",
             Desc = "▶ 造成 {Damage} 伤害；若这是你唯一有冷却时间的武器，为此物品装填 1 弹药；弹药：{AmmoCap}",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 3.0,
             Damage = [8, 16, 30, 48],
             Custom_0 = 1,

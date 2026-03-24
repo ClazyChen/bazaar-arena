@@ -16,6 +16,7 @@ alwaysApply: false
   - 字典：空字典用 `[]`（如 `Dictionary<K,V> d = [];`）；带初值的字典在 C# 12 仍用传统写法 `new Dictionary<K,V> { [k] = v }`。
   - 赋值给接口类型（如 `IEnumerable<T> x = []`）可能改变运行时集合类型，若需保持具体类型请显式写 `List<T> x = [];`。
 - **物品模板与按等级属性**：扩展属性统一用 `_intsByTier`（`Dictionary<string, List<int>>`）存储；单值存为长度为 1 的列表。在 `new ItemTemplate { }` 中可用 `Damage = 40` 或 `Damage = [25, 35, 45, 55]`，通过 `IntOrByTier` 类型与属性 setter 写入。运行时用 `GetInt(key, tier)` 按当前等级取值；未定义 key 时返回默认值。**避免魔法字符串**：标签用 `Tag.*`（Core/Tag.cs），触发器用 `Trigger.*`（Core/Trigger.cs），属性名/key 用 `nameof(ItemTemplate.xxx)`；仅 ItemTemplate 未暴露的属性（如 Shield、Regen）在 EffectKindKeys 等保留字面量。
+- **Tags 写法**：`ItemTemplate.Tags` 在物品定义中必须使用位掩码单值（如 `Tags = Tag.Weapon | Tag.Tool`），不要使用数组写法 `Tags = [Tag.Weapon, Tag.Tool]`。数组在 `IntOrByTier` 语义下表示按档位列表，会造成标签判定错误。
 - **自定义类型支持集合表达式**：若希望 `X = [a, b, c]` 直接赋给自定义类型（如 `IntOrByTier`），需：(1) 为该类型添加 `[CollectionBuilder(typeof(类型), "Create")]`；(2) 实现静态方法 `Create(ReadOnlySpan<T>)` 返回该类型；(3) 实现 `IEnumerable<T>` 并暴露 `GetEnumerator`，以便编译器推断元素类型（否则报 CS9188）。
 
 示例（注释风格）：

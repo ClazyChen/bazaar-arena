@@ -12,7 +12,7 @@ public static class Langxian
         {
             Name = "狼筅",
             Desc = "▶ 造成 {Damage} 伤害；使用此物品赢得战斗时，此物品的伤害提高 {Custom_0}",
-            Tags = [Tag.Weapon, Tag.Relic],
+            Tags = Tag.Weapon | Tag.Relic,
             Cooldown = 10.0,
             Damage = 40,
             Custom_0 = [40, 60, 80, 100],

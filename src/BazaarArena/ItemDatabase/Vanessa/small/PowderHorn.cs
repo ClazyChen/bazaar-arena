@@ -13,7 +13,7 @@ public static class PowderHorn
         {
             Name = "火药角",
             Desc = "▶ 为此物品右侧的物品装填 {Custom_0} 弹药",
-            Tags = [Tag.Tool],
+            Tags = Tag.Tool,
             Cooldown = 4.0,
             Custom_0 = [1, 2, 3, 4],
             Abilities =

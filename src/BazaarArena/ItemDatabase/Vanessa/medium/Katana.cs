@@ -12,7 +12,7 @@ public static class Katana
         {
             Name = "武士刀",
             Desc = "▶ 造成 {Damage} 伤害",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 2.0,
             Damage = [5, 10, 15, 20],
             Abilities =

@@ -13,7 +13,7 @@ public static class Handaxe
         {
             Name = "手斧",
             Desc = "▶ 造成 {Damage} 伤害；己方武器伤害 +{Custom_0}（限本场战斗）",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 6.0,
             Damage = [10, 15, 20, 25],
             Custom_0 = [6, 9, 12, 15],

@@ -13,7 +13,7 @@ public static class Ambergris
         {
             Name = "龙涎香",
             Desc = "▶ 获得治疗，等量于此物品价值的 {Custom_0} 倍；购买水系物品时，此物品的价值提高 {Custom_1}",
-            Tags = [Tag.Aquatic, Tag.Relic],
+            Tags = Tag.Aquatic | Tag.Relic,
             Cooldown = 4.0,
             Custom_0 = [1, 2, 3, 4],
             Custom_1 = [1, 2, 3, 4],

@@ -13,7 +13,7 @@ public static class BilgeWorm
         {
             Name = "舱底蠕虫",
             Desc = "敌人使用其最左侧的物品时，造成 {Damage} 伤害；吸血",
-            Tags = [Tag.Weapon, Tag.Aquatic],
+            Tags = Tag.Weapon | Tag.Aquatic,
             Damage = [10, 20, 30, 40],
             LifeSteal = 1,
             Abilities =
@@ -33,7 +33,7 @@ public static class BilgeWorm
         {
             Name = "舱底蠕虫_S10",
             Desc = "▶ 己方物品获得 {+Custom_0} 暴击率（限本场战斗）；▶ 对自己造成 {Poison} 剧毒；造成暴击时，为此物品充能 1 秒",
-            Tags = [],
+            Tags = 0,
             Cooldown = 5.0,
             Poison = 1,
             Custom_0 = [4, 8, 12],
@@ -58,7 +58,7 @@ public static class BilgeWorm
         {
             Name = "舱底蠕虫_S9",
             Desc = "▶ 己方物品获得 {+Custom_0} 暴击率（限本场战斗）；造成暴击时，对自己造成 {Poison} 剧毒",
-            Tags = [],
+            Tags = 0,
             Cooldown = 4.0,
             Poison = 1,
             Custom_0 = [4, 8, 12],

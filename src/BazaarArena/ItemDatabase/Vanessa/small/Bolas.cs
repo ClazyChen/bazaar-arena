@@ -13,7 +13,7 @@ public static class Bolas
         {
             Name = "流星索",
             Desc = "▶ 造成 {Damage} 伤害；▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；弹药：{AmmoCap}",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 4.0,
             Damage = [20, 40, 60, 80],
             Slow = [2.0, 3.0, 4.0, 5.0],
@@ -34,7 +34,7 @@ public static class Bolas
         {
             Name = "流星索_S1",
             Desc = "▶ 造成 {Damage} 伤害；▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；弹药：{AmmoCap}",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 6.0,
             Damage = [40, 60, 80, 100],
             Slow = [2.0, 3.0, 4.0, 5.0],

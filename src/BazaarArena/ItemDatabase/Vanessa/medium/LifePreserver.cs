@@ -12,7 +12,7 @@ public static class LifePreserver
         {
             Name = "救生圈",
             Desc = "▶ 获得 {Shield} 护盾；每场战斗即将首次落败时，治疗 {Heal} 生命值",
-            Tags = [Tag.Aquatic],
+            Tags = Tag.Aquatic,
             Cooldown = 12.0,
             Shield = [10, 20, 40, 80],
             Heal = [200, 500, 1000, 2000],

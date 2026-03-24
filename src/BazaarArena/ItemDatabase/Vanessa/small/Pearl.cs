@@ -13,7 +13,7 @@ public static class Pearl
         {
             Name = "珍珠",
             Desc = "▶ 获得 {Shield} 护盾；使用其他水系物品时，为此物品充能 1 秒",
-            Tags = [Tag.Aquatic],
+            Tags = Tag.Aquatic,
             Cooldown = 5.0,
             Shield = [10, 20, 30, 40],
             Charge = 1.0,

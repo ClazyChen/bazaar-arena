@@ -13,7 +13,7 @@ public static class ShoeBlade
         {
             Name = "靴里剑",
             Desc = "▶ 造成 {Damage} 伤害；首次使用此物品时，暴击率 +100%",
-            Tags = [Tag.Weapon, Tag.Apparel],
+            Tags = Tag.Weapon | Tag.Apparel,
             Cooldown = 6.0,
             Damage = [20, 40, 60, 80],
             Custom_0 = 0,
@@ -48,7 +48,7 @@ public static class ShoeBlade
         {
             Name = "靴里剑_S1",
             Desc = "▶ 造成 {Damage} 伤害；暴击率：{CritRate}%",
-            Tags = [Tag.Weapon, Tag.Apparel],
+            Tags = Tag.Weapon | Tag.Apparel,
             Cooldown = 7.0,
             Damage = [20, 40, 60, 80],
             CritRate = [15, 30, 50, 100],

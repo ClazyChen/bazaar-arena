@@ -13,7 +13,7 @@ public static class TinyCutlass
         {
             Name = "迷你弯刀",
             Desc = "▶ 造成 {Damage} 伤害；多重释放：{Multicast}；此物品能造成双倍暴击伤害",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 6.0,
             Damage = [6, 12, 24, 48],
             Multicast = 2,

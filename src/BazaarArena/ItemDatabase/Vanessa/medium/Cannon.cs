@@ -12,7 +12,7 @@ public static class Cannon
         {
             Name = "火炮",
             Desc = "▶ 造成 {Damage} 伤害；▶ 造成灼烧，等量于此物品伤害的 10%；弹药：{AmmoCap}",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 4.0,
             Damage = [40, 60, 80, 100],
             AmmoCap = 2,

@@ -12,7 +12,7 @@ public static class Wetware
         {
             Name = "湿件战服",
             Desc = "▶ 获得 {Shield} 护盾；▶ 使用武器时，此物品的护盾提高 {Custom_0}（限本场战斗）；若拥有另一件科技物品，此物品的冷却时间缩短 2 秒",
-            Tags = [Tag.Aquatic, Tag.Apparel, Tag.Tech],
+            Tags = Tag.Aquatic | Tag.Apparel | Tag.Tech,
             Cooldown = 8.0,
             Shield = 10,
             Custom_0 = [15, 25, 35, 45],

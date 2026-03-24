@@ -12,7 +12,7 @@ public static class Cutlass
         {
             Name = "弯刀",
             Desc = "▶ 造成 {Damage} 伤害；多重释放：{Multicast}；此物品能造成双倍暴击伤害",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 5.0,
             Damage = [10, 20, 30, 40],
             Multicast = 2,

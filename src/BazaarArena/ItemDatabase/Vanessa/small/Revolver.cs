@@ -13,7 +13,7 @@ public static class Revolver
         {
             Name = "左轮手枪",
             Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 3.0,
             Damage = [8, 16, 24, 32],
             AmmoCap = 6,
@@ -31,7 +31,7 @@ public static class Revolver
         {
             Name = "左轮手枪_S1",
             Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；暴击率 {CritRate}%；造成暴击时，为此物品装填 {Custom_0} 发弹药",
-            Tags = [Tag.Weapon],
+            Tags = Tag.Weapon,
             Cooldown = 4.0,
             Damage = [8, 16, 24, 32],
             AmmoCap = 6,
