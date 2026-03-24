@@ -26,7 +26,7 @@ public sealed partial class BattleContext
         int baseValue = (uint)key < (uint)item.Attributes.Length ? item.GetAttribute(key) : 0;
         var sessionTables = BattleState.SessionTables;
         if (sessionTables == null) return baseValue;
-        if (!sessionTables.AurasByAttribute.TryGetValue(key, out var auras) || auras.Count == 0) return baseValue;
+        if (!sessionTables.AurasByAttribute.TryGetValue(key, out var auraIds) || auraIds.Count == 0) return baseValue;
         if (key == Key.Tags)
         {
             int tagMask = baseValue;
@@ -35,8 +35,10 @@ public sealed partial class BattleContext
                 BattleState = BattleState,
                 InvokeTarget = null,
             };
-            foreach (var (source, aura) in auras)
+            foreach (var auraId in auraIds)
             {
+                var source = BattleState.GetAuraOwner(auraId);
+                var aura = BattleState.GetAura(auraId);
                 if (source.Destroyed) continue;
                 tagCtx.Caster = source;
                 tagCtx.Item = item;
@@ -55,8 +57,10 @@ public sealed partial class BattleContext
             BattleState = BattleState,
             InvokeTarget = null,
         };
-        foreach (var (source, aura) in auras)
+        foreach (var auraId in auraIds)
         {
+            var source = BattleState.GetAuraOwner(auraId);
+            var aura = BattleState.GetAura(auraId);
             if (source.Destroyed) continue;
             auraCtx.Caster = source;
             auraCtx.Item = item;

@@ -53,7 +53,9 @@ public static class Key
     public const int Value = ModifyAttributeTargetCount + 1;
     public const int Tags = Value + 1;
     public const int DerivedTags = Tags + 1;
-    public const int Size = DerivedTags + 1;
+    /// <summary>物品是否可暴击（0/1），在 ItemDatabase.Register 阶段预计算。</summary>
+    public const int CanCrit = DerivedTags + 1;
+    public const int Size = CanCrit + 1;
     public const int Hero = Size + 1;
     public const int Custom_0 = Hero + 1;
     public const int Custom_1 = Custom_0 + 1;

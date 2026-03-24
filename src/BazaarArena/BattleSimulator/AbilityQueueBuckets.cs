@@ -10,13 +10,13 @@ internal sealed class AbilityQueueBuckets
 {
     public const int BucketCount = 6;
 
-    private readonly List<RuntimeAbilityRef>[] _buckets;
+    private readonly List<int>[] _buckets;
 
     public AbilityQueueBuckets()
     {
-        _buckets = new List<RuntimeAbilityRef>[BucketCount];
+        _buckets = new List<int>[BucketCount];
         for (int i = 0; i < BucketCount; i++)
-            _buckets[i] = new List<RuntimeAbilityRef>(8);
+            _buckets[i] = new List<int>(8);
     }
 
     public static int BucketIndex(AbilityPriority p)
@@ -27,9 +27,9 @@ internal sealed class AbilityQueueBuckets
         return b;
     }
 
-    public List<RuntimeAbilityRef> Bucket(int index) => _buckets[index];
+    public List<int> Bucket(int index) => _buckets[index];
 
-    public void AddToBucket(int bucketIndex, RuntimeAbilityRef abilityRef) => _buckets[bucketIndex].Add(abilityRef);
+    public void AddToBucket(int bucketIndex, int abilityId) => _buckets[bucketIndex].Add(abilityId);
 
     public void Clear()
     {

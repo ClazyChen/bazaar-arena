@@ -109,10 +109,12 @@ public sealed partial class BattleContext
         }
         string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
         BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, effectName, logValue ?? indices.Count, BattleState.TimeMs, isCrit: false, extraSuffix);
-        if (effectTriggerName != null && BattleState.TriggerInvoker != null)
+        if (effectTriggerName != null)
         {
+            var triggerTargets = new List<ItemState>(indices.Count);
             foreach (int i in indices)
-                BattleState.TriggerInvoker(effectTriggerName.Value, Caster, fromSide.Items[i], 1);
+                triggerTargets.Add(fromSide.Items[i]);
+            BattleState.InvokeTriggerMany(effectTriggerName.Value, Caster, triggerTargets, triggerTargets.Count);
         }
     }
 
@@ -125,10 +127,12 @@ public sealed partial class BattleContext
             targetNames.Add(perTarget(side, index));
         string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
         BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, effectName, logValue ?? targets.Count, BattleState.TimeMs, isCrit: false, extraSuffix);
-        if (effectTriggerName != null && BattleState.TriggerInvoker != null)
+        if (effectTriggerName != null)
         {
+            var triggerTargets = new List<ItemState>(targets.Count);
             foreach (var (side, index) in targets)
-                BattleState.TriggerInvoker(effectTriggerName.Value, Caster, side.Items[index], 1);
+                triggerTargets.Add(side.Items[index]);
+            BattleState.InvokeTriggerMany(effectTriggerName.Value, Caster, triggerTargets, triggerTargets.Count);
         }
     }
 
@@ -328,7 +332,7 @@ public sealed partial class BattleContext
     }
 
     public void ReportTriggerCause(int triggerName) =>
-        BattleState.TriggerInvoker?.Invoke(triggerName, Caster, null, 1);
+        BattleState.InvokeTrigger(triggerName, Caster, null, 1);
 
     public void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false) =>
         BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, effectName, value, BattleState.TimeMs, showCrit, extraSuffix);
@@ -359,7 +363,7 @@ public sealed partial class BattleContext
         foreach (int i in indices)
         {
             var target = targetSide.Items[i];
-            BattleState.TriggerInvoker?.Invoke(Trigger.Destroy, Caster, target, null);
+            BattleState.InvokeTrigger(Trigger.Destroy, Caster, target, null);
             target.Destroyed = true;
         }
     }

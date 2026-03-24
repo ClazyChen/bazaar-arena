@@ -162,9 +162,11 @@ public class ItemDatabase : IItemTemplateResolver
             if (tag != 0) TryAddDerivedTag(template, tag);
         }
 
+        bool canCrit = HasAnyCrittableTag(template) && HasUseItemSelfCritAbility(template);
         // Tag.Crit：具备六类可暴击 Tag 之一且至少一条 UseItem+UseSelf+ApplyCritMultiplier 能力
-        if (HasAnyCrittableTag(template) && HasUseItemSelfCritAbility(template))
+        if (canCrit)
             TryAddDerivedTag(template, DerivedTag.Crit);
+        template.SetIntByKey(Key.CanCrit, canCrit ? 1 : 0);
 
         if (HasAnyTierPositive(template, Key.CooldownMs)) TryAddDerivedTag(template, DerivedTag.Cooldown);
     }

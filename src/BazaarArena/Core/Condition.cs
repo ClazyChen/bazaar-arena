@@ -4,18 +4,6 @@ namespace BazaarArena.Core;
 
 public static class Condition
 {
-    /// <summary>
-    /// 与 <see cref="BattleContext.Caster"/> 比较方位的「另一端」：
-    /// 若 <see cref="BattleContext.Source"/> 与 Caster 为同槽（效果/公式里常如此），则用 <see cref="BattleContext.Item"/>（候选）；
-    /// 否则用 Source（触发器下为引起触发的那件物品）。
-    /// </summary>
-    private static ItemState SpatialOtherVsCaster(BattleContext ctx)
-    {
-        if (ctx.Source.SideIndex == ctx.Caster.SideIndex && ctx.Source.ItemIndex == ctx.Caster.ItemIndex)
-            return ctx.Item;
-        return ctx.Source;
-    }
-
     public static Formula Always { get; } = Formula.True;
 
     /// <summary>引起触发者（Source）与能力持有者（Caster）为同一件物品（如自用 UseItem）。</summary>
@@ -43,37 +31,32 @@ public static class Condition
 
     public static Formula AdjacentToCaster { get; } = new(ctx =>
     {
-        var o = SpatialOtherVsCaster(ctx);
-        return o.SideIndex == ctx.Caster.SideIndex
-            && Math.Abs(o.ItemIndex - ctx.Caster.ItemIndex) == 1 ? 1 : 0;
+        return ctx.Item.SideIndex == ctx.Caster.SideIndex
+            && Math.Abs(ctx.Item.ItemIndex - ctx.Caster.ItemIndex) == 1 ? 1 : 0;
     });
 
     public static Formula RightOfCaster { get; } = new(ctx =>
     {
-        var o = SpatialOtherVsCaster(ctx);
-        return o.SideIndex == ctx.Caster.SideIndex
-            && o.ItemIndex == ctx.Caster.ItemIndex + 1 ? 1 : 0;
+        return ctx.Item.SideIndex == ctx.Caster.SideIndex
+            && ctx.Item.ItemIndex == ctx.Caster.ItemIndex + 1 ? 1 : 0;
     });
 
     public static Formula LeftOfCaster { get; } = new(ctx =>
     {
-        var o = SpatialOtherVsCaster(ctx);
-        return o.SideIndex == ctx.Caster.SideIndex
-            && o.ItemIndex == ctx.Caster.ItemIndex - 1 ? 1 : 0;
+        return ctx.Item.SideIndex == ctx.Caster.SideIndex
+            && ctx.Item.ItemIndex == ctx.Caster.ItemIndex - 1 ? 1 : 0;
     });
 
     public static Formula StrictlyLeftOfCaster { get; } = new(ctx =>
     {
-        var o = SpatialOtherVsCaster(ctx);
-        return o.SideIndex == ctx.Caster.SideIndex
-            && o.ItemIndex < ctx.Caster.ItemIndex ? 1 : 0;
+        return ctx.Item.SideIndex == ctx.Caster.SideIndex
+            && ctx.Item.ItemIndex < ctx.Caster.ItemIndex ? 1 : 0;
     });
 
     public static Formula StrictlyRightOfCaster { get; } = new(ctx =>
     {
-        var o = SpatialOtherVsCaster(ctx);
-        return o.SideIndex == ctx.Caster.SideIndex
-            && o.ItemIndex > ctx.Caster.ItemIndex ? 1 : 0;
+        return ctx.Item.SideIndex == ctx.Caster.SideIndex
+            && ctx.Item.ItemIndex > ctx.Caster.ItemIndex ? 1 : 0;
     });
 
     public static Formula InFlight { get; } = Formula.Item(Key.InFlight);
@@ -100,7 +83,7 @@ public static class Condition
     public static Formula CasterCustom0IsZero { get; } = new(ctx =>
         ctx.Caster.GetAttribute(Key.Custom_0) == 0 ? 1 : 0);
 
-    public static Formula CanCrit { get; } = new(ctx => ctx.Item.CanCrit ? 1 : 0);
+    public static Formula CanCrit { get; } = new(ctx => ctx.GetItemInt(ctx.Item, Key.CanCrit) != 0 ? 1 : 0);
 
     /// <summary>候选（Item）为 Caster 同侧右侧第一个未摧毁物品（中间槽位须均已摧毁）。</summary>
     public static Formula FirstNonDestroyedRightOfCaster { get; } = new(ctx =>
