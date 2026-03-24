@@ -27,7 +27,7 @@ public static class PetRock
                 {
                     Attribute = Key.CritRate,
                     Condition = Condition.SameSide & Condition.OnlyCompanion,
-                    Value = Formula.Source(Key.Custom_0),
+                    Value = Formula.Caster(Key.Custom_0),
                 },
             ],
         };

@@ -16,7 +16,6 @@ public class ItemState
     public int ItemIndex { get => Attributes[Key.ItemIndex]; set => Attributes[Key.ItemIndex] = value; }
     public ItemTier Tier { get => (ItemTier)Attributes[Key.Tier]; set => Attributes[Key.Tier] = (int)value; }
     public int ChargedTimeMs { get => Attributes[Key.ChargedTimeMs]; set => Attributes[Key.ChargedTimeMs] = value; }
-    public int CooldownElapsedMs { get => Attributes[Key.ChargedTimeMs]; set => Attributes[Key.ChargedTimeMs] = value; }
     public int FreezeRemainingMs { get => Attributes[Key.FreezeRemainingMs]; set => Attributes[Key.FreezeRemainingMs] = value; }
     public int SlowRemainingMs { get => Attributes[Key.SlowRemainingMs]; set => Attributes[Key.SlowRemainingMs] = value; }
     public int HasteRemainingMs { get => Attributes[Key.HasteRemainingMs]; set => Attributes[Key.HasteRemainingMs] = value; }
@@ -24,8 +23,8 @@ public class ItemState
     public bool Destroyed { get => Attributes[Key.Destroyed] != 0; set => Attributes[Key.Destroyed] = value ? 1 : 0; }
     public int CritTimeMs { get => Attributes[Key.CritTimeMs]; set => Attributes[Key.CritTimeMs] = value; }
     public bool IsCritThisUse { get => Attributes[Key.IsCritThisUse] != 0; set => Attributes[Key.IsCritThisUse] = value ? 1 : 0; }
-    public int CritDamagePercentThisUse { get => Attributes[Key.CritDamage]; set => Attributes[Key.CritDamage] = value; }
-    public int AmmoRemaining { get => Attributes[Key.Custom_2]; set => Attributes[Key.Custom_2] = value; }
+    public int CritDamage { get => Attributes[Key.CritDamage]; set => Attributes[Key.CritDamage] = value; }
+    public int AmmoRemaining { get => Attributes[Key.AmmoRemaining]; set => Attributes[Key.AmmoRemaining] = value; }
     public ItemState(ItemTemplate template, ItemTier tier)
     {
         Template = template;

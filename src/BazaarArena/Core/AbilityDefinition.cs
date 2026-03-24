@@ -16,7 +16,6 @@ public class AbilityDefinition
     public bool UseSelf { get; set; } = true;
     public Action<BattleContext, AbilityDefinition>? Apply { get; set; }
     public Formula? TargetCondition { get; set; }
-    public int Value { get; set; }
     public int? ValueKey { get; set; }
     public bool ApplyCritMultiplier { get; set; } = true;
     public string? EffectLogName { get; set; }
@@ -33,7 +32,6 @@ public class AbilityDefinition
         Formula? targetCondition = null,
         Formula? additionalTargetCondition = null,
         int? valueKey = null,
-        int? value = null,
         bool? applyCritMultiplier = null,
         Action<BattleContext, AbilityDefinition>? apply = null,
         string? effectLogName = null,
@@ -46,7 +44,6 @@ public class AbilityDefinition
             TriggerEntries[0].Trigger = trigger.Value;
         if (priority != null) Priority = priority.Value;
         if (valueKey != null) ValueKey = valueKey.Value;
-        if (value != null) Value = value.Value;
         if (applyCritMultiplier != null) ApplyCritMultiplier = applyCritMultiplier.Value;
         if (apply != null) Apply = apply;
         if (effectLogName != null) EffectLogName = effectLogName;
@@ -88,12 +85,5 @@ public class AbilityDefinition
             Condition = merged,
         });
         return this;
-    }
-
-    public int ResolveValue(ItemTemplate template, ItemTier tier, int defaultKey)
-    {
-        int key = ValueKey ?? defaultKey;
-        int v = template.GetInt(key, tier);
-        return v != 0 ? v : Value;
     }
 }

@@ -48,37 +48,41 @@ public static class Ability
 
     /// <summary>充能（Apply.Charge）。默认触发器 UseItem；目标默认己方、未摧毁且有冷却；定制用 .Override(...)。</summary>
     public static AbilityDefinition Charge => CreateBase(AbilityType.Charge, Core.Apply.Charge).Override(
+        valueKey: Key.Charge,
         applyCritMultiplier: false,
         targetCondition: WithCooldownTarget(Condition.SameSide),
         targetCountKey: Key.ChargeTargetCount);
 
     /// <summary>加速（Apply.Haste）。默认触发器 UseItem；目标默认己方、未摧毁且有冷却；定制用 .Override(...)。</summary>
     public static AbilityDefinition Haste => CreateBase(AbilityType.Haste, Core.Apply.Haste).Override(
+        valueKey: Key.Haste,
         applyCritMultiplier: false,
         targetCondition: WithCooldownTarget(Condition.SameSide),
         targetCountKey: Key.HasteTargetCount);
 
-    /// <summary>装填弹药（Apply.Reload）。默认触发器 UseItem；目标默认己方、未摧毁且为弹药物品；数值取自 ValueKey（默认 Custom_0）。定制用 .Override(...)。</summary>
+    /// <summary>装填弹药（Apply.Reload）。默认触发器 UseItem；目标默认己方、未摧毁且为弹药物品；数值取自 ValueKey（默认 Reload）。定制用 .Override(...)。</summary>
     public static AbilityDefinition Reload => CreateBase(AbilityType.Reload, Core.Apply.Reload).Override(
-        valueKey: Key.Custom_0,
+        valueKey: Key.Reload,
         applyCritMultiplier: false,
         targetCondition: WithAmmoTarget(Condition.SameSide),
         targetCountKey: Key.ReloadTargetCount);
 
     /// <summary>减速（Apply.Slow）。默认触发器 UseItem；目标默认敌方、未摧毁且有冷却；定制用 .Override(...)。</summary>
     public static AbilityDefinition Slow => CreateBase(AbilityType.Slow, Core.Apply.Slow).Override(
+        valueKey: Key.Slow,
         applyCritMultiplier: false,
         targetCondition: WithCooldownTarget(Condition.DifferentSide),
         targetCountKey: Key.SlowTargetCount);
 
     /// <summary>冻结（Apply.Freeze）。默认触发器 UseItem；目标默认敌方、未摧毁且有冷却；定制用 .Override(...)。</summary>
     public static AbilityDefinition Freeze => CreateBase(AbilityType.Freeze, Core.Apply.Freeze).Override(
+        valueKey: Key.Freeze,
         applyCritMultiplier: false,
         targetCondition: WithCooldownTarget(Condition.DifferentSide),
         targetCountKey: Key.FreezeTargetCount);
 
     /// <summary>开始飞行：对己方满足目标条件且未飞行的物品设为飞行（等价于 AddAttribute(Key.InFlight) 设 1）。默认 additionalTargetCondition 为 NotInFlight；日志显示「开始飞行」。</summary>
-    public static AbilityDefinition StartFlying => AddAttribute(Key.InFlight).Override(value: 1, additionalTargetCondition: Condition.NotInFlight, effectLogName: "开始飞行");
+    public static AbilityDefinition StartFlying => AddAttribute(Key.InFlight).Override(valueKey: Key.Custom_0, additionalTargetCondition: Condition.NotInFlight, effectLogName: "开始飞行");
 
     /// <summary>摧毁（Apply.Destroy）。默认触发器 UseItem；目标默认己方、未摧毁；定制用 .Override(...)。</summary>
     public static AbilityDefinition Destroy => CreateBase(AbilityType.Destroy, Core.Apply.Destroy).Override(
@@ -94,7 +98,7 @@ public static class Ability
 
     /// <summary>结束飞行：对己方满足目标条件且处于飞行状态的物品取消飞行。</summary>
     public static AbilityDefinition StopFlying => ReduceAttribute(Key.InFlight, Key.Custom_0).Override(
-        value: 1,
+        valueKey: Key.Custom_0,
         targetCondition: Condition.SameSide & Condition.InFlight,
         effectLogName: "结束飞行");
 

@@ -46,3 +46,5 @@ alwaysApply: true
 - **CLI 与测试**：完成任务后用 **CLI** 与物品测试脚本做验证；脚本位于 **`scripts/item_tests/`**，卡组集 JSON 位于 **`Data/Decks/item_tests/`**（如 `test_small_bronze.json`）。常用示例：小型铜 `run_item_tests_small_bronze.py`、中型银 `run_item_tests_medium_silver.py`、中型金/钻 `run_item_tests_medium_gold_diamond.py`、大型银/金/钻 `run_item_tests_large_silver_gold_diamond.py`、海盗小型/中型铜 `run_item_tests_vanessa_*` 等。**完整命令与档位列表**见 **docs/cli-and-testing.md** 与 **.cursor/rules/cli-and-testing.mdc**。测试未通过时在文档中标注「未通过测试」、不放松断言。
 
 - **Git 提交信息**：提交信息须符合 **.cursor/rules/git-commit-format.mdc**（`<type>(<scope>): <subject>`，中文主题，如 `feat(gui): 卡组 MinTier 显示与拖拽`）。
+
+- **ValueKey 与运行时读值（2026-03）**：能力执行路径统一由 **`Apply`** 通过 `ctx.GetItemInt(ctx.Caster, ability.ValueKey!.Value)` 读取数值；`AbilityDefinition.Value` 与 `Override(value: ...)` 已移除，不再允许新增。常量效果请改为模板属性（通常 `Custom_x`）并在能力上设置 `valueKey`。`BattleContext.GetResolvedValue` 已移除；默认值应在 `ItemDatabase.Register` 阶段补齐（如 `ModifyAttributeTargetCount=20`），运行时仅保留最小兼容兜底（如目标数为 0 时按 1）。

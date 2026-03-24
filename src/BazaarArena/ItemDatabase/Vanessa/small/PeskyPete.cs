@@ -75,7 +75,7 @@ public static class PeskyPete
                 new AuraDefinition
                 {
                     Attribute = Key.Burn,
-                    Value = Formula.Source(Key.Custom_0) * Formula.Count(AdjacentFriendOrProperty),
+                    Value = Formula.Caster(Key.Custom_0) * Formula.Count(AdjacentFriendOrProperty),
                 },
             ],
         };

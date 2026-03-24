@@ -26,7 +26,7 @@ public static class Cannon
                 new AuraDefinition
                 {
                     Attribute = Key.Burn,
-                    Value = RatioUtil.PercentFloor(Formula.Source(Key.Damage), 10),
+                    Value = RatioUtil.PercentFloor(Formula.Caster(Key.Damage), 10),
                 },
             ],
         };

@@ -17,6 +17,7 @@ public static class LifePreserver
             Shield = [10, 20, 40, 80],
             Heal = [200, 500, 1000, 2000],
             Custom_0 = 0,
+            Custom_1 = 1,
             Abilities =
             [
                 Ability.Shield,
@@ -29,7 +30,7 @@ public static class LifePreserver
                     trigger: Trigger.AboutToLose,
                     additionalCondition: Condition.CasterCustom0IsZero,
                     targetCondition: Condition.SameAsCaster,
-                    value: 1,
+                    valueKey: Key.Custom_1,
                     effectLogName: "",
                     priority: AbilityPriority.Immediate
                 ),

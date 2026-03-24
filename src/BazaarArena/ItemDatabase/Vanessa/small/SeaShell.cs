@@ -26,7 +26,7 @@ public static class SeaShell
                 {
                     Attribute = Key.Shield,
                     Condition = Condition.SameAsCaster,
-                    Value = Formula.Source(Key.Custom_0) * Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Aquatic)),
+                    Value = Formula.Caster(Key.Custom_0) * Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Aquatic)),
                 },
             ],
         };

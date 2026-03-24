@@ -17,13 +17,14 @@ public static class ShoeBlade
             Cooldown = 6.0,
             Damage = [20, 40, 60, 80],
             Custom_0 = 0,
+            Custom_1 = 1,
             Abilities =
             [
                 Ability.Damage,
                 Ability.AddAttribute(Key.Custom_0).Override(
                     additionalCondition: Condition.CasterCustom0IsZero,
                     targetCondition: Condition.SameAsCaster,
-                    value: 1,
+                    valueKey: Key.Custom_1,
                     effectLogName: "",
                     priority: AbilityPriority.Lowest
                 ),

@@ -29,7 +29,7 @@ public static class Cove
                 new AuraDefinition
                 {
                     Attribute = Key.Shield,
-                    Value = (Formula.Source(Key.Price) + Formula.Source(Key.Custom_1) * Formula.Source(Key.Custom_2)) * Formula.Source(Key.Custom_0),
+                    Value = (Formula.Caster(Key.Price) + Formula.Caster(Key.Custom_1) * Formula.Caster(Key.Custom_2)) * Formula.Caster(Key.Custom_0),
                 },
             ],
         };

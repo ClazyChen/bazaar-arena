@@ -182,7 +182,7 @@ public class BattleSimulator
                             if (item.CritTimeMs == battleState.TimeMs)
                             {
                                 isCrit = item.IsCritThisUse;
-                                critDamagePercent = item.CritDamagePercentThisUse;
+                                critDamagePercent = item.CritDamage;
                             }
                             else
                             {
@@ -195,7 +195,7 @@ public class BattleSimulator
                                 }
                                 item.CritTimeMs = battleState.TimeMs;
                                 item.IsCritThisUse = isCrit;
-                                item.CritDamagePercentThisUse = critDamagePercent;
+                                item.CritDamage = critDamagePercent;
                                 if (isCrit)
                                     InvokeTrigger(Trigger.Crit, item, null, battleState.TimeMs, side0, side1, abilityCurrent, abilityNext);
                             }
@@ -405,12 +405,12 @@ public class BattleSimulator
             if (item.SlowRemainingMs > 0) advanceMs /= 2;
             int cap = Math.Max(1, cooldownMs / 20);
             advanceMs = Math.Min(advanceMs, cap);
-            item.CooldownElapsedMs += advanceMs;
-            if (item.CooldownElapsedMs >= cooldownMs)
+            item.ChargedTimeMs += advanceMs;
+            if (item.ChargedTimeMs >= cooldownMs)
             {
                 int ammoCap = side.GetItemInt(i, Key.AmmoCap);
                 if (ammoCap > 0 && item.AmmoRemaining <= 0) continue;
-                item.CooldownElapsedMs = 0;
+                item.ChargedTimeMs = 0;
                 castQueue.Add(item);
             }
         }

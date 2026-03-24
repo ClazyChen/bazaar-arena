@@ -29,7 +29,7 @@ public static class Langxian
                 new AuraDefinition
                 {
                     Attribute = Key.Damage,
-                    Value = Formula.Source(Key.Custom_0) * Formula.Source(Key.Custom_1),
+                    Value = Formula.Caster(Key.Custom_0) * Formula.Caster(Key.Custom_1),
                 },
             ],
         };

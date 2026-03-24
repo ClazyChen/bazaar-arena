@@ -27,7 +27,7 @@ public static class Handaxe
                 {
                     Attribute = Key.Damage,
                     Condition = Condition.SameSide & Condition.WithTag(Tag.Weapon),
-                    Value = Formula.Source(Key.Custom_0),
+                    Value = Formula.Caster(Key.Custom_0),
                 },
             ],
         };

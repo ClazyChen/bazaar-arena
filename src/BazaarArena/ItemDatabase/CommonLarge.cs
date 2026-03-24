@@ -95,7 +95,7 @@ public static class CommonLarge
                 new AuraDefinition
                 {
                     Attribute = Key.Damage,
-                    Value = Formula.Source(Key.Custom_0) * (Formula.Source(Key.StashParameter) + Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Small))),
+                    Value = Formula.Caster(Key.Custom_0) * (Formula.Caster(Key.StashParameter) + Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Small))),
                 },
             ],
         };

@@ -22,13 +22,13 @@ public static class StarChart
                 {
                     Attribute = Key.CritRate,
                     Condition = Condition.AdjacentToCaster,
-                    Value = Formula.Source(Key.Custom_0),
+                    Value = Formula.Caster(Key.Custom_0),
                 },
                 new AuraDefinition
                 {
                     Attribute = Key.PercentCooldownReduction,
                     Condition = Condition.AdjacentToCaster,
-                    Value = Formula.Source(Key.Custom_1),
+                    Value = Formula.Caster(Key.Custom_1),
                 },
             ],
         };

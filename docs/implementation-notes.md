@@ -4,6 +4,34 @@
 
 ---
 
+## ValueKey 与属性读取路径收敛（2026-03-24）
+
+### 目标
+
+- 移除 `BattleContext.GetResolvedValue`，统一由 `GetItemInt` 读取战斗内属性。
+- 运行时不再保留 `fallbackValue` 与 `AbilityDefinition.Value` 双轨兜底。
+- 暴击倍率仅在 `Apply` 的对应能力分支显式应用。
+
+### 最终约定
+
+- **能力主数值必须走 `ValueKey`**：`Apply` 内统一读取 `ctx.GetItemInt(ctx.Caster, ability.ValueKey!.Value)`。
+- **`AbilityDefinition.Value` 已删除**：`Override` 不再接受 `value` 参数，常量值请迁移为模板属性（通常 `Custom_x`）并用 `valueKey` 指向。
+- **默认值前置到注册阶段**：`ItemDatabase.EnsureDefaultAttributes` 负责补齐模板默认值；其中 `ModifyAttributeTargetCount` 默认值已调整为 `20`。
+- **目标数量默认值**：`Charge/Haste/Slow/Freeze/Reload/Repair/Destroy` 等 `*TargetCount` 读取为 0 时在 `Apply` 侧按 1 处理，防止历史模板缺省导致无目标。
+- **暴击处理**：`Damage/Burn/Poison/Shield/Heal`（以及 `Add/Reduce` 在 `ApplyCritMultiplier=true` 时）在 `Apply` 分支内显式乘 `ctx.CurrentCritMultiplier`；不再通过统一读取函数隐式处理。
+
+### 迁移经验
+
+- `StartFlying/StopFlying` 这类“实际不依赖数值”的能力，为保持 `ValueKey` 一致性可指定 `Key.Custom_0`，但效果语义仍由对应 `Apply` 分支控制（如 StopFlying 直接置 0）。
+- 当去掉运行时 fallback 后，所有能力定义必须保证 `ValueKey` 可用；新增能力时若漏配 `ValueKey`，应尽早在测试中暴露而非默默回退。
+
+### 回归记录
+
+- 迁移后 `dotnet build` 通过。
+- 小型铜脚本中 `姜饼人_gingerbread` 用例出现“未出现充能日志”失败，提示需要继续核对 `UseItem` 触发链路与 `Charge` 读值路径（不通过放松断言规避）。
+
+---
+
 ## AuraDefinition 与 BattleContext 复用经验（2026-03-24）
 
 ### 1) AuraDefinition 收敛：移除 SourceCondition 与 GrantedTags

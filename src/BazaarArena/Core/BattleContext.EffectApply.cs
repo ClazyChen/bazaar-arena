@@ -4,16 +4,6 @@ namespace BazaarArena.Core;
 
 public sealed partial class BattleContext
 {
-    public int GetResolvedValue(int key, bool applyCritMultiplier = false, int defaultValue = 0, int fallbackValue = 0)
-    {
-        int baseValue = GetItemInt(Caster, key);
-        if (baseValue == 0 && defaultValue != 0)
-            baseValue = defaultValue;
-        if (baseValue == 0 && fallbackValue != 0)
-            baseValue = fallbackValue;
-        return applyCritMultiplier ? baseValue * CurrentCritMultiplier : baseValue;
-    }
-
     public int ApplyDamageToOpp(int value, bool isBurn) => BattleSideDamage.ApplyDamageToSide(OppSide, value, isBurn);
     public void HealCaster(int amount) { CurrentSide.Hp = Math.Min(CurrentSide.MaxHp, CurrentSide.Hp + amount); }
     public void AddBurnToOpp(int value) => OppSide.Burn += value;
@@ -40,18 +30,18 @@ public sealed partial class BattleContext
         fullAndShouldCast = false;
         int cooldownMs = CurrentSide.GetItemInt(Caster.ItemIndex, Key.CooldownMs);
         if (cooldownMs <= 0) return;
-        int newElapsed = Math.Min(cooldownMs, Caster.CooldownElapsedMs + chargeMs);
-        int added = newElapsed - Caster.CooldownElapsedMs;
-        Caster.CooldownElapsedMs = newElapsed;
+        int newElapsed = Math.Min(cooldownMs, Caster.ChargedTimeMs + chargeMs);
+        int added = newElapsed - Caster.ChargedTimeMs;
+        Caster.ChargedTimeMs = newElapsed;
         if (added > 0)
             BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, "充能", added, BattleState.TimeMs, isCrit: false);
-        if (Caster.CooldownElapsedMs >= cooldownMs)
+        if (Caster.ChargedTimeMs >= cooldownMs)
         {
             int ammoCap = CurrentSide.GetItemInt(Caster.ItemIndex, Key.AmmoCap);
             if (ammoCap <= 0 || Caster.AmmoRemaining > 0)
                 BattleState.CastQueue.Add(Caster);
             fullAndShouldCast = true;
-            Caster.CooldownElapsedMs = 0;
+            Caster.ChargedTimeMs = 0;
         }
     }
 
@@ -147,14 +137,14 @@ public sealed partial class BattleContext
         var target = side.Items[itemIndex];
         int cooldownMs = side.GetItemInt(itemIndex, Key.CooldownMs);
         if (cooldownMs <= 0) return target.Template.Name;
-        int newElapsed = Math.Min(cooldownMs, target.CooldownElapsedMs + chargeMs);
-        target.CooldownElapsedMs = newElapsed;
-        if (target.CooldownElapsedMs >= cooldownMs && side == CurrentSide)
+        int newElapsed = Math.Min(cooldownMs, target.ChargedTimeMs + chargeMs);
+        target.ChargedTimeMs = newElapsed;
+        if (target.ChargedTimeMs >= cooldownMs && side == CurrentSide)
         {
             int ammoCap = side.GetItemInt(itemIndex, Key.AmmoCap);
             if (ammoCap <= 0 || target.AmmoRemaining > 0)
                 BattleState.CastQueue.Add(target);
-            target.CooldownElapsedMs = 0;
+            target.ChargedTimeMs = 0;
         }
         return target.Template.Name;
     }
@@ -217,10 +207,10 @@ public sealed partial class BattleContext
             if (side == CurrentSide)
             {
                 int cooldownMs = side.GetItemInt(index, Key.CooldownMs);
-                if (cooldownMs > 0 && t.CooldownElapsedMs >= cooldownMs && (cap <= 0 || t.AmmoRemaining > 0))
+                if (cooldownMs > 0 && t.ChargedTimeMs >= cooldownMs && (cap <= 0 || t.AmmoRemaining > 0))
                 {
                     BattleState.CastQueue.Add(t);
-                    t.CooldownElapsedMs = 0;
+                    t.ChargedTimeMs = 0;
                 }
             }
             return t.Template.Name;
@@ -231,7 +221,7 @@ public sealed partial class BattleContext
     {
         if (targetCount <= 0) return;
         var condition = (targetCondition ?? Condition.SameSide) & Condition.Destroyed;
-        ApplyToTargets(CurrentSide, targetCount, condition, "修复", null, (t, _) => { t.Destroyed = false; t.CooldownElapsedMs = 0; return t.Template.Name; }, null);
+        ApplyToTargets(CurrentSide, targetCount, condition, "修复", null, (t, _) => { t.Destroyed = false; t.ChargedTimeMs = 0; return t.Template.Name; }, null);
     }
 
     private void ApplyToSideWithCondition(BattleSide fromSide, Formula? targetCondition, string logEffectName, int logValue, Func<ItemState, int, string?> perItem)
@@ -325,12 +315,12 @@ public sealed partial class BattleContext
             wi.SetAttribute(attributeKey, newVal);
             targetNames.Add(wi.Template.Name);
 
-            if (attributeKey == Key.CooldownMs && side == CurrentSide && wi.CooldownElapsedMs >= newVal)
+            if (attributeKey == Key.CooldownMs && side == CurrentSide && wi.ChargedTimeMs >= newVal)
             {
                 int ammoCap = side.GetItemInt(index, Key.AmmoCap);
                 if (ammoCap <= 0 || wi.AmmoRemaining > 0)
                     BattleState.CastQueue.Add(wi);
-                wi.CooldownElapsedMs = 0;
+                wi.ChargedTimeMs = 0;
             }
         }
         if (targetNames.Count > 0 && !string.IsNullOrEmpty(logName))

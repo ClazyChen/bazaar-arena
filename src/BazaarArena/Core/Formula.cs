@@ -10,15 +10,9 @@ public class Formula
     /// <summary>求值。</summary>
     public int Evaluate(BattleContext ctx) => _evaluate(ctx);
 
-    /// <summary>读取「能力持有者」模板整型；与上下文字段 <see cref="BattleContext.Source"/>（引起触发者）区分，此处固定走 <see cref="BattleContext.Caster"/>。</summary>
-    public static Formula Source(int key) => new(ctx => ctx.GetItemInt(ctx.Caster, key));
-
     public static Formula Caster(int key) => new(ctx => ctx.GetItemInt(ctx.Caster, key));
 
-    public static Formula Item(int key) => new(ctx =>
-    {
-        return ctx.GetItemInt(ctx.Item, key);
-    });
+    public static Formula Item(int key) => new(ctx => ctx.GetItemInt(ctx.Item, key));
 
     /// <summary>常数。</summary>
     public static Formula Constant(int value) => new(_ => value);
@@ -46,61 +40,35 @@ public class Formula
         foreach (var it in side0.Items)
         {
             countCtx.Item = it;
-            countCtx.Source = it;
             if (condition.Evaluate(countCtx) != 0) n++;
         }
         foreach (var it in side1.Items)
         {
             countCtx.Item = it;
-            countCtx.Source = it;
             if (condition.Evaluate(countCtx) != 0) n++;
         }
         return n;
     });
 
-    private static BazaarArena.BattleSimulator.BattleSide CurrentSide(BattleContext ctx)
-    {
-        int sideIndex = ctx.Caster.SideIndex;
-        return ctx.BattleState.Side[sideIndex];
-    }
-
-    private static BazaarArena.BattleSimulator.BattleSide OppSide(BattleContext ctx)
-    {
-        int sideIndex = ctx.Caster.SideIndex;
-        return ctx.BattleState.Side[1 - sideIndex];
-    }
-
-    private static int ReadSideAttribute(BazaarArena.BattleSimulator.BattleSide side, int key)
-    {
-        if (key == Key.SideIndex) return side.SideIndex;
-        if (key == Key.Damage) return side.MaxHp;
-        if (key == Key.Heal) return side.Hp;
-        if (key == Key.Shield) return side.Shield;
-        if (key == Key.Burn) return side.Burn;
-        if (key == Key.Poison) return side.Poison;
-        if (key == Key.Regen) return side.Regen;
-        if (key == Key.Gold) return side.Gold;
-        return 0;
-    }
-
-    public static Formula Side(string sideKey) => new(ctx =>
-    {
-        if (!Key.TryGetKey(sideKey, out int k)) return 0;
-        return ReadSideAttribute(CurrentSide(ctx), k);
-    });
-
-    public static Formula Opp(string sideKey) => new(ctx =>
-    {
-        if (!Key.TryGetKey(sideKey, out int k)) return 0;
-        return ReadSideAttribute(OppSide(ctx), k);
-    });
-    public static Formula Side(int key) => new(ctx => ReadSideAttribute(CurrentSide(ctx), key));
-    public static Formula Opp(int key) => new(ctx => ReadSideAttribute(OppSide(ctx), key));
+    public static Formula Side(int key) => new(ctx => ctx.CurrentSide.GetAttribute(key));
+    public static Formula Opp(int key) => new(ctx => ctx.OppSide.GetAttribute(key));
     public static Formula SideSelect(int key, SideSelectKind kind) => new(ctx =>
     {
-        int a = ReadSideAttribute(ctx.BattleState.Side[0], key);
-        int b = ReadSideAttribute(ctx.BattleState.Side[1], key);
-        return kind == SideSelectKind.Min ? Math.Min(a, b) : Math.Max(a, b);
+        bool hasAny = false;
+        int selected = 0;
+        foreach (var item in ctx.CurrentSide.Items)
+        {
+            if (item.Destroyed) continue;
+            int value = item.GetAttribute(key);
+            if (!hasAny)
+            {
+                selected = value;
+                hasAny = true;
+                continue;
+            }
+            selected = kind == SideSelectKind.Min ? Math.Min(selected, value) : Math.Max(selected, value);
+        }
+        return hasAny ? selected : 0;
     });
 
     public static Formula operator +(Formula a, Formula b) => new(ctx => a.Evaluate(ctx) + b.Evaluate(ctx));

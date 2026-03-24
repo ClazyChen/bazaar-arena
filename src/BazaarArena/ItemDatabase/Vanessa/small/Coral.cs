@@ -29,7 +29,7 @@ public static class Coral
                 new AuraDefinition
                 {
                     Attribute = Key.Heal,
-                    Value = Formula.Source(Key.Custom_0) * Formula.Source(Key.Custom_1),
+                    Value = Formula.Caster(Key.Custom_0) * Formula.Caster(Key.Custom_1),
                 },
             ],
         };

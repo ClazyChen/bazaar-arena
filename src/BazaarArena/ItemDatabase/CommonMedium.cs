@@ -217,7 +217,7 @@ public static class CommonMedium
                 {
                     Attribute = Key.Damage,
                     Condition = Condition.AdjacentToCaster & Condition.WithTag(Tag.Weapon),
-                    Value = Formula.Source(Key.Custom_0),
+                    Value = Formula.Caster(Key.Custom_0),
                 },
             ],
         };
@@ -400,12 +400,13 @@ public static class CommonMedium
             Cooldown = 7.0,
             Damage = [100, 200, 300],
             Charge = [1.0, 2.0, 3.0],
+            Custom_0 = 1_000_000,
             Abilities =
             [
                 Ability.Damage,
                 Ability.ReduceAttribute(Key.FreezeRemainingMs).Override(
                     targetCondition: Condition.SameSide & Condition.IsFrozen,
-                    value: 1_000_000,
+                    valueKey: Key.Custom_0,
                     effectLogName: "解除冻结"
                 ),
                 Ability.Charge.Override(
@@ -417,7 +418,7 @@ public static class CommonMedium
                     trigger: Trigger.Freeze,
                     condition: Condition.SameAsCaster,
                     targetCondition: Condition.SameAsCaster & Condition.IsFrozen,
-                    value: 1_000_000,
+                    valueKey: Key.Custom_0,
                     effectLogName: "解除冻结",
                     priority: AbilityPriority.Low
                 ),
@@ -444,7 +445,7 @@ public static class CommonMedium
                 new AuraDefinition
                 {
                     Attribute = Key.Damage,
-                    Value = Formula.Source(Key.Custom_0) * Formula.Count(Condition.StrictlyLeftOfCaster),
+                    Value = Formula.Caster(Key.Custom_0) * Formula.Count(Condition.StrictlyLeftOfCaster),
                 },
                 new AuraDefinition
                 {
@@ -513,7 +514,7 @@ public static class CommonMedium
                 {
                     Attribute = Key.CritRate,
                     Condition = Condition.AdjacentToCaster,
-                    Value = Formula.Source(Key.Custom_0),
+                    Value = Formula.Caster(Key.Custom_0),
                 },
             ],
         };
@@ -582,7 +583,7 @@ public static class CommonMedium
                 {
                     Attribute = Key.PercentCooldownReduction,
                     Condition = Condition.SameSide & Condition.WithTag(Tag.Vehicle),
-                    Value = Formula.Source(Key.Custom_0),
+                    Value = Formula.Caster(Key.Custom_0),
                 },
             ],
         };
@@ -721,7 +722,7 @@ public static class CommonMedium
                 {
                     Attribute = Key.Shield,
                     Condition = Condition.SameAsCaster,
-                    Value = RatioUtil.PercentFloor(Formula.Side(Key.MaxHp), Formula.Source(Key.Custom_0)),
+                    Value = RatioUtil.PercentFloor(Formula.Side(Key.MaxHp), Formula.Caster(Key.Custom_0)),
                 },
             ],
         };

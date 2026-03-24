@@ -146,7 +146,7 @@ public static class CommonSmall
                 {
                     Attribute = Key.CritRate,
                     Condition = Condition.AdjacentToCaster,
-                    Value = Formula.Source(Key.Custom_0),
+                    Value = Formula.Caster(Key.Custom_0),
                 },
             ],
         };
@@ -378,7 +378,7 @@ public static class CommonSmall
                 {
                     Attribute = Key.Multicast,
                     Condition = Condition.SameAsCaster & Formula.Caster(Key.InFlight),
-                    Value = Formula.Source(Key.Custom_0),
+                    Value = Formula.Caster(Key.Custom_0),
                 },
             ],
         };
@@ -408,7 +408,7 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     Attribute = Key.Burn,
-                    Value = Formula.Source(Key.Damage),
+                    Value = Formula.Caster(Key.Damage),
                 },
             ],
         };
@@ -457,7 +457,7 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     Attribute = Key.Damage,
-                    Value = Formula.Source(Key.Custom_0) * Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Friend)),
+                    Value = Formula.Caster(Key.Custom_0) * Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Friend)),
                 },
                 new AuraDefinition
                 {
@@ -525,7 +525,7 @@ public static class CommonSmall
                 {
                     Attribute = Key.CritRate,
                     Condition = Condition.SameAsCaster & Condition.OnlyCompanion,
-                    Value = Formula.Source(Key.Custom_0),
+                    Value = Formula.Caster(Key.Custom_0),
                 },
             ],
         };
@@ -625,7 +625,7 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     Attribute = Key.Damage,
-                    Value = Formula.Source(Key.AmmoRemaining),
+                    Value = Formula.Caster(Key.AmmoRemaining),
                 },
             ]
         };

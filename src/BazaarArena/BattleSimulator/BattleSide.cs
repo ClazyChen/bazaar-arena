@@ -17,16 +17,6 @@ public class BattleSide
             Attributes[key] = value;
     }
 
-    /// <summary>按键名解析（如卡组 JSON、公式字符串）；未知名返回默认值。</summary>
-    public int GetInt(string keyName, int defaultValue = 0) =>
-        Key.TryGetKey(keyName, out int k) ? GetAttribute(k) : defaultValue;
-
-    public void SetInt(string keyName, int value)
-    {
-        if (Key.TryGetKey(keyName, out int k))
-            SetAttribute(k, value);
-    }
-
     public int SideIndex { get => Attributes[Key.SideIndex]; set => Attributes[Key.SideIndex] = value; }
     public int MaxHp { get => Attributes[Key.Damage]; set => Attributes[Key.Damage] = value; }
     public int Hp { get => Attributes[Key.Heal]; set => Attributes[Key.Heal] = value; }

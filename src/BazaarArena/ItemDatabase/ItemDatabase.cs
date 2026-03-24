@@ -97,7 +97,7 @@ public class ItemDatabase : IItemTemplateResolver
         EnsureDefaultIfUndefined(template, Key.ReloadTargetCount, 1);
         EnsureDefaultIfUndefined(template, Key.RepairTargetCount, 1);
         EnsureDefaultIfUndefined(template, Key.DestroyTargetCount, 1);
-        EnsureDefaultIfUndefined(template, Key.ModifyAttributeTargetCount, 1);
+        EnsureDefaultIfUndefined(template, Key.ModifyAttributeTargetCount, 20);
         EnsureDefaultIfUndefined(template, Key.Value, TrimByMinTier(GetDefaultPriceBySize(defaultSize), template.MinTier));
     }
 
