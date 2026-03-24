@@ -250,7 +250,7 @@ public static class CommonSmall
             [
                 Ability.Damage,
                 Ability.ReduceAttribute(Key.Shield).Override(
-                    additionalTargetCondition: Condition.WithTag(DerivedTag.Shield),
+                    additionalTargetCondition: Condition.WithDerivedTag(DerivedTag.Shield),
                     priority: AbilityPriority.High
                 ),
             ],
@@ -573,7 +573,7 @@ public static class CommonSmall
             Abilities =
             [
                 Ability.Charge.Override(
-                    additionalTargetCondition: Condition.DifferentFromCaster & Condition.NotWithTag(Tag.Weapon),
+                    additionalTargetCondition: Condition.DifferentFromCaster & ~Condition.WithTag(Tag.Weapon),
                     priority: AbilityPriority.High
                 )
             ],

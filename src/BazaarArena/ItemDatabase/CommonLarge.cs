@@ -163,7 +163,7 @@ public static class CommonLarge
                 ),
                 Ability.AddAttribute(Key.CritRate).Override(
                     trigger: Trigger.Poison,
-                    condition: Condition.NotWithTag(Tag.Relic),
+                    condition: ~Condition.WithTag(Tag.Relic),
                     priority: AbilityPriority.Low
                 ),
                 Ability.Charge.Override(

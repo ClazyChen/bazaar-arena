@@ -3,9 +3,9 @@ namespace BazaarArena.Core;
 /// <summary>常用能力定义的默认对象与工厂方法，用于简化物品定义；定制通过 Ability.xxx.Override(...) 链式调用。</summary>
 public static class Ability
 {
-    private static Formula WithCooldownTarget(Formula baseCondition) => baseCondition & Condition.NotDestroyed & Condition.HasCooldown;
-    private static Formula WithNotDestroyedTarget(Formula baseCondition) => baseCondition & Condition.NotDestroyed;
-    private static Formula WithAmmoTarget(Formula baseCondition) => baseCondition & Condition.NotDestroyed & Condition.WithTag(DerivedTag.Ammo);
+    private static Formula WithCooldownTarget(Formula baseCondition) => baseCondition & ~Condition.Destroyed & Condition.HasCooldown;
+    private static Formula WithNotDestroyedTarget(Formula baseCondition) => baseCondition & ~Condition.Destroyed;
+    private static Formula WithAmmoTarget(Formula baseCondition) => baseCondition & ~Condition.Destroyed & Condition.WithDerivedTag(DerivedTag.Ammo);
 
     private static AbilityDefinition CreateBase(AbilityType abilityType, Action<BattleContext, AbilityDefinition>? apply)
     {
@@ -82,7 +82,7 @@ public static class Ability
         targetCountKey: Key.FreezeTargetCount);
 
     /// <summary>开始飞行：对己方满足目标条件且未飞行的物品设为飞行（等价于 AddAttribute(Key.InFlight) 设 1）。默认 additionalTargetCondition 为 NotInFlight；日志显示「开始飞行」。</summary>
-    public static AbilityDefinition StartFlying => AddAttribute(Key.InFlight).Override(valueKey: Key.Custom_0, additionalTargetCondition: Condition.NotInFlight, effectLogName: "开始飞行");
+    public static AbilityDefinition StartFlying => AddAttribute(Key.InFlight).Override(valueKey: Key.Custom_0, additionalTargetCondition: ~Condition.InFlight, effectLogName: "开始飞行");
 
     /// <summary>摧毁（Apply.Destroy）。默认触发器 UseItem；目标默认己方、未摧毁；定制用 .Override(...)。</summary>
     public static AbilityDefinition Destroy => CreateBase(AbilityType.Destroy, Core.Apply.Destroy).Override(

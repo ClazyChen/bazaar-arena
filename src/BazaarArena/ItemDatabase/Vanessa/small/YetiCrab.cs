@@ -22,7 +22,7 @@ public static class YetiCrab
                 Ability.Freeze,
                 Ability.AddAttribute(Key.Poison).Override(
                     trigger: Trigger.Freeze,
-                    additionalTargetCondition: Condition.AdjacentToCaster & Condition.WithTag(DerivedTag.Poison)
+                    additionalTargetCondition: Condition.AdjacentToCaster & Condition.WithDerivedTag(DerivedTag.Poison)
                 ),
             ],
         };

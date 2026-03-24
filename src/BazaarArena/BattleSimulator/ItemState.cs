@@ -5,6 +5,9 @@ namespace BazaarArena.BattleSimulator;
 /// <summary>战斗中单件物品的运行时状态（Attribute[Key.xxx]）。</summary>
 public class ItemState
 {
+    private const int CrittableDerivedTagMask =
+        DerivedTag.Damage | DerivedTag.Burn | DerivedTag.Poison | DerivedTag.Heal | DerivedTag.Shield | DerivedTag.Regen;
+
     public ItemTemplate Template { get; init; }
     public AbilityDefinition[] Abilities { get; init; } = [];
     public int[] Attributes { get; init; } = new int[Key.ItemStateAttributeCount];
@@ -25,6 +28,14 @@ public class ItemState
     public bool IsCritThisUse { get => Attributes[Key.IsCritThisUse] != 0; set => Attributes[Key.IsCritThisUse] = value ? 1 : 0; }
     public int CritDamage { get => Attributes[Key.CritDamage]; set => Attributes[Key.CritDamage] = value; }
     public int AmmoRemaining { get => Attributes[Key.AmmoRemaining]; set => Attributes[Key.AmmoRemaining] = value; }
+    public bool HasUseItemSelfCritAbility =>
+        Abilities.Any(a =>
+            a.Apply != null
+            && a.ApplyCritMultiplier
+            && a.UseSelf
+            && a.TriggerEntries.Any(e => e.Trigger == Trigger.UseItem));
+    public bool CanCrit => ((GetAttribute(Key.DerivedTags) & CrittableDerivedTagMask) != 0) && HasUseItemSelfCritAbility;
+
     public ItemState(ItemTemplate template, ItemTier tier)
     {
         Template = template;

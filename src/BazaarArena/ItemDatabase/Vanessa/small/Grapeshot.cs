@@ -22,7 +22,7 @@ public static class Grapeshot
             [
                 Ability.Damage,
                 Ability.Reload.Override(
-                    condition: Condition.SameSide & Condition.WithTag(DerivedTag.Ammo) & Condition.DifferentFromCaster,
+                    condition: Condition.SameSide & Condition.WithDerivedTag(DerivedTag.Ammo) & Condition.DifferentFromCaster,
                     targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Lowest
                 ),
@@ -46,7 +46,7 @@ public static class Grapeshot
             [
                 Ability.Damage,
                 Ability.Reload.Override(
-                    condition: Condition.SameSide & Condition.WithTag(DerivedTag.Ammo) & Condition.DifferentFromCaster,
+                    condition: Condition.SameSide & Condition.WithDerivedTag(DerivedTag.Ammo) & Condition.DifferentFromCaster,
                     targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Lowest
                 ),

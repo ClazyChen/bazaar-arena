@@ -74,6 +74,7 @@ public class Formula
     public static Formula operator +(Formula a, Formula b) => new(ctx => a.Evaluate(ctx) + b.Evaluate(ctx));
     public static Formula operator -(Formula a, Formula b) => new(ctx => a.Evaluate(ctx) - b.Evaluate(ctx));
     public static Formula operator -(Formula f) => new(ctx => -f.Evaluate(ctx));
+    public static Formula operator ~(Formula f) => new(ctx => f.Evaluate(ctx) == 0 ? 1 : 0);
     public static Formula operator *(Formula a, Formula b) => new(ctx => a.Evaluate(ctx) * b.Evaluate(ctx));
     public static Formula operator *(int n, Formula f) => new(ctx => n * f.Evaluate(ctx));
     public static Formula operator *(Formula f, int n) => new(ctx => f.Evaluate(ctx) * n);

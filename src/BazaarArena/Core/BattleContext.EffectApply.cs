@@ -152,7 +152,7 @@ public sealed partial class BattleContext
     public void ApplyFreeze(int freezeMs, int targetCount, Formula? targetCondition = null)
     {
         if (freezeMs <= 0 || targetCount <= 0) return;
-        var cond = (targetCondition ?? Condition.DifferentSide) & Condition.NotDestroyed;
+        var cond = (targetCondition ?? Condition.DifferentSide) & ~Condition.Destroyed;
         ApplyToTargetsBothSides(targetCount, cond, "冻结", freezeMs, (side, index) =>
         {
             var t = side.Items[index];
@@ -166,7 +166,7 @@ public sealed partial class BattleContext
     public void ApplySlow(int slowMs, int targetCount, Formula? targetCondition = null)
     {
         if (slowMs <= 0 || targetCount <= 0) return;
-        var cond = (targetCondition ?? Condition.DifferentSide) & Condition.NotDestroyed & Condition.HasCooldown;
+        var cond = (targetCondition ?? Condition.DifferentSide) & ~Condition.Destroyed & Condition.HasCooldown;
         ApplyToTargetsBothSides(targetCount, cond, "减速", slowMs, (side, index) =>
         {
             var t = side.Items[index];
@@ -178,14 +178,14 @@ public sealed partial class BattleContext
     public void ApplyCharge(int chargeMs, int targetCount, Formula? targetCondition = null)
     {
         if (chargeMs <= 0 || targetCount <= 0) return;
-        var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.HasCooldown;
+        var cond = (targetCondition ?? Condition.SameSide) & ~Condition.Destroyed & Condition.HasCooldown;
         ApplyToTargetsBothSides(targetCount, cond, "充能", chargeMs, (side, index) => ChargeItemAt(side, index, chargeMs), null);
     }
 
     public void ApplyHaste(int hasteMs, int targetCount, Formula? targetCondition = null, string? effectLogName = null)
     {
         if (hasteMs <= 0 || targetCount <= 0) return;
-        var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.HasCooldown;
+        var cond = (targetCondition ?? Condition.SameSide) & ~Condition.Destroyed & Condition.HasCooldown;
         ApplyToTargetsBothSides(targetCount, cond, effectLogName ?? "加速", hasteMs, (side, index) =>
         {
             var t = side.Items[index];
@@ -197,7 +197,7 @@ public sealed partial class BattleContext
     public void ApplyReload(int amount, int targetCount, Formula? targetCondition = null, string? effectLogName = null)
     {
         if (amount <= 0 || targetCount <= 0) return;
-        var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.WithTag(DerivedTag.Ammo);
+        var cond = (targetCondition ?? Condition.SameSide) & ~Condition.Destroyed & Condition.WithDerivedTag(DerivedTag.Ammo);
         ApplyToTargetsBothSides(targetCount, cond, effectLogName ?? "装填", amount, (side, index) =>
         {
             var t = side.Items[index];
@@ -246,7 +246,7 @@ public sealed partial class BattleContext
     public void AddAttributeToCasterSide(int attributeKey, int value, Formula? targetCondition, int maxTargetCount = 0, string? effectLogName = null)
     {
         if (value <= 0 || targetCondition == null) return;
-        var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed;
+        var cond = (targetCondition ?? Condition.SameSide) & ~Condition.Destroyed;
         if (attributeKey == Key.CritRate)
             cond &= Condition.CanCrit;
         string logName = effectLogName ?? (AttributeLogNames.Get(attributeKey) + "提高");
@@ -294,7 +294,7 @@ public sealed partial class BattleContext
     public void ReduceAttributeToSide(int attributeKey, int value, Formula? targetCondition, int maxTargetCount = 0, string? effectLogName = null)
     {
         if (value <= 0 || targetCondition == null) return;
-        var cond = (targetCondition ?? Condition.DifferentSide) & Condition.NotDestroyed;
+        var cond = (targetCondition ?? Condition.DifferentSide) & ~Condition.Destroyed;
         if (attributeKey == Key.CritRate)
             cond &= Condition.CanCrit;
         string logName = effectLogName ?? (AttributeLogNames.Get(attributeKey) + "降低");
@@ -338,7 +338,7 @@ public sealed partial class BattleContext
     public void ApplyDestroy(int targetCount, Formula? targetCondition = null)
     {
         if (targetCount <= 0) return;
-        var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed;
+        var cond = (targetCondition ?? Condition.SameSide) & ~Condition.Destroyed;
         var sideIndices = GetTargetIndices(CurrentSide, targetCount, cond);
         BattleSide targetSide;
         List<int> indices;

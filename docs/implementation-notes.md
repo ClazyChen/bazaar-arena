@@ -78,7 +78,7 @@
   - 普通标签（显式定义 + 尺寸 `Small/Medium/Large`）放 **`Tag`**，写入 **`Key.Tags`**。
   - 自动推导标签（`Damage/Shield/Ammo/Burn/Poison/Heal/Regen/Crit/Cooldown/...`）放 **`DerivedTag`**，写入 **`Key.DerivedTags`**。
   - `DerivedTag` 从 **`1 << 0`** 重新编号，独立于 `Tag`。
-- **条件判定**：`Condition.WithTag/NotWithTag/WithTemplateTag` 需同时检查 `Tags` 与 `DerivedTags`（分别判位，再做 OR 语义），不能先把两个位掩码直接合并后按单域理解。
+- **条件判定**：`Condition.WithTag` 与 `Condition.WithDerivedTag` 已按语义拆分：前者只检查 `Key.Tags`，后者只检查 `Key.DerivedTags`；两者均通过 `GetItemInt` 读取以感知光环带来的动态标签变化。
 
 ### 2) Apply 作为能力执行入口，效果逻辑挂在 BattleContext 上
 
@@ -541,7 +541,7 @@
 
 - **选取范围**：目标从**双方所有物品**中按 **TargetCondition** 筛选（**GetTargetsFromBothSides**），不再限定「冻结只选敌方、加速只选己方」；通过 TargetCondition 表达「己方」「敌方」或自定义范围（如寒冰特服「自身或相邻」）。
 - **Apply 层强制条件**：  
-  - **NotDestroyed**：冻结、减速、加速、充能、摧毁在 Apply 内统一 **cond = (targetCondition ?? default) & Condition.NotDestroyed**，定义时 Override targetCondition **不必再写** NotDestroyed。  
+  - **NotDestroyed**：冻结、减速、加速、充能、摧毁在 Apply 内统一 **cond = (targetCondition ?? default) & ~Condition.Destroyed**，定义时 Override targetCondition **不必再写** 未摧毁条件。  
   - **HasCooldown**：仅**减速、加速、充能**在 Apply 内再强制 **& Condition.HasCooldown**；**冻结**不强制，以便支持「冻结己方无冷却物品」（如寒冰特服冻自身或相邻服饰）。
 - **定义简化**：例如寒冰特服只需 `Ability.Freeze.Override(targetCondition: Condition.SameAsSource | Condition.AdjacentToSource)`，不写 NotDestroyed/HasCooldown。
 
@@ -557,7 +557,7 @@
 
 ### 小结
 
-修改属性增减或冻结/减速/加速/充能时：Reduce 己方用 ReduceAttribute + Override(targetCondition: Condition.SameSide)；日志用 AttributeLogNames + 可选 effectLogName；目标由 TargetCondition 在双方中筛选（Reduce 与 Add/Freeze 一致），Apply 内固定加 NotDestroyed，减速/加速/充能固定加 HasCooldown；百分比用 RatioUtil。
+修改属性增减或冻结/减速/加速/充能时：Reduce 己方用 ReduceAttribute + Override(targetCondition: Condition.SameSide)；日志用 AttributeLogNames + 可选 effectLogName；目标由 TargetCondition 在双方中筛选（Reduce 与 Add/Freeze 一致），Apply 内固定加 `~Condition.Destroyed`，减速/加速/充能固定加 HasCooldown；百分比用 RatioUtil。
 
 ---
 
@@ -597,8 +597,8 @@
 
 ### 飞行（In Flight）
 
-- **飞行为属性**：运行时状态存于模板字典（**Key.InFlight**）。**开始飞行** = 对己方满足目标条件且**未飞行**的物品设为飞行：**Ability.StartFlying**（等价于 `AddAttribute(Key.InFlight).Override(value: 1, additionalTargetCondition: Condition.NotInFlight)`），效果走 AddAttributeToCasterSide，内部对 Key.InFlight 设 `wi.InFlight = (value != 0)`。**结束飞行** 已改名为 **StopFlying**（**Ability.StopFlying**），目标默认己方且 **InFlight**，效果为 **SetAttributeOnCasterSide(Key.InFlight, 0, ctx.TargetCondition)**。
-- **光环条件**：`Condition.InFlight` / **Condition.NotInFlight** 表示被评估对象（Item）在/不在飞行。光环「提供者在飞行」用 **AuraDefinition.SourceCondition = Condition.InFlight**。
+- **飞行为属性**：运行时状态存于模板字典（**Key.InFlight**）。**开始飞行** = 对己方满足目标条件且**未飞行**的物品设为飞行：**Ability.StartFlying**（等价于 `AddAttribute(Key.InFlight).Override(value: 1, additionalTargetCondition: ~Condition.InFlight)`），效果走 AddAttributeToCasterSide，内部对 Key.InFlight 设 `wi.InFlight = (value != 0)`。**结束飞行** 已改名为 **StopFlying**（**Ability.StopFlying**），目标默认己方且 **InFlight**，效果为 **SetAttributeOnCasterSide(Key.InFlight, 0, ctx.TargetCondition)**。
+- **光环条件**：`Condition.InFlight` 表示被评估对象（Item）在飞行；“不在飞行”统一写 `~Condition.InFlight`，不再维护 `Condition.NotInFlight` 常量条件。
 - **日志与 UI**：「开始飞行」「结束飞行」日志与 **EffectKeywordFormatting** 中「飞行」与护盾同色。
 
 ### 造成暴击时（Trigger.Crit）与暴击机制（按物品按帧统一）
@@ -701,8 +701,8 @@
 ### add/reduce 暴击率仅对可暴击物品生效
 
 - **问题**：原用 **HasAnyCrittableTag**（六类 Tag 之一）限制加/减暴击率目标；但如舱底蠕虫 S9 有 Poison 会补 Tag.Poison，却无「使用本物品」可暴击能力，不应获得暴击率。
-- **Condition.CanCrit**：被评估对象「可参与暴击」= HasAnyCrittableTag 成立 **且** 至少有一条能力满足 `TriggerName == Trigger.UseItem && UseSelf && ApplyCritMultiplier`。用于 add/reduce 暴击率时的隐含目标条件。
-- **效果层**：**AddAttributeToCasterSide**、**ReduceAttributeToSide** 中当 `attributeName == Key.CritRatePercent` 时，使用 **Condition.CanCrit** 替代 HasAnyCrittableTag 过滤目标。不修改物品定义即可保证不可暴击物品（如 S9）不会收到暴击率。
+- **Condition.CanCrit**：被评估对象「可参与暴击」统一读取 `ItemState.CanCrit`（运行时判定），语义为：具备可暴击类型 `DerivedTag`（Damage/Burn/Poison/Heal/Shield/Regen）且至少一条能力满足 `TriggerName == Trigger.UseItem && UseSelf && ApplyCritMultiplier`。
+- **效果层**：**AddAttributeToCasterSide**、**ReduceAttributeToSide** 中当 `attributeName == Key.CritRatePercent` 时，使用 **Condition.CanCrit** 过滤目标。不修改物品定义即可保证不可暴击物品（如 S9）不会收到暴击率。
 
 ---
 
