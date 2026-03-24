@@ -27,13 +27,6 @@ public class AbilityDefinition
                 ? (Condition.SameSide & Condition.DifferentFromCaster)
                 : Condition.SameSide;
 
-    private static Formula DefaultTargetConditionByTrigger(int trigger) =>
-        trigger == Trigger.UseItem
-            ? Condition.SameAsCaster
-            : trigger == Trigger.Ammo
-                ? Condition.DifferentSide
-                : Condition.SameSide;
-
     public AbilityDefinition Override(
         int? trigger = null,
         AbilityPriority? priority = null,
@@ -54,7 +47,7 @@ public class AbilityDefinition
         {
             TriggerEntries[0].Trigger = trigger.Value;
             TriggerEntries[0].Condition = DefaultConditionByTrigger(trigger.Value);
-            TargetCondition = DefaultTargetConditionByTrigger(trigger.Value);
+            // TargetCondition 由 Ability.xxx 工厂与后续 Override(targetCondition/additionalTargetCondition) 决定，勿按 trigger 覆盖。
         }
         if (priority != null) Priority = priority.Value;
         if (valueKey != null) ValueKey = valueKey.Value;

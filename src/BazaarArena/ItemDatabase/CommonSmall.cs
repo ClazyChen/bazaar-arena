@@ -628,7 +628,7 @@ public static class CommonSmall
         };
     }
 
-    /// <summary>月光宝珠（Moon Orb）：遗物。敌方物品被加速时，对该物品施加减速 {SlowSeconds} 秒；己方物品被减速时，对该物品施加加速 {HasteSeconds} 秒。目标由 additionalTargetCondition: SameAsInvokeTarget 限定为触发器指向的那一件。</summary>
+    /// <summary>月光宝珠（Moon Orb）：遗物。敌方物品被加速时，对该物品施加减速 {SlowSeconds} 秒；己方物品被减速时，对该物品施加加速 {HasteSeconds} 秒。目标由 targetCondition: SameAsInvokeTarget（及未摧毁、有冷却）限定为触发器指向的那一件。</summary>
     public static ItemTemplate MoonOrb()
     {
         return new ItemTemplate

@@ -2,10 +2,11 @@
 
 ## Condition 扩展、Destroy 默认敌方、物品语义修正（2026-03-25）
 
+- **AbilityDefinition.Override(trigger)**：不再按触发器类型重置 **TargetCondition**；目标筛选默认值完全由 **Ability.xxx** 工厂与显式 **targetCondition** / **additionalTargetCondition** 决定（曾用 **DefaultTargetConditionByTrigger** 的 **Ammo→DifferentSide** 已移除）。月光宝珠改为 **targetCondition: SameAsInvokeTarget & ~Destroyed & HasCooldown**。
 - **Condition（InvokeTarget 相关）**：新增 **InvokeTargetWithTag**、**InvokeTargetInFlight**、**InvokeTargetSameSide**、**InvokeTargetDifferentSide**、**InvokeTargetSameAsCaster**；用于在 **TriggerEntry.Condition** 中按「触发器指向的那件物品」判阵营/标签/飞行，而不误用 **Source**（施加者）。牵引光束 **Trigger.Destroy** 第二段伤害改为条件式 **SameAsCaster & (InvokeTargetWithTag(Large) | InvokeTargetInFlight)**，替代自定义 **apply**。
 - **月光宝珠**：**Trigger.Haste** / **Trigger.Slow** 分别用 **InvokeTargetDifferentSide** / **InvokeTargetSameSide** + **SameAsInvokeTarget**，表达「敌方物品被加速 / 己方物品被减速」且与施加者阵营无关。
 - **破冰尖镐**：**Trigger.Freeze** 下「此物品被冻结时解除」用 **condition: InvokeTargetSameAsCaster**。
-- **Ability.Destroy**：工厂默认 **targetCondition** 改为 **敌方未摧毁**（**DifferentSide**，仍经 **WithNotDestroyedTarget**）；**牵引光束** 改为完整 **targetCondition: SameSide & ~Destroyed & FirstNonDestroyedRightOfCaster**。**AbilityDefinition.DefaultTargetConditionByTrigger(Trigger.Ammo)** 设为 **DifferentSide**，**分解射线** 等可省略重复的 **targetCondition**。
+- **Ability.Destroy**：工厂默认 **targetCondition** 改为 **敌方未摧毁**（**DifferentSide**，仍经 **WithNotDestroyedTarget**）；**牵引光束** 改为完整 **targetCondition: SameSide & ~Destroyed & FirstNonDestroyedRightOfCaster**。**分解射线**（**Destroy** + **Trigger.Ammo**）依赖工厂默认，无需再写 **targetCondition**。
 - **神经毒素**：「使用相邻武器时」改为 **trigger: UseOtherItem** 与完整 **condition**（含 **SameSide & DifferentFromCaster & AdjacentToCaster & WithTag(Weapon)**）。
 - **Tag 写法**：多标签「满足其一」优先 **WithTag(Tag.A | Tag.B | Tag.C)**。
 - **文档与规则**：**docs/implementation-notes.md**、**.cursor/rules/project-conventions.mdc**、**.cursor/rules/item-design.mdc**、**.cursor/rules/battle-simulator-ability-queue.mdc** 同步上述约定。
