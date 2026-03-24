@@ -316,6 +316,7 @@ public static class CommonSmall
             Abilities =
             [
                 Ability.Slow.Override(
+                    trigger: Trigger.UseOtherItem,
                     condition: Condition.AdjacentToCaster & Condition.WithTag(Tag.Weapon)
                 ),
             ],
@@ -339,6 +340,7 @@ public static class CommonSmall
                     priority: AbilityPriority.High
                 ),
                 Ability.Charge.Override(
+                    trigger: Trigger.UseOtherItem,
                     additionalCondition: Condition.WithTag(Tag.Weapon),
                     targetCondition: Condition.SameAsCaster
                 ),
@@ -425,7 +427,8 @@ public static class CommonSmall
                     priority: AbilityPriority.Low
                 ),
                 Ability.Charge.Override(
-                    condition: Condition.SameSide & Condition.DifferentFromCaster & Condition.WithTag(Tag.Tool),
+                    trigger: Trigger.UseOtherItem,
+                    additionalCondition: Condition.WithTag(Tag.Tool),
                     targetCondition: Condition.SameAsCaster
                 ),
             ],
@@ -438,7 +441,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "纳米机器人",
-            Desc = "▶ 每拥有一位伙伴，造成 {Custom_0} 伤害；每有一个相邻的伙伴，冷却时间缩短 1 秒",
+            Desc = "▶ 每有 1 件伙伴，造成 {Custom_0} 伤害；每有 1 件相邻的伙伴，此物品的冷却时间缩短 1 秒",
             Tags = Tag.Weapon | Tag.Friend,
             Cooldown = 6.0,
             Custom_0 = [15, 20, 25],
@@ -504,7 +507,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "友好玩偶",
-            Desc = "▶ 造成 {Damage} 伤害；若此为唯一伙伴，暴击率 {+Custom_0%}",
+            Desc = "▶ 造成 {Damage} 伤害；如果此物品是己方唯一的伙伴，此物品 {+Custom_0%} 暴击率",
             Tags = Tag.Weapon | Tag.Friend | Tag.Toy,
             Cooldown = 3.0,
             Damage = [5, 15, 25],
@@ -538,7 +541,7 @@ public static class CommonSmall
             Abilities =
             [
                 Ability.Destroy.Override(
-                    additionalTargetCondition: Condition.FirstNonDestroyedRightOfCaster
+                    targetCondition: Condition.SameSide & Condition.FirstNonDestroyedRightOfCaster
                 ),
                 Ability.Damage.Override(
                     trigger: Trigger.Destroy,
@@ -547,17 +550,7 @@ public static class CommonSmall
                 Ability.Damage.Override(
                     trigger: Trigger.Destroy,
                     condition: Condition.SameAsCaster
-                ).Override(
-                    apply: (ctx, ability) =>
-                    {
-                        // Trigger.Destroy 通过 InvokeTarget 传入被摧毁物品；额外伤害仅在其为大型或飞行时生效。
-                        var destroyed = ctx.InvokeTarget;
-                        if (destroyed == null) return;
-                        bool isLarge = (ctx.GetItemInt(destroyed, Key.Tags) & Tag.Large) != 0;
-                        bool inFlight = destroyed.InFlight || ctx.GetItemInt(destroyed, Key.InFlight) != 0;
-                        if (!isLarge && !inFlight) return;
-                        Apply.Damage(ctx, ability);
-                    }
+                        & (Condition.InvokeTargetWithTag(Tag.Large) | Condition.InvokeTargetInFlight)
                 ),
             ],
         };
@@ -590,7 +583,7 @@ public static class CommonSmall
         return new ItemTemplate
         {
             Name = "远古标本",
-            Desc = "▶ 治疗 {Heal} 生命值；▶ 造成 {Poison} 剧毒；每有一件相邻的水系、伙伴或遗物，此物品的冷却时间就缩短 1 秒",
+            Desc = "▶ 治疗 {Heal} 生命值；▶ 造成 {Poison} 剧毒；每有 1 件相邻的水系、伙伴或遗物，此物品的冷却时间缩短 1 秒",
             Tags = Tag.Friend | Tag.Relic | Tag.Aquatic,
             Cooldown = 5.0,
             Heal = [80, 120],
@@ -605,7 +598,7 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     Attribute = Key.CooldownMs,
-                    Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToCaster & (Condition.WithTag(Tag.Aquatic) | Condition.WithTag(Tag.Friend) | Condition.WithTag(Tag.Relic))),
+                    Value = Formula.Constant(-1000) * Formula.Count(Condition.AdjacentToCaster & Condition.WithTag(Tag.Aquatic | Tag.Friend | Tag.Relic)),
                 },
             ],
         };
@@ -649,12 +642,13 @@ public static class CommonSmall
             [
                 Ability.Slow.Override(
                     trigger: Trigger.Haste,
-                    condition: Condition.DifferentSide,
+                    condition: Condition.InvokeTargetDifferentSide,
                     additionalTargetCondition: Condition.SameAsInvokeTarget,
                     priority: AbilityPriority.High
                 ),
                 Ability.Haste.Override(
                     trigger: Trigger.Slow,
+                    condition: Condition.InvokeTargetSameSide,
                     additionalTargetCondition: Condition.SameAsInvokeTarget,
                     priority: AbilityPriority.High
                 ),
@@ -695,8 +689,6 @@ public static class CommonSmall
         db.Register(Proboscis());
         db.Register(FriendlyDoll());
         db.Register(TractorBeam());
-
-        db.Register(MoonOrb());
 
         db.DefaultMinTier = ItemTier.Gold;
         db.Register(Wand());

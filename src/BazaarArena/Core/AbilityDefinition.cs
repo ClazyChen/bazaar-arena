@@ -30,7 +30,9 @@ public class AbilityDefinition
     private static Formula DefaultTargetConditionByTrigger(int trigger) =>
         trigger == Trigger.UseItem
             ? Condition.SameAsCaster
-            : Condition.SameSide;
+            : trigger == Trigger.Ammo
+                ? Condition.DifferentSide
+                : Condition.SameSide;
 
     public AbilityDefinition Override(
         int? trigger = null,

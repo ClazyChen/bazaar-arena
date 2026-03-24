@@ -50,7 +50,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "暗影斗篷",
-            Desc = "使用此物品右侧的物品时，使之加速 {HasteSeconds} 秒；若为武器则伤害提高 {Custom_0}（限本场战斗）",
+            Desc = "使用此物品右侧的物品时，加速该物品 {HasteSeconds} 秒；若该物品为武器，其伤害提高 {Custom_0}（限本场战斗）",
             Tags = Tag.Apparel,
             Haste = [1.0, 2.0, 3.0, 4.0],
             Custom_0 = [3, 5, 7, 9],
@@ -76,7 +76,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "冰冻钝器",
-            Desc = "▶ 造成 {Damage} 伤害；▶ 冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒；触发冻结时，己方武器伤害提高 {Custom_0}（限本场战斗）",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 冻结 {FreezeTargetCount} 件物品 {FreezeSeconds} 秒；触发冻结时，武器伤害提高 {Custom_0}（限本场战斗）",
             Tags = Tag.Weapon,
             Cooldown = 9.0,
             Damage = [20, 40, 60, 80],
@@ -248,7 +248,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "宇宙炫羽",
-            Desc = "▶ {Custom_1} 件物品开始飞行；▶ 飞行物品暴击率 {+Custom_0%}；造成暴击或使用飞行物品时，为此物品充能 {ChargeSeconds} 秒",
+            Desc = "▶ {Custom_1} 件物品开始飞行；▶ 飞行物品暴击率提高 {+Custom_0%} （限本场战斗）；造成暴击或使用飞行物品时，为此物品充能 {ChargeSeconds} 秒",
             Tags = Tag.Relic,
             Cooldown = 4.0,
             Custom_0 = [5, 10, 15],
@@ -269,7 +269,7 @@ public static class CommonMedium
                     priority: AbilityPriority.Low
                 ).Also(
                     trigger: Trigger.UseOtherItem,
-                    condition: Condition.SameSide & Condition.InFlight
+                    additionalCondition: Condition.InFlight
                 ),
             ],
         };
@@ -308,7 +308,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "碾骨爪",
-            Desc = "▶ 造成伤害，等量于己方物品中最高的护盾值；▶ 护盾物品的护盾提高 {+Custom_0}（限本场战斗）",
+            Desc = "▶ 造成伤害，等量于己方物品中最高的护盾值；▶ 护盾物品的护盾提高 {Custom_0}（限本场战斗）",
             Tags = Tag.Weapon | Tag.Aquatic,
             Cooldown = 9.0,
             Custom_0 = [20, 40, 60],
@@ -394,7 +394,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "破冰尖镐",
-            Desc = "▶ 造成 {Damage} 伤害；▶ 解除己方物品的冻结效果；任意物品冻结时，为此物品充能 {ChargeSeconds} 秒；此物品冻结时，解除其冻结效果",
+            Desc = "▶ 造成 {Damage} 伤害；▶ 解除己方物品的冻结效果；任意物品被冻结时，为此物品充能 {ChargeSeconds} 秒；此物品被冻结时，解除其冻结效果",
             Tags = Tag.Weapon | Tag.Tool,
             Cooldown = 7.0,
             Damage = [100, 200, 300],
@@ -410,13 +410,14 @@ public static class CommonMedium
                 ),
                 Ability.Charge.Override(
                     trigger: Trigger.Freeze,
+                    condition: Condition.Always,
                     targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Low
                 ),
                 Ability.ReduceAttribute(Key.FreezeRemainingMs).Override(
                     trigger: Trigger.Freeze,
-                    condition: Condition.SameAsCaster,
-                    targetCondition: Condition.SameAsCaster & Condition.IsFrozen,
+                    condition: Condition.InvokeTargetSameAsCaster,
+                    targetCondition: Condition.SameAsCaster,
                     valueKey: Key.Custom_0,
                     effectLogName: "解除冻结",
                     priority: AbilityPriority.Low
@@ -431,7 +432,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "仿生手臂",
-            Desc = "▶ 此物品左侧每有一件物品，造成 {Custom_0} 伤害；此物品右侧每有一件科技物品，此物品的冷却时间缩短 1 秒",
+            Desc = "▶ 此物品左侧每有 1 件物品，造成 {Custom_0} 伤害；此物品右侧每有 1 件科技，此物品的冷却时间缩短 1 秒",
             Tags = Tag.Weapon | Tag.Tech,
             Cooldown = [8.0, 7.0, 6.0],
             Custom_0 = [50, 75, 100],
@@ -461,7 +462,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "时光指针",
-            Desc = "▶ 另一件工具的冷却时间缩短 1 秒（限本场战斗）；每有一件相邻的工具，此物品的冷却时间缩短 1 秒",
+            Desc = "▶ 使 1 件其他工具的冷却时间缩短 1 秒（限本场战斗）；每有 1 件相邻的工具，此物品的冷却时间缩短 1 秒",
             Tags = Tag.Relic | Tag.Tool,
             Cooldown = [9.0, 8.0, 7.0],
             Custom_0 = 1000,
@@ -469,8 +470,7 @@ public static class CommonMedium
             Abilities =
             [
                 Ability.ReduceAttribute(Key.CooldownMs).Override(
-                    targetCondition: Condition.SameSide,
-                    additionalTargetCondition: Condition.HasCooldown & Condition.DifferentFromCaster & Condition.WithTag(Tag.Tool),
+                    targetCondition: Condition.SameSide & Condition.HasCooldown & Condition.DifferentFromCaster & Condition.WithTag(Tag.Tool),
                     effectLogName: "冷却缩短"
                 ),
             ],
@@ -491,7 +491,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "祖特笛",
-            Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；相邻物品暴击率 {+Custom_0%}；造成暴击时，为此物品充能 {ChargeSeconds} 秒",
+            Desc = "▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；相邻物品 {+Custom_0%} 暴击率；造成暴击时，为此物品充能 {ChargeSeconds} 秒",
             Cooldown = 7.0,
             Slow = 2.0,
             SlowTargetCount = [2, 3],
@@ -563,7 +563,7 @@ public static class CommonMedium
                 ),
                 Ability.Charge.Override(
                     trigger: Trigger.Destroy,
-                    condition: Condition.SameAsCaster,
+                    condition: Condition.InvokeTargetSameAsCaster,
                     targetCondition: Condition.SameSide,
                     priority: AbilityPriority.Low
                 ),
@@ -574,8 +574,7 @@ public static class CommonMedium
                 {
                     Attribute = Key.Tags,
                     Condition = Condition.AdjacentToCaster,
-                    Value = Formula.Constant(Tag.Vehicle),
-                    Percent = false,
+                    Value = Formula.Constant(Tag.Vehicle)
                 },
                 new AuraDefinition
                 {
@@ -593,15 +592,14 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "生体融合臂",
-            Desc = "己方物品弹药耗尽时，造成 {Damage} 伤害；此物品左侧的弹药物品暴击率 +100%；此物品左侧的弹药物品最大弹药量 +1",
+            Desc = "己方物品弹药耗尽时，造成 {Damage} 伤害；此物品左侧的弹药物品 +100% 暴击率；此物品左侧的弹药物品 +1 最大弹药量",
             Tags = Tag.Weapon | Tag.Tool,
             Damage = [100, 200],
             Abilities =
             [
                 Ability.Damage.Override(
                     trigger: Trigger.Ammo,
-                    additionalCondition: Condition.AmmoDepleted,
-                    targetCondition: Condition.DifferentSide
+                    additionalCondition: Condition.AmmoDepleted
                 ),
             ],
             Auras =
@@ -610,8 +608,7 @@ public static class CommonMedium
                 {
                     Attribute = Key.CritRate,
                     Condition = Condition.LeftOfCaster & Condition.WithDerivedTag(DerivedTag.Ammo),
-                    Value = Formula.Constant(100),
-                    Percent = true,
+                    Value = Formula.Constant(100)
                 },
                 new AuraDefinition
                 {
@@ -629,7 +626,7 @@ public static class CommonMedium
         return new ItemTemplate
         {
             Name = "分解射线",
-            Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；此物品弹药耗尽时，摧毁 1 件敌方物品（Highest）",
+            Desc = "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；此物品弹药耗尽时，摧毁 {DestroyTargetCount} 件物品",
             Tags = Tag.Weapon | Tag.Tech | Tag.Ray,
             Cooldown = [3.0, 2.0],
             Damage = [100, 200],
@@ -640,7 +637,6 @@ public static class CommonMedium
                 Ability.Destroy.Override(
                     trigger: Trigger.Ammo,
                     condition: Condition.SameAsCaster & Condition.AmmoDepleted,
-                    targetCondition: Condition.DifferentSide,
                     priority: AbilityPriority.Highest
                 ),
             ],
@@ -710,8 +706,7 @@ public static class CommonMedium
                     targetCondition: Condition.AdjacentToCaster
                 ),
                 Ability.Shield.Override(
-                    trigger: Trigger.Destroy,
-                    condition: Condition.SameAsCaster
+                    trigger: Trigger.Destroy
                 ),
             ],
             Auras =

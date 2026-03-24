@@ -41,7 +41,8 @@ alwaysApply: false
 - **此物品右侧的武器**：紧邻右侧且为武器 → **Condition.RightOfSource & Condition.WithTag(Tag.Weapon)**。
 - **此物品左侧的武器**：紧邻左侧且为武器 → **Condition.LeftOfSource & Condition.WithTag(Tag.Weapon)**。
 - 「使用**其他**某类物品时」：须在 condition 中加 **Condition.DifferentFromSource**（触发者为「其他」物品），例如 `Condition.SameSide & Condition.WithTag(Tag.Weapon) & Condition.DifferentFromSource`。
-- **「此物品被加速时」/「此物品被减速时」**：用 `trigger: Trigger.Haste` / `Trigger.Slow`，且 **condition: Condition.SameAsInvokeTarget**（被加速/被减速的是本物品才触发），**targetCondition: Condition.SameAsSource**（效果施加给自身）。参考毒须鲶、皮皮虾。
+- **「此物品被加速时」/「此物品被减速时」**：用 `trigger: Trigger.Haste` / `Trigger.Slow`，且 **condition: Condition.SameAsInvokeTarget**（被加速/被减速的是本物品才触发），**targetCondition: Condition.SameAsCaster**（效果施加给自身）。参考毒须鲶、皮皮虾。
+- **「敌方物品被加速时」「己方物品被减速时」**（效果施加给**被加速/被减速的那一件**，且与**谁施加**无关）：`Trigger.Haste` / `Trigger.Slow`，**condition** 分别为 **InvokeTargetDifferentSide** / **InvokeTargetSameSide**，**additionalTargetCondition: Condition.SameAsInvokeTarget**。参考月光宝珠。
 - **「每有一个相邻的…，此物品 +1 多重释放」**：多重释放 = 相邻数量，用 **Formula.Count(AdjacentToSource & ...)**，**不要**加 `Formula.Constant(1) +`。参考迷幻蝠鲼、鹦鹉皮特。
 
 ## 效果文案与实现对应

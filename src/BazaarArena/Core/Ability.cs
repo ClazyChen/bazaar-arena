@@ -84,10 +84,10 @@ public static class Ability
     /// <summary>开始飞行：对己方满足目标条件且未飞行的物品设为飞行（等价于 AddAttribute(Key.InFlight) 设 1）。默认 additionalTargetCondition 为 NotInFlight；日志显示「开始飞行」。</summary>
     public static AbilityDefinition StartFlying => AddAttribute(Key.InFlight).Override(valueKey: Key.Custom_0, additionalTargetCondition: ~Condition.InFlight, effectLogName: "开始飞行");
 
-    /// <summary>摧毁（Apply.Destroy）。默认触发器 UseItem；目标默认己方、未摧毁；定制用 .Override(...)。</summary>
+    /// <summary>摧毁（Apply.Destroy）。默认触发器 UseItem；目标默认敌方、未摧毁；摧毁己方或相邻等需 .Override(targetCondition: ...) 显式指定。</summary>
     public static AbilityDefinition Destroy => CreateBase(AbilityType.Destroy, Core.Apply.Destroy).Override(
         applyCritMultiplier: false,
-        targetCondition: WithNotDestroyedTarget(Condition.SameSide),
+        targetCondition: WithNotDestroyedTarget(Condition.DifferentSide),
         targetCountKey: Key.DestroyTargetCount);
 
     /// <summary>修复（Apply.Repair）。默认触发器 UseItem；目标默认己方（实现内与 Condition.Destroyed 组合）；定制用 .Override(...)。</summary>

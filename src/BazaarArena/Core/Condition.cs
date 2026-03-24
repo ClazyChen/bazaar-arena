@@ -28,6 +28,16 @@ public static class Condition
         ctx.InvokeTarget != null
         && ctx.Item.SideIndex == ctx.InvokeTarget.SideIndex
         && ctx.Item.ItemIndex == ctx.InvokeTarget.ItemIndex ? 1 : 0);
+    public static Formula InvokeTargetSameAsCaster { get; } = new(ctx =>
+        ctx.InvokeTarget != null
+        && ctx.InvokeTarget.SideIndex == ctx.Caster.SideIndex
+        && ctx.InvokeTarget.ItemIndex == ctx.Caster.ItemIndex ? 1 : 0);
+    public static Formula InvokeTargetSameSide { get; } = new(ctx =>
+        ctx.InvokeTarget != null
+        && ctx.InvokeTarget.SideIndex == ctx.Caster.SideIndex ? 1 : 0);
+    public static Formula InvokeTargetDifferentSide { get; } = new(ctx =>
+        ctx.InvokeTarget != null
+        && ctx.InvokeTarget.SideIndex != ctx.Caster.SideIndex ? 1 : 0);
 
     public static Formula AdjacentToCaster { get; } = new(ctx =>
     {
@@ -106,6 +116,12 @@ public static class Condition
 
     public static Formula WithTag(int tagMask) => new(ctx => (ctx.GetItemInt(ctx.Item, Key.Tags) & tagMask) != 0 ? 1 : 0);
     public static Formula WithDerivedTag(int tagMask) => new(ctx => (ctx.GetItemInt(ctx.Item, Key.DerivedTags) & tagMask) != 0 ? 1 : 0);
+    public static Formula InvokeTargetWithTag(int tagMask) => new(ctx =>
+        ctx.InvokeTarget != null
+        && (ctx.GetItemInt(ctx.InvokeTarget, Key.Tags) & tagMask) != 0 ? 1 : 0);
+    public static Formula InvokeTargetInFlight { get; } = new(ctx =>
+        ctx.InvokeTarget != null
+        && (ctx.InvokeTarget.InFlight || ctx.GetItemInt(ctx.InvokeTarget, Key.InFlight) != 0) ? 1 : 0);
     public static Formula LeftMost(Formula inner) => new(ctx =>
     {
         if (inner.Evaluate(ctx) == 0) return 0;

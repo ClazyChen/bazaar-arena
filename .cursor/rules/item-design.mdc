@@ -70,7 +70,7 @@ globs: "**/ItemDatabase/**","**/Core/BattleContext*.cs","**/Core/Apply.cs","**/C
 - **Condition**：引起触发的物品（Item）需满足；UseItem 默认 SameAsSource。
 - **TargetCondition**：效果施加给谁；AddAttribute 默认 SameSide，ReduceAttribute 默认 DifferentSide。
 - **「此物品获得 X」**：TargetCondition 须为 **SameAsSource**，Condition 描述谁触发（如 AdjacentToSource）。
-- **触发器指向目标**：在效果层用 **`additionalTargetCondition: Condition.SameAsInvokeTarget`** 等表达（**`AbilityDefinition.Override` 已无 `invokeTargetCondition` 参数**）。牵引光束「被毁物品为大型或飞行」用 **Condition.WithTag(Tag.Large) | Condition.InFlight**。
+- **触发器指向目标**：效果选「被触发指向的那一件」用 **`additionalTargetCondition: Condition.SameAsInvokeTarget`**。若语义须判断 **InvokeTarget** 的阵营/标签/飞行（与 **Source** 无关），在 **TriggerEntry.Condition** 中用 **`Condition.InvokeTargetSameSide`**、**InvokeTargetDifferentSide**、**InvokeTargetSameAsCaster**、**InvokeTargetWithTag**、**InvokeTargetInFlight** 等（**`AbilityDefinition.Override` 已无 `invokeTargetCondition` 参数**）。**`Ability.Damage`** 不读 **TargetCondition**，「仅当 InvokeTarget 满足 X 才造成伤害」须把门控写在 **condition**（如牵引光束第二段：**SameAsCaster & (InvokeTargetWithTag(Large) | InvokeTargetInFlight)**）。
 
 ---
 
@@ -80,7 +80,7 @@ globs: "**/ItemDatabase/**","**/Core/BattleContext*.cs","**/Core/Apply.cs","**/C
 - **ValueKey 与 ctx.Value**：指定了 ValueKey 的能力由模拟器解析并填入 **`ctx.Value`**；AddAttribute(Key.InFlight) 等可用 **value: 1** 在 Override 中指定。
 - **AddAttribute / ReduceAttribute**：目标默认己方/敌方；用 **additionalTargetCondition** 收窄（如 `Condition.WithTag(Tag.Weapon)`），或 **targetCondition** 完全自定义。定义时在默认目标上**仅追加条件**时优先用 **additionalTargetCondition**，避免写完整 targetCondition（如「己方且飞行」用 `additionalTargetCondition: Condition.InFlight`）。
 - **SetAttributeOnCasterSide**：对己方目标将属性设为某值（如 StopFlying 设 Key.InFlight 为 0），对应 **`Apply.StopFlying`**（**`Core/Apply.cs`**）。
-- **摧毁**：**Ability.Destroy**，目标默认己方未摧毁；「右侧第一个未摧毁」用 **additionalTargetCondition: Condition.FirstNonDestroyedRightOfSource**。先触发 Destroy 再标记 Destroyed。
+- **摧毁**：**Ability.Destroy** 默认 **targetCondition** 为 **敌方未摧毁**（**DifferentSide**，工厂 **WithNotDestroyedTarget**）。摧毁己方「右侧第一件未摧毁」等须 **完整 targetCondition**（如 **`SameSide & ~Destroyed & FirstNonDestroyedRightOfCaster`**），不可在默认敌方下仅叠 **additionalTargetCondition**。**Override(trigger: Trigger.Ammo)** 时 **TargetCondition** 默认 **DifferentSide**，与 Destroy 默认一致。先 **InvokeTrigger(Destroy)** 再标记 **Destroyed**。
 - **物品类型 Tag**：由 **EnsureTypeTags** 按 Damage/Burn/Poison/Heal/Shield/Regen 及 SameAsSource 光环自动补充，无需手写。
 
 ---

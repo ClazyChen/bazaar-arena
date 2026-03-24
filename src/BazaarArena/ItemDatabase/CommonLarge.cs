@@ -80,7 +80,7 @@ public static class CommonLarge
         return new ItemTemplate
         {
             Name = "废品场长枪",
-            Desc = "▶ 每拥有一件小型物品（含储存箱等效）造成 {Custom_0} 伤害",
+            Desc = "▶ 每有 1 件小型物品（含储存箱等效），造成 {Custom_0} 伤害",
             Tags = Tag.Weapon,
             Cooldown = 11.0,
             Damage = 0,
@@ -149,7 +149,7 @@ public static class CommonLarge
         return new ItemTemplate
         {
             Name = "以太能量导体",
-            Desc = "触发剧毒或使用遗物时，己方物品暴击率 {+Custom_0%}（限本场战斗）；造成暴击时，为己方遗物充能 {ChargeSeconds} 秒",
+            Desc = "触发剧毒时，己方物品暴击率提高 {+Custom_0%}（限本场战斗）；使用遗物时，己方物品暴击率提高 {+Custom_0%}（限本场战斗）；造成暴击时，为己方遗物充能 {ChargeSeconds} 秒",
             Tags = Tag.Relic,
             Cooldown = 0,
             Custom_0 = [2, 4],
@@ -158,18 +158,17 @@ public static class CommonLarge
             [
                 Ability.AddAttribute(Key.CritRate).Override(
                     trigger: Trigger.UseOtherItem,
-                    condition: Condition.SameSide & Condition.WithTag(Tag.Relic),
-                    priority: AbilityPriority.Medium
+                    additionalCondition: Condition.WithTag(Tag.Relic),
+                    priority: AbilityPriority.Low
                 ),
                 Ability.AddAttribute(Key.CritRate).Override(
                     trigger: Trigger.Poison,
-                    condition: ~Condition.WithTag(Tag.Relic),
+                    additionalCondition: ~Condition.WithTag(Tag.Relic),
                     priority: AbilityPriority.Low
                 ),
                 Ability.Charge.Override(
                     trigger: Trigger.Crit,
-                    additionalTargetCondition: Condition.WithTag(Tag.Relic),
-                    priority: AbilityPriority.Low
+                    additionalTargetCondition: Condition.WithTag(Tag.Relic)
                 ),
             ],
         };

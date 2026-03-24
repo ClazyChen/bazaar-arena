@@ -1,5 +1,17 @@
 # 变更记录
 
+## Condition 扩展、Destroy 默认敌方、物品语义修正（2026-03-25）
+
+- **Condition（InvokeTarget 相关）**：新增 **InvokeTargetWithTag**、**InvokeTargetInFlight**、**InvokeTargetSameSide**、**InvokeTargetDifferentSide**、**InvokeTargetSameAsCaster**；用于在 **TriggerEntry.Condition** 中按「触发器指向的那件物品」判阵营/标签/飞行，而不误用 **Source**（施加者）。牵引光束 **Trigger.Destroy** 第二段伤害改为条件式 **SameAsCaster & (InvokeTargetWithTag(Large) | InvokeTargetInFlight)**，替代自定义 **apply**。
+- **月光宝珠**：**Trigger.Haste** / **Trigger.Slow** 分别用 **InvokeTargetDifferentSide** / **InvokeTargetSameSide** + **SameAsInvokeTarget**，表达「敌方物品被加速 / 己方物品被减速」且与施加者阵营无关。
+- **破冰尖镐**：**Trigger.Freeze** 下「此物品被冻结时解除」用 **condition: InvokeTargetSameAsCaster**。
+- **Ability.Destroy**：工厂默认 **targetCondition** 改为 **敌方未摧毁**（**DifferentSide**，仍经 **WithNotDestroyedTarget**）；**牵引光束** 改为完整 **targetCondition: SameSide & ~Destroyed & FirstNonDestroyedRightOfCaster**。**AbilityDefinition.DefaultTargetConditionByTrigger(Trigger.Ammo)** 设为 **DifferentSide**，**分解射线** 等可省略重复的 **targetCondition**。
+- **神经毒素**：「使用相邻武器时」改为 **trigger: UseOtherItem** 与完整 **condition**（含 **SameSide & DifferentFromCaster & AdjacentToCaster & WithTag(Weapon)**）。
+- **Tag 写法**：多标签「满足其一」优先 **WithTag(Tag.A | Tag.B | Tag.C)**。
+- **文档与规则**：**docs/implementation-notes.md**、**.cursor/rules/project-conventions.mdc**、**.cursor/rules/item-design.mdc**、**.cursor/rules/battle-simulator-ability-queue.mdc** 同步上述约定。
+
+---
+
 ## Core/BattleSimulator 收敛与文档规则同步（2026-03-24）
 
 - **收敛**：删除 `BattleSimulator/AbilityQueueEntry.cs`；`BattleState` 改为 `InvokeTrigger(..., executeImmediate)` 显式下传 Immediate 执行；`AbilityState.InvokeTargets` 从 `List` 迁移为 `Queue`；新增 `BattleState.SwapAbilityBuckets()`；`BattleSimulator` 提取 `DrainCurrentAbilityBuckets(...)` 去重步骤 8 与 AboutToLose 后 drain。

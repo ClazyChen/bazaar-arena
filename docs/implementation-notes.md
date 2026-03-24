@@ -857,11 +857,11 @@
 
 ## 摧毁（Destroy）与「施加摧毁时」触发器
 
-- **Trigger.Destroy**：`Core/Trigger.cs` 中 `Destroy = "摧毁物品时"`。语义：**任意物品施加摧毁时触发**，实现同 Slow：Condition 判定施加摧毁的物品，InvokeTargetCondition 判定被摧毁的物品；`EnsureTriggerCondition` 默认 `Condition.SameSide`，能力上常用 `SameAsSource` 表示「仅施加摧毁的物品自身」触发。
-- **统一摧毁接口**：使用 **Ability.Destroy** + **Effect.DestroyApply**，接口与 Slow 类似；目标要求**未摧毁**（`Condition.NotDestroyed`），**不**要求有冷却。目标默认己方(SameSide)；当 **targetCondition** 限定为敌方（如 **Condition.DifferentSide**）时，**ApplyDestroy** 从敌方阵营选目标并施加摧毁（入队时用敌方 SideIndex）。`targetCondition` / `additionalTargetCondition` 与其余多目标能力一致。`ItemTemplate.DestroyTargetCount` 默认 1，可省略。多目标选取**一律随机**（不放回）；「右侧下一件」等语义用**条件**限定候选池，例如 **Condition.FirstNonDestroyedRightOfSource**（右侧第一个未摧毁物品，可能隔多格），池中至多一个，随机选 1 即得。
-- **Condition.FirstNonDestroyedRightOfSource**：被评估对象是能力持有者右侧第一个未摧毁的物品（同侧、ItemIndex > Source.ItemIndex，且中间槽位均已摧毁）。牵引光束用 `Ability.Destroy(additionalTargetCondition: Condition.FirstNonDestroyedRightOfSource)`，不再使用特化 Effect。
-- **执行顺序**：「施加摧毁」必须在**将目标标记为 Destroyed 之前**调用 `InvokeTrigger`。实现：`ApplyDestroy` 选目标后对每个目标调用 `OnDestroyApplied(i)`；回调内先 `InvokeTrigger(Trigger.Destroy, ...)`，再 `target.Destroyed = true`。
-- **ConditionContext**：与 Slow 相同。被摧毁目标为大型或飞行时用 **`InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight`**。
+- **Trigger.Destroy**：`Core/Trigger.cs` 中 `Destroy = 7`。语义：**任意物品施加摧毁时触发**；`EnsureTriggerCondition` 默认 **TriggerEntry.Condition** 为 `Condition.SameSide`（表现为「己方施加」）；能力上常用 **condition: Condition.SameAsCaster** 表示「仅施加摧毁的能力持有者自身」触发。被摧毁的那一件由 **`InvokeTriggerMany`/`InvokeTarget`** 传入；对 **被摧毁目标** 的门控应写在 **TriggerEntry.Condition** 中，使用 **`BattleContext.InvokeTarget`**（见 **Condition.InvokeTarget\*** 与 **SameAsInvokeTarget**），**不是**已移除的顶层 `invokeTargetCondition` 参数。
+- **统一摧毁接口**：**Ability.Destroy**（`Core/Ability.cs`）默认 **targetCondition** 为 **敌方、未摧毁**（**`WithNotDestroyedTarget(Condition.DifferentSide)`**）。**`ApplyDestroy`**（`BattleContext.EffectApply.cs`）将传入条件再 **`& ~Condition.Destroyed`** 后，先扫 **CurrentSide** 再扫 **OppSide** 选目标。摧毁己方、自身、相邻等须 **完整重写 targetCondition**（必要时含 **`SameSide & ~Condition.Destroyed & …`**）；**不可**在默认 **DifferentSide** 下仅用 **additionalTargetCondition** 叠出「同侧右侧第一件」语义（会与默认敌方 **与** 成永假）。**牵引光束**：`targetCondition: Condition.SameSide & ~Condition.Destroyed & Condition.FirstNonDestroyedRightOfCaster`。**`ItemTemplate.DestroyTargetCount`** 默认 1，可省略。多目标选取**随机不放回**；「右侧第一件」等用条件收窄候选池（代码条件名为 **FirstNonDestroyedRightOfCaster**）。
+- **Trigger.Ammo 与 TargetCondition**：调用 **`AbilityDefinition.Override(trigger: Trigger.Ammo)`** 时会把 **TargetCondition** 设为 **`DefaultTargetConditionByTrigger(Ammo)` = `Condition.DifferentSide`**，与 **Destroy** 默认敌方一致；「弹药耗尽摧毁敌方」类能力可不再写 **targetCondition**。
+- **执行顺序**：「施加摧毁」必须在**将目标标记为 Destroyed 之前**调用 `InvokeTrigger`。实现：`ApplyDestroy` 选目标后对每个目标 `InvokeTriggerMany(Trigger.Destroy, ...)`，再 **`target.Destroyed = true`**。
+- **Trigger.Destroy 附加伤害（例：牵引光束）**：**`Ability.Damage`** 的 **Apply** 不读 **TargetCondition**，第二段伤害是否触发须在 **TriggerEntry.Condition** 中写 **`Condition.SameAsCaster & (Condition.InvokeTargetWithTag(Tag.Large) | Condition.InvokeTargetInFlight)`**（或等价组合）。
 - **已移除**：`Effect.DestroyNextItemToRightOfCasterApply`、`ChargeSelfApply`（充能统一用 ChargeApply + targetCondition/SameAsSource 与默认 ChargeTargetCount=1）。
 - **日志与颜色**：`EffectLogFormat.FormatEffectValue("摧毁"|"修复", value)` 返回空串；`EffectKeywordFormatting` 中「摧毁」rgb(255,50,120)，「修复」rgb(143,252,188)。见 **.cursor/rules/data-and-logging.mdc**。
 
@@ -874,7 +874,8 @@
 ### Trigger.Ammo「此物品」弹药耗尽
 
 - **语义**：文案「**此物品**弹药耗尽时」表示仅当**能力持有者自身**消耗弹药且当次耗尽时触发，不是「己方任意弹药物品耗尽」。
-- **写法**：除 **additionalCondition: Condition.AmmoDepleted** 外，须显式 **condition: Condition.SameAsSource**（引起触发的物品 = 能力持有者）。否则 Trigger.Ammo 默认 Condition 为 SameSide，会误触发于己方其他弹药物品耗尽。
+- **写法**：除 **additionalCondition: Condition.AmmoDepleted** 外，须显式 **condition: Condition.SameAsCaster**（引起触发的物品 = 能力持有者）。否则 **Trigger.Ammo** 默认 **TriggerEntry.Condition** 为 **SameSide**，会误触发于己方其他弹药物品耗尽。
+- **TargetCondition**：**Override(trigger: Trigger.Ammo)** 时 **TargetCondition** 默认 **DifferentSide**（与 **Ability.Destroy** 默认敌方摧毁一致）；需摧毁己方等目标时须显式 **targetCondition**。
 
 ### 物品文案中「Highest」/「Lowest」与目标选取
 
@@ -923,7 +924,7 @@
 
 - **统一语义**：Freeze、Slow、Crit、Destroy 均为「**任意物品**施加/造成 xx 时触发」；默认 `Condition.SameSide` 表现为己方，重写 Condition（如 `DifferentSide`）可实现对方触发。与 UseItem（仅己方施放）、BattleStart 一致由 `InvokeTrigger` 统一处理，Condition 评估时 Source=能力持有者、Item=引起触发的物品。
 - **命名统一**：触发器常量与 UseItem/Freeze/Slow 保持一致风格：`Trigger.Crit`、`Trigger.Destroy`（不再使用 OnCrit、OnDestroy），便于后续扩展新触发器时命名一致。
-- **Destroy 与 Slow 同构**：施加摧毁时用 Condition 判定施加者、InvokeTargetCondition 判定被摧毁物品，context 传 `InvokeTargetItem`（ItemState 引用），无需 DestroyedItemTemplate 等专用字段；被毁目标为大型或飞行用 `InvokeTargetCondition = Condition.WithTag(Tag.Large) | Condition.InFlight`。
+- **Destroy 与 Slow 同构**：施加摧毁时 **Source** = 施加者、**InvokeTarget** = 被摧毁物品（**ItemState**）；对 **InvokeTarget** 的判定在 **TriggerEntry.Condition** 中用 **Condition.InvokeTarget\*** / **SameAsInvokeTarget** 等表达（**已无** `invokeTargetCondition` 顶层参数）。
 
 ---
 
