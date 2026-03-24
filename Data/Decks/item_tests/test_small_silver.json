@@ -56,8 +56,7 @@
 
     { "id": "ss_tractor_beam_p1", "deck": { "playerLevel": 5, "slots": [
       { "itemName": "牵引光束", "tier": 1 },
-      { "itemName": "宇宙护符", "tier": 1 },
-      { "itemName": "友好玩偶", "tier": 3 }
+      { "itemName": "临时避难所", "tier": 0 }
     ] } },
     { "id": "ss_tractor_beam_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
   ]

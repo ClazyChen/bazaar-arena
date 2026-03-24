@@ -11,7 +11,6 @@ public static class AttributeLogNames
         [Key.Burn] = "灼烧",
         [Key.Poison] = "剧毒",
         [Key.CritRate] = "暴击率",
-        [Key.Gold] = "金币",
         [Key.InFlight] = "飞行",
         [Key.FreezeRemainingMs] = "冻结",
         [Key.CooldownMs] = "冷却时间",

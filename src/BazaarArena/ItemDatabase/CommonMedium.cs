@@ -602,7 +602,7 @@ public static class CommonMedium
             [
                 Ability.Damage.Override(
                     trigger: Trigger.Ammo,
-                    additionalCondition: Condition.AmmoDepleted,
+                    condition: Condition.SameSide & Condition.AmmoDepleted,
                     targetCondition: Condition.DifferentSide
                 ),
             ],

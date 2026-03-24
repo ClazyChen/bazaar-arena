@@ -15,6 +15,17 @@ public class BattleSimulator
     private const int BurnTickIntervalMs = 500;
     private const int PoisonRegenTickIntervalMs = 1000;
     private BattleSessionTables? _sessionTables;
+    private readonly Dictionary<Deck, PreparedDeck> _preparedDeckCache = [];
+
+    private sealed class PreparedDeck
+    {
+        public required object ResolverRef { get; init; }
+        public required int Signature { get; init; }
+        public required int MaxHp { get; init; }
+        public required int Shield { get; init; }
+        public required int Regen { get; init; }
+        public required List<ItemState> FlattenedItems { get; init; }
+    }
 
     /// <summary>根据玩家等级返回默认生命上限（来自 levelups.json 映射，1 级 300，之后按 JSON 累加）。</summary>
     public static int DefaultMaxHpForLevel(int level) => LevelUpTable.GetMaxHp(level);
@@ -27,8 +38,10 @@ public class BattleSimulator
         IBattleLogSink logSink,
         BattleLogLevel logLevel)
     {
-        var side0 = BuildSide(deck1, resolver);
-        var side1 = BuildSide(deck2, resolver);
+        var prepared0 = PrepareDeck(deck1, resolver);
+        var prepared1 = PrepareDeck(deck2, resolver);
+        var side0 = prepared0 == null ? null : BuildSide(prepared0);
+        var side1 = prepared1 == null ? null : BuildSide(prepared1);
         if (side0 == null || side1 == null)
             throw new ArgumentException("卡组中包含未知物品，无法构建战斗状态。");
 
@@ -51,6 +64,8 @@ public class BattleSimulator
         battleState.Side[1] = side1;
         battleState.SessionTables = _sessionTables;
         battleState.AbilityStates.Clear();
+        InitializeAmmoRemaining(side0, battleState);
+        InitializeAmmoRemaining(side1, battleState);
 
         void RunAbilityApply(int abilityId, ItemState? invokeTargetItem, bool allowCastQueueEnqueue)
         {
@@ -223,24 +238,96 @@ public class BattleSimulator
         }
     }
 
-    private static BattleSide? BuildSide(Deck deck, IItemTemplateResolver resolver)
+    private PreparedDeck? PrepareDeck(Deck deck, IItemTemplateResolver resolver)
     {
-                var side = new BattleSide
+        int signature = ComputeDeckSignature(deck);
+        if (_preparedDeckCache.TryGetValue(deck, out var cached)
+            && ReferenceEquals(cached.ResolverRef, resolver)
+            && cached.Signature == signature)
         {
-            MaxHp = deck.PlayerOverrides?.GetValueOrDefault("MaxHp", LevelUpTable.GetMaxHp(deck.PlayerLevel)) ?? LevelUpTable.GetMaxHp(deck.PlayerLevel),
-            Shield = deck.PlayerOverrides?.GetValueOrDefault("Shield", 0) ?? 0,
-            Regen = deck.PlayerOverrides?.GetValueOrDefault("Regen", 0) ?? 0,
-        };
-        side.Hp = side.MaxHp;
-                foreach (var entry in deck.Slots)
+            return cached;
+        }
+
+        int maxHp = deck.PlayerOverrides?.GetValueOrDefault("MaxHp", LevelUpTable.GetMaxHp(deck.PlayerLevel)) ?? LevelUpTable.GetMaxHp(deck.PlayerLevel);
+        int shield = deck.PlayerOverrides?.GetValueOrDefault("Shield", 0) ?? 0;
+        int regen = deck.PlayerOverrides?.GetValueOrDefault("Regen", 0) ?? 0;
+        var flattened = new List<ItemState>(deck.Slots.Count);
+        foreach (var entry in deck.Slots)
         {
-                    var t = resolver.GetTemplate(entry.ItemName);
+            var t = resolver.GetTemplate(entry.ItemName);
             if (t == null) return null;
             var item = new ItemState(t, entry.Tier);
             ApplyOverrides(item, entry.Overrides);
-            side.Items.Add(item);
+            flattened.Add(item);
+        }
+
+        var prepared = new PreparedDeck
+        {
+            ResolverRef = resolver,
+            Signature = signature,
+            MaxHp = maxHp,
+            Shield = shield,
+            Regen = regen,
+            FlattenedItems = flattened,
+        };
+        _preparedDeckCache[deck] = prepared;
+        return prepared;
+    }
+
+    private static BattleSide BuildSide(PreparedDeck prepared)
+    {
+        var side = new BattleSide
+        {
+            MaxHp = prepared.MaxHp,
+            Shield = prepared.Shield,
+            Regen = prepared.Regen,
+        };
+        side.Hp = side.MaxHp;
+        foreach (var item in prepared.FlattenedItems)
+        {
+            side.Items.Add(new ItemState(item));
         }
         return side;
+    }
+
+    private static int ComputeDeckSignature(Deck deck)
+    {
+        var hash = new HashCode();
+        hash.Add(deck.PlayerLevel);
+        if (deck.PlayerOverrides != null)
+        {
+            foreach (var kv in deck.PlayerOverrides.OrderBy(k => k.Key, StringComparer.Ordinal))
+            {
+                hash.Add(kv.Key, StringComparer.Ordinal);
+                hash.Add(kv.Value);
+            }
+        }
+        hash.Add(deck.Slots.Count);
+        foreach (var slot in deck.Slots)
+        {
+            hash.Add(slot.ItemName, StringComparer.Ordinal);
+            hash.Add((int)slot.Tier);
+            if (slot.Overrides != null)
+            {
+                foreach (var kv in slot.Overrides.OrderBy(k => k.Key, StringComparer.Ordinal))
+                {
+                    hash.Add(kv.Key, StringComparer.Ordinal);
+                    hash.Add(kv.Value);
+                }
+            }
+        }
+        return hash.ToHashCode();
+    }
+
+    private static void InitializeAmmoRemaining(BattleSide side, BattleState battleState)
+    {
+        for (int i = 0; i < side.Items.Count; i++)
+        {
+            var item = side.Items[i];
+            int ammoCap = battleState.GetItemInt(item, Key.AmmoCap);
+            if (ammoCap > 0 && item.AmmoRemaining <= 0)
+                item.AmmoRemaining = ammoCap;
+        }
     }
 
     private static BattleSessionTables BuildSessionTables(BattleSide side0, BattleSide side1)
@@ -332,11 +419,19 @@ public class BattleSimulator
                         {
                             bool isCrit = false;
                             int critDamagePercent = 200;
-                            int critRate = item.GetAttribute(Key.CritRate);
+                            // 暴击判定应读取运行时生效值（含光环），否则类似「唯一伙伴+暴击率光环」无法生效。
+                            var critCtx = new BattleContext
+                            {
+                                BattleState = battleState,
+                                Item = item,
+                                Caster = item,
+                                Source = item,
+                            };
+                            int critRate = critCtx.GetItemInt(item, Key.CritRate);
                             if (critRate > 0 && ThreadLocalRandom.Next100() < critRate)
                             {
                                 isCrit = true;
-                                critDamagePercent = item.GetAttribute(Key.CritDamage);
+                                critDamagePercent = critCtx.GetItemInt(item, Key.CritDamage);
                                 if (critDamagePercent <= 0) critDamagePercent = 200;
                             }
                             item.CritTimeMs = battleState.TimeMs;

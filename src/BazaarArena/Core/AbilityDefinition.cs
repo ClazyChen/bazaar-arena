@@ -27,6 +27,11 @@ public class AbilityDefinition
                 ? (Condition.SameSide & Condition.DifferentFromCaster)
                 : Condition.SameSide;
 
+    private static Formula DefaultTargetConditionByTrigger(int trigger) =>
+        trigger == Trigger.UseItem
+            ? Condition.SameAsCaster
+            : Condition.SameSide;
+
     public AbilityDefinition Override(
         int? trigger = null,
         AbilityPriority? priority = null,
@@ -44,7 +49,11 @@ public class AbilityDefinition
             TriggerEntries.Add(new TriggerEntry { Trigger = Trigger.UseItem, Condition = Condition.SameAsCaster });
 
         if (trigger != null)
+        {
             TriggerEntries[0].Trigger = trigger.Value;
+            TriggerEntries[0].Condition = DefaultConditionByTrigger(trigger.Value);
+            TargetCondition = DefaultTargetConditionByTrigger(trigger.Value);
+        }
         if (priority != null) Priority = priority.Value;
         if (valueKey != null) ValueKey = valueKey.Value;
         if (applyCritMultiplier != null) ApplyCritMultiplier = applyCritMultiplier.Value;

@@ -44,6 +44,19 @@ public sealed class BattleState
         return Side[sideId].Items[itemId];
     }
 
+    public int GetItemInt(ItemState item, int key)
+    {
+        var ctx = new BattleContext
+        {
+            BattleState = this,
+            Item = item,
+            Caster = item,
+            Source = item,
+            InvokeTarget = null,
+        };
+        return ctx.GetItemInt(item, key);
+    }
+
     private static void DecodeAbilityId(int abilityId, out int sideId, out int itemId, out int abilityIndex)
     {
         sideId = abilityId & 1;

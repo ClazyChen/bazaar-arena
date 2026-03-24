@@ -498,6 +498,7 @@ public static class CommonSmall
             [
                 Ability.Damage.Override(
                     trigger: Trigger.Slow,
+                    condition: Condition.SameSide,
                     priority: AbilityPriority.Low
                 ),
             ],
@@ -552,8 +553,18 @@ public static class CommonSmall
                 ),
                 Ability.Damage.Override(
                     trigger: Trigger.Destroy,
-                    condition: Condition.SameAsCaster,
-                    additionalCondition: Condition.WithTag(Tag.Large) | Condition.InFlight
+                    condition: Condition.SameAsCaster
+                ).Override(
+                    apply: (ctx, ability) =>
+                    {
+                        // Trigger.Destroy 通过 InvokeTarget 传入被摧毁物品；额外伤害仅在其为大型或飞行时生效。
+                        var destroyed = ctx.InvokeTarget;
+                        if (destroyed == null) return;
+                        bool isLarge = (ctx.GetItemInt(destroyed, Key.Tags) & Tag.Large) != 0;
+                        bool inFlight = destroyed.InFlight || ctx.GetItemInt(destroyed, Key.InFlight) != 0;
+                        if (!isLarge && !inFlight) return;
+                        Apply.Damage(ctx, ability);
+                    }
                 ),
             ],
         };

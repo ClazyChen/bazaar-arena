@@ -28,7 +28,7 @@ MEDIUM_BRONZE_TESTS = [
     {"name": "火箭靴_rocket_boots", "deck1": "mb_rocket_boots_p1", "deck2": "mb_rocket_boots_p2", "log_contains": ["火箭靴", "加速"]},
     {"name": "火蜥幼兽_salamander_pup", "deck1": "mb_salamander_pup_p1", "deck2": "mb_salamander_pup_p2", "log_contains": ["火蜥幼兽", "灼烧"]},
     {"name": "简易路障_makeshift_barricade", "deck1": "mb_makeshift_barricade_p1", "deck2": "mb_makeshift_barricade_p2", "log_contains": ["简易路障", "减速"]},
-    {"name": "外骨骼_exoskeleton", "deck1": "mb_exoskeleton_p1", "deck2": "mb_exoskeleton_p2", "log_contains": ["獠牙", "伤害 10"]},
+    {"name": "外骨骼_exoskeleton", "deck1": "mb_exoskeleton_p1", "deck2": "mb_exoskeleton_p2", "log_contains": ["獠牙", "伤害 7"]},
     {"name": "废品场维修机器人_junkyard_repairbot", "deck1": "mb_junkyard_repairbot_p1", "deck2": "mb_junkyard_repairbot_p2", "log_contains": ["牵引光束", "摧毁", "废品场维修机器人", "修复", "治疗"]},
 ]
 

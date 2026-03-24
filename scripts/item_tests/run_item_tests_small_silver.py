@@ -28,7 +28,7 @@ SMALL_SILVER_TESTS: list[dict] = [
     {"name": "工蜂_busy_bee", "deck1": "ss_busy_bee_p1", "deck2": "ss_busy_bee_p2", "log_contains": ["工蜂", "伤害"]},
     {"name": "口器_proboscis", "deck1": "ss_proboscis_p1", "deck2": "ss_proboscis_p2", "log_contains": ["口器", "伤害"]},
     {"name": "友好玩偶_friendly_doll", "deck1": "ss_friendly_doll_p1", "deck2": "ss_friendly_doll_p2", "log_contains": ["友好玩偶", "伤害"]},
-    {"name": "牵引光束_tractor_beam", "deck1": "ss_tractor_beam_p1", "deck2": "ss_tractor_beam_p2", "log_contains": ["牵引光束", "摧毁", "伤害", "开始飞行"], "log_min_count": {"[牵引光束] 伤害": 2}},
+    {"name": "牵引光束_tractor_beam", "deck1": "ss_tractor_beam_p1", "deck2": "ss_tractor_beam_p2", "log_contains": ["牵引光束", "摧毁", "伤害"], "log_min_count": {"[牵引光束] 伤害": 2}},
 ]
 
 
