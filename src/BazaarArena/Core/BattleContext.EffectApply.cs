@@ -11,45 +11,45 @@ public sealed partial class BattleContext
             baseValue = defaultValue;
         if (baseValue == 0 && fallbackValue != 0)
             baseValue = fallbackValue;
-        return applyCritMultiplier ? baseValue * CritMultiplier : baseValue;
+        return applyCritMultiplier ? baseValue * CurrentCritMultiplier : baseValue;
     }
 
-    public int ApplyDamageToOpp(int value, bool isBurn) => BattleSideDamage.ApplyDamageToSide(Opp, value, isBurn);
-    public void HealCaster(int amount) { Side.Hp = Math.Min(Side.MaxHp, Side.Hp + amount); }
-    public void AddBurnToOpp(int value) => Opp.Burn += value;
-    public void AddPoisonToOpp(int value) => Opp.Poison += value;
-    public void AddPoisonToCaster(int value) => Side.Poison += value;
-    public void AddShieldToCaster(int value) => Side.Shield += value;
+    public int ApplyDamageToOpp(int value, bool isBurn) => BattleSideDamage.ApplyDamageToSide(OppSide, value, isBurn);
+    public void HealCaster(int amount) { CurrentSide.Hp = Math.Min(CurrentSide.MaxHp, CurrentSide.Hp + amount); }
+    public void AddBurnToOpp(int value) => OppSide.Burn += value;
+    public void AddPoisonToOpp(int value) => OppSide.Poison += value;
+    public void AddPoisonToCaster(int value) => CurrentSide.Poison += value;
+    public void AddShieldToCaster(int value) => CurrentSide.Shield += value;
 
     public int HealCasterWithDebuffClear(int requestedHeal)
     {
-        int room = Math.Max(0, Side.MaxHp - Side.Hp);
+        int room = Math.Max(0, CurrentSide.MaxHp - CurrentSide.Hp);
         int heal = Math.Min(requestedHeal, room);
-        Side.Hp += heal;
+        CurrentSide.Hp += heal;
         int clear = RatioUtil.PercentFloor(requestedHeal, 5);
-        Side.Burn = Math.Max(0, Side.Burn - clear);
-        Side.Poison = Math.Max(0, Side.Poison - clear);
+        CurrentSide.Burn = Math.Max(0, CurrentSide.Burn - clear);
+        CurrentSide.Poison = Math.Max(0, CurrentSide.Poison - clear);
         return heal;
     }
 
-    public void AddRegenToCaster(int value) => Side.Regen += value;
-    public void AddGoldToCaster(int value) => Side.Gold += value;
+    public void AddRegenToCaster(int value) => CurrentSide.Regen += value;
+    public void AddGoldToCaster(int value) => CurrentSide.Gold += value;
 
     public void ChargeCasterItem(int chargeMs, out bool fullAndShouldCast)
     {
         fullAndShouldCast = false;
-        int cooldownMs = Side.GetItemInt(Caster.ItemIndex, Key.CooldownMs);
+        int cooldownMs = CurrentSide.GetItemInt(Caster.ItemIndex, Key.CooldownMs);
         if (cooldownMs <= 0) return;
         int newElapsed = Math.Min(cooldownMs, Caster.CooldownElapsedMs + chargeMs);
         int added = newElapsed - Caster.CooldownElapsedMs;
         Caster.CooldownElapsedMs = newElapsed;
         if (added > 0)
-            LogSink.OnEffect(Caster, Caster.Template.Name, "充能", added, TimeMs, isCrit: false);
-        if (Caster.CooldownElapsedMs >= cooldownMs && ChargeInducedCastQueue != null)
+            BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, "充能", added, BattleState.TimeMs, isCrit: false);
+        if (Caster.CooldownElapsedMs >= cooldownMs)
         {
-            int ammoCap = Side.GetItemInt(Caster.ItemIndex, Key.AmmoCap);
+            int ammoCap = CurrentSide.GetItemInt(Caster.ItemIndex, Key.AmmoCap);
             if (ammoCap <= 0 || Caster.AmmoRemaining > 0)
-                ChargeInducedCastQueue.Add(Caster);
+                BattleState.CastQueue.Add(Caster);
             fullAndShouldCast = true;
             Caster.CooldownElapsedMs = 0;
         }
@@ -58,13 +58,10 @@ public sealed partial class BattleContext
     private BattleContext BuildContext(ItemState item) => new()
     {
         BattleState = BattleState,
-        Side = Side,
-        Opp = Opp,
         Item = item,
         Caster = Caster,
-        Source = Caster,
+        Source = item,
         InvokeTarget = InvokeTarget,
-        TimeMs = TimeMs,
     };
 
     private List<int> GetTargetIndices(BattleSide fromSide, int targetCount, Formula? condition)
@@ -91,7 +88,7 @@ public sealed partial class BattleContext
     {
         if (condition == null) return [];
         var pool = new List<(BattleSide side, int index)>();
-        foreach (var fromSide in new[] { Side, Opp })
+        foreach (var fromSide in new[] { CurrentSide, OppSide })
         {
             for (int i = 0; i < fromSide.Items.Count; i++)
             {
@@ -121,11 +118,11 @@ public sealed partial class BattleContext
             targetNames.Add(perTarget(target, i));
         }
         string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
-        LogSink.OnEffect(Caster, Caster.Template.Name, effectName, logValue ?? indices.Count, TimeMs, isCrit: false, extraSuffix);
-        if (effectTriggerName != null && TriggerInvoker != null)
+        BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, effectName, logValue ?? indices.Count, BattleState.TimeMs, isCrit: false, extraSuffix);
+        if (effectTriggerName != null && BattleState.TriggerInvoker != null)
         {
             foreach (int i in indices)
-                TriggerInvoker(effectTriggerName.Value, Caster, fromSide.Items[i], 1);
+                BattleState.TriggerInvoker(effectTriggerName.Value, Caster, fromSide.Items[i], 1);
         }
     }
 
@@ -137,11 +134,11 @@ public sealed partial class BattleContext
         foreach (var (side, index) in targets)
             targetNames.Add(perTarget(side, index));
         string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
-        LogSink.OnEffect(Caster, Caster.Template.Name, effectName, logValue ?? targets.Count, TimeMs, isCrit: false, extraSuffix);
-        if (effectTriggerName != null && TriggerInvoker != null)
+        BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, effectName, logValue ?? targets.Count, BattleState.TimeMs, isCrit: false, extraSuffix);
+        if (effectTriggerName != null && BattleState.TriggerInvoker != null)
         {
             foreach (var (side, index) in targets)
-                TriggerInvoker(effectTriggerName.Value, Caster, side.Items[index], 1);
+                BattleState.TriggerInvoker(effectTriggerName.Value, Caster, side.Items[index], 1);
         }
     }
 
@@ -152,11 +149,11 @@ public sealed partial class BattleContext
         if (cooldownMs <= 0) return target.Template.Name;
         int newElapsed = Math.Min(cooldownMs, target.CooldownElapsedMs + chargeMs);
         target.CooldownElapsedMs = newElapsed;
-        if (target.CooldownElapsedMs >= cooldownMs && side == Side && ChargeInducedCastQueue != null)
+        if (target.CooldownElapsedMs >= cooldownMs && side == CurrentSide)
         {
             int ammoCap = side.GetItemInt(itemIndex, Key.AmmoCap);
             if (ammoCap <= 0 || target.AmmoRemaining > 0)
-                ChargeInducedCastQueue.Add(target);
+                BattleState.CastQueue.Add(target);
             target.CooldownElapsedMs = 0;
         }
         return target.Template.Name;
@@ -195,11 +192,11 @@ public sealed partial class BattleContext
         ApplyToTargetsBothSides(targetCount, cond, "充能", chargeMs, (side, index) => ChargeItemAt(side, index, chargeMs), null);
     }
 
-    public void ApplyHaste(int hasteMs, int targetCount, Formula? targetCondition = null)
+    public void ApplyHaste(int hasteMs, int targetCount, Formula? targetCondition = null, string? effectLogName = null)
     {
         if (hasteMs <= 0 || targetCount <= 0) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.HasCooldown;
-        ApplyToTargetsBothSides(targetCount, cond, EffectLogName ?? "加速", hasteMs, (side, index) =>
+        ApplyToTargetsBothSides(targetCount, cond, effectLogName ?? "加速", hasteMs, (side, index) =>
         {
             var t = side.Items[index];
             t.HasteRemainingMs += hasteMs;
@@ -207,22 +204,22 @@ public sealed partial class BattleContext
         }, Trigger.Haste);
     }
 
-    public void ApplyReload(int amount, int targetCount, Formula? targetCondition = null)
+    public void ApplyReload(int amount, int targetCount, Formula? targetCondition = null, string? effectLogName = null)
     {
         if (amount <= 0 || targetCount <= 0) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed & Condition.WithTag(DerivedTag.Ammo);
-        ApplyToTargetsBothSides(targetCount, cond, EffectLogName ?? "装填", amount, (side, index) =>
+        ApplyToTargetsBothSides(targetCount, cond, effectLogName ?? "装填", amount, (side, index) =>
         {
             var t = side.Items[index];
             int cap = t.GetAttribute(Key.AmmoCap);
             int add = Math.Min(amount, Math.Max(0, cap - t.AmmoRemaining));
             t.AmmoRemaining += add;
-            if (side == Side && ChargeInducedCastQueue != null)
+            if (side == CurrentSide)
             {
                 int cooldownMs = side.GetItemInt(index, Key.CooldownMs);
                 if (cooldownMs > 0 && t.CooldownElapsedMs >= cooldownMs && (cap <= 0 || t.AmmoRemaining > 0))
                 {
-                    ChargeInducedCastQueue.Add(t);
+                    BattleState.CastQueue.Add(t);
                     t.CooldownElapsedMs = 0;
                 }
             }
@@ -234,7 +231,7 @@ public sealed partial class BattleContext
     {
         if (targetCount <= 0) return;
         var condition = (targetCondition ?? Condition.SameSide) & Condition.Destroyed;
-        ApplyToTargets(Side, targetCount, condition, "修复", null, (t, _) => { t.Destroyed = false; t.CooldownElapsedMs = 0; return t.Template.Name; }, null);
+        ApplyToTargets(CurrentSide, targetCount, condition, "修复", null, (t, _) => { t.Destroyed = false; t.CooldownElapsedMs = 0; return t.Template.Name; }, null);
     }
 
     private void ApplyToSideWithCondition(BattleSide fromSide, Formula? targetCondition, string logEffectName, int logValue, Func<ItemState, int, string?> perItem)
@@ -256,21 +253,21 @@ public sealed partial class BattleContext
         }
     }
 
-    public void AddAttributeToCasterSide(int attributeKey, int value, Formula? targetCondition, int maxTargetCount = 0)
+    public void AddAttributeToCasterSide(int attributeKey, int value, Formula? targetCondition, int maxTargetCount = 0, string? effectLogName = null)
     {
         if (value <= 0 || targetCondition == null) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed;
         if (attributeKey == Key.CritRate)
             cond &= Condition.CanCrit;
-        string logName = EffectLogName ?? (AttributeLogNames.Get(attributeKey) + "提高");
+        string logName = effectLogName ?? (AttributeLogNames.Get(attributeKey) + "提高");
         if (maxTargetCount > 0)
         {
-            var indices = GetTargetIndices(Side, maxTargetCount, cond);
+            var indices = GetTargetIndices(CurrentSide, maxTargetCount, cond);
             if (indices.Count == 0) return;
             var targetNames = new List<string>();
             foreach (int i in indices)
             {
-                var wi = Side.Items[i];
+                var wi = CurrentSide.Items[i];
                 if (attributeKey == Key.Damage) { wi.SetAttribute(Key.Damage, wi.GetAttribute(Key.Damage) + value); targetNames.Add(wi.Template.Name); }
                 else if (attributeKey == Key.Poison) { wi.SetAttribute(Key.Poison, wi.GetAttribute(Key.Poison) + value); targetNames.Add(wi.Template.Name); }
                 else if (attributeKey == Key.CritRate) { wi.SetAttribute(Key.CritRate, wi.GetAttribute(Key.CritRate) + value); targetNames.Add(wi.Template.Name); }
@@ -278,10 +275,10 @@ public sealed partial class BattleContext
                 else { wi.SetAttribute(attributeKey, wi.GetAttribute(attributeKey) + value); targetNames.Add(wi.Template.Name); }
             }
             if (targetNames.Count > 0 && !string.IsNullOrEmpty(logName))
-                LogSink.OnEffect(Caster, Caster.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
+                BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, logName, value, BattleState.TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
             return;
         }
-        ApplyToSideWithCondition(Side, cond, logName, value, (wi, _) =>
+        ApplyToSideWithCondition(CurrentSide, cond, logName, value, (wi, _) =>
         {
             if (attributeKey == Key.Damage) { wi.SetAttribute(Key.Damage, wi.GetAttribute(Key.Damage) + value); return wi.Template.Name; }
             if (attributeKey == Key.Poison) { wi.SetAttribute(Key.Poison, wi.GetAttribute(Key.Poison) + value); return wi.Template.Name; }
@@ -292,11 +289,11 @@ public sealed partial class BattleContext
         });
     }
 
-    public void SetAttributeOnCasterSide(int attributeKey, int value, Formula? targetCondition)
+    public void SetAttributeOnCasterSide(int attributeKey, int value, Formula? targetCondition, string? effectLogName = null)
     {
         if (targetCondition == null) return;
-        string logName = EffectLogName ?? (attributeKey == Key.InFlight && value == 0 ? "结束飞行" : AttributeLogNames.Get(attributeKey) + "变更");
-        ApplyToSideWithCondition(Side, targetCondition, logName, 0, (wi, _) =>
+        string logName = effectLogName ?? (attributeKey == Key.InFlight && value == 0 ? "结束飞行" : AttributeLogNames.Get(attributeKey) + "变更");
+        ApplyToSideWithCondition(CurrentSide, targetCondition, logName, 0, (wi, _) =>
         {
             if (attributeKey == Key.InFlight) { wi.InFlight = value != 0; return wi.Template.Name; }
             wi.SetAttribute(attributeKey, value);
@@ -328,23 +325,23 @@ public sealed partial class BattleContext
             wi.SetAttribute(attributeKey, newVal);
             targetNames.Add(wi.Template.Name);
 
-            if (attributeKey == Key.CooldownMs && side == Side && wi.CooldownElapsedMs >= newVal && ChargeInducedCastQueue != null)
+            if (attributeKey == Key.CooldownMs && side == CurrentSide && wi.CooldownElapsedMs >= newVal)
             {
                 int ammoCap = side.GetItemInt(index, Key.AmmoCap);
                 if (ammoCap <= 0 || wi.AmmoRemaining > 0)
-                    ChargeInducedCastQueue.Add(wi);
+                    BattleState.CastQueue.Add(wi);
                 wi.CooldownElapsedMs = 0;
             }
         }
         if (targetNames.Count > 0 && !string.IsNullOrEmpty(logName))
-            LogSink.OnEffect(Caster, Caster.Template.Name, logName, value, TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
+            BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, logName, value, BattleState.TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
     }
 
     public void ReportTriggerCause(int triggerName) =>
-        TriggerInvoker?.Invoke(triggerName, Caster, null, 1);
+        BattleState.TriggerInvoker?.Invoke(triggerName, Caster, null, 1);
 
     public void LogEffect(string effectName, int value, string? extraSuffix = null, bool showCrit = false) =>
-        LogSink.OnEffect(Caster, Caster.Template.Name, effectName, value, TimeMs, showCrit, extraSuffix);
+        BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, effectName, value, BattleState.TimeMs, showCrit, extraSuffix);
 
     public void SetCasterInFlight(bool inFlight) => Caster.InFlight = inFlight;
 
@@ -352,18 +349,18 @@ public sealed partial class BattleContext
     {
         if (targetCount <= 0) return;
         var cond = (targetCondition ?? Condition.SameSide) & Condition.NotDestroyed;
-        var sideIndices = GetTargetIndices(Side, targetCount, cond);
+        var sideIndices = GetTargetIndices(CurrentSide, targetCount, cond);
         BattleSide targetSide;
         List<int> indices;
         if (sideIndices.Count > 0)
         {
-            targetSide = Side;
+            targetSide = CurrentSide;
             indices = sideIndices;
         }
         else
         {
-            indices = GetTargetIndices(Opp, targetCount, cond);
-            targetSide = Opp;
+            indices = GetTargetIndices(OppSide, targetCount, cond);
+            targetSide = OppSide;
         }
         if (indices.Count == 0) return;
         var targetNames = indices.Select(i => targetSide.Items[i].Template.Name).ToList();
@@ -372,7 +369,7 @@ public sealed partial class BattleContext
         foreach (int i in indices)
         {
             var target = targetSide.Items[i];
-            TriggerInvoker?.Invoke(Trigger.Destroy, Caster, target, null);
+            BattleState.TriggerInvoker?.Invoke(Trigger.Destroy, Caster, target, null);
             target.Destroyed = true;
         }
     }

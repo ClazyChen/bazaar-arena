@@ -9,6 +9,8 @@ internal static class BattleSimulatorThreadScratch
 
     [ThreadStatic] private static int s_invokeDepth;
     [ThreadStatic] private static List<int>?[]? s_invokeIndexLists;
+    [ThreadStatic] private static Core.BattleContext?[]? s_invokeContexts;
+    [ThreadStatic] private static BattleState?[]? s_invokeBattleStates;
 
     [ThreadStatic] private static int s_execDepth;
     [ThreadStatic] private static Core.BattleContext?[]? s_execContexts;
@@ -17,14 +19,20 @@ internal static class BattleSimulatorThreadScratch
     internal static void BeginInvokeTrigger()
     {
         s_invokeIndexLists ??= new List<int>[MaxNesting];
+        s_invokeContexts ??= new Core.BattleContext[MaxNesting];
+        s_invokeBattleStates ??= new BattleState[MaxNesting];
         if (s_invokeDepth >= MaxNesting)
             throw new InvalidOperationException("InvokeTrigger 嵌套超过上限，请检查是否出现意外的同步递归。");
         int d = s_invokeDepth++;
         s_invokeIndexLists[d] ??= new List<int>(32);
         s_invokeIndexLists[d]!.Clear();
+        s_invokeContexts[d] ??= new Core.BattleContext();
+        s_invokeBattleStates[d] ??= new BattleState();
     }
 
     internal static List<int> CurrentInvokeIndices() => s_invokeIndexLists![s_invokeDepth - 1]!;
+    internal static Core.BattleContext CurrentInvokeContext() => s_invokeContexts![s_invokeDepth - 1]!;
+    internal static BattleState CurrentInvokeBattleState() => s_invokeBattleStates![s_invokeDepth - 1]!;
 
     internal static void EndInvokeTrigger()
     {

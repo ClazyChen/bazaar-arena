@@ -377,7 +377,7 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     Attribute = Key.Multicast,
-                    SourceCondition = Condition.InFlight,
+                    Condition = Condition.SameAsCaster & Formula.Caster(Key.InFlight),
                     Value = Formula.Source(Key.Custom_0),
                 },
             ],
@@ -524,7 +524,7 @@ public static class CommonSmall
                 new AuraDefinition
                 {
                     Attribute = Key.CritRate,
-                    SourceCondition = Condition.OnlyCompanion,
+                    Condition = Condition.SameAsCaster & Condition.OnlyCompanion,
                     Value = Formula.Source(Key.Custom_0),
                 },
             ],

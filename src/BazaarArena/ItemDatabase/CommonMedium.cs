@@ -573,8 +573,10 @@ public static class CommonMedium
             [
                 new AuraDefinition
                 {
+                    Attribute = Key.Tags,
                     Condition = Condition.AdjacentToCaster,
-                    GrantedTags = [Tag.Vehicle],
+                    Value = Formula.Constant(Tag.Vehicle),
+                    Percent = false,
                 },
                 new AuraDefinition
                 {

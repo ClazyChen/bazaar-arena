@@ -49,8 +49,11 @@ public class BattleSimulator
         foreach (var kv in _sessionTables.AbilityRefIdToState)
             _abilityStates[kv.Key] = kv.Value;
 
-        int timeMs = 0;
-        List<ItemState> castQueue = [];
+        var battleState = new BattleState();
+        battleState.Side[0] = side0;
+        battleState.Side[1] = side1;
+        battleState.SessionTables = _sessionTables;
+        battleState.LogSink = logSink;
         var abilityCurrent = new AbilityQueueBuckets();
         var abilityNext = new AbilityQueueBuckets();
 
@@ -59,20 +62,20 @@ public class BattleSimulator
         int sandstormIntervalMs = 300;
         int sandstormDamage = 1;
 
-        for (int frame = 0; ; frame++, timeMs += FrameMs)
+        for (int frame = 0; ; frame++, battleState.TimeMs += FrameMs)
         {
             if (logLevel == BattleLogLevel.Detailed)
-                logSink.OnFrameStart(timeMs, frame);
-            logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);
+                logSink.OnFrameStart(battleState.TimeMs, frame);
+            logSink.OnHpSnapshot(battleState.TimeMs, side0.Hp, side1.Hp);
 
             // 1. 第 0 帧触发「战斗开始」：统一 invoke 入队，仅 Immediate 入 current、其余入 next，步骤 8 再执行
             if (frame == 0)
                 InvokeTrigger(Trigger.BattleStart, null, null, 0, side0, side1, abilityCurrent, abilityNext);
 
             // 2. 处理冷却，充能完成则加入施放队列（冻结时冷却不推进）
-            castQueue.Clear();
-            ProcessCooldown(side0, timeMs, castQueue);
-            ProcessCooldown(side1, timeMs, castQueue);
+            battleState.CastQueue.Clear();
+            ProcessCooldown(side0, battleState.TimeMs, battleState.CastQueue);
+            ProcessCooldown(side1, battleState.TimeMs, battleState.CastQueue);
 
             // 3. 加速、减速、冻结剩余时间减少 50ms（放在冷却之后，保证持续时间足额）
             foreach (var side in new[] { side0, side1 })
@@ -86,27 +89,27 @@ public class BattleSimulator
             }
 
             // 4. 1000ms 倍数：剧毒、生命再生
-            if (timeMs > 0 && timeMs % PoisonRegenTickIntervalMs == 0)
+            if (battleState.TimeMs > 0 && battleState.TimeMs % PoisonRegenTickIntervalMs == 0)
             {
-                SettlePoison(side0, side1, logSink, timeMs);
-                SettlePoison(side1, side0, logSink, timeMs);
-                SettleRegen(side0, logSink, timeMs);
-                SettleRegen(side1, logSink, timeMs);
+                SettlePoison(side0, side1, logSink, battleState.TimeMs);
+                SettlePoison(side1, side0, logSink, battleState.TimeMs);
+                SettleRegen(side0, logSink, battleState.TimeMs);
+                SettleRegen(side1, logSink, battleState.TimeMs);
             }
 
             // 5. 500ms 倍数：灼烧
-            if (timeMs > 0 && timeMs % BurnTickIntervalMs == 0)
+            if (battleState.TimeMs > 0 && battleState.TimeMs % BurnTickIntervalMs == 0)
             {
-                SettleBurn(side0, side1, logSink, timeMs);
-                SettleBurn(side1, side0, logSink, timeMs);
+                SettleBurn(side0, side1, logSink, battleState.TimeMs);
+                SettleBurn(side1, side0, logSink, battleState.TimeMs);
             }
 
             // 6. 沙尘暴
-            if (timeMs >= SandstormStartMs && timeMs < SandstormEndMs && timeMs >= sandstormNextTickMs)
+            if (battleState.TimeMs >= SandstormStartMs && battleState.TimeMs < SandstormEndMs && battleState.TimeMs >= sandstormNextTickMs)
             {
-                ApplySandstorm(side0, sandstormDamage, logSink, timeMs);
-                ApplySandstorm(side1, sandstormDamage, logSink, timeMs);
-                logSink.OnSandstormTick(sandstormDamage, timeMs);
+                ApplySandstorm(side0, sandstormDamage, logSink, battleState.TimeMs);
+                ApplySandstorm(side1, sandstormDamage, logSink, battleState.TimeMs);
+                logSink.OnSandstormTick(sandstormDamage, battleState.TimeMs);
                 if (sandstormIntervalMs > 140)
                 {
                     sandstormIntervalMs -= 20;
@@ -114,21 +117,21 @@ public class BattleSimulator
                 }
                 else
                     sandstormDamage += 2;
-                sandstormNextTickMs = timeMs + sandstormIntervalMs;
+                sandstormNextTickMs = battleState.TimeMs + sandstormIntervalMs;
             }
 
             // 7-8. 施放队列产生的能力入 next 各桶（下一帧才处理）；步骤 8 只处理 current 六桶；延后/未消耗的入 next；仅步骤 9 对调 current/next 引用
             do
             {
-                var toProcess = new List<ItemState>(castQueue);
-                castQueue.Clear();
+                var toProcess = new List<ItemState>(battleState.CastQueue);
+                battleState.CastQueue.Clear();
                 // 7. 遍历本轮施放队列，用触发器调用方式加入能力队列（先合并 current 再 next，都没有则入 next；仅 Immediate 入 current）
                 foreach (var item in toProcess)
                 {
                     var side = item.SideIndex == 0 ? side0 : side1;
                     int ammoCap = side.GetItemInt(item.ItemIndex, Key.AmmoCap);
                     int multicast = side.GetItemInt(item.ItemIndex, Key.Multicast);
-                    InvokeTrigger(Trigger.UseItem, item, new TriggerInvokeContext { Multicast = multicast, InvokeTargetItem = item }, timeMs, side0, side1, abilityCurrent, abilityNext,
+                    InvokeTrigger(Trigger.UseItem, item, new TriggerInvokeContext { Multicast = multicast, InvokeTargetItem = item }, battleState.TimeMs, side0, side1, abilityCurrent, abilityNext,
                         executeImmediate: (owner, abilityIdx, ability) =>
                         {
                             if (_sessionTables == null) return;
@@ -143,13 +146,13 @@ public class BattleSimulator
                                 }
                             }
                             if (abilityRef != null)
-                                ExecuteOneEffect(abilityRef, null, false, 200, side0, side1, timeMs, logSink, castQueue, abilityCurrent, abilityNext);
+                                ExecuteOneEffect(abilityRef, null, side0, side1, battleState.TimeMs, logSink, battleState.CastQueue, abilityCurrent, abilityNext);
                         });
                     if (ammoCap > 0)
                         item.AmmoRemaining = Math.Max(0, item.AmmoRemaining - 1);
-                    logSink.OnCast(item, item.Template.Name, timeMs, ammoCap > 0 ? item.AmmoRemaining : null);
+                    logSink.OnCast(item, item.Template.Name, battleState.TimeMs, ammoCap > 0 ? item.AmmoRemaining : null);
                     if (ammoCap > 0)
-                        InvokeTrigger(Trigger.Ammo, item, null, timeMs, side0, side1, abilityCurrent, abilityNext);
+                        InvokeTrigger(Trigger.Ammo, item, null, battleState.TimeMs, side0, side1, abilityCurrent, abilityNext);
                 }
 
                 // 8. 处理能力队列（只处理 current 六桶）；桶序 = Immediate→Lowest，桶内 FIFO。与上次触发间隔不足 250ms 的条目写入 next 对应桶留到下一帧再判。
@@ -163,20 +166,20 @@ public class BattleSimulator
                             continue;
                         var item = abilityRef.Owner;
                         var ability = abilityRef.Ability;
-                        if (state.LastTriggerMs != int.MinValue && timeMs - state.LastTriggerMs < TriggerIntervalMs)
+                        if (state.LastTriggerMs != int.MinValue && battleState.TimeMs - state.LastTriggerMs < TriggerIntervalMs)
                         {
                             AddEntryToBucketsByAbilityPriority(abilityNext, abilityRef);
                             continue;
                         }
                         var side = item.SideIndex == 0 ? side0 : side1;
                         var opp = item.SideIndex == 0 ? side1 : side0;
-                        state.LastTriggerMs = timeMs;
+                        state.LastTriggerMs = battleState.TimeMs;
                         bool canCrit = ItemHasAnyCrittableField(item) && ability.Apply != null && ability.ApplyCritMultiplier && ability.UseSelf;
                         bool isCrit = false;
                         int critDamagePercent = 200;
                         if (canCrit)
                         {
-                            if (item.CritTimeMs == timeMs)
+                            if (item.CritTimeMs == battleState.TimeMs)
                             {
                                 isCrit = item.IsCritThisUse;
                                 critDamagePercent = item.CritDamagePercentThisUse;
@@ -190,11 +193,11 @@ public class BattleSimulator
                                     critDamagePercent = item.GetAttribute(Key.CritDamage);
                                     if (critDamagePercent <= 0) critDamagePercent = 200;
                                 }
-                                item.CritTimeMs = timeMs;
+                                item.CritTimeMs = battleState.TimeMs;
                                 item.IsCritThisUse = isCrit;
                                 item.CritDamagePercentThisUse = critDamagePercent;
                                 if (isCrit)
-                                    InvokeTrigger(Trigger.Crit, item, null, timeMs, side0, side1, abilityCurrent, abilityNext);
+                                    InvokeTrigger(Trigger.Crit, item, null, battleState.TimeMs, side0, side1, abilityCurrent, abilityNext);
                             }
                         }
                         ItemState? invokeTarget = null;
@@ -203,14 +206,14 @@ public class BattleSimulator
                             invokeTarget = state.InvokeTargets[0];
                             state.InvokeTargets.RemoveAt(0);
                         }
-                        ExecuteOneEffect(abilityRef, invokeTarget, isCrit, critDamagePercent, side0, side1, timeMs, logSink, castQueue, abilityCurrent, abilityNext);
+                        ExecuteOneEffect(abilityRef, invokeTarget, side0, side1, battleState.TimeMs, logSink, battleState.CastQueue, abilityCurrent, abilityNext);
                         state.PendingCount--;
                         if (state.PendingCount > 0)
                             AddEntryToBucketsByAbilityPriority(abilityNext, abilityRef);
                     }
                     bucket.Clear();
                 }
-            } while (castQueue.Count > 0);
+            } while (battleState.CastQueue.Count > 0);
 
             // 9. 能力队列更新到下一帧：对调 current/next，下一帧步骤 8 直接处理原 next 各桶；清空新的 next（原 current 已空桶，Clear 仅复位容量语义）
             (abilityCurrent, abilityNext) = (abilityNext, abilityCurrent);
@@ -222,9 +225,9 @@ public class BattleSimulator
             var aboutToLoseCurrent = new AbilityQueueBuckets();
             var aboutToLoseNext = new AbilityQueueBuckets();
             if (dead0)
-                InvokeTrigger(Trigger.AboutToLose, null, null, timeMs, side0, side1, aboutToLoseCurrent, aboutToLoseNext, null, 0);
+                InvokeTrigger(Trigger.AboutToLose, null, null, battleState.TimeMs, side0, side1, aboutToLoseCurrent, aboutToLoseNext, null, 0);
             if (dead1)
-                InvokeTrigger(Trigger.AboutToLose, null, null, timeMs, side0, side1, aboutToLoseCurrent, aboutToLoseNext, null, 1);
+                InvokeTrigger(Trigger.AboutToLose, null, null, battleState.TimeMs, side0, side1, aboutToLoseCurrent, aboutToLoseNext, null, 1);
             while (!aboutToLoseCurrent.IsEmpty)
             {
                 for (int pbi = 0; pbi < AbilityQueueBuckets.BucketCount; pbi++)
@@ -241,7 +244,7 @@ public class BattleSimulator
                             invokeTarget = state.InvokeTargets[0];
                             state.InvokeTargets.RemoveAt(0);
                         }
-                        ExecuteOneEffect(abilityRef, invokeTarget, false, 200, side0, side1, timeMs, logSink, null, aboutToLoseCurrent, aboutToLoseNext);
+                        ExecuteOneEffect(abilityRef, invokeTarget, side0, side1, battleState.TimeMs, logSink, null, aboutToLoseCurrent, aboutToLoseNext);
                         state.PendingCount = Math.Max(0, state.PendingCount - 1);
                         if (state.PendingCount > 0)
                             AddEntryToBucketsByAbilityPriority(aboutToLoseNext, abilityRef);
@@ -253,28 +256,28 @@ public class BattleSimulator
             dead1 = side1.Hp <= 0;
             if (dead0 && dead1)
             {
-                logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);
-                logSink.OnResult(-1, timeMs, true);
+                logSink.OnHpSnapshot(battleState.TimeMs, side0.Hp, side1.Hp);
+                logSink.OnResult(-1, battleState.TimeMs, true);
                 return -1;
             }
             if (dead1)
             {
-                logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);
-                logSink.OnResult(0, timeMs, false);
+                logSink.OnHpSnapshot(battleState.TimeMs, side0.Hp, side1.Hp);
+                logSink.OnResult(0, battleState.TimeMs, false);
                 return 0;
             }
             if (dead0)
             {
-                logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);
-                logSink.OnResult(1, timeMs, false);
+                logSink.OnHpSnapshot(battleState.TimeMs, side0.Hp, side1.Hp);
+                logSink.OnResult(1, battleState.TimeMs, false);
                 return 1;
             }
 
             // 11. 沙尘暴 120s 结束判平局
-            if (timeMs >= SandstormEndMs)
+            if (battleState.TimeMs >= SandstormEndMs)
             {
-                logSink.OnHpSnapshot(timeMs, side0.Hp, side1.Hp);
-                logSink.OnResult(-1, timeMs, true);
+                logSink.OnHpSnapshot(battleState.TimeMs, side0.Hp, side1.Hp);
+                logSink.OnResult(-1, battleState.TimeMs, true);
                 return -1;
             }
         }
@@ -477,6 +480,14 @@ public class BattleSimulator
         BattleSimulatorThreadScratch.BeginInvokeTrigger();
         try
         {
+            var triggerState = BattleSimulatorThreadScratch.CurrentInvokeBattleState();
+            triggerState.Side[0] = side0;
+            triggerState.Side[1] = side1;
+            triggerState.SessionTables = _sessionTables;
+            triggerState.TimeMs = timeMs;
+            var triggerCtx = BattleSimulatorThreadScratch.CurrentInvokeContext();
+            triggerCtx.BattleState = triggerState;
+
             void VisitOwnerSide(int ownerSideIndex, BattleSide ownerSide)
             {
                 BattleSide mySide = ownerSide;
@@ -508,15 +519,10 @@ public class BattleSimulator
                         foreach (var entry in ab.TriggerEntries)
                         {
                             if (entry.Trigger != triggerName) continue;
-                            var triggerCtx = new BattleContext
-                            {
-                                BattleState = new BattleState { Side0 = side0, Side1 = side1, TimeMs = timeMs },
-                                SessionTables = _sessionTables,
-                                Item = abilityOwner,
-                                Caster = abilityOwner,
-                                Source = causeItem ?? abilityOwner,
-                                InvokeTarget = context?.InvokeTargetItem,
-                            };
+                            triggerCtx.Item = abilityOwner;
+                            triggerCtx.Caster = abilityOwner;
+                            triggerCtx.Source = causeItem ?? abilityOwner;
+                            triggerCtx.InvokeTarget = context?.InvokeTargetItem;
                             if (entry.Condition.Evaluate(triggerCtx) == 0) continue;
                             matched = true;
                             break;
@@ -553,52 +559,39 @@ public class BattleSimulator
     }
 
     /// <summary>暴击时最终倍率 = CritDamagePercent/100，默认 200 即 2 倍；利爪翻倍为 400 即 4 倍。chargeInducedCastQueue 非 null 时充能导致满会加入该队列。执行过程中引发的新能力通过 AddOrMergeAbility/Invoke*Trigger 加入 current/next（仅 Immediate 入 current）。</summary>
-    private void ExecuteOneEffect(RuntimeAbilityRef abilityRef, ItemState? invokeTargetItem, bool isCrit, int critDamagePercent,
+    private void ExecuteOneEffect(RuntimeAbilityRef abilityRef, ItemState? invokeTargetItem,
         BattleSide side0, BattleSide side1, int timeMs, IBattleLogSink logSink, List<ItemState>? chargeInducedCastQueue,
         AbilityQueueBuckets currentAbilityQueue, AbilityQueueBuckets nextAbilityQueue)
     {
         var item = abilityRef.Owner;
         var ability = abilityRef.Ability;
         if (ability.Apply == null) return;
-        var side = item.SideIndex == 0 ? side0 : side1;
-        var opp = item.SideIndex == 0 ? side1 : side0;
-        int critMultiplier = isCrit ? Math.Max(1, critDamagePercent / 100) : 1;
-        int value = 0;
-        if (ability.ValueKey != null)
-        {
-            int baseValue = item.GetAttribute(ability.ValueKey ?? Key.Custom_0);
-            bool applyCrit = ItemHasAnyCrittableField(item) && ability.ApplyCritMultiplier;
-            value = applyCrit ? baseValue * critMultiplier : baseValue;
-        }
-
         BattleSimulatorThreadScratch.BeginExecuteOneEffect(out var ctx, out var battleState);
         try
         {
-            battleState.Side0 = side0;
-            battleState.Side1 = side1;
+            battleState.Side[0] = side0;
+            battleState.Side[1] = side1;
+            battleState.SessionTables = _sessionTables;
             battleState.TimeMs = timeMs;
-            ctx.Rebind(
-                battleState,
-                side,
-                opp,
-                item,
-                value,
-                critMultiplier,
-                isCrit,
-                timeMs,
-                logSink,
-                chargeInducedCastQueue,
-                (triggerName, causeItem, targetItem, multicast) =>
-                {
-                    var triggerCtx = new TriggerInvokeContext { InvokeTargetItem = targetItem, Multicast = multicast };
-                    InvokeTrigger(triggerName, causeItem, triggerCtx, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
-                },
-                ability.TargetCondition,
-                ability.EffectLogName,
-                ability.TargetCountKey,
-                invokeTargetItem);
-            ctx.SessionTables = _sessionTables;
+            battleState.LogSink = logSink;
+            battleState.TriggerInvoker = (triggerName, causeItem, targetItem, multicast) =>
+            {
+                var triggerCtx = new TriggerInvokeContext { InvokeTargetItem = targetItem, Multicast = multicast };
+                InvokeTrigger(triggerName, causeItem, triggerCtx, timeMs, side0, side1, currentAbilityQueue, nextAbilityQueue);
+            };
+            ctx.BattleState = battleState;
+            ctx.Item = item;
+            ctx.Caster = item;
+            ctx.Source = item;
+            ctx.InvokeTarget = invokeTargetItem;
+            if (chargeInducedCastQueue != null)
+                battleState.CastQueue.Clear();
             ability.Apply(ctx, ability);
+            if (chargeInducedCastQueue != null)
+            {
+                for (int i = 0; i < battleState.CastQueue.Count; i++)
+                    chargeInducedCastQueue.Add(battleState.CastQueue[i]);
+            }
         }
         finally
         {

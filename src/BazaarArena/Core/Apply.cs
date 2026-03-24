@@ -8,14 +8,14 @@ public static class Apply
         int actualHp = ctx.ApplyDamageToOpp(value, isBurn: false);
         bool lifeSteal = ctx.GetResolvedValue(Key.LifeSteal, defaultValue: 0) != 0;
         if (lifeSteal && actualHp > 0) ctx.HealCaster(actualHp);
-        ctx.LogEffect(lifeSteal ? "吸血" : "伤害", value, showCrit: ctx.IsCrit);
+        ctx.LogEffect(lifeSteal ? "吸血" : "伤害", value, showCrit: ctx.IsCritNow);
     };
 
     public static readonly Action<BattleContext, AbilityDefinition> Burn = (ctx, ability) =>
     {
         int value = ctx.GetResolvedValue(Key.Burn, applyCritMultiplier: true, fallbackValue: ability.Value);
         ctx.AddBurnToOpp(value);
-        ctx.LogEffect("灼烧", value, showCrit: ctx.IsCrit);
+        ctx.LogEffect("灼烧", value, showCrit: ctx.IsCritNow);
         ctx.ReportTriggerCause(Trigger.Burn);
     };
 
@@ -23,7 +23,7 @@ public static class Apply
     {
         int value = ctx.GetResolvedValue(Key.Poison, applyCritMultiplier: true, fallbackValue: ability.Value);
         ctx.AddPoisonToOpp(value);
-        ctx.LogEffect("剧毒", value, showCrit: ctx.IsCrit);
+        ctx.LogEffect("剧毒", value, showCrit: ctx.IsCritNow);
         ctx.ReportTriggerCause(Trigger.Poison);
     };
 
@@ -31,7 +31,7 @@ public static class Apply
     {
         int value = ctx.GetResolvedValue(Key.Shield, applyCritMultiplier: true, fallbackValue: ability.Value);
         ctx.AddShieldToCaster(value);
-        ctx.LogEffect("护盾", value, showCrit: ctx.IsCrit);
+        ctx.LogEffect("护盾", value, showCrit: ctx.IsCritNow);
         ctx.ReportTriggerCause(Trigger.Shield);
     };
 
@@ -39,7 +39,7 @@ public static class Apply
     {
         int requested = ctx.GetResolvedValue(Key.Heal, applyCritMultiplier: true, fallbackValue: ability.Value);
         ctx.HealCasterWithDebuffClear(requested);
-        ctx.LogEffect("治疗", requested, showCrit: ctx.IsCrit);
+        ctx.LogEffect("治疗", requested, showCrit: ctx.IsCritNow);
     };
 
     public static readonly Action<BattleContext, AbilityDefinition> GainGold = (ctx, ability) =>
@@ -78,7 +78,7 @@ public static class Apply
         int hasteMs = ctx.GetResolvedValue(Key.Haste, fallbackValue: ability.Value);
         int countKey = ability.TargetCountKey ?? Key.HasteTargetCount;
         int count = ctx.GetResolvedValue(countKey, defaultValue: 1);
-        ctx.ApplyHaste(hasteMs, count, ability.TargetCondition);
+        ctx.ApplyHaste(hasteMs, count, ability.TargetCondition, ability.EffectLogName);
     };
 
     public static readonly Action<BattleContext, AbilityDefinition> Reload = (ctx, ability) =>
@@ -86,7 +86,7 @@ public static class Apply
         int amount = ctx.GetResolvedValue(Key.Custom_0, fallbackValue: ability.Value);
         int countKey = ability.TargetCountKey ?? Key.ReloadTargetCount;
         int count = ctx.GetResolvedValue(countKey, defaultValue: 1);
-        ctx.ApplyReload(amount, count, ability.TargetCondition);
+        ctx.ApplyReload(amount, count, ability.TargetCondition, ability.EffectLogName);
     };
 
     public static readonly Action<BattleContext, AbilityDefinition> Repair = (ctx, ability) =>
@@ -111,7 +111,7 @@ public static class Apply
             int cap = ctx.GetResolvedValue(countKey, defaultValue: 20);
             int maxTarget = cap >= 20 ? 0 : cap;
             int value = ctx.GetResolvedValue(ability.ValueKey ?? Key.Custom_0, applyCritMultiplier: ability.ApplyCritMultiplier, fallbackValue: ability.Value);
-            ctx.AddAttributeToCasterSide(attributeKey, value, targetCond, maxTarget);
+            ctx.AddAttributeToCasterSide(attributeKey, value, targetCond, maxTarget, ability.EffectLogName);
         };
 
     public static Action<BattleContext, AbilityDefinition> ReduceAttribute(int attributeKey) =>
@@ -127,6 +127,6 @@ public static class Apply
 
     public static readonly Action<BattleContext, AbilityDefinition> StopFlying = (ctx, ability) =>
     {
-        ctx.SetAttributeOnCasterSide(Key.InFlight, 0, ability.TargetCondition);
+        ctx.SetAttributeOnCasterSide(Key.InFlight, 0, ability.TargetCondition, ability.EffectLogName);
     };
 }

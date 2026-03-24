@@ -34,7 +34,7 @@ public static class ShoeBlade
                 {
                     Attribute = Key.CritRate,
                     Value = Formula.Constant(100),
-                    SourceCondition = Condition.CasterCustom0IsZero,
+                    Condition = Condition.SameAsCaster & Condition.CasterCustom0IsZero,
                 },
             ],
         };

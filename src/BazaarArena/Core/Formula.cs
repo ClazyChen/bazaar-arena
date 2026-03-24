@@ -34,33 +34,26 @@ public class Formula
     public static Formula Count(Formula condition) => new(ctx =>
     {
         int n = 0;
-        var side0 = ctx.BattleState.Side0;
-        var side1 = ctx.BattleState.Side1;
+        var side0 = ctx.BattleState.Side[0];
+        var side1 = ctx.BattleState.Side[1];
+        var countCtx = new BattleContext
+        {
+            BattleState = ctx.BattleState,
+            Caster = ctx.Caster,
+            Source = ctx.Source,
+            InvokeTarget = ctx.InvokeTarget,
+        };
         foreach (var it in side0.Items)
         {
-            var c = new BattleContext
-            {
-                BattleState = ctx.BattleState,
-                SessionTables = ctx.SessionTables,
-                Item = it,
-                Caster = ctx.Caster,
-                Source = ctx.Source,
-                InvokeTarget = ctx.InvokeTarget,
-            };
-            if (condition.Evaluate(c) != 0) n++;
+            countCtx.Item = it;
+            countCtx.Source = it;
+            if (condition.Evaluate(countCtx) != 0) n++;
         }
         foreach (var it in side1.Items)
         {
-            var c = new BattleContext
-            {
-                BattleState = ctx.BattleState,
-                SessionTables = ctx.SessionTables,
-                Item = it,
-                Caster = ctx.Caster,
-                Source = ctx.Source,
-                InvokeTarget = ctx.InvokeTarget,
-            };
-            if (condition.Evaluate(c) != 0) n++;
+            countCtx.Item = it;
+            countCtx.Source = it;
+            if (condition.Evaluate(countCtx) != 0) n++;
         }
         return n;
     });
@@ -68,13 +61,13 @@ public class Formula
     private static BazaarArena.BattleSimulator.BattleSide CurrentSide(BattleContext ctx)
     {
         int sideIndex = ctx.Caster.SideIndex;
-        return sideIndex == 0 ? ctx.BattleState.Side0 : ctx.BattleState.Side1;
+        return ctx.BattleState.Side[sideIndex];
     }
 
     private static BazaarArena.BattleSimulator.BattleSide OppSide(BattleContext ctx)
     {
         int sideIndex = ctx.Caster.SideIndex;
-        return sideIndex == 0 ? ctx.BattleState.Side1 : ctx.BattleState.Side0;
+        return ctx.BattleState.Side[1 - sideIndex];
     }
 
     private static int ReadSideAttribute(BazaarArena.BattleSimulator.BattleSide side, int key)
@@ -105,8 +98,8 @@ public class Formula
     public static Formula Opp(int key) => new(ctx => ReadSideAttribute(OppSide(ctx), key));
     public static Formula SideSelect(int key, SideSelectKind kind) => new(ctx =>
     {
-        int a = ReadSideAttribute(ctx.BattleState.Side0, key);
-        int b = ReadSideAttribute(ctx.BattleState.Side1, key);
+        int a = ReadSideAttribute(ctx.BattleState.Side[0], key);
+        int b = ReadSideAttribute(ctx.BattleState.Side[1], key);
         return kind == SideSelectKind.Min ? Math.Min(a, b) : Math.Max(a, b);
     });
 

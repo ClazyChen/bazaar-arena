@@ -24,7 +24,6 @@ public static class Condition
     /// </summary>
     private static ItemState SpatialOtherVsCaster(BattleContext ctx)
     {
-        if (ctx.Source == null) return ctx.Item;
         if (ctx.Source.SideIndex == ctx.Caster.SideIndex && ctx.Source.ItemIndex == ctx.Caster.ItemIndex)
             return ctx.Item;
         return ctx.Source;
@@ -34,24 +33,21 @@ public static class Condition
 
     /// <summary>引起触发者（Source）与能力持有者（Caster）为同一件物品（如自用 UseItem）。</summary>
     public static Formula SameAsCaster { get; } = new(ctx =>
-        ctx.Source != null
-        && ctx.Source.SideIndex == ctx.Caster.SideIndex
+        ctx.Source.SideIndex == ctx.Caster.SideIndex
         && ctx.Source.ItemIndex == ctx.Caster.ItemIndex ? 1 : 0);
 
     /// <summary>引起触发者（Source）与能力持有者（Caster）不是同一件物品。</summary>
     public static Formula DifferentFromCaster { get; } = new(ctx =>
-        ctx.Source == null
-        || ctx.Source.SideIndex != ctx.Caster.SideIndex
+        ctx.Source.SideIndex != ctx.Caster.SideIndex
         || ctx.Source.ItemIndex != ctx.Caster.ItemIndex ? 1 : 0);
 
     /// <summary>Source 与 Caster 在同一阵营侧。</summary>
     public static Formula SameSide { get; } = new(ctx =>
-        ctx.Source == null
-        || ctx.Source.SideIndex == ctx.Caster.SideIndex ? 1 : 0);
+        ctx.Source.SideIndex == ctx.Caster.SideIndex ? 1 : 0);
 
     /// <summary>Source 与 Caster 在不同阵营侧。</summary>
     public static Formula DifferentSide { get; } = new(ctx =>
-        ctx.Source != null && ctx.Source.SideIndex != ctx.Caster.SideIndex ? 1 : 0);
+        ctx.Source.SideIndex != ctx.Caster.SideIndex ? 1 : 0);
 
     public static Formula SameAsInvokeTarget { get; } = new(ctx =>
         ctx.InvokeTarget != null
@@ -118,7 +114,7 @@ public static class Condition
         if (ctx.Item.SideIndex != ctx.Caster.SideIndex) return 0;
         if (ctx.Item.Destroyed) return 0;
         if (ctx.Item.ItemIndex <= ctx.Caster.ItemIndex) return 0;
-        var side = ctx.Caster.SideIndex == 0 ? ctx.BattleState.Side0 : ctx.BattleState.Side1;
+        var side = ctx.BattleState.Side[ctx.Caster.SideIndex];
         for (int j = ctx.Caster.ItemIndex + 1; j < ctx.Item.ItemIndex; j++)
         {
             if (j >= side.Items.Count) return 0;

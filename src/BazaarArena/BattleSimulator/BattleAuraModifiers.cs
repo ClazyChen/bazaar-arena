@@ -11,7 +11,9 @@ internal static class BattleAuraModifiers
     {
         fixedSum = 0;
         percentSum = 0;
-        var battleState = new BattleState { Side0 = side, Side1 = opp ?? side };
+        var battleState = new BattleState();
+        battleState.Side[0] = side;
+        battleState.Side[1] = opp ?? side;
         int attributeKey = int.TryParse(attributeName, out var parsed) ? parsed : -1;
         for (int i = 0; i < side.Items.Count; i++)
         {
@@ -23,29 +25,18 @@ internal static class BattleAuraModifiers
                 var auraCtx = new BattleContext
                 {
                     Item = targetItem,
-                    Source = source,
+                    Source = targetItem,
                     Caster = source,
                     BattleState = battleState,
                 };
                 if (aura.Condition.Evaluate(auraCtx) == 0) continue;
-                if (aura.SourceCondition != null)
-                {
-                    var sourceOnlyCtx = new BattleContext
-                    {
-                        Item = source,
-                        Source = source,
-                        Caster = source,
-                        BattleState = battleState,
-                    };
-                    if (aura.SourceCondition.Evaluate(sourceOnlyCtx) == 0) continue;
-                }
                 if (aura.Value != null)
                 {
                     int v = aura.Value.Evaluate(new BattleContext
                     {
                         BattleState = battleState,
                         Item = targetItem,
-                        Source = source,
+                        Source = targetItem,
                         Caster = source,
                     });
                     if (aura.Percent)

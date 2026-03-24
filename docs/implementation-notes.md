@@ -4,6 +4,43 @@
 
 ---
 
+## AuraDefinition 与 BattleContext 复用经验（2026-03-24）
+
+### 1) AuraDefinition 收敛：移除 SourceCondition 与 GrantedTags
+
+- **结论**：`AuraDefinition` 仅保留 `Attribute`、`Condition`、`Value`、`Percent`，不再维护 `SourceCondition` 与 `GrantedTags` 两套分支语义。
+- **原因**：
+  - `SourceCondition` 与 `Condition` 同时存在时，调用方需维护两阶段上下文，易出现漏判与字段污染；
+  - `GrantedTags` 与数值光环是并行机制，维护成本高且重复。
+- **迁移规则**：
+  - 原 `SourceCondition = X` 迁移为 `Condition = Condition.SameAsSource & X`（或按原有目标条件与 `X` 组合）。
+  - 原 `GrantedTags = [Tag.A, Tag.B]` 迁移为 `Attribute = Key.Tags`、`Value = Formula.Constant(Tag.A | Tag.B)`、`Percent = false`。
+
+### 2) Key.Tags 光环按位或（|）而非数值加法
+
+- **约定**：当 `aura.Attribute == Key.Tags` 时，`Value` 表示**标签掩码**，叠加方式必须是按位或 `|`。
+- **实现**：`BattleContext.GetItemInt(item, Key.Tags)` 走标签专用分支：基础标签掩码与每条命中光环 `Value` 做 OR 合并；`Percent` 分支不参与标签光环。
+- **边界**：`DerivedTags` 不参与该语义；自动推导标签仍由注册阶段与能力/机制规则生成。
+
+### 3) BattleContext 复用：先对齐语义，再减少 new
+
+- **热点**：`Formula.Count`、`BattleContext.GetItemInt`（aura 循环）、`BattleSimulator.InvokeTrigger` 条件判定。
+- **复用原则**：
+  - 仅复用对象，不复用语义状态；
+  - 每次评估前必须显式覆写 `Item`、`Source`、`InvokeTarget`（必要时 `Caster`）；
+  - 涉及 `SameSide`/`DifferentSide`/`SameAsInvokeTarget` 时，不能只改 `Item`。
+- **本轮落地**：
+  - `Formula.Count` 使用单实例 `BattleContext` 循环复写；
+  - `GetItemInt` 在 aura 循环内复用局部 `auraCtx`；
+  - `InvokeTrigger` 条件判定接入 `BattleSimulatorThreadScratch` 的 thread-static `BattleContext/BattleState`。
+
+### 4) BattleContext 执行路径：移除 Rebind
+
+- **结论**：`ExecuteOneEffect` 不再调用 `ctx.Rebind(...)`，改为直接写入最小字段（`BattleState/Item/Caster/Source/InvokeTarget`）。
+- **收益**：减少参数散传与对象状态分叉，便于后续继续做热路径减分配。
+
+---
+
 ## Tag/DerivedTag、Apply 统一入口与模板复用经验（2026-03-24）
 
 ### 1) Tag 与 DerivedTag 必须分离位域
