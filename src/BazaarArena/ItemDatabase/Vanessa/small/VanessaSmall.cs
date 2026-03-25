@@ -12,6 +12,8 @@ public static class VanessaSmall
         db.DefaultHero = Hero.Vanessa;
         db.DefaultMinTier = ItemTier.Bronze;
         db.Register(BilgeWorm.Template());
+        db.Register(Clamera.Template_S8());
+        db.Register(Clamera.Template_S1());
         db.Register(ConcealedDagger.Template());
         db.Register(Piranha.Template());
         db.Register(Piranha.Template_S1());
@@ -67,6 +69,8 @@ public static class VanessaSmall
         db.Register(Kusarigama.Template_S4());
         db.Register(CustomScope.Template());
         db.Register(CustomScope.Template_S2());
+        db.Register(IcePick.Template());
+        db.Register(Clamera.Template());
         db.Register(Grapeshot.Template_S1());
         db.Register(PeskyPete.Template_S5());
 

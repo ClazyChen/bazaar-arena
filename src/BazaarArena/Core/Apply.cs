@@ -74,7 +74,7 @@ public static class Apply
         int chargeMs = ctx.GetItemInt(ctx.Caster, ability.ValueKey!.Value);
         int countKey = ability.TargetCountKey ?? Key.ChargeTargetCount;
         int count = ReadCount(ctx, countKey);
-        ctx.ApplyCharge(chargeMs, count, ability.TargetCondition);
+        ctx.ApplyCharge(chargeMs, count, ability.TargetCondition, ability.EffectLogName);
     };
 
     public static readonly Action<BattleContext, AbilityDefinition> Freeze = (ctx, ability) =>

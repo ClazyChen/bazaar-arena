@@ -109,8 +109,11 @@ public sealed partial class BattleContext
             var target = fromSide.Items[i];
             targetNames.Add(perTarget(target, i));
         }
-        string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
-        BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, effectName, logValue ?? indices.Count, BattleState.TimeMs, isCrit: false, extraSuffix);
+        if (!string.IsNullOrEmpty(effectName))
+        {
+            string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
+            BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, effectName, logValue ?? indices.Count, BattleState.TimeMs, isCrit: false, extraSuffix);
+        }
         if (effectTriggerName != null)
         {
             var triggerTargets = new List<ItemState>(indices.Count);
@@ -127,8 +130,11 @@ public sealed partial class BattleContext
         var targetNames = new List<string>();
         foreach (var (side, index) in targets)
             targetNames.Add(perTarget(side, index));
-        string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
-        BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, effectName, logValue ?? targets.Count, BattleState.TimeMs, isCrit: false, extraSuffix);
+        if (!string.IsNullOrEmpty(effectName))
+        {
+            string extraSuffix = " →[" + string.Join("、", targetNames) + "]";
+            BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, effectName, logValue ?? targets.Count, BattleState.TimeMs, isCrit: false, extraSuffix);
+        }
         if (effectTriggerName != null)
         {
             var triggerTargets = new List<ItemState>(targets.Count);
@@ -181,11 +187,11 @@ public sealed partial class BattleContext
         }, Trigger.Slow);
     }
 
-    public void ApplyCharge(int chargeMs, int targetCount, Formula? targetCondition = null)
+    public void ApplyCharge(int chargeMs, int targetCount, Formula? targetCondition = null, string? effectLogName = null)
     {
         if (chargeMs <= 0 || targetCount <= 0) return;
         var cond = (targetCondition ?? Condition.SameSide) & ~Condition.Destroyed & Condition.HasCooldown;
-        ApplyToTargetsBothSides(targetCount, cond, "充能", chargeMs, (side, index) => ChargeItemAt(side, index, chargeMs), null);
+        ApplyToTargetsBothSides(targetCount, cond, effectLogName ?? "充能", chargeMs, (side, index) => ChargeItemAt(side, index, chargeMs), null);
     }
 
     public void ApplyHaste(int hasteMs, int targetCount, Formula? targetCondition = null, string? effectLogName = null)
