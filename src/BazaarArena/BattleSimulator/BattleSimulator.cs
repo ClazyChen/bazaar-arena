@@ -121,6 +121,7 @@ public class BattleSimulator
             // 3. 加速、减速、冻结剩余时间减少 50ms（放在冷却之后，保证持续时间足额）
             foreach (var side in new[] { side0, side1 })
             {
+                if (side.InvincibleRemainingMs > 0) side.InvincibleRemainingMs = Math.Max(0, side.InvincibleRemainingMs - FrameMs);
                 foreach (var item in side.Items)
                 {
                     if (item.HasteRemainingMs > 0) item.HasteRemainingMs = Math.Max(0, item.HasteRemainingMs - FrameMs);

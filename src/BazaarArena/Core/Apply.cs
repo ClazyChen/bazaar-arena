@@ -153,4 +153,12 @@ public static class Apply
     {
         ctx.SetAttributeOnCasterSide(Key.InFlight, 0, ability.TargetCondition, ability.EffectLogName);
     };
+
+    public static readonly Action<BattleContext, AbilityDefinition> Invincible = (ctx, ability) =>
+    {
+        int durationMs = ctx.GetItemInt(ctx.Caster, ability.ValueKey!.Value);
+        if (durationMs <= 0) return;
+        ctx.CurrentSide.InvincibleRemainingMs += durationMs;
+        ctx.LogEffect("无敌", durationMs, showCrit: false);
+    };
 }

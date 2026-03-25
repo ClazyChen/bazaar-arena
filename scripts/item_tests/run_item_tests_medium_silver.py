@@ -28,6 +28,7 @@ MEDIUM_SILVER_TESTS = [
     {"name": "破冰尖镐_icebreaker", "deck1": "ms_icebreaker_p1", "deck2": "ms_icebreaker_p2", "log_contains": ["破冰尖镐", "伤害"]},
     {"name": "仿生手臂_bionic_arm", "deck1": "ms_bionic_arm_p1", "deck2": "ms_bionic_arm_p2", "log_contains": ["仿生手臂", "伤害", "75"]},
     {"name": "时光指针_hands_of_time", "deck1": "ms_hands_of_time_p1", "deck2": "ms_hands_of_time_p2", "log_contains": ["时光指针", "冷却缩短"]},
+    {"name": "赛博铁尺_cyber_sai", "deck1": "ms_cyber_sai_p1", "deck2": "ms_cyber_sai_p2", "log_contains": ["赛博铁尺", "伤害提高"]},
 ]
 
 

@@ -21,6 +21,12 @@ internal static class BattleSideDamage
             damage -= shieldConsume;
         }
         int actualHpDamage = Math.Max(0, damage);
+        if (actualHpDamage <= 0) return 0;
+
+        // 无敌：只豁免“生命值降低”，护盾仍按规则吸收并减少。
+        if (side.InvincibleRemainingMs > 0)
+            return 0;
+
         side.Hp -= actualHpDamage;
         return actualHpDamage;
     }

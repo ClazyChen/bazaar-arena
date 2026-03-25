@@ -25,6 +25,8 @@ public class BattleSide
     public int Poison { get => Attributes[Key.Poison]; set => Attributes[Key.Poison] = value; }
     public int Regen { get => Attributes[Key.Regen]; set => Attributes[Key.Regen] = value; }
     public int Gold { get => Attributes[Key.Gold]; set => Attributes[Key.Gold] = value; }
+    /// <summary>无敌剩余时间（毫秒）。>0 时“即将造成生命值降低”的结算会豁免 HP 扣减（护盾仍按规则吸收）。</summary>
+    public int InvincibleRemainingMs { get => Attributes[Key.InvincibleRemainingMs]; set => Attributes[Key.InvincibleRemainingMs] = value; }
 
     public List<ItemState> Items { get; set; } = [];
 

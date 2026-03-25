@@ -46,6 +46,14 @@ public static class Condition
             && Math.Abs(ctx.Item.ItemIndex - ctx.Caster.ItemIndex) == 1 ? 1 : 0;
     });
 
+    /// <summary>触发器指向目标（InvokeTarget）与能力持有者（Caster）相邻（同侧左右一格）。用于「使用相邻物品时…」类被动触发条件。</summary>
+    public static Formula InvokeTargetAdjacentToCaster { get; } = new(ctx =>
+    {
+        return ctx.InvokeTarget != null
+            && ctx.InvokeTarget.SideIndex == ctx.Caster.SideIndex
+            && Math.Abs(ctx.InvokeTarget.ItemIndex - ctx.Caster.ItemIndex) == 1 ? 1 : 0;
+    });
+
     public static Formula RightOfCaster { get; } = new(ctx =>
     {
         return ctx.Item.SideIndex == ctx.Caster.SideIndex

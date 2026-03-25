@@ -268,24 +268,27 @@ public sealed partial class BattleContext
             var indices = GetTargetIndices(CurrentSide, maxTargetCount, cond);
             if (indices.Count == 0) return;
             var targetNames = new List<string>();
+            List<ItemState>? triggerTargets = null;
             foreach (int i in indices)
             {
                 var wi = CurrentSide.Items[i];
                 if (attributeKey == Key.Damage) { wi.SetAttribute(Key.Damage, wi.GetAttribute(Key.Damage) + value); targetNames.Add(wi.Template.Name); }
                 else if (attributeKey == Key.Poison) { wi.SetAttribute(Key.Poison, wi.GetAttribute(Key.Poison) + value); targetNames.Add(wi.Template.Name); }
-                else if (attributeKey == Key.CritRate) { wi.SetAttribute(Key.CritRate, wi.GetAttribute(Key.CritRate) + value); targetNames.Add(wi.Template.Name); }
+                else if (attributeKey == Key.CritRate) { wi.SetAttribute(Key.CritRate, wi.GetAttribute(Key.CritRate) + value); targetNames.Add(wi.Template.Name); (triggerTargets ??= new List<ItemState>(indices.Count)).Add(wi); }
                 else if (attributeKey == Key.InFlight) { wi.InFlight = value != 0; targetNames.Add(wi.Template.Name); }
                 else { wi.SetAttribute(attributeKey, wi.GetAttribute(attributeKey) + value); targetNames.Add(wi.Template.Name); }
             }
             if (targetNames.Count > 0 && !string.IsNullOrEmpty(logName))
                 BattleState.LogSink.OnEffect(Caster, Caster.Template.Name, logName, value, BattleState.TimeMs, isCrit: false, " →[" + string.Join("、", targetNames) + "]");
+            if (attributeKey == Key.CritRate && triggerTargets != null && triggerTargets.Count > 0)
+                BattleState.InvokeTriggerMany(Trigger.CritRateIncreased, Caster, triggerTargets, triggerTargets.Count);
             return;
         }
         ApplyToSideWithCondition(CurrentSide, cond, logName, value, (wi, _) =>
         {
             if (attributeKey == Key.Damage) { wi.SetAttribute(Key.Damage, wi.GetAttribute(Key.Damage) + value); return wi.Template.Name; }
             if (attributeKey == Key.Poison) { wi.SetAttribute(Key.Poison, wi.GetAttribute(Key.Poison) + value); return wi.Template.Name; }
-            if (attributeKey == Key.CritRate) { wi.SetAttribute(Key.CritRate, wi.GetAttribute(Key.CritRate) + value); return wi.Template.Name; }
+            if (attributeKey == Key.CritRate) { wi.SetAttribute(Key.CritRate, wi.GetAttribute(Key.CritRate) + value); BattleState.InvokeTrigger(Trigger.CritRateIncreased, Caster, wi, 1); return wi.Template.Name; }
             if (attributeKey == Key.InFlight) { wi.InFlight = value != 0; return wi.Template.Name; }
             wi.SetAttribute(attributeKey, wi.GetAttribute(attributeKey) + value);
             return wi.Template.Name;

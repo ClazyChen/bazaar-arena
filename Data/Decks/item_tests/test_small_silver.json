@@ -58,7 +58,20 @@
       { "itemName": "牵引光束", "tier": 1 },
       { "itemName": "临时避难所", "tier": 0 }
     ] } },
-    { "id": "ss_tractor_beam_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+    { "id": "ss_tractor_beam_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ss_incendiary_rounds_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "燃烧子弹", "tier": 1 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "ss_incendiary_rounds_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ss_dart_launcher_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "神经毒素", "tier": 1 },
+      { "itemName": "飞镖发射器", "tier": 1 },
+      { "itemName": "灵质", "tier": 1 }
+    ] } },
+    { "id": "ss_dart_launcher_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
   ]
 }
 

@@ -102,6 +102,11 @@ public static class Ability
         targetCondition: Condition.SameSide & Condition.InFlight,
         effectLogName: "结束飞行");
 
+    /// <summary>获得无敌（Apply.Invincible）。持续时间来自 <see cref="ItemTemplate.Invincible"/>（内部写入 Key.Custom_3 毫秒）。默认触发器 UseItem。</summary>
+    public static AbilityDefinition Invincible => CreateBase(AbilityType.Invincible, Core.Apply.Invincible).Override(
+        valueKey: Key.InvincibleMs,
+        applyCritMultiplier: false);
+
     /// <summary>对满足目标条件的物品增加指定属性（限本场战斗）。attributeKey 如 Key.Damage、Key.Poison；amountKey 默认 Key.Custom_0。</summary>
     public static AbilityDefinition AddAttribute(int attributeKey, int? amountKey = null) => CreateBase(AbilityType.AddAttribute, Apply.AddAttribute(attributeKey)).Override(
         valueKey: amountKey ?? Key.Custom_0,

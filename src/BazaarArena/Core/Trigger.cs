@@ -29,8 +29,10 @@ public static class Trigger
     public const int Ammo = 11;
     /// <summary>即将落败时触发（该方 Hp≤0 时，每场战斗每方最多触发一次，由模拟器步骤 10 用阵营标记保证「首次」）。默认 Condition 为 SameSide。</summary>
     public const int AboutToLose = 12;
+    /// <summary>任意物品对目标施加「暴击率提高」时触发（由 AddAttribute(Key.CritRate) 上报）；InvokeTarget=被提高暴击率的物品；默认 Condition 为 SameSide。</summary>
+    public const int CritRateIncreased = 13;
     // 新增触发器时写在这里
     
     // 触发器的数量
-    public const int Count = 13;
+    public const int Count = 14;
 }

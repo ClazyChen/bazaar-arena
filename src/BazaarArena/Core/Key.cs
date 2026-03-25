@@ -26,8 +26,6 @@ public static class Key
     public const int Heal = Shield + 1;
     public const int Regen = Heal + 1;
     public const int CritRate = Regen + 1;
-    /// <summary>仅阵营使用；复用 <see cref="CritRate"/> 点位，避免物品属性额外占位。</summary>
-    public const int Gold = CritRate;
     public const int CritDamage = CritRate + 1;
     public const int Multicast = CritDamage + 1;
     public const int AmmoCap = Multicast + 1;
@@ -57,7 +55,9 @@ public static class Key
     public const int CanCrit = DerivedTags + 1;
     public const int Size = CanCrit + 1;
     public const int Hero = Size + 1;
-    public const int Custom_0 = Hero + 1;
+    /// <summary>获得无敌的持续时间（毫秒）。物品定义侧用 <see cref="ItemTemplate.Invincible"/> 以秒为单位写入。</summary>
+    public const int InvincibleMs = Hero + 1;
+    public const int Custom_0 = InvincibleMs + 1;
     public const int Custom_1 = Custom_0 + 1;
     public const int Custom_2 = Custom_1 + 1;
     public const int Custom_3 = Custom_2 + 1;
@@ -79,7 +79,11 @@ public static class Key
 
     public const int MaxHp = Damage;
     public const int Hp = Heal;
+    /// <summary>仅阵营使用；复用 <see cref="CritRate"/> 点位，避免物品属性额外占位。</summary>
+    public const int Gold = CritRate;
+    /// <summary>阵营无敌剩余时间（毫秒）。放在 SideStateAttributeCount 之前以便 BattleSide.Attributes 扩容。</summary>
+    public const int InvincibleRemainingMs = CritDamage;
 
     /// <summary>BattleSide.Attributes 长度；下标 0～7 与 SideIndex～Gold（同 CritRate）一致。</summary>
-    public const int SideStateAttributeCount = Gold + 1;
+    public const int SideStateAttributeCount = InvincibleRemainingMs + 1;
 }

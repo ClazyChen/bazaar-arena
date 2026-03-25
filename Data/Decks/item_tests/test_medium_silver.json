@@ -53,6 +53,13 @@
       { "itemName": "时光指针", "tier": 1 },
       { "itemName": "放大镜", "tier": 0 }
     ] } },
-    { "id": "ms_hands_of_time_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+    { "id": "ms_hands_of_time_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_cyber_sai_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "三花", "tier": 0 },
+      { "itemName": "獠牙", "tier": 0 },
+      { "itemName": "赛博铁尺", "tier": 1 }
+    ] } },
+    { "id": "ms_cyber_sai_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
   ]
 }
