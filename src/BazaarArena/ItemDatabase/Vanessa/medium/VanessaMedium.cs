@@ -37,6 +37,9 @@ public static class VanessaMedium
         db.Register(Sharkray.Template_S11());
 
         db.DefaultMinTier = ItemTier.Silver;
+        db.Register(Seashadow.Template());
+        db.Register(CardTable.Template());
+        db.Register(CardTable.Template_S1());
         db.Register(Disguise.Template());
         db.Register(Disguise.Template_S1());
         db.Register(Sharkray.Template());
@@ -51,6 +54,11 @@ public static class VanessaMedium
         db.Register(OrangeJulian.Template());
         db.Register(OrangeJulian.Template_S8());
         db.Register(ElementalDepthCharge.Template());
+        db.Register(DarkwaterAnglerfish.Template());
+        db.Register(Pufferfish.Template());
+        db.Register(DockLines.Template());
+        db.Register(CaptainsWheel.Template());
+        db.Register(Figurehead.Template());
         db.Register(Sextant.Template());
         db.Register(Sextant.Template_S1());
         db.Register(Ramrod.Template());

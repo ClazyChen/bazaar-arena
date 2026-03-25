@@ -182,7 +182,9 @@ public sealed partial class BattleContext
         ApplyToTargetsBothSides(targetCount, cond, "减速", slowMs, (side, index) =>
         {
             var t = side.Items[index];
-            t.SlowRemainingMs += slowMs;
+            int pct = Math.Clamp(GetItemInt(t, Key.PercentSlowReduction), 0, 100);
+            int effectiveMs = slowMs - RatioUtil.PercentFloor(slowMs, pct);
+            t.SlowRemainingMs += effectiveMs;
             return t.Template.Name;
         }, Trigger.Slow);
     }

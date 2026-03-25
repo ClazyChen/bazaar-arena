@@ -39,11 +39,13 @@ public class Formula
         };
         foreach (var it in side0.Items)
         {
+            if (it.Destroyed) continue;
             countCtx.Item = it;
             if (condition.Evaluate(countCtx) != 0) n++;
         }
         foreach (var it in side1.Items)
         {
+            if (it.Destroyed) continue;
             countCtx.Item = it;
             if (condition.Evaluate(countCtx) != 0) n++;
         }
