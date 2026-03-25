@@ -27,7 +27,7 @@
 
 ### 海盗（Vanessa）小型铜物品
 
-以下物品在 **ItemDatabase.Vanessa.Small** 中注册，**DefaultHero = Vanessa**，**Size = Small、MinTier = Bronze**。自动化测试见 `docs/test-cases-vanessa-small-bronze.md`，脚本 `scripts/item_tests/run_item_tests_vanessa_small_bronze.py`，卡组集同 `Data/Decks/item_tests/test_small_bronze.json`（卡组 ID 前缀 `vanessa_sb_*`）。
+以下物品在 **ItemDatabase.Vanessa.Small** 中注册，**DefaultHero = Vanessa**，**Size = Small、MinTier = Bronze**。自动化测试见 `docs/test-cases/test-cases-vanessa-small-bronze.md`，脚本 `scripts/item_tests/run_item_tests_vanessa_small_bronze.py`，卡组集同 `Data/Decks/item_tests/test_small_bronze.json`（卡组 ID 前缀 `vanessa_sb_*`）。
 
 | 名称 | 效果简述 | 标签 | 冷却 | 测试状态 |
 |------|----------|------|------|----------|
@@ -101,7 +101,7 @@
 
 ## 中型铜物品（Medium, MinTier = Bronze）
 
-以下物品在 `ItemDatabase.CommonMedium` 中注册为 **Size = Medium、MinTier = Bronze**。自动化测试见 `docs/test-cases-medium-bronze.md`，脚本 `scripts/item_tests/run_item_tests_medium_bronze.py`，卡组集 `Data/Decks/item_tests/test_medium_bronze.json`。
+以下物品在 `ItemDatabase.CommonMedium` 中注册为 **Size = Medium、MinTier = Bronze**。自动化测试见 `docs/test-cases/test-cases-medium-bronze.md`，脚本 `scripts/item_tests/run_item_tests_medium_bronze.py`，卡组集 `Data/Decks/item_tests/test_medium_bronze.json`。
 
 | 名称 | 效果简述 | 标签 | 测试要点 | 测试状态（中型铜） |
 |------|----------|------|----------|-------------------|
@@ -120,7 +120,7 @@
 
 ### 海盗（Vanessa）中型铜物品
 
-以下物品在 **ItemDatabase.Vanessa.Medium** 中注册，**DefaultHero = Vanessa**，**Size = Medium、DefaultMinTier = Bronze**。自动化测试见 `docs/test-cases-vanessa-medium-bronze.md`，脚本 `scripts/item_tests/run_item_tests_vanessa_medium_bronze.py`，卡组集同 `Data/Decks/item_tests/test_medium_bronze.json`（卡组 ID 前缀 `vanessa_mb_*`）。
+以下物品在 **ItemDatabase.Vanessa.Medium** 中注册，**DefaultHero = Vanessa**，**Size = Medium、DefaultMinTier = Bronze**。自动化测试见 `docs/test-cases/test-cases-vanessa-medium-bronze.md`，脚本 `scripts/item_tests/run_item_tests_vanessa_medium_bronze.py`，卡组集同 `Data/Decks/item_tests/test_medium_bronze.json`（卡组 ID 前缀 `vanessa_mb_*`）。
 
 | 名称 | 效果简述 | 标签 | 测试状态 |
 |------|----------|------|----------|
@@ -146,7 +146,7 @@
 
 ## 中型银物品（Medium, MinTier = Silver）
 
-以下物品在 `ItemDatabase.CommonMedium` 中注册为 **Size = Medium、MinTier = Silver**。自动化测试见 `docs/test-cases-medium-silver.md`，脚本 `scripts/item_tests/run_item_tests_medium_silver.py`，卡组集 `Data/Decks/item_tests/test_medium_silver.json`。
+以下物品在 `ItemDatabase.CommonMedium` 中注册为 **Size = Medium、MinTier = Silver**。自动化测试见 `docs/test-cases/test-cases-medium-silver.md`，脚本 `scripts/item_tests/run_item_tests_medium_silver.py`，卡组集 `Data/Decks/item_tests/test_medium_silver.json`。
 
 | 名称 | 效果简述 | 标签 | 冷却 | 测试状态（中型银） |
 |------|----------|------|------|-------------------|
@@ -163,7 +163,7 @@
 
 ## 中型金物品（Medium, MinTier = Gold）
 
-以下物品在 `ItemDatabase.CommonMedium` 中注册为 **Size = Medium、MinTier = Gold**。自动化测试见 `docs/test-cases-medium-gold-diamond.md`，脚本 `scripts/item_tests/run_item_tests_medium_gold_diamond.py`，卡组集 `Data/Decks/item_tests/test_medium_gold_diamond.json`。
+以下物品在 `ItemDatabase.CommonMedium` 中注册为 **Size = Medium、MinTier = Gold**。自动化测试见 `docs/test-cases/test-cases-medium-gold-diamond.md`，脚本 `scripts/item_tests/run_item_tests_medium_gold_diamond.py`，卡组集 `Data/Decks/item_tests/test_medium_gold_diamond.json`。
 
 | 名称 | 效果简述 | 标签 | 测试要点 | 测试状态（中型金） |
 |------|----------|------|----------|-------------------|
@@ -188,7 +188,7 @@
 
 ## 大型铜物品（Large, MinTier = Bronze）
 
-以下物品在 `ItemDatabase.CommonLarge` 中注册为 **Size = Large、MinTier = Bronze**。自动化测试见 `docs/test-cases-large-bronze.md`，脚本 `scripts/item_tests/run_item_tests_large_bronze.py`，卡组集 `Data/Decks/item_tests/test_large_bronze.json`。
+以下物品在 `ItemDatabase.CommonLarge` 中注册为 **Size = Large、MinTier = Bronze**。自动化测试见 `docs/test-cases/test-cases-large-bronze.md`，脚本 `scripts/item_tests/run_item_tests_large_bronze.py`，卡组集 `Data/Decks/item_tests/test_large_bronze.json`。
 
 | 名称 | 效果简述 | 标签 | 测试要点 | 测试状态（大型铜） |
 |------|----------|------|----------|-------------------|
@@ -202,7 +202,7 @@
 
 ## 大型银物品（Large, MinTier = Silver）
 
-以下物品在 `ItemDatabase.CommonLarge` 中注册为 **Size = Large、MinTier = Silver**。自动化测试见 `docs/test-cases-large-silver-gold-diamond.md`，脚本 `scripts/item_tests/run_item_tests_large_silver_gold_diamond.py`，卡组集 `Data/Decks/item_tests/test_large_silver_gold_diamond.json`。
+以下物品在 `ItemDatabase.CommonLarge` 中注册为 **Size = Large、MinTier = Silver**。自动化测试见 `docs/test-cases/test-cases-large-silver-gold-diamond.md`，脚本 `scripts/item_tests/run_item_tests_large_silver_gold_diamond.py`，卡组集 `Data/Decks/item_tests/test_large_silver_gold_diamond.json`。
 
 | 名称 | 效果简述 | 标签 | 测试要点 | 测试状态（大型银） |
 |------|----------|------|----------|-------------------|

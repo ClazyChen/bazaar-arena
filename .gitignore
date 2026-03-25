@@ -57,3 +57,6 @@ __pycache__/
 
 # BenchmarkDotNet 本地产物
 BenchmarkDotNet.Artifacts/
+
+# 大体积原始日志
+docs/*-raw.log

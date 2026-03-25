@@ -18,7 +18,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--raw-log",
         default=None,
-        help="Greedy 原始控制台输出日志文件（完整 tee 落盘）。默认 docs/greedy-vanessa-bronze-top1-l<level>-raw.log。",
+        help="Greedy 原始控制台输出日志文件（完整 tee 落盘）。默认 Logs/greedy/greedy-vanessa-bronze-top1-l<level>-raw.log。",
     )
     parser.add_argument(
         "--level",
@@ -210,7 +210,7 @@ def main() -> int:
     root = repo_root()
     level = args.level
     out_rel = args.output or f"docs/greedy-vanessa-bronze-top1-l{level}.txt"
-    raw_rel = args.raw_log or f"docs/greedy-vanessa-bronze-top1-l{level}-raw.log"
+    raw_rel = args.raw_log or f"Logs/greedy/greedy-vanessa-bronze-top1-l{level}-raw.log"
     marker = f"l{level}"
     if args.output is not None and marker not in Path(out_rel).name:
         print(
