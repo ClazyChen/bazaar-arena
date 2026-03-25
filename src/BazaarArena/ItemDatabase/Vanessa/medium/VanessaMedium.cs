@@ -76,5 +76,6 @@ public static class VanessaMedium
         db.Register(WeatherGlass.Template_S4());
         db.Register(Lockbox.Template());
         db.Register(OniMask.Template());
+        db.Register(CauterizingBlade.Template());
     }
 }

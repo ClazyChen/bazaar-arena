@@ -110,6 +110,18 @@
       { "itemName": "连发步枪", "tier": 1 },
       { "itemName": "葡萄弹", "tier": 1 }
     ] } },
-    { "id": "ms_repeater_use_this_item_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+    { "id": "ms_repeater_use_this_item_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_cauterizing_blade_q1_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "烙刀", "tier": 1, "overrides": { "Custom_1": 1 } },
+      { "itemName": "锁镰_S4", "tier": 1 }
+    ] } },
+    { "id": "ms_cauterizing_blade_q1_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_cauterizing_blade_q2_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "烙刀", "tier": 1, "overrides": { "Custom_1": 2 } },
+      { "itemName": "星盘", "tier": 1 }
+    ] } },
+    { "id": "ms_cauterizing_blade_q2_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
   ]
 }
