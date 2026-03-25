@@ -62,6 +62,11 @@ public static class VanessaSmall
         db.Register(BilgeWorm.Template_S10());
         db.Register(BilgeWorm.Template_S9());
         db.Register(ConcealedDagger.Template_S1());
+        db.Register(DiveWeights.Template());
+        db.Register(Kusarigama.Template());
+        db.Register(Kusarigama.Template_S4());
+        db.Register(CustomScope.Template());
+        db.Register(CustomScope.Template_S2());
         db.Register(Grapeshot.Template_S1());
         db.Register(PeskyPete.Template_S5());
 
