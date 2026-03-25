@@ -44,6 +44,31 @@
   - `InvokeTarget` = 触发器指向目标（若有）。
 - 若误把 `Item` 固定为能力持有者，会导致 `UseOtherItem` 下如 `LeftOfCaster/WithTag(...)` 等条件在错误对象上求值，出现“有施放但不触发效果”。
 
+### Condition 求值上下文速查（Item/Caster/Source/InvokeTarget）
+
+同一个 `Condition`（尤其 `SameSide`/`SameAsCaster`/`SameAsInvokeTarget`）在不同求值语境下含义会变。这里给一个速查表，写物品/导表时按语境对齐：
+
+- **触发器条件（TriggerEntry.Condition / `InvokeTrigger`）**
+  - `Caster` = 能力持有者
+  - `Source` = 引起触发者（causeItem；无则 Caster）
+  - `Item` = 引起触发者（通常与 Source 同一件）
+  - `InvokeTarget` = 触发器指向目标（如 Slow/Freeze/Destroy 的被施加者；或 UseOtherItem 的“被使用物品”）
+  - 典型坑：`Trigger.Crit` 默认条件是 `SameSide`，若文案是“此物品暴击时”必须写 `condition: SameAsCaster`，否则会变成“任意己方暴击时”。
+- **效果目标筛选（ApplyToTargets / additionalTargetCondition）**
+  - `Item` = 候选目标
+  - `Source` = 候选目标（由 `BattleContext.EffectApply.BuildContext` 等路径构造）
+  - 因此 `SameSide` 等价于“候选目标与 Caster 同侧”，很多时候不需要额外手写“同侧”条件。
+
+- **光环条件（`AuraDefinition.Condition`）**
+  - `Caster` = 光环提供者
+  - `Item` = 被加光环者
+  - `Source` = 被加光环者（见 `BattleContext.GetItemInt` 内 auraCtx 构造）
+  - 因此 `SameSide` 同样等价于“被加光环者与提供者同侧”。
+- **计数（`Formula.Count(condition)`）**
+  - `Item` 会被遍历为候选物品
+  - 但 `Source` 固定为外层 ctx.Source（不会随候选 Item 变化）
+  - 因此不要在 `Count(...)` 里用 `Condition.SameSide` 表达“候选 item 同侧过滤”；应优先使用像 `AdjacentToCaster` 这种直接检查 `Item.SideIndex` 的条件，或自定义“Item 与 Caster 同侧”条件。
+
 ### PoisonSelf 最终约定
 
 - `Ability.PoisonSelf` 为**独立能力语义**，不再视为过渡别名：
