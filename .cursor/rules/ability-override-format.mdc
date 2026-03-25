@@ -17,12 +17,12 @@ globs: "**/ItemDatabase/**","**/Core/Ability*.cs"
 
 - **只覆盖需要改变的参数**：与默认值相同的参数不必写（例如 ReduceAttribute 默认 Priority 为 Medium，若仍为 Medium 则不要写 `priority: AbilityPriority.Medium`）。
 - **condition 与 additionalCondition 二选一**：**任何时候都不应同时指定** `condition` 和 `additionalCondition`。若目标条件**包含**该 trigger 的默认条件（即在默认上追加约束），则**只写** `additionalCondition`；若目标条件**不包含**默认（或需完全替换），则**只写** `condition` 并用 `&` 组合多个条件。
-- **换 trigger 且只传 additionalCondition 时**：合并条件会用**新 trigger 的默认**作 base（如 UseItem→Ammo 时用 SameSide），不会沿用原能力的 Condition（如 SameAsSource）。因此「己方弹药物品耗尽时」写 `Override(trigger: Trigger.Ammo, additionalCondition: Condition.AmmoDepleted, ...)` 即可；「此物品弹药耗尽时」写 `condition: Condition.SameAsSource & Condition.AmmoDepleted`，不写 additionalCondition。详见 `docs/implementation-notes.md`「弹药消耗触发器」经验。
+- **换 trigger 且只传 additionalCondition 时**：合并条件会用**新 trigger 的默认**作 base（如 UseItem→Ammo 时用 SameSide），不会沿用原能力的 Condition（如 SameAsCaster）。因此「己方弹药物品耗尽时」写 `Override(trigger: Trigger.Ammo, additionalCondition: Condition.AmmoDepleted, ...)` 即可；「此物品弹药耗尽时」写 `condition: Condition.SameAsCaster & Condition.AmmoDepleted`，不写 additionalCondition。详见 `docs/implementation-notes.md`「弹药消耗触发器」经验。
 - 当能力的**默认 TargetCondition** 已是 `Condition.SameSide`（如 AddAttribute、Charge、Haste）或 `Condition.DifferentSide`（如 ReduceAttribute、Slow、Freeze）时，若只需在默认上**追加**条件，应使用 **additionalTargetCondition** 而非重写 **targetCondition**，以保持简洁并与默认语义一致。
 
 - 示例：目标为「己方且飞行」→ 写 `additionalTargetCondition: Condition.InFlight`，勿写 `targetCondition: Condition.SameSide & Condition.InFlight`。
 - 示例：目标为「己方武器」→ 写 `additionalTargetCondition: Condition.WithTag(Tag.Weapon)`。
-- **冻结/减速/加速/充能**：Override **targetCondition** 时**不必写** `Condition.NotDestroyed`、`Condition.HasCooldown`（Apply 层已按规则强制添加）；例如寒冰特服只需 `targetCondition: Condition.SameAsSource | Condition.AdjacentToSource`。
+- **冻结/减速/加速/充能**：Override **targetCondition** 时**不必写** `Condition.NotDestroyed`、`Condition.HasCooldown`（Apply 层已按规则强制添加）；例如寒冰特服只需 `targetCondition: Condition.SameAsCaster | Condition.AdjacentToCaster`。
 
 ## 参数顺序
 
@@ -30,13 +30,11 @@ globs: "**/ItemDatabase/**","**/Core/Ability*.cs"
 
 1. **trigger**
 2. **condition** / **additionalCondition**
-3. **invokeTargetCondition**
-4. **sourceCondition**
-5. **targetCondition** / **additionalTargetCondition**
-6. **priority**
+3. **targetCondition** / **additionalTargetCondition**
+4. **priority**
 
-其余可选参数（如 valueKey、value、applyCritMultiplier、apply、effectLogName、targetCountKey）如确需覆盖，放在 priority 之后即可。  
-对于 **ability.Also(...)**，通常只传前四类参数（trigger / condition / invokeTargetCondition / sourceCondition），不应在 Also 中修改 priority / valueKey / value / targetCondition 等共享属性。
+其余可选参数（如 `valueKey`、`applyCritMultiplier`、`apply`、`effectLogName`、`targetCountKey`）如确需覆盖，放在 `priority` 之后即可。  
+对于 **ability.Also(...)**，仅支持 `trigger / condition / additionalCondition` 三类参数；`Also` 不应承载 `priority`、`targetCondition`、`valueKey` 等共享属性修改。
 
 ## 示例
 
@@ -50,12 +48,11 @@ Ability.AddAttribute(Key.Damage).Override(
 ),
 Ability.Charge.Override(
     condition: Condition.SameSide & Condition.WithTag(Tag.Tool),
-    targetCondition: Condition.SameAsSource
+    targetCondition: Condition.SameAsCaster
 ),
 Ability.Damage.Override(
     trigger: Trigger.Destroy,
-    condition: Condition.SameAsSource,
-    invokeTargetCondition: Condition.WithTag(Tag.Large) | Condition.InFlight
+    condition: Condition.SameAsCaster
 ),
 ```
 
@@ -72,6 +69,6 @@ Ability.Burn.Override(
     condition: Condition.SameSide
 ).Also(
     trigger: Trigger.UseItem,
-    condition: Condition.SameAsSource
+    condition: Condition.SameAsCaster
 ),
 ```

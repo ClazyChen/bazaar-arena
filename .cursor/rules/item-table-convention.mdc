@@ -19,7 +19,7 @@ alwaysApply: false
 | **minTier** | **档位**（**第 5 列，B/S/G/D**） | **仅字母列**表示档位：B=Bronze、S=Silver、G=Gold、D=Diamond。在 RegisterAll 中设 `db.DefaultMinTier` 后注册。**勿将第 4 列数字当作 minTier**。 |
 | Size | 第 6 列，S/M/L | Small / Medium / Large，`db.DefaultSize` |
 | CD | 第 7 列，冷却秒数 | `Cooldown = 数值` 或 `Cooldown = [a, b, c, d]`（按档位） |
-| TAG | 第 8 列，标签 | `Tags = [Tag.工具]` 等（多标签用逗号分隔）；以表格为准，如「水系、地产」→ `Tag.Aquatic`、`Tag.Property`。 |
+| TAG | 第 8 列，标签 | `Tags = Tag.Tool` 等位掩码写法（多标签用 `|` 组合）；以表格为准，如「水系、地产」→ `Tag.Aquatic | Tag.Property`。 |
 | 效果 | 第 9 列，物品描述与能力 | 对应 `Desc`；多条效果在 Desc 中用分号隔开。实现为 Abilities / Auras |
 
 ## 优先级缩写
@@ -38,12 +38,12 @@ alwaysApply: false
 
 - **己方最左侧的武器** / **己方最右侧的武器**：在己方、满足某条件的物品中取 **ItemIndex 最小/最大** 的那一件。使用 **Condition.LeftMost(Condition inner)** / **Condition.RightMost(Condition inner)**，例如：
   - 己方最左侧和最右侧的武器：`Condition.LeftMost(Condition.WithTag(Tag.Weapon)) | Condition.RightMost(Condition.WithTag(Tag.Weapon))`
-- **此物品右侧的武器**：紧邻右侧且为武器 → **Condition.RightOfSource & Condition.WithTag(Tag.Weapon)**。
-- **此物品左侧的武器**：紧邻左侧且为武器 → **Condition.LeftOfSource & Condition.WithTag(Tag.Weapon)**。
-- 「使用**其他**某类物品时」：须在 condition 中加 **Condition.DifferentFromSource**（触发者为「其他」物品），例如 `Condition.SameSide & Condition.WithTag(Tag.Weapon) & Condition.DifferentFromSource`。
+- **此物品右侧的武器**：紧邻右侧且为武器 → **Condition.RightOfCaster & Condition.WithTag(Tag.Weapon)**。
+- **此物品左侧的武器**：紧邻左侧且为武器 → **Condition.LeftOfCaster & Condition.WithTag(Tag.Weapon)**。
+- 「使用**其他**某类物品时」：须在 condition 中加 **Condition.DifferentFromCaster**（触发者为「其他」物品），例如 `Condition.SameSide & Condition.WithTag(Tag.Weapon) & Condition.DifferentFromCaster`。
 - **「此物品被加速时」/「此物品被减速时」**：用 `trigger: Trigger.Haste` / `Trigger.Slow`，且 **condition: Condition.SameAsInvokeTarget**（被加速/被减速的是本物品才触发），**targetCondition: Condition.SameAsCaster**（效果施加给自身）。参考毒须鲶、皮皮虾。
 - **「敌方物品被加速时」「己方物品被减速时」**（效果施加给**被加速/被减速的那一件**，且与**谁施加**无关）：`Trigger.Haste` / `Trigger.Slow`，**condition** 分别为 **InvokeTargetDifferentSide** / **InvokeTargetSameSide**，**targetCondition: SameAsInvokeTarget & ~Destroyed & HasCooldown**（勿依赖改 trigger 时重置 TargetCondition，否则会残留 Slow/Haste 工厂的敌方默认）。参考月光宝珠。
-- **「每有一个相邻的…，此物品 +1 多重释放」**：多重释放 = 相邻数量，用 **Formula.Count(AdjacentToSource & ...)**，**不要**加 `Formula.Constant(1) +`。参考迷幻蝠鲼、鹦鹉皮特。
+- **「每有一个相邻的…，此物品 +1 多重释放」**：多重释放 = 相邻数量，用 **Formula.Count(Condition.AdjacentToCaster & ...)**，**不要**加 `Formula.Constant(1) +`。参考迷幻蝠鲼、鹦鹉皮特。
 
 ## 效果文案与实现对应
 

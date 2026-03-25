@@ -40,9 +40,8 @@ globs: "**/*.cs","**/*.xaml","**/docs/**"
 - **物品标签（Tags）必须用位掩码单值**：统一写 `Tags = Tag.Weapon | Tag.Tool`，空标签写 `Tags = 0`。禁止写 `Tags = [Tag.Weapon, Tag.Tool]` 或 `Tags = []`，因为在当前 `IntOrByTier` 模型下这会被解释为按档位列表，导致标签条件在部分档位失效。
 - **公共物品**：仅保留 `ItemDatabase/Common.cs` 注册公共物品；`App`/`Program` 只调用 `Common.RegisterAll`。新增公共物品在 Common 中写工厂方法并在 `RegisterAll` 中注册。**物品设计经验**（触发器、战斗开始、自定义效果、ValueKey、Tooltip、灼烧衰减等）见 **item-design.mdc**。
 - **ItemTemplate.Desc**：物品模板有 `Desc` 属性，可含占位符 `{Damage}`、`{Cooldown}`、`{Burn}`、`{Poison}`、`{Custom_0}` 等；卡组编辑区悬停时替换为当前 tier 或全 tier 数值，并与 `EffectKeywordFormatting` 关键词着色一致。**无冷却（CooldownMs 为 0）时不显示冷却行**。Desc 中可用分号（`;` 或 `；`）分段，Tooltip 会按段拆成多行显示。
-- **效果预定义与自定义**：`Core/Effect.cs` 提供 `Effect.Damage`、`Effect.Burn`、`Effect.WeaponDamageBonus(ValueKey: "Custom_0")` 等。预定义效果仅设 `Kind` 与 `ValueKey = EffectKind.XXX.GetDefaultTemplateKey()`；`Kind = Other` 时用 `CustomEffectId` 在 `BattleSimulator/CustomEffectHandlers.cs` 中派发，不在 BattleSimulator 内堆逻辑。
-- **避免魔法字符串**：标签用 `Tag.Weapon`、`Tag.Friend` 等（`Core/Tag.cs`）；触发器用 `Trigger.UseItem`、`Trigger.BattleStart`（`Core/Trigger.cs`）；AuraDefinition/Effect 的 AttributeName、ValueKey 等用 `nameof(ItemTemplate.xxx)`。详见 `docs/implementation-notes.md`「避免魔法字符串」。
-- **EffectKind 与策略表**：Kind→默认 key、Kind→日志名集中在 `EffectKindKeys` 与 `EffectKindExtensions`；BattleSimulator 中效果应用通过 `GetEffectApplier(EffectKind)` 策略表派发，新增标准效果时在策略表与 EffectKindKeys 中扩展即可。
+- **能力执行模型**：能力定义统一通过 `AbilityDefinition.Apply`（`Action<BattleContext, AbilityDefinition>`）执行；优先使用 `Ability.*` 工厂 + `Override(...)`，由 `Core/Apply.cs` 提供标准委托（Damage/Burn/Poison/Shield/Charge/...）。新增语义时扩展 `Apply` 与 `Ability` 工厂，不再走旧 `Effect.cs / EffectKind` 路径。
+- **避免魔法字符串**：标签用 `Tag.*`、触发器用 `Trigger.*`、属性 key 用 `Key.*`。`OverridableAttributes` 与运行时属性均使用整型 key，Deck 层字符串 overrides 仅作为输入桥接（`Key.TryGetKey`）。
 - **数据与日志路径**：见 `data-and-logging.mdc`（Data/、Logs/、levelups 解析、CopyToOutputDirectory）。
 
 ## Tooltip 与悬停说明
@@ -54,7 +53,7 @@ globs: "**/*.cs","**/*.xaml","**/docs/**"
 
 ## 修改与扩展时注意
 
-- **Override 换 trigger 且只传 additionalCondition**：合并条件以**新 trigger 的默认**为 base，不沿用原能力 Condition；否则会误成「仅能力持有者」触发（如 Ammo 误用 SameAsSource）。见 `docs/implementation-notes.md`「弹药消耗触发器」、**.cursor/rules/ability-override-format.mdc**。
+- **Override 换 trigger 且只传 additionalCondition**：合并条件以**新 trigger 的默认**为 base，不沿用原能力 Condition；否则会误成「仅能力持有者」触发（如 Ammo 误用 `SameAsCaster`）。见 `docs/implementation-notes.md`「弹药消耗触发器」、**.cursor/rules/ability-override-format.mdc**。
 - 新增窗口或对话框时记得设置 `Owner`，并在需要时在 Loaded 中聚焦输入控件。
 - 修改战斗结算顺序或能力队列移动时机时，对照设计文档的帧顺序与 `implementation-notes.md` 的帧边界说明。
 - 卡组集相关逻辑集中在 DeckManager 与 MainWindow 的保存/另存为/删除/重命名/上移下移/新建卡组集中，保持“有路径则写回，无路径则弹窗”的一致性；卡组列表顺序由 DeckManager 的 `_order` 维护，与 JSON 中 `decks` 数组一致。

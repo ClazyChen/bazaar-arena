@@ -10,7 +10,7 @@ globs: "**/ItemDatabase/**","**/Core/BattleContext*.cs","**/Core/Apply.cs","**/C
 
 ### 基础与注册
 
-- **基础字段**：`Name`、`Desc`、`Tags`。Tags 使用 `Tag.Weapon`、`Tag.Friend`、`Tag.Tool`、`Tag.Apparel`、`Tag.Food`、`Tag.Tech`、`Tag.Property`、`Tag.Vehicle`、`Tag.Relic`、`Tag.Dragon`、`Tag.Drone`、`Tag.Toy` 等。**尺寸 Tag**（`Tag.Small`、`Tag.Medium`、`Tag.Large`）与**类型/机制 DerivedTag**（Damage、Burn、Poison、Heal、Shield、Regen、Charge、Freeze、Slow、Haste、Reload、Repair、Destroy、StartFlying、StopFlying、Crit、Cooldown、Ammo）由 **Register** 内 **EnsureTypeTags** 按 **AbilityType** 与 SameAsSource 光环等自动添加，无需手写。
+- **基础字段**：`Name`、`Desc`、`Tags`。Tags 使用 `Tag.Weapon`、`Tag.Friend`、`Tag.Tool`、`Tag.Apparel`、`Tag.Food`、`Tag.Tech`、`Tag.Property`、`Tag.Vehicle`、`Tag.Relic`、`Tag.Dragon`、`Tag.Drone`、`Tag.Toy` 等。**尺寸 Tag**（`Tag.Small`、`Tag.Medium`、`Tag.Large`）与**类型/机制 DerivedTag**（Damage、Burn、Poison、Heal、Shield、Regen、Charge、Freeze、Slow、Haste、Reload、Repair、Destroy、StartFlying、StopFlying、Crit、Cooldown、Ammo）由 **Register** 内 **EnsureTypeTags** 按 **AbilityType** 与 `Condition.SameAsCaster` 光环等自动添加，无需手写。
 - **MinTier、Size**：**不在物品工厂中设置**；在 **RegisterAll** 中通过 `db.DefaultSize`、`db.DefaultMinTier` 按批次设置，`Register` 时写入模板。
 
 ### 数值与时间
@@ -28,19 +28,19 @@ globs: "**/ItemDatabase/**","**/Core/BattleContext*.cs","**/Core/Apply.cs","**/C
 
 - **结构**：`Auras` 为 `List<AuraDefinition>`。每条含：
   - **AttributeName**：作用的属性名，用 **Key.CritRatePercent**、**Key.Damage** 等。
-  - **Condition**：对该目标生效的条件，**默认 SameAsSource**；仅当**非** SameAsSource 时才显式写（如 `Condition.AdjacentToSource`、`Condition.WithTag(Tag.Weapon)`）。**不要**写 `Condition = Condition.SameAsSource`（冗余，AuraDefinition 默认即为此）。
-  - **SourceCondition**：光环提供者需满足的条件（如 `Condition.InFlight`、`Condition.OnlyCompanion`），评估时 Item=Source=提供者。
+  - **Condition**：对该目标生效的条件，**默认 SameAsCaster**；仅当**非** SameAsCaster 时才显式写（如 `Condition.AdjacentToCaster`、`Condition.WithTag(Tag.Weapon)`）。作用自身时不必写 `Condition = Condition.SameAsCaster`。
+  - **Condition**：`AuraDefinition.Condition` 同时承担“目标筛选 + 提供者限制”。默认 `Condition.SameAsCaster`；若需限制提供者，把条件并入同一表达式（如 `Condition.SameAsCaster & Condition.InFlight`）。
   - **Value**：`Formula?`，由 `Formula.Evaluate` 计算。如 `Formula.Source(Key.Custom_0)`、`Formula.Opp(BattleSide.KeyPoison)`、`Formula.Source(Key.Custom_0) * Formula.Count(Condition.SameSide & Condition.WithTag(Tag.Friend))`。`FixedValueKey` / `FixedValueFormula` / `PercentValueKey` 已废弃，统一为 **Value + Percent**。
   - **Percent**：`bool`，默认 false。为 true 时公式结果为百分比加成（+N% 加算），如利爪暴击伤害 +100%。
-- **公式**：使用 **Formula.Source(key)**、**Formula.Side(key)**、**Formula.Opp(key)**、**Formula.Count(condition)** 与 `+`/`-`/`*`、一元负号、`int * Formula` 组合；可用 **RatioUtil.PercentFloor(Formula, percent)**。战斗内读属性优先 **BattleSide.GetItemInt(itemIndex, key, default)**；**当前** **`GetItemInt`** 尚未合并 **`BattleAuraModifiers.Accumulate`**，接回前勿假设读数已含光环（见 **implementation-notes**「光环（Aura）与属性读取」）。
+- **公式**：使用 **Formula.Source(key)**、**Formula.Side(key)**、**Formula.Opp(key)**、**Formula.Count(condition)** 与 `+`/`-`/`*`、一元负号、`int * Formula` 组合；可用 **RatioUtil.PercentFloor(Formula, percent)**。战斗内读属性统一走 **`BattleState.GetItemInt(item, key)`** 或 **`ctx.GetItemInt(item, key)`**，按当前实现会合并光环。
 
 ### 可复写属性与其它
 
-- **OverridableAttributes**：`Dictionary<string, IntOrByTier>?`，卡组内可复写属性及按 tier 默认值。键用 **Key.Custom_1**、**Key.StashParameter** 等。**约定：仅在此处写一次默认值**，不要在模板上再写同名属性（如只写 `OverridableAttributes = { [Key.Custom_1] = [5, 10, 15, 20] }`，不写 `Custom_1 = [5, 10, 15, 20]`）；**Register** 会将 OverridableAttributes 的默认值同步到模板，供战斗内公式与 Desc 使用。详见 `docs/implementation-notes.md`「OverridableAttributes 与 Aura Condition 约定」。
+- **OverridableAttributes**：`Dictionary<int, IntOrByTier>?`，卡组内可复写属性及按 tier 默认值。键用 **Key.Custom_1**、**Key.StashParameter** 等。**约定：仅在此处写一次默认值**，不要在模板上再写同名属性（如只写 `OverridableAttributes = { [Key.Custom_1] = [5, 10, 15, 20] }`，不写 `Custom_1 = [5, 10, 15, 20]`）；**Register** 会将 OverridableAttributes 的默认值同步到模板，供战斗内公式与 Desc 使用。详见 `docs/implementation-notes.md`「OverridableAttributes 与 Aura Condition 约定」。
 - **局外成长（光环 + 可覆盖变量）**：若效果为「局外某条件（如购买水系、赢得战斗）时此物品某属性提高 X/Y/Z/W」，不实现局外触发，但可用**基础数值（若有）+ 光环公式 + OverridableAttributes** 描述：**Custom_0** 写模板上（每档提高量等），**Custom_1** 仅写 **OverridableAttributes**（局外可覆盖，已购买数量常用默认 5/10/15/20）；光环 `Value = Formula.Source(Key.Custom_0) * Formula.Source(Key.Custom_1)`。参考 **珊瑚**（治疗）、**珊瑚护甲**（护盾）、**狼筅**。
 - **StashParameter**：用于如储物箱「小型物品数 + StashParameter」类公式时，默认值只写在 **OverridableAttributes** 中即可。
 - **弹药**：`AmmoCap`（0 表示无弹药）；使用后扣减 `AmmoRemaining`，日志可显示剩余弹药。
-- **战斗内模板**：每场战斗每个槽位用卡组 template 克隆；`ItemState.Template` 即该克隆，可直接修改（如 `Template.Damage = Template.Damage.Add(delta)`）。
+- **战斗内状态**：战斗内可变值存于 `ItemState.Attributes`；模板定义按引用复用。运行时改值用 `item.SetAttribute(...)` / `item.GetAttribute(...)`，不要依赖“战斗内模板克隆”。
 
 ---
 
@@ -49,39 +49,39 @@ globs: "**/ItemDatabase/**","**/Core/BattleContext*.cs","**/Core/Apply.cs","**/C
 ### 触发器
 
 - **命名**：`Trigger.UseItem`、`Trigger.BattleStart`、`Trigger.Crit`、`Trigger.Freeze`、`Trigger.Slow`、`Trigger.Destroy` 等（不带 On 前缀）。
-- **UseItem**：冷却转好后施放，能力入队，按 250ms 间隔与优先级结算。默认 **Condition = SameAsSource**（即「此物品被使用时」）。**UseSelf**：AbilityDefinition.UseSelf 表示「Trigger 为 UseItem 且未在 Override 中提供 condition」；仅 UseSelf 能力参与暴击判定（暴击按物品按帧统一，每物品每帧只判定一次）。
-- **「当其他某类物品被使用」**：必须用 **condition: Condition.SameSide & Condition.WithTag(Tag.xxx)**（如「使用工具时」用 `Condition.SameSide & Condition.WithTag(Tag.Tool)`），**不能**用 additionalCondition（否则会变成 SameAsSource & WithTag，即「此物品被使用且此物品是工具」）。示例：姜饼人、断裂镣铐。
-- **「当右侧/相邻物品被使用」**：用 **condition: Condition.DifferentFromSource & Condition.SameSide & Condition.RightOfSource**（或 AdjacentToSource 等），示例：暗影斗篷。
-- **BattleStart / Crit / Destroy**：默认 Condition 为 SameSide；需「仅自身」时写 **condition: Condition.SameAsSource**。
+- **UseItem**：冷却转好后施放，能力入队，按 250ms 间隔与优先级结算。默认 **Condition = SameAsCaster**（即「此物品被使用时」）。
+- **「当其他某类物品被使用」**：优先用 `UseOtherItem`，并写 **condition: Condition.SameSide & Condition.DifferentFromCaster & Condition.WithTag(Tag.xxx)**（如「使用工具时」）。不要把该语义写成 `UseItem + additionalCondition`。
+- **「当右侧/相邻物品被使用」**：用 **condition: Condition.DifferentFromCaster & Condition.SameSide & Condition.RightOfCaster**（或 `Condition.AdjacentToCaster` 等）。
+- **BattleStart / Crit / Destroy**：默认 Condition 为 SameSide；需「仅自身」时写 **condition: Condition.SameAsCaster**。
 
 ### Ability 工厂与 Key
 
 - **无参属性**（`Core/Ability.cs`）：**Damage**、**Shield**、**Heal**、**Burn**、**Poison**、**Charge**、**Haste**、**Slow**、**Freeze**、**StartFlying**、**StopFlying**、**Destroy**、**Repair**。返回带默认值的 `AbilityDefinition`。
 - **方法**：**AddAttribute(attributeName, amountKey?)**、**ReduceAttribute(attributeName, amountKey?)**，需指定属性 key（如 **Key.Damage**、**Key.Shield**）。
 - **数值/属性 key**：一律用 **Key.***（`Core/Key.cs`），如 Key.Damage、Key.Custom_0、Key.CooldownMs、Key.InFlight 等。
-- **定制**：统一用 **Ability.xxx.Override(...)**，参数顺序见 **ability-override-format.mdc**。多效果或特殊 Condition 可用 `new AbilityDefinition { ..., Apply = Apply.XXX, ... }`（**`Core/Apply.cs`** 内 **`Action<BattleContext>`**），但优先用工厂 + Override。
+- **定制**：统一用 **Ability.xxx.Override(...)**，参数顺序见 **ability-override-format.mdc**。多效果或特殊 Condition 可用 `new AbilityDefinition { ..., Apply = Apply.XXX, ... }`（**`Core/Apply.cs`** 内 **`Action<BattleContext, AbilityDefinition>`**），但优先用工厂 + Override。
 
 ### 飞行（InFlight）
 
-- **飞行为属性**：运行时状态存于模板字典（Key.InFlight）。**开始飞行** = 对己方满足目标条件且**未飞行**的物品设为飞行，即 **Ability.StartFlying**（等价于 `AddAttribute(Key.InFlight).Override(value: 1, additionalTargetCondition: Condition.NotInFlight)`）。**结束飞行** 已改名为 **StopFlying**，目标默认己方且 **InFlight**，用 **Ability.StopFlying**。
+- **飞行为属性**：运行时状态存于 `ItemState.Attributes` 的 `Key.InFlight`。`Ability.StartFlying` 固定 `valueKey: Key.Custom_0`，模板需提供正值（常见 `Custom_0 = 1`）；`Ability.StopFlying` 用于结束飞行。
 
 ### 能力语义速查
 
-- **Condition**：引起触发的物品（Item）需满足；UseItem 默认 SameAsSource。
+- **Condition**：引起触发的物品需满足；UseItem 默认 SameAsCaster。
 - **TargetCondition**：效果施加给谁；AddAttribute 默认 SameSide，ReduceAttribute 默认 DifferentSide。
-- **「此物品获得 X」**：TargetCondition 须为 **SameAsSource**，Condition 描述谁触发（如 AdjacentToSource）。
+- **「此物品获得 X」**：TargetCondition 须为 **SameAsCaster**，Condition 描述谁触发（如 `AdjacentToCaster`）。
 - **触发器指向目标**：效果选「被触发指向的那一件」用 **`additionalTargetCondition: Condition.SameAsInvokeTarget`**。若语义须判断 **InvokeTarget** 的阵营/标签/飞行（与 **Source** 无关），在 **TriggerEntry.Condition** 中用 **`Condition.InvokeTargetSameSide`**、**InvokeTargetDifferentSide**、**InvokeTargetSameAsCaster**、**InvokeTargetWithTag**、**InvokeTargetInFlight** 等（**`AbilityDefinition.Override` 已无 `invokeTargetCondition` 参数**）。**`Ability.Damage`** 不读 **TargetCondition**，「仅当 InvokeTarget 满足 X 才造成伤害」须把门控写在 **condition**（如牵引光束第二段：**SameAsCaster & (InvokeTargetWithTag(Large) | InvokeTargetInFlight)**）。
 
 ---
 
 ## 效果与数值
 
-- **Apply**：**`AbilityDefinition.Apply`** 为 **`Action<BattleContext>?`**；预定义委托在 **`Core/Apply.cs`**。只读效果用 **`ctx.GetResolvedValue(Key.xxx, ...)`** 取值；**光环合并**须在 **`GetResolvedValue` / `GetItemInt`** 路径显式接 **`BattleAuraModifiers`**（**当前** **`GetItemInt`** 尚未接线，见 implementation-notes）。
-- **ValueKey 与 ctx.Value**：指定了 ValueKey 的能力由模拟器解析并填入 **`ctx.Value`**；AddAttribute(Key.InFlight) 等可用 **value: 1** 在 Override 中指定。
+- **Apply**：**`AbilityDefinition.Apply`** 为 **`Action<BattleContext, AbilityDefinition>?`**；预定义委托在 **`Core/Apply.cs`**。数值统一通过 `ctx.GetItemInt(ctx.Caster, ability.ValueKey!.Value)` 读取。
+- **ValueKey**：能力不再有 `Value`/`ctx.Value`/`Override(value: ...)`；常量效果请落到模板字段（常见 `Custom_x`）并通过 `valueKey` 读取。
 - **AddAttribute / ReduceAttribute**：目标默认己方/敌方；用 **additionalTargetCondition** 收窄（如 `Condition.WithTag(Tag.Weapon)`），或 **targetCondition** 完全自定义。定义时在默认目标上**仅追加条件**时优先用 **additionalTargetCondition**，避免写完整 targetCondition（如「己方且飞行」用 `additionalTargetCondition: Condition.InFlight`）。
 - **SetAttributeOnCasterSide**：对己方目标将属性设为某值（如 StopFlying 设 Key.InFlight 为 0），对应 **`Apply.StopFlying`**（**`Core/Apply.cs`**）。
 - **摧毁**：**Ability.Destroy** 默认 **targetCondition** 为 **敌方未摧毁**（**DifferentSide**，工厂 **WithNotDestroyedTarget**）。摧毁己方「右侧第一件未摧毁」等须 **完整 targetCondition**（如 **`SameSide & ~Destroyed & FirstNonDestroyedRightOfCaster`**），不可在默认敌方下仅叠 **additionalTargetCondition**。**Override(trigger: …)** 不会按触发器覆盖 **TargetCondition**；**Destroy** 改 **Ammo** 等仍保留工厂默认 **DifferentSide**。先 **InvokeTrigger(Destroy)** 再标记 **Destroyed**。
-- **物品类型 Tag**：由 **EnsureTypeTags** 按 Damage/Burn/Poison/Heal/Shield/Regen 及 SameAsSource 光环自动补充，无需手写。
+- **物品类型 Tag**：由 **EnsureTypeTags** 按 Damage/Burn/Poison/Heal/Shield/Regen 及 `Condition.SameAsCaster` 光环自动补充，无需手写。
 
 ---
 
