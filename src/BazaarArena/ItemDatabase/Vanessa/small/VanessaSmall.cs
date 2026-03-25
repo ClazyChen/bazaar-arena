@@ -71,11 +71,25 @@ public static class VanessaSmall
         db.Register(CustomScope.Template_S2());
         db.Register(IcePick.Template());
         db.Register(Clamera.Template());
+        db.Register(Holsters.Template());
+        db.Register(Cannonball.Template());
+        db.Register(ButterflySwords.Template());
+        db.Register(ButterflySwords.Template_S10());
+        db.Register(VampireSquid.Template());
+        db.Register(IntegratedHud.Template());
+        db.Register(MrRichardson.Template());
+        db.Register(OldSaltclaw.Template());
+        db.Register(Jitte.Template());
+        db.Register(NestingDoll.Template());
+        db.Register(Silencer.Template());
+        db.Register(ShotGlasses.Template());
+        db.Register(ShotGlasses.Template_S4());
         db.Register(Grapeshot.Template_S1());
         db.Register(PeskyPete.Template_S5());
 
         db.DefaultMinTier = ItemTier.Gold;
         db.Register(PeskyPete.Template_S1());
+        db.Register(Holsters.Template_S4());
 
     }
 }

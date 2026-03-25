@@ -54,6 +54,11 @@ if (batchPath != null)
 }
 
 // 单次对战模式
+if (deck1Id == null || deck2Id == null)
+{
+    PrintUsage();
+    return 1;
+}
 var deckA = deckManager.Load(deck1Id);
 var deckB = deckManager.Load(deck2Id);
 

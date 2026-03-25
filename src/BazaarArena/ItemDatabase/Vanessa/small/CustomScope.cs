@@ -20,7 +20,7 @@ public static class CustomScope
             [
                 Ability.Charge.Override(
                     trigger: Trigger.Crit,
-                    additionalCondition: Condition.OnlyWeaponWithCooldown & Condition.RightOfCaster,
+                    additionalCondition: Condition.OnlyWeapon & Condition.RightOfCaster,
                     additionalTargetCondition: ~Condition.WithTag(Tag.Weapon),
                     priority: AbilityPriority.Low
                 ),
@@ -52,7 +52,7 @@ public static class CustomScope
             [
                 Ability.Charge.Override(
                     trigger: Trigger.Crit,
-                    additionalCondition: Condition.OnlyWeaponWithCooldown & Condition.RightOfCaster,
+                    additionalCondition: Condition.OnlyWeapon & Condition.RightOfCaster,
                     additionalTargetCondition: ~Condition.WithTag(Tag.Weapon),
                     priority: AbilityPriority.Low
                 ),

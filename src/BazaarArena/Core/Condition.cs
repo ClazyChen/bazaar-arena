@@ -84,8 +84,14 @@ public static class Condition
     private static Formula IsWeaponWithCooldownCandidate { get; } =
         SameSide & ~Destroyed & WithTag(Tag.Weapon) & HasCooldown;
 
+    private static Formula IsWeaponCandidate { get; } =
+        SameSide & ~Destroyed & WithTag(Tag.Weapon);
+
     public static Formula OnlyCompanion { get; } =
         IsCompanionCandidate & Formula.Apply(Formula.Count(IsCompanionCandidate), n => n == 1 ? 1 : 0);
+
+    public static Formula OnlyWeapon { get; } =
+        IsWeaponCandidate & Formula.Apply(Formula.Count(IsWeaponCandidate), n => n == 1 ? 1 : 0);
 
     public static Formula OnlyWeaponWithCooldown { get; } =
         IsWeaponWithCooldownCandidate & Formula.Apply(Formula.Count(IsWeaponWithCooldownCandidate), n => n == 1 ? 1 : 0);
