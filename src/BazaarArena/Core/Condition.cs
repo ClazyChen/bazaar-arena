@@ -6,23 +6,23 @@ public static class Condition
 {
     public static Formula Always { get; } = Formula.True;
 
-    /// <summary>引起触发者（Source）与能力持有者（Caster）为同一件物品（如自用 UseItem）。</summary>
+    /// <summary>当前判定对象（Item）与能力持有者（Caster）为同一件物品（如自用 UseItem）。</summary>
     public static Formula SameAsCaster { get; } = new(ctx =>
-        ctx.Source.SideIndex == ctx.Caster.SideIndex
-        && ctx.Source.ItemIndex == ctx.Caster.ItemIndex ? 1 : 0);
+        ctx.Item.SideIndex == ctx.Caster.SideIndex
+        && ctx.Item.ItemIndex == ctx.Caster.ItemIndex ? 1 : 0);
 
-    /// <summary>引起触发者（Source）与能力持有者（Caster）不是同一件物品。</summary>
+    /// <summary>当前判定对象（Item）与能力持有者（Caster）不是同一件物品。</summary>
     public static Formula DifferentFromCaster { get; } = new(ctx =>
-        ctx.Source.SideIndex != ctx.Caster.SideIndex
-        || ctx.Source.ItemIndex != ctx.Caster.ItemIndex ? 1 : 0);
+        ctx.Item.SideIndex != ctx.Caster.SideIndex
+        || ctx.Item.ItemIndex != ctx.Caster.ItemIndex ? 1 : 0);
 
-    /// <summary>Source 与 Caster 在同一阵营侧。</summary>
+    /// <summary>Item 与 Caster 在同一阵营侧。</summary>
     public static Formula SameSide { get; } = new(ctx =>
-        ctx.Source.SideIndex == ctx.Caster.SideIndex ? 1 : 0);
+        ctx.Item.SideIndex == ctx.Caster.SideIndex ? 1 : 0);
 
-    /// <summary>Source 与 Caster 在不同阵营侧。</summary>
+    /// <summary>Item 与 Caster 在不同阵营侧。</summary>
     public static Formula DifferentSide { get; } = new(ctx =>
-        ctx.Source.SideIndex != ctx.Caster.SideIndex ? 1 : 0);
+        ctx.Item.SideIndex != ctx.Caster.SideIndex ? 1 : 0);
 
     /// <summary> 受到触发（InvokeTarget）的物品和当前物品（Item）为同一件。</summary>
     public static Formula SameAsInvokeTarget { get; } = new(ctx =>

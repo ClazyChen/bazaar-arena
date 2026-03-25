@@ -77,7 +77,7 @@
 
 - **卡组**：P1 `ss_incendiary_rounds_p1`（燃烧子弹 银 + 獠牙 铜 相邻），P2 `ss_incendiary_rounds_p2`（獠牙 铜）
 - **预期**：日志中出现「燃烧子弹」与「灼烧」
-- **目的**：验证「使用相邻物品时造成灼烧」触发条件（Source 与 Caster 相邻）与灼烧数值
+- **目的**：验证「使用相邻物品时造成灼烧」触发条件（InvokeTarget 与 Caster 相邻）与灼烧数值
 
 ## 13. 飞镖发射器（Dart Launcher）
 

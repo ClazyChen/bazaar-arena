@@ -226,6 +226,8 @@ public sealed partial class BattleContext
                     t.ChargedTimeMs = 0;
                 }
             }
+            if (add > 0)
+                BattleState.InvokeTrigger(Trigger.Reload, Caster, t, 1);
             return t.Template.Name;
         }, null);
     }

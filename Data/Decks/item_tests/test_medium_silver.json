@@ -60,6 +60,56 @@
       { "itemName": "獠牙", "tier": 0 },
       { "itemName": "赛博铁尺", "tier": 1 }
     ] } },
-    { "id": "ms_cyber_sai_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+    { "id": "ms_cyber_sai_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_bladed_hoverboard_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "獠牙", "tier": 0 },
+      { "itemName": "带刃悬浮板", "tier": 1 }
+    ] } },
+    { "id": "ms_bladed_hoverboard_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_elemental_depth_charge_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "元素深水炸弹", "tier": 1 },
+      { "itemName": "碾骨爪", "tier": 1 }
+    ] } },
+    { "id": "ms_elemental_depth_charge_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_ramrod_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "填弹杆", "tier": 1 },
+      { "itemName": "左轮手枪", "tier": 0 }
+    ] } },
+    { "id": "ms_ramrod_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_javelin_reload_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "填弹杆", "tier": 1 },
+      { "itemName": "标枪", "tier": 1 }
+    ] } },
+    { "id": "ms_javelin_reload_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_submersible_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "碾骨爪", "tier": 1 },
+      { "itemName": "深潜器", "tier": 1 },
+      { "itemName": "鲨齿爪", "tier": 0 }
+    ] } },
+    { "id": "ms_submersible_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_torpedo_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "鱼雷", "tier": 1 },
+      { "itemName": "渔网", "tier": 0 }
+    ] } },
+    { "id": "ms_torpedo_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_oni_mask_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "篝火", "tier": 1 },
+      { "itemName": "恶鬼面具", "tier": 1 },
+      { "itemName": "友好玩偶", "tier": 2 }
+    ] } },
+    { "id": "ms_oni_mask_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_repeater_use_this_item_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "连发步枪", "tier": 1 },
+      { "itemName": "葡萄弹", "tier": 1 }
+    ] } },
+    { "id": "ms_repeater_use_this_item_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
   ]
 }

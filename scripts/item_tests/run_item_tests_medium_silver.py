@@ -29,6 +29,14 @@ MEDIUM_SILVER_TESTS = [
     {"name": "仿生手臂_bionic_arm", "deck1": "ms_bionic_arm_p1", "deck2": "ms_bionic_arm_p2", "log_contains": ["仿生手臂", "伤害", "75"]},
     {"name": "时光指针_hands_of_time", "deck1": "ms_hands_of_time_p1", "deck2": "ms_hands_of_time_p2", "log_contains": ["时光指针", "冷却缩短"]},
     {"name": "赛博铁尺_cyber_sai", "deck1": "ms_cyber_sai_p1", "deck2": "ms_cyber_sai_p2", "log_contains": ["赛博铁尺", "伤害提高"]},
+    {"name": "带刃悬浮板_bladed_hoverboard", "deck1": "ms_bladed_hoverboard_p1", "deck2": "ms_bladed_hoverboard_p2", "log_contains": ["带刃悬浮板", "伤害"]},
+    {"name": "元素深水炸弹_elemental_depth_charge", "deck1": "ms_elemental_depth_charge_p1", "deck2": "ms_elemental_depth_charge_p2", "log_contains": ["元素深水炸弹", "灼烧", "剧毒", "冻结"]},
+    {"name": "填弹杆_ramrod", "deck1": "ms_ramrod_p1", "deck2": "ms_ramrod_p2", "log_contains": ["填弹杆", "装填", "暴击率提高"]},
+    {"name": "标枪_装填触发_javelin_reload", "deck1": "ms_javelin_reload_p1", "deck2": "ms_javelin_reload_p2", "log_contains": ["标枪", "装填", "暴击率提高"]},
+    {"name": "深潜器_submersible", "deck1": "ms_submersible_p1", "deck2": "ms_submersible_p2", "log_contains": ["深潜器", "伤害提高"]},
+    {"name": "鱼雷_torpedo", "deck1": "ms_torpedo_p1", "deck2": "ms_torpedo_p2", "log_contains": ["鱼雷", "伤害提高"]},
+    {"name": "恶鬼面具_oni_mask", "deck1": "ms_oni_mask_p1", "deck2": "ms_oni_mask_p2", "log_contains": ["恶鬼面具", "灼烧提高"]},
+    {"name": "连发步枪_use_this_item_repeater", "deck1": "ms_repeater_use_this_item_p1", "deck2": "ms_repeater_use_this_item_p2", "log_contains": ["连发步枪", "伤害"]},
 ]
 
 

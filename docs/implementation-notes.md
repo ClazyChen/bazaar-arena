@@ -67,7 +67,7 @@
 - **计数（`Formula.Count(condition)`）**
   - `Item` 会被遍历为候选物品
   - 但 `Source` 固定为外层 ctx.Source（不会随候选 Item 变化）
-  - 因此不要在 `Count(...)` 里用 `Condition.SameSide` 表达“候选 item 同侧过滤”；应优先使用像 `AdjacentToCaster` 这种直接检查 `Item.SideIndex` 的条件，或自定义“Item 与 Caster 同侧”条件。
+  - **注意**：`Condition.SameSide`/`DifferentSide` 等核心条件以 `Item` 为判定对象，因此在 `Count(...)` 的嵌套扫描里也可以直接用于“候选 item 与 Caster 同侧过滤”。`Source` 在该语境下仅用于保留外层上下文，不建议在物品定义侧直接依赖。
 
 ### PoisonSelf 最终约定
 

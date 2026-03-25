@@ -27,12 +27,14 @@ public static class Trigger
     public const int Shield = 10;
     /// <summary>弹药消耗时触发（某物品消耗 1 发弹药时，即 AmmoRemaining-- 后）；来源=消耗弹药的那个物品。默认 Condition 为 SameSide。可用 additionalCondition: Condition.AmmoDepleted 限定为「耗尽当次」。</summary>
     public const int Ammo = 11;
+    /// <summary>物品被装填时触发（由 ApplyReload 上报）；来源=执行装填的物品（通常为能力持有者）；InvokeTarget=被装填的物品；默认 Condition 为 SameSide。</summary>
+    public const int Reload = 12;
     /// <summary>即将落败时触发（该方 Hp≤0 时，每场战斗每方最多触发一次，由模拟器步骤 10 用阵营标记保证「首次」）。默认 Condition 为 SameSide。</summary>
-    public const int AboutToLose = 12;
+    public const int AboutToLose = 13;
     /// <summary>任意物品对目标施加「暴击率提高」时触发（由 AddAttribute(Key.CritRate) 上报）；InvokeTarget=被提高暴击率的物品；默认 Condition 为 SameSide。</summary>
-    public const int CritRateIncreased = 13;
+    public const int CritRateIncreased = 14;
     // 新增触发器时写在这里
     
     // 触发器的数量
-    public const int Count = 14;
+    public const int Count = 15;
 }

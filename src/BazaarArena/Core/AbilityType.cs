@@ -19,4 +19,5 @@ public enum AbilityType
     ReduceAttribute = 14,
     GainGold = 15,
     Invincible = 16,
+    UseThisItem = 17,
 }

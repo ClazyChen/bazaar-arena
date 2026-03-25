@@ -69,6 +69,16 @@ public static class Apply
         ctx.LogEffect("金币", value, showCrit: false);
     };
 
+    public static readonly Action<BattleContext, AbilityDefinition> UseThisItem = (ctx, ability) =>
+    {
+        if (!ctx.AllowCastQueueEnqueue) return;
+        if (ctx.Caster.Destroyed) return;
+        if (ctx.Caster.FreezeRemainingMs > 0) return;
+        int ammoCap = ctx.GetItemInt(ctx.Caster, Key.AmmoCap);
+        if (ammoCap > 0 && ctx.Caster.AmmoRemaining <= 0) return;
+        ctx.BattleState.CastQueue.Add(ctx.Caster);
+    };
+
     public static readonly Action<BattleContext, AbilityDefinition> Charge = (ctx, ability) =>
     {
         int chargeMs = ctx.GetItemInt(ctx.Caster, ability.ValueKey!.Value);

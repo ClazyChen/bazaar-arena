@@ -63,3 +63,53 @@
 - **卡组**：P1 `ms_cyber_sai_p1`（三花 铜 + 獠牙 铜 + 赛博铁尺 银），P2 `ms_cyber_sai_p2`（獠牙 铜）
 - **预期**：日志中出现「赛博铁尺」与「伤害提高」
 - **目的**：验证新增触发器 `CritRateIncreased`：当三花因「使用其他武器」而提高暴击率时，赛博铁尺能对该武器施加「伤害提高」
+
+---
+
+## 10. 带刃悬浮板（Bladed Hoverboard）
+
+- **卡组**：P1 `ms_bladed_hoverboard_p1`（獠牙 铜 + 带刃悬浮板 银 相邻），P2 `ms_bladed_hoverboard_p2`（獠牙 铜）
+- **预期**：日志中出现「带刃悬浮板」与「伤害」（使用相邻物品时触发）
+- **目的**：验证 `UseOtherItem + InvokeTargetAdjacentToCaster` 的相邻触发语义
+
+## 11. 元素深水炸弹（Elemental Depth Charge）
+
+- **卡组**：P1 `ms_elemental_depth_charge_p1`（元素深水炸弹 银 + 碾骨爪 银），P2 `ms_elemental_depth_charge_p2`（獠牙 铜）
+- **预期**：日志中出现「元素深水炸弹」「灼烧」「剧毒」「冻结」
+- **目的**：验证多能力（灼烧/剧毒/冻结）与弹药物品施放日志
+
+## 12. 填弹杆（Ramrod）
+
+- **卡组**：P1 `ms_ramrod_p1`（填弹杆 银 + 左轮手枪 铜 相邻），P2 `ms_ramrod_p2`（獠牙 铜）
+- **预期**：日志中出现「填弹杆」「装填」「暴击率提高」
+- **目的**：验证新增触发器 `Reload`：当填弹杆装填相邻弹药物品时，可触发后续「暴击率提高（限本场战斗）」效果
+
+## 13. 标枪（Javelin）：被装填触发
+
+- **卡组**：P1 `ms_javelin_reload_p1`（填弹杆 银 + 标枪 银 相邻），P2 `ms_javelin_reload_p2`（獠牙 铜）
+- **预期**：日志中出现「标枪」「装填」「暴击率提高」
+- **目的**：验证 `Reload` 触发器的 `InvokeTargetSameAsCaster` 收窄语义（仅当被装填的是这件标枪时触发）
+
+## 14. 深潜器（Submersible）
+
+- **卡组**：P1 `ms_submersible_p1`（碾骨爪 银 + 深潜器 银 + 鲨齿爪 铜），P2 `ms_submersible_p2`（獠牙 铜）
+- **预期**：日志中出现「深潜器」「伤害提高」
+- **目的**：验证「最左/最右水系武器」目标筛选（LeftMost/RightMost）与本场战斗属性增益
+
+## 15. 鱼雷（Torpedo）
+
+- **卡组**：P1 `ms_torpedo_p1`（鱼雷 银 + 渔网 铜），P2 `ms_torpedo_p2`（獠牙 铜）
+- **预期**：日志中出现「鱼雷」「伤害提高」
+- **目的**：验证 `UseOtherItem` 的额外条件（使用其他水系或弹药物品时）对自身战斗内属性增益
+
+## 16. 恶鬼面具（Oni Mask）
+
+- **卡组**：P1 `ms_oni_mask_p1`（篝火 银 + 恶鬼面具 银 + 友好玩偶 金），P2 `ms_oni_mask_p2`（獠牙 铜）
+- **预期**：日志中出现「恶鬼面具」「灼烧提高」
+- **目的**：验证「造成暴击时」触发对灼烧物品施加本场战斗灼烧提高
+
+## 17. 连发步枪（Repeater）：使用此物品（UseThisItem）
+
+- **卡组**：P1 `ms_repeater_use_this_item_p1`（连发步枪 银 + 葡萄弹 银），P2 `ms_repeater_use_this_item_p2`（獠牙 铜）
+- **预期**：日志中出现「连发步枪」「伤害」
+- **目的**：验证新增能力 `UseThisItem`：当其他弹药物品被使用时，连发步枪可绕过冷却直接进入施放队列并造成伤害

@@ -107,6 +107,10 @@ public static class Ability
         valueKey: Key.InvincibleMs,
         applyCritMultiplier: false);
 
+    /// <summary>使用此物品：将此物品直接加入施放队列，不消耗充能（绕过冷却）。常用于「使用其他某类物品时，使用此物品」。</summary>
+    public static AbilityDefinition UseThisItem => CreateBase(AbilityType.UseThisItem, Core.Apply.UseThisItem).Override(
+        applyCritMultiplier: false);
+
     /// <summary>对满足目标条件的物品增加指定属性（限本场战斗）。attributeKey 如 Key.Damage、Key.Poison；amountKey 默认 Key.Custom_0。</summary>
     public static AbilityDefinition AddAttribute(int attributeKey, int? amountKey = null) => CreateBase(AbilityType.AddAttribute, Apply.AddAttribute(attributeKey)).Override(
         valueKey: amountKey ?? Key.Custom_0,

@@ -45,5 +45,36 @@ public static class VanessaMedium
         db.Register(Bonfire.Template());
         db.Register(CyberSai.Template());
         db.Register(CyberSai.Template_S6());
+
+        db.Register(BladedHoverboard.Template());
+        db.Register(BladedHoverboard.Template_S4());
+        db.Register(OrangeJulian.Template());
+        db.Register(OrangeJulian.Template_S8());
+        db.Register(ElementalDepthCharge.Template());
+        db.Register(Sextant.Template());
+        db.Register(Sextant.Template_S1());
+        db.Register(Ramrod.Template());
+        db.Register(Ramrod.Template_S5());
+        db.Register(Ramrod.Template_S1());
+        db.Register(Javelin.Template());
+        db.Register(Javelin.Template_S11());
+        db.Register(Javelin.Template_S5());
+        db.Register(Submersible.Template());
+        db.Register(Submersible.Template_S8());
+        db.Register(Arbalest.Template());
+        db.Register(Musket.Template());
+        db.Register(Musket.Template_S4());
+        db.Register(Repeater.Template());
+        db.Register(Repeater.Template_S1());
+        db.Register(Harpoon.Template());
+        db.Register(Torpedo.Template());
+        db.Register(Torpedo.Template_S1());
+        db.Register(WantedPoster.Template());
+        db.Register(Astrolabe.Template());
+        db.Register(Astrolabe.Template_S1());
+        db.Register(WeatherGlass.Template());
+        db.Register(WeatherGlass.Template_S4());
+        db.Register(Lockbox.Template());
+        db.Register(OniMask.Template());
     }
 }
