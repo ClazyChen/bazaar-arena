@@ -16,7 +16,7 @@ public sealed class Config
     public bool Perf { get; set; } = false;
     public List<string> ExcludedItems { get; set; } = [];
 
-    /// <summary>玩家等级（仅支持 2、3 或 4）：影响槽位上限、对战 Deck.PlayerLevel、overridable 预应用尺度。</summary>
+    /// <summary>玩家等级（仅支持 2、3、4 或 5）：影响槽位上限、对战 Deck.PlayerLevel、overridable 预应用尺度。</summary>
     public int PlayerLevel { get; set; } = 2;
 
     public static Config Parse(string[] args)
@@ -90,8 +90,8 @@ public sealed class Config
             }
         }
 
-        if (c.PlayerLevel != 2 && c.PlayerLevel != 3 && c.PlayerLevel != 4)
-            throw new ArgumentException("仅支持 --level 2、3 或 4。");
+        if (c.PlayerLevel != 2 && c.PlayerLevel != 3 && c.PlayerLevel != 4 && c.PlayerLevel != 5)
+            throw new ArgumentException("仅支持 --level 2、3、4 或 5。");
 
         if (string.IsNullOrWhiteSpace(c.AnchorItem))
             throw new ArgumentException("必须提供 --anchor-item");

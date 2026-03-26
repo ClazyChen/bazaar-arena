@@ -39,9 +39,7 @@ public static class ShotGlasses
             Cooldown = 5.0,
             AmmoCap = [1, 2, 3],
             Haste = 1.0,
-            HasteTargetCount = 99,
             Slow = 1.0,
-            SlowTargetCount = 99,
             Abilities =
             [
                 Ability.Haste,

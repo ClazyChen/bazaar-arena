@@ -12,6 +12,7 @@ public static class Bonfire
             Desc = "造成 {Burn} 灼烧；触发灼烧时，加速 {HasteTargetCount} 件相邻物品 {Haste} 秒",
             Cooldown = 5.0,
             Tags = 0,
+            HasteTargetCount = 1,
             Burn = [5, 10, 15],
             Haste = [1, 2, 3],
             Abilities =

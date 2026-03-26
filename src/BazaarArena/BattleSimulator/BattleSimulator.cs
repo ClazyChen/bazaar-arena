@@ -263,7 +263,7 @@ public class BattleSimulator
                 ItemState item;
                 var ov = entry.Overrides;
                 if (protoResolver != null
-                    && entry.Tier == ItemTier.Bronze
+                    && (entry.Tier == ItemTier.Bronze || entry.Tier == ItemTier.Silver)
                     && (ov == null || ov.Count == 0)
                     && protoResolver.TryGetBattlePrototype(entry.ItemName) is { } proto)
                 {

@@ -8,7 +8,7 @@ from pathlib import Path
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="对 52 个海盗铜物品批量运行锚定贪心搜索并汇总 top1。"
+        description="对海盗物品批量运行锚定贪心搜索并汇总 top1。"
     )
     parser.add_argument(
         "--output",
@@ -23,9 +23,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--level",
         type=int,
-        choices=[2, 3, 4],
+        choices=[2, 3, 4, 5],
         default=2,
-        help="传给 Greedy 的 --level（2：6 槽半 overrides；3：8 槽铜档；4：10 槽铜银平均 overrides）。",
+        help="传给 Greedy 的 --level（2：6 槽半 overrides；3：8 槽铜档；4：10 槽铜银平均 overrides；5：10 槽银档）。",
     )
     parser.add_argument("--top-k", type=int, default=20, help="Greedy 的 K。")
     parser.add_argument("--top-multiplier", type=int, default=2, help="Greedy 的 M。")
@@ -67,14 +67,36 @@ def ok(text: str) -> None:
 
 def parse_registered_class_names(vanessa_register_file: Path) -> list[str]:
     text = vanessa_register_file.read_text(encoding="utf-8")
-    bronze_chunk_match = re.search(
-        r"DefaultMinTier\s*=\s*ItemTier\.Bronze;(?P<body>[\s\S]*?)(?:DefaultMinTier\s*=\s*ItemTier\.Silver;|}\s*$)",
-        text,
-    )
-    if not bronze_chunk_match:
-        raise RuntimeError(f"无法在文件中找到 Bronze 注册段：{vanessa_register_file}")
-    body = bronze_chunk_match.group("body")
-    class_names = re.findall(r"db\.Register\((\w+)\.Template\(\)\);", body)
+    def extract_block(tier: str) -> str:
+        m = re.search(
+            rf"DefaultMinTier\s*=\s*ItemTier\.{tier};(?P<body>[\s\S]*?)(?:DefaultMinTier\s*=\s*ItemTier\.\w+;|}}\s*$)",
+            text,
+        )
+        if not m:
+            raise RuntimeError(f"无法在文件中找到 {tier} 注册段：{vanessa_register_file}")
+        return m.group("body")
+
+    class_names: list[str] = []
+    for tier in ("Bronze",):
+        class_names.extend(re.findall(r"db\.Register\((\w+)\.Template\(\)\);", extract_block(tier)))
+    return class_names
+
+
+def parse_registered_class_names_for_tiers(vanessa_register_file: Path, tiers: list[str]) -> list[str]:
+    text = vanessa_register_file.read_text(encoding="utf-8")
+
+    def extract_block(tier: str) -> str:
+        m = re.search(
+            rf"DefaultMinTier\s*=\s*ItemTier\.{tier};(?P<body>[\s\S]*?)(?:DefaultMinTier\s*=\s*ItemTier\.\w+;|}}\s*$)",
+            text,
+        )
+        if not m:
+            raise RuntimeError(f"无法在文件中找到 {tier} 注册段：{vanessa_register_file}")
+        return m.group("body")
+
+    class_names: list[str] = []
+    for tier in tiers:
+        class_names.extend(re.findall(r"db\.Register\((\w+)\.Template\(\)\);", extract_block(tier)))
     return class_names
 
 
@@ -86,7 +108,7 @@ def parse_template_name(template_file: Path) -> str:
     return m.group(1)
 
 
-def collect_anchor_items(root: Path) -> list[str]:
+def collect_anchor_items(root: Path, player_level: int) -> list[str]:
     class_name_to_file: dict[str, Path] = {}
     for p in (root / "src" / "BazaarArena" / "ItemDatabase" / "Vanessa").rglob("*.cs"):
         class_name_to_file[p.stem] = p
@@ -99,19 +121,29 @@ def collect_anchor_items(root: Path) -> list[str]:
 
     names: list[str] = []
     for register_file in register_files:
-        for class_name in parse_registered_class_names(register_file):
+        if player_level == 5:
+            class_names = parse_registered_class_names_for_tiers(register_file, ["Bronze", "Silver"])
+        else:
+            class_names = parse_registered_class_names(register_file)
+        for class_name in class_names:
             file_path = class_name_to_file.get(class_name)
             if file_path is None:
                 raise RuntimeError(f"找不到类文件：{class_name}")
             names.append(parse_template_name(file_path))
-    if len(names) != 52:
+
+    # 特殊：Greedy lv5 会把烙刀展开为 Q1/Q2 两个锚定物品（输出需区分）。
+    if "烙刀" in names:
+        names = [n for n in names if n != "烙刀"]
+        names.extend(["烙刀（Q1）", "烙刀（Q2）"])
+
+    if player_level != 5 and len(names) != 52:
         raise RuntimeError(f"海盗铜物品数量不是 52，而是 {len(names)}。")
     return names
 
 
 def max_slots_for_player_level(level: int) -> int:
-    """与 BazaarArena.Core.Deck.MaxSlotsForLevel 一致（脚本使用 2–4）。"""
-    return {2: 6, 3: 8, 4: 10}[level]
+    """与 BazaarArena.Core.Deck.MaxSlotsForLevel 一致（脚本使用 2–5）。"""
+    return {2: 6, 3: 8, 4: 10, 5: 10}[level]
 
 
 def collect_burn_tag_items(root: Path) -> set[str]:
@@ -127,6 +159,8 @@ def collect_burn_tag_items(root: Path) -> set[str]:
 
 
 def build_excluded_items(anchor: str, burn_items: set[str]) -> list[str]:
+    if anchor in {"烙刀（Q1）", "烙刀（Q2）"}:
+        anchor = "烙刀"
     excluded: list[str] = []
     if anchor != "舱底蠕虫":
         excluded.append("舱底蠕虫")
@@ -232,7 +266,7 @@ def main() -> int:
     tmp_dir.mkdir(parents=True, exist_ok=True)
     max_size = max_slots_for_player_level(level)
 
-    anchors = collect_anchor_items(root)
+    anchors = collect_anchor_items(root, level)
     burn_items = collect_burn_tag_items(root)
 
     rows: list[str] = []

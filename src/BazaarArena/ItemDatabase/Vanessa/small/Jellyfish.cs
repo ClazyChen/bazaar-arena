@@ -17,6 +17,7 @@ public static class Jellyfish
             Cooldown = 7.0,
             Poison = [3, 6, 9, 12],
             Haste = [1.0, 2.0, 3.0, 4.0],
+            HasteTargetCount = 1,
             Abilities =
             [
                 Ability.Poison,

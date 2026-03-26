@@ -16,6 +16,7 @@ public static class DiveWeights
             Cooldown = 8.0,
             AmmoCap = 4,
             Haste = [1.0, 2.0, 3.0],
+            HasteTargetCount = 1,
             Abilities =
             [
                 Ability.Haste,

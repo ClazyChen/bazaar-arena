@@ -38,6 +38,7 @@ public static class Sextant
             Tags = Tag.Aquatic | Tag.Tool,
             Haste = [1.0, 2.0, 3.0],
             Custom_0 = [15, 30, 50],
+            HasteTargetCount = 1,
             Abilities =
             [
                 Ability.Haste.Override(

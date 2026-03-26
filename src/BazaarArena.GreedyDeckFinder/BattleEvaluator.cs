@@ -253,12 +253,13 @@ public sealed class BattleEvaluator
     private Deck ToDeck(DeckRep rep)
     {
         var sig = rep.Signature();
+        var tier = _playerLevel == 5 ? ItemTier.Silver : ItemTier.Bronze;
         return _deckCache.GetOrAdd(sig, _ =>
         {
             var slots = rep.ItemNames.Select(name => new DeckSlotEntry
             {
                 ItemName = name,
-                Tier = ItemTier.Bronze,
+                Tier = tier,
                 Overrides = null,
             }).ToList();
             return new Deck

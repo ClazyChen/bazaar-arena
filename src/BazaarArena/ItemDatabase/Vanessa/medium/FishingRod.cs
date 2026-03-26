@@ -15,6 +15,7 @@ public static class FishingRod
             Tags = Tag.Aquatic | Tag.Tool,
             Cooldown = 5.0,
             Haste = 2.0,
+            HasteTargetCount = 1,
             Abilities =
             [
                 Ability.Haste.Override(

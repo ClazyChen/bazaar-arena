@@ -33,7 +33,7 @@ public static class Program
 
         if (config.ExcludedItems.Contains(config.AnchorItem, StringComparer.Ordinal))
             throw new ArgumentException($"锚定物品被排除：{config.AnchorItem}");
-        var pool = new ItemPool(db, config.ExcludedItems);
+        var pool = new ItemPool(db, config.PlayerLevel, config.ExcludedItems);
         IItemTemplateResolver resolver = new GreedyPreflattenedResolver(db, pool, config.PlayerLevel);
         var simulator = new SimulatorClass();
         var rng = config.Seed.HasValue ? new Random(config.Seed.Value) : new Random();

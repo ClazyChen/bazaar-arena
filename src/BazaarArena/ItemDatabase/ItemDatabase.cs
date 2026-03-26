@@ -91,8 +91,8 @@ public class ItemDatabase : IItemTemplateResolver
         EnsureDefaultIfUndefined(template, Key.Multicast, 1);
         EnsureDefaultIfUndefined(template, Key.CritDamage, 200);
         EnsureDefaultIfUndefined(template, Key.ChargeTargetCount, 1);
-        EnsureDefaultIfUndefined(template, Key.HasteTargetCount, 1);
-        EnsureDefaultIfUndefined(template, Key.SlowTargetCount, 1);
+        EnsureDefaultIfUndefined(template, Key.HasteTargetCount, 20);
+        EnsureDefaultIfUndefined(template, Key.SlowTargetCount, 20);
         EnsureDefaultIfUndefined(template, Key.FreezeTargetCount, 1);
         EnsureDefaultIfUndefined(template, Key.ReloadTargetCount, 1);
         EnsureDefaultIfUndefined(template, Key.RepairTargetCount, 1);
