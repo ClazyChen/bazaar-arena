@@ -16,6 +16,7 @@ public static class IllusoRay
             Tags = Tag.Aquatic | Tag.Ray | Tag.Friend,
             Cooldown = 6.0,
             Slow = [1.0, 2.0, 3.0, 4.0],
+            SlowTargetCount = 1,
             Abilities =
             [
                 Ability.Slow,

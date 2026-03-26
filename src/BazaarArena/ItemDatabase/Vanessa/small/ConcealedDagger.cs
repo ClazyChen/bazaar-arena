@@ -18,6 +18,7 @@ public static class ConcealedDagger
             Damage = [10, 20, 30, 40],
             Haste = [1.0, 2.0, 3.0, 4.0],
             Custom_0 = 1,
+            HasteTargetCount = 1,
             Abilities =
             [
                 Ability.Damage,

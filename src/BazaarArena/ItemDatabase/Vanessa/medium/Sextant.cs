@@ -12,6 +12,7 @@ public static class Sextant
             Desc = "造成暴击时，加速 {HasteTargetCount} 件物品 {HasteSeconds} 秒；触发加速时，1 件物品暴击率提高 {Custom_0%}（限本场战斗）",
             Cooldown = 0.0,
             Tags = Tag.Aquatic | Tag.Tool,
+            HasteTargetCount = 1,
             Haste = [1.0, 2.0, 3.0],
             Custom_0 = 5,
             Abilities =
