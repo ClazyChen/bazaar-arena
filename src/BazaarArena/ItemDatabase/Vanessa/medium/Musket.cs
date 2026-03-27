@@ -4,8 +4,6 @@ namespace BazaarArena.ItemDatabase.Vanessa.Medium;
 
 public static class Musket
 {
-    private static Formula InvokeTargetAdjacentToCaster { get; } = Condition.InvokeTargetAdjacentToCaster;
-
     public static ItemTemplate Template()
     {
         return new ItemTemplate
@@ -23,12 +21,12 @@ public static class Musket
                 Ability.Damage,
                 Ability.Reload.Override(
                     trigger: Trigger.Burn,
-                    additionalCondition: InvokeTargetAdjacentToCaster,
+                    additionalCondition: Condition.AdjacentToCaster,
                     targetCondition: Condition.SameAsCaster,
                     priority: AbilityPriority.Lowest),
                 Ability.AddAttribute(Key.Damage).Override(
                     trigger: Trigger.Burn,
-                    additionalCondition: InvokeTargetAdjacentToCaster,
+                    additionalCondition: Condition.AdjacentToCaster,
                     targetCondition: Condition.SameAsCaster,
                     valueKey: Key.Custom_0,
                     priority: AbilityPriority.Lowest),

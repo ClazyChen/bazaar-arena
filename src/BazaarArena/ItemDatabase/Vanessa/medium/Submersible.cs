@@ -43,7 +43,7 @@ public static class Submersible
                 new AuraDefinition
                 {
                     Attribute = Key.CooldownMs,
-                    Condition = HasOtherVehicleOrLarge,
+                    Condition = Condition.SameAsCaster & HasOtherVehicleOrLarge,
                     Value = Formula.Constant(-2000),
                 }
             ]

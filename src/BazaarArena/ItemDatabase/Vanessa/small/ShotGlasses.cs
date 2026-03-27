@@ -12,7 +12,7 @@ public static class ShotGlasses
         return new ItemTemplate
         {
             Name = "烈酒杯",
-            Desc = "▶ 加速 {HasteTargetCount} 件物品 {HasteSeconds} 秒；▶ 减速 {SlowTargetCount} 件物品 {SlowSeconds} 秒；弹药：{AmmoCap}",
+            Desc = "▶ 加速 {HasteTargetCount} 件物品 {HasteSeconds} 秒；▶ 减速己方 {SlowTargetCount} 件物品 {SlowSeconds} 秒；弹药：{AmmoCap}",
             Tags = 0,
             Cooldown = 3.0,
             AmmoCap = [1, 2, 3],
@@ -23,7 +23,9 @@ public static class ShotGlasses
             Abilities =
             [
                 Ability.Haste,
-                Ability.Slow.Override(priority: AbilityPriority.High),
+                Ability.Slow.Override(
+                    targetCondition: Condition.SameSide, 
+                    priority: AbilityPriority.High),
             ],
         };
     }
