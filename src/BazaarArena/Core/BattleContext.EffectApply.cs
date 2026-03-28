@@ -4,7 +4,8 @@ namespace BazaarArena.Core;
 
 public sealed partial class BattleContext
 {
-    public int ApplyDamageToOpp(int value, bool isBurn) => BattleSideDamage.ApplyDamageToSide(OppSide, value, isBurn);
+    public int ApplyDamageToOpp(int value, bool isBurn) =>
+        BattleSideDamage.ApplyDamageToSide(OppSide, value, isBurn ? DamageShieldRule.Burn : DamageShieldRule.Standard);
     public void HealCaster(int amount) { CurrentSide.Hp = Math.Min(CurrentSide.MaxHp, CurrentSide.Hp + amount); }
     public void AddBurnToOpp(int value) => OppSide.Burn += value;
     public void AddPoisonToOpp(int value) => OppSide.Poison += value;

@@ -498,7 +498,7 @@ public class BattleSimulator
     {
         if (victim.Burn <= 0) return;
         int damage = victim.Burn;
-        BattleSideDamage.ApplyDamageToSide(victim, damage, isBurn: true);
+        BattleSideDamage.ApplyDamageToSide(victim, damage, DamageShieldRule.Burn);
         int decay = RatioUtil.PercentFloor(victim.Burn, 3); // 衰减量：当前灼烧的 3%（至少为 1），灼烧 1 时衰减 1 变为 0
         victim.Burn = Math.Max(0, victim.Burn - decay);
         logSink.OnBurnTick(victim, damage, victim.Burn, timeMs);
@@ -508,7 +508,7 @@ public class BattleSimulator
     {
         if (victim.Poison <= 0) return;
         int damage = victim.Poison;
-        BattleSideDamage.ApplyDamageToSide(victim, damage, isBurn: false);
+        BattleSideDamage.ApplyDamageToSide(victim, damage, DamageShieldRule.PoisonTick);
         logSink.OnPoisonTick(victim, damage, timeMs);
     }
 
@@ -522,7 +522,7 @@ public class BattleSimulator
 
     private static void ApplySandstorm(BattleSide side, int damage, IBattleLogSink logSink, int timeMs)
     {
-        _ = BattleSideDamage.ApplyDamageToSide(side, damage, isBurn: false);
+        _ = BattleSideDamage.ApplyDamageToSide(side, damage, DamageShieldRule.Standard);
     }
 
 }
