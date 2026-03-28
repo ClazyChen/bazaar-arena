@@ -22,7 +22,8 @@ public class ItemState
     public bool Destroyed { get => Attributes[Key.Destroyed] != 0; set => Attributes[Key.Destroyed] = value ? 1 : 0; }
     public int CritTimeMs { get => Attributes[Key.CritTimeMs]; set => Attributes[Key.CritTimeMs] = value; }
     public bool IsCritThisUse { get => Attributes[Key.IsCritThisUse] != 0; set => Attributes[Key.IsCritThisUse] = value ? 1 : 0; }
-    public int CritDamage { get => Attributes[Key.CritDamage]; set => Attributes[Key.CritDamage] = value; }
+    /// <summary>本帧本次使用：暴击伤害百分比快照（仅步骤 8 暴击判定写入；勿与 <see cref="Key.CritDamage"/> 模板槽混用）。</summary>
+    public int CritDamagePercentThisUse { get => Attributes[Key.CritDamagePercentThisUse]; set => Attributes[Key.CritDamagePercentThisUse] = value; }
     public int AmmoRemaining { get => Attributes[Key.AmmoRemaining]; set => Attributes[Key.AmmoRemaining] = value; }
 
     public ItemState(ItemTemplate template, ItemTier tier)

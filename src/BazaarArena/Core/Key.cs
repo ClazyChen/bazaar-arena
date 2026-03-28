@@ -75,7 +75,9 @@ public static class Key
     public const int Tier = ItemIndex + 1;
     public const int CritTimeMs = Tier + 1;
     public const int IsCritThisUse = CritTimeMs + 1;
-    public const int ItemStateAttributeCount = IsCritThisUse + 1;
+    /// <summary>本帧本次使用已结算的暴击伤害百分比（如 200、400），与模板 <see cref="CritDamage"/> 槽位分离，避免写入后参与光环叠乘。</summary>
+    public const int CritDamagePercentThisUse = IsCritThisUse + 1;
+    public const int ItemStateAttributeCount = CritDamagePercentThisUse + 1;
 
     public const int MaxHp = Damage;
     public const int Hp = Heal;

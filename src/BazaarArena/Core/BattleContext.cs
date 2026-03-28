@@ -20,7 +20,7 @@ public sealed partial class BattleContext
     public BattleSide CurrentSide => BattleState.Side[Caster.SideIndex];
     public BattleSide OppSide => BattleState.Side[1 - Caster.SideIndex];
     public bool IsCritNow => Caster.CritTimeMs == BattleState.TimeMs && Caster.IsCritThisUse;
-    public int CurrentCritMultiplier => IsCritNow ? Math.Max(1, Caster.CritDamage / 100) : 1;
+    public int CurrentCritMultiplier => IsCritNow ? Math.Max(1, Caster.CritDamagePercentThisUse / 100) : 1;
 
     public int GetItemInt(ItemState item, int key)
     {

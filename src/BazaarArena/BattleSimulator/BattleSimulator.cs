@@ -451,7 +451,7 @@ public class BattleSimulator
                             }
                             item.CritTimeMs = battleState.TimeMs;
                             item.IsCritThisUse = isCrit;
-                            item.CritDamage = critDamagePercent;
+                            item.CritDamagePercentThisUse = critDamagePercent;
                             if (isCrit)
                                 battleState.InvokeTrigger(Trigger.Crit, item, null, 1);
                         }
