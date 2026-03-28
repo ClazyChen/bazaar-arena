@@ -17,20 +17,25 @@ public static class CardTable
             Tags = 0,
             Custom_0 = 1,
             ModifyAttributeTargetCount = 1,
+            Custom_1 = 0,
             Abilities =
             [
                 Ability.AddAttribute(Key.Multicast).Override(
                     additionalTargetCondition: Condition.WithTag(Tag.Friend),
                     valueKey: Key.Custom_0,
                     priority: AbilityPriority.Low),
+                Ability.AddAttribute(Key.CooldownMs).Override(
+                    targetCondition: Condition.SameAsCaster,
+                    valueKey: Key.Custom_1,
+                    priority: AbilityPriority.Low),
             ],
             Auras =
             [
                 new AuraDefinition
                 {
-                    Attribute = Key.CooldownMs,
-                    Value = 1000 * NonCompanionOtherCount,
-                }
+                    Attribute = Key.Custom_1,
+                    Value = Formula.Constant(1000) * NonCompanionOtherCount,
+                },
             ],
         };
     }

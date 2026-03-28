@@ -31,8 +31,11 @@ public static class Program
         VanessaMedium.RegisterAll(db);
         VanessaLarge.RegisterAll(db);
 
-        if (config.ExcludedItems.Contains(config.AnchorItem, StringComparer.Ordinal))
-            throw new ArgumentException($"锚定物品被排除：{config.AnchorItem}");
+        foreach (var name in config.SeedOrderedItems)
+        {
+            if (config.ExcludedItems.Contains(name, StringComparer.Ordinal))
+                throw new ArgumentException($"起始卡组中的物品被排除：{name}");
+        }
         var pool = new ItemPool(db, config.PlayerLevel, config.ExcludedItems);
         IItemTemplateResolver resolver = new GreedyPreflattenedResolver(db, pool, config.PlayerLevel);
         var simulator = new SimulatorClass();
@@ -42,14 +45,14 @@ public static class Program
         var searcher = new GreedySearcher(config, pool, resolver, evaluator, rng, perf);
 
         Console.WriteLine($"[GreedyDeckFinder] 玩家等级：{config.PlayerLevel}");
-        Console.WriteLine($"[GreedyDeckFinder] 锚定物品：{config.AnchorItem}");
+        Console.WriteLine($"[GreedyDeckFinder] 起始卡组（有序）：{string.Join(" | ", config.SeedOrderedItems)}");
         if (config.ExcludedItems.Count > 0)
             Console.WriteLine($"[GreedyDeckFinder] 排除物品：{string.Join("、", config.ExcludedItems)}");
-        var topBySize = searcher.Run(config.AnchorItem, (size, top) => PrintSizeResult(size, top));
+        var topBySize = searcher.Run(config.SeedOrderedItems, (size, top) => PrintSizeResult(size, top));
         if (config.Perf)
             Console.WriteLine(perf.BuildSummary(config.Workers));
         if (!string.IsNullOrWhiteSpace(config.OutputPath))
-            WriteResult(config.OutputPath, config.AnchorItem, topBySize);
+            WriteResult(config.OutputPath, config.SeedOrderedItems, topBySize);
         return 0;
     }
 
@@ -64,10 +67,10 @@ public static class Program
         }
     }
 
-    private static void WriteResult(string path, string anchor, Dictionary<int, List<CandidateState>> topBySize)
+    private static void WriteResult(string path, IReadOnlyList<string> seedOrdered, Dictionary<int, List<CandidateState>> topBySize)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"锚定物品: {anchor}");
+        sb.AppendLine($"起始卡组（有序）: {string.Join(" | ", seedOrdered)}");
         foreach (var s in topBySize.Keys.OrderBy(x => x))
         {
             sb.AppendLine($"size={s}");

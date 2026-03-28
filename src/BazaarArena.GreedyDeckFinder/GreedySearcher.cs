@@ -29,14 +29,46 @@ public sealed class GreedySearcher
         _perf = perf;
     }
 
-    public Dictionary<int, List<CandidateState>> Run(string anchorItem, Action<int, List<CandidateState>>? onSizeCompleted = null)
+    /// <summary>单物品起始，等价于 <see cref="Run(IReadOnlyList{string}, Action{int, List{CandidateState}}?)"/> 传入单元素列表。</summary>
+    public Dictionary<int, List<CandidateState>> Run(string anchorItem, Action<int, List<CandidateState>>? onSizeCompleted = null) =>
+        Run((IReadOnlyList<string>)[anchorItem], onSizeCompleted);
+
+    /// <summary>以有序部分卡组为起点（各物品 size 之和为起始档），其后按 size 递增贪心扩展。</summary>
+    public Dictionary<int, List<CandidateState>> Run(
+        IReadOnlyList<string> seedOrderedItems,
+        Action<int, List<CandidateState>>? onSizeCompleted = null)
     {
-        int anchorSize = _pool.SizeOfItem(anchorItem, _db);
-        if (anchorSize <= 0)
-            throw new InvalidOperationException($"找不到锚定物品或尺寸非法：{anchorItem}");
+        if (seedOrderedItems == null || seedOrderedItems.Count == 0)
+            throw new ArgumentException("起始物品列表不能为空。", nameof(seedOrderedItems));
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        int anchorSize = 0;
+        var orderedNames = new List<string>(seedOrderedItems.Count);
+        foreach (var raw in seedOrderedItems)
+        {
+            var name = raw.Trim();
+            if (name.Length == 0)
+                continue;
+            if (!seen.Add(name))
+                throw new InvalidOperationException($"起始卡组含重复物品：{name}");
+
+            int sz = _pool.SizeOfItem(name, _db);
+            if (sz <= 0)
+                throw new InvalidOperationException($"找不到起始物品或尺寸非法：{name}");
+            anchorSize += sz;
+            orderedNames.Add(name);
+        }
+
+        if (orderedNames.Count == 0)
+            throw new ArgumentException("起始物品列表在去掉空项后为空。", nameof(seedOrderedItems));
+
+        int maxSizeSum = Deck.MaxSlotsForLevel(_config.PlayerLevel);
+        if (anchorSize > maxSizeSum)
+            throw new InvalidOperationException(
+                $"起始卡组总占用 {anchorSize} 超过当前等级槽位上限 {maxSizeSum}（玩家等级 {_config.PlayerLevel}）。");
 
         var topBySize = new Dictionary<int, List<CandidateState>>();
-        var initRep = new DeckRep([anchorItem]);
+        var initRep = new DeckRep(orderedNames);
         topBySize[anchorSize] =
         [
             new CandidateState
@@ -47,7 +79,6 @@ public sealed class GreedySearcher
             }
         ];
 
-        int maxSizeSum = Deck.MaxSlotsForLevel(_config.PlayerLevel);
         for (int s = anchorSize + 1; s <= maxSizeSum; s++)
         {
             long tExpand0 = System.Diagnostics.Stopwatch.GetTimestamp();

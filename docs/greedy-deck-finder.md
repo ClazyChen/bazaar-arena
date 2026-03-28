@@ -1,10 +1,10 @@
 # 锚定贪心搜索器（GreedyDeckFinder）
 
-`BazaarArena.GreedyDeckFinder` 是按锚定物品搜索 `size=6` 最强卡组的控制台程序。
+`BazaarArena.GreedyDeckFinder` 是按起始卡组（单物品锚定或**有序**多物品部分卡组）搜索满槽最强候选的控制台程序。
 
 ## 核心规则
 
-- 以锚定物品为起点，按物理占用 `size` 从 `sA` 递增到 `6`。
+- 以起始卡组为起点：单物品时占用为该物品 size；多物品时为各物品 size **之和**，且**排列顺序**即对战中的槽位从左到右顺序。其后按总占用 `size` 从起始值递增到当前玩家等级的槽位上限。
 - 每轮 `size=s` 的候选来自所有分解 `s=p+q`（`q ∈ {1,2,3}`）：
   - `TopK[p] + 所有 size=q 物品`。
 - 候选生成后立即选择该组合的代表排列：
@@ -23,9 +23,26 @@
 dotnet run --project src/BazaarArena.GreedyDeckFinder/BazaarArena.GreedyDeckFinder.csproj -- --anchor-item 鲨鱼爪 --top-k 10 --top-multiplier 3 --seed 1
 ```
 
+多物品有序起始（CSV 顺序即卡组从左到右顺序，**勿与** `--anchor-item` 同时使用）：
+
+```bash
+dotnet run --project src/BazaarArena.GreedyDeckFinder/BazaarArena.GreedyDeckFinder.csproj -- --seed-items 物品甲,物品乙 --level 2 --top-k 5
+```
+
+`--config <path>` JSON 可与上述参数等价，例如仅多物品起始：
+
+```json
+{
+  "seedOrderedItems": ["物品甲", "物品乙"],
+  "playerLevel": 2,
+  "topK": 10
+}
+```
+
 常用参数：
 
-- `--anchor-item <物品名>`：必填
+- `--anchor-item <物品名>`：与 `--seed-items` **二选一**，单物品起始（内部会归一为单元素有序列表）
+- `--seed-items <物品名[,物品名...]>`：与 `--anchor-item` **二选一**；可多次传入，按参数出现顺序**追加**各段 CSV 中的物品，整体保持有序
 - `--top-k <K>`：每轮保留的候选数量
 - `--top-multiplier <M>`：瑞士轮后保留 `K*M` 进入大循环
 - `--bo <n>`：BO*n*，默认 5（仅支持奇数）
@@ -33,7 +50,7 @@ dotnet run --project src/BazaarArena.GreedyDeckFinder/BazaarArena.GreedyDeckFind
 - `--workers <n>`：并行执行 BO 对战（0/1 为串行）
 - `--perf`：输出阶段耗时、BO 数、单局数与吞吐（含代表排列候选数、代表排列 BO 数、瑞士剪枝淘汰人数累计）；另输出 **`[性能·分解]`**：严格串行「胶水」分项（扩展桶、擂台初始化/波次间、瑞士、大循环、加赛）、`PlayBoNBatch`/`PlaySeriesBatch` 并行与串行批的墙钟及对局数、**胶水+各批墙钟与阶段合计的核对偏差**（应接近 0%）、并行 BO 占阶段比例及 `单局线程累计/perf墙钟` 估计有效并行度。
 - `--output <path>`：可选，结果写入文件
-- `--exclude-item <物品名[,物品名...]>`：可重复传，用于在生成过程中始终排除指定物品（锚定物品不可排除）
+- `--exclude-item <物品名[,物品名...]>`：可重复传，用于在生成过程中始终排除指定物品（**起始卡组内**的物品不可被排除）
 
 ## 性能实现说明
 

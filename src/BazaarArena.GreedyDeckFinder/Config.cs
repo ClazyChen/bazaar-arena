@@ -7,6 +7,10 @@ public sealed class Config
 {
     public string? ConfigPath { get; set; }
     public string AnchorItem { get; set; } = "";
+
+    /// <summary>有序起始卡组（与 <see cref="AnchorItem"/> 二选一互斥；最终运行以此列表为准，单锚点时由 Parse 填入单元素）。</summary>
+    public List<string> SeedOrderedItems { get; set; } = [];
+
     public int TopK { get; set; } = 10;
     public int TopMultiplier { get; set; } = 3;
     public int BestOf { get; set; } = 5;
@@ -44,6 +48,12 @@ public sealed class Config
                 case "--anchor-item" when i + 1 < args.Length:
                     c.AnchorItem = args[++i];
                     break;
+                case "--seed-items" when i + 1 < args.Length:
+                {
+                    foreach (var name in SplitCsv(args[++i]))
+                        c.SeedOrderedItems.Add(name);
+                    break;
+                }
                 case "--top-k" when i + 1 < args.Length && int.TryParse(args[i + 1], out var k):
                     c.TopK = k;
                     i++;
@@ -93,8 +103,20 @@ public sealed class Config
         if (c.PlayerLevel != 2 && c.PlayerLevel != 3 && c.PlayerLevel != 4 && c.PlayerLevel != 5 && c.PlayerLevel != 6)
             throw new ArgumentException("仅支持 --level 2、3、4、5 或 6。");
 
-        if (string.IsNullOrWhiteSpace(c.AnchorItem))
-            throw new ArgumentException("必须提供 --anchor-item");
+        c.SeedOrderedItems = c.SeedOrderedItems
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .ToList();
+        c.AnchorItem = (c.AnchorItem ?? string.Empty).Trim();
+
+        bool hasSeedList = c.SeedOrderedItems.Count > 0;
+        bool hasAnchor = c.AnchorItem.Length > 0;
+        if (hasSeedList && hasAnchor)
+            throw new ArgumentException("请勿同时指定 --anchor-item 与 --seed-items。");
+        if (!hasSeedList && !hasAnchor)
+            throw new ArgumentException("必须提供 --anchor-item 或 --seed-items。");
+        if (!hasSeedList)
+            c.SeedOrderedItems = [c.AnchorItem];
 
         if (c.TopK <= 0) c.TopK = 10;
         if (c.TopMultiplier <= 0) c.TopMultiplier = 3;
