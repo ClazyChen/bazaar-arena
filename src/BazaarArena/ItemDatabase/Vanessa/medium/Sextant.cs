@@ -14,6 +14,7 @@ public static class Sextant
             Tags = Tag.Aquatic | Tag.Tool,
             HasteTargetCount = 1,
             Haste = [1.0, 2.0, 3.0],
+            ModifyAttributeTargetCount = 1,
             Custom_0 = 5,
             Abilities =
             [
