@@ -28,7 +28,7 @@ public sealed class ItemPool
             var t = db.GetTemplate(name);
             if (t == null || t.Hero != Hero.Vanessa)
                 continue;
-            if (playerLevel == 5)
+            if (playerLevel >= 5)
             {
                 if (t.MinTier != ItemTier.Bronze && t.MinTier != ItemTier.Silver)
                     continue;

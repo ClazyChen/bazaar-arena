@@ -23,9 +23,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--level",
         type=int,
-        choices=[2, 3, 4, 5],
+        choices=[2, 3, 4, 5, 6],
         default=2,
-        help="传给 Greedy 的 --level（2：6 槽半 overrides；3：8 槽铜档；4：10 槽铜银平均 overrides；5：10 槽银档）。",
+        help="传给 Greedy 的 --level（2：6 槽半 overrides；3：8 槽铜档；4：10 槽铜银平均 overrides；5：10 槽银档；6：10 槽银金平均 overrides）。",
     )
     parser.add_argument("--top-k", type=int, default=20, help="Greedy 的 K。")
     parser.add_argument("--top-multiplier", type=int, default=2, help="Greedy 的 M。")
@@ -121,7 +121,7 @@ def collect_anchor_items(root: Path, player_level: int) -> list[str]:
 
     names: list[str] = []
     for register_file in register_files:
-        if player_level == 5:
+        if player_level >= 5:
             class_names = parse_registered_class_names_for_tiers(register_file, ["Bronze", "Silver"])
         else:
             class_names = parse_registered_class_names(register_file)
@@ -136,14 +136,14 @@ def collect_anchor_items(root: Path, player_level: int) -> list[str]:
         names = [n for n in names if n != "烙刀"]
         names.extend(["烙刀（Q1）", "烙刀（Q2）"])
 
-    if player_level != 5 and len(names) != 52:
+    if player_level < 5 and len(names) != 52:
         raise RuntimeError(f"海盗铜物品数量不是 52，而是 {len(names)}。")
     return names
 
 
 def max_slots_for_player_level(level: int) -> int:
     """与 BazaarArena.Core.Deck.MaxSlotsForLevel 一致（脚本使用 2–5）。"""
-    return {2: 6, 3: 8, 4: 10, 5: 10}[level]
+    return {2: 6, 3: 8, 4: 10, 5: 10, 6: 10}[level]
 
 
 def collect_burn_tag_items(root: Path) -> set[str]:

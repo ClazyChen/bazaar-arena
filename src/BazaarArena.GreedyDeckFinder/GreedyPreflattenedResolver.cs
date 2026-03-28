@@ -9,6 +9,7 @@ namespace BazaarArena.GreedyDeckFinder;
 /// Greedy 专用 resolver：启动时对物品池模板做一次性扁平化（Bronze 单值化），并按玩家等级预应用 overridable
 /// （2 级铜档一半、3 级铜档满值、4 级铜档与银档的平均值，向下取整）。
 /// 5 级：扁平化为银档，并对 overridable 应用银档默认值。
+/// 6 级：扁平化为银档，并对 overridable 应用银档与金档默认值的平均值（向下取整）。
 /// 同时为池内每件物品构造战斗 <see cref="ItemState"/> 原型；<see cref="BattleSimulator"/> 构建卡组时可只拷贝属性数组，避免对同模板重复 GetInt。
 /// </summary>
 internal sealed class GreedyPreflattenedResolver : IItemBattlePrototypeResolver
@@ -24,7 +25,7 @@ internal sealed class GreedyPreflattenedResolver : IItemBattlePrototypeResolver
         ["烙刀（Q2）"] = ("烙刀", 2),
     };
 
-    /// <param name="playerLevel">2：overridable 铜档一半；3：铜档满值；4：铜档与银档平均；5：银档默认。</param>
+    /// <param name="playerLevel">2：overridable 铜档一半；3：铜档满值；4：铜档与银档平均；5：银档默认；6：银档与金档平均。</param>
     public GreedyPreflattenedResolver(ItemDb baseDb, ItemPool pool, int playerLevel)
     {
         _baseDb = baseDb;
@@ -59,7 +60,7 @@ internal sealed class GreedyPreflattenedResolver : IItemBattlePrototypeResolver
 
     private static ItemState BuildBattlePrototype(ItemTemplate flat, int playerLevel, int? custom1)
     {
-        var tier = playerLevel == 5 ? ItemTier.Silver : ItemTier.Bronze;
+        var tier = playerLevel >= 5 ? ItemTier.Silver : ItemTier.Bronze;
         var p = new ItemState(flat, tier);
         if (custom1.HasValue)
             p.SetAttribute(Key.Custom_1, custom1.Value);
@@ -68,7 +69,7 @@ internal sealed class GreedyPreflattenedResolver : IItemBattlePrototypeResolver
 
     private static ItemTemplate FlattenWithOverrides(ItemTemplate source, int playerLevel)
     {
-        var baseTier = playerLevel == 5 ? ItemTier.Silver : ItemTier.Bronze;
+        var baseTier = playerLevel >= 5 ? ItemTier.Silver : ItemTier.Bronze;
         var flat = new ItemTemplate
         {
             Name = source.Name,
@@ -97,6 +98,12 @@ internal sealed class GreedyPreflattenedResolver : IItemBattlePrototypeResolver
                 if (playerLevel == 5)
                 {
                     applied = source.GetInt(kv.Key, ItemTier.Silver);
+                }
+                else if (playerLevel == 6)
+                {
+                    int silverVal = source.GetInt(kv.Key, ItemTier.Silver);
+                    int goldVal = source.GetInt(kv.Key, ItemTier.Gold);
+                    applied = (silverVal + goldVal) / 2;
                 }
                 else
                 {
