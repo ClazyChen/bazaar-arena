@@ -271,12 +271,18 @@ public sealed partial class BattleContext
         if (maxTargetCount > 0)
         {
             var indices = GetTargetIndices(CurrentSide, maxTargetCount, cond);
+            BattleSide sideForTargets = CurrentSide;
+            if (indices.Count == 0)
+            {
+                indices = GetTargetIndices(OppSide, maxTargetCount, cond);
+                sideForTargets = OppSide;
+            }
             if (indices.Count == 0) return;
             var targetNames = new List<string>();
             List<ItemState>? triggerTargets = null;
             foreach (int i in indices)
             {
-                var wi = CurrentSide.Items[i];
+                var wi = sideForTargets.Items[i];
                 if (attributeKey == Key.Damage) { wi.SetAttribute(Key.Damage, wi.GetAttribute(Key.Damage) + value); targetNames.Add(wi.Template.Name); }
                 else if (attributeKey == Key.Poison) { wi.SetAttribute(Key.Poison, wi.GetAttribute(Key.Poison) + value); targetNames.Add(wi.Template.Name); }
                 else if (attributeKey == Key.CritRate) { wi.SetAttribute(Key.CritRate, wi.GetAttribute(Key.CritRate) + value); targetNames.Add(wi.Template.Name); (triggerTargets ??= new List<ItemState>(indices.Count)).Add(wi); }

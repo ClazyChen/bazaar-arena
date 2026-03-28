@@ -23,9 +23,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--level",
         type=int,
-        choices=[2, 3, 4, 5, 6],
         default=2,
-        help="传给 Greedy 的 --level（2：6 槽半 overrides；3：8 槽铜档；4：10 槽铜银平均 overrides；5：10 槽银档；6：10 槽银金平均 overrides）。",
+        help="传给 Greedy 的 --level（2–20）。槽位与 Core.Deck.MaxSlotsForLevel 一致；池子/档位/overridable 见 GreedyLevelRules。",
     )
     parser.add_argument("--top-k", type=int, default=20, help="Greedy 的 K。")
     parser.add_argument("--top-multiplier", type=int, default=2, help="Greedy 的 M。")
@@ -65,23 +64,6 @@ def ok(text: str) -> None:
     print(color_text(text, "32"))
 
 
-def parse_registered_class_names(vanessa_register_file: Path) -> list[str]:
-    text = vanessa_register_file.read_text(encoding="utf-8")
-    def extract_block(tier: str) -> str:
-        m = re.search(
-            rf"DefaultMinTier\s*=\s*ItemTier\.{tier};(?P<body>[\s\S]*?)(?:DefaultMinTier\s*=\s*ItemTier\.\w+;|}}\s*$)",
-            text,
-        )
-        if not m:
-            raise RuntimeError(f"无法在文件中找到 {tier} 注册段：{vanessa_register_file}")
-        return m.group("body")
-
-    class_names: list[str] = []
-    for tier in ("Bronze",):
-        class_names.extend(re.findall(r"db\.Register\((\w+)\.Template\(\)\);", extract_block(tier)))
-    return class_names
-
-
 def parse_registered_class_names_for_tiers(vanessa_register_file: Path, tiers: list[str]) -> list[str]:
     text = vanessa_register_file.read_text(encoding="utf-8")
 
@@ -108,6 +90,18 @@ def parse_template_name(template_file: Path) -> str:
     return m.group(1)
 
 
+def register_tiers_for_player_level(player_level: int) -> list[str]:
+    """与 GreedyLevelRules.IsMinTierAllowedInPool 一致：铜恒在；≥5 银；≥8 金；≥11 钻。"""
+    tiers = ["Bronze"]
+    if player_level >= 5:
+        tiers.append("Silver")
+    if player_level >= 8:
+        tiers.append("Gold")
+    if player_level >= 11:
+        tiers.append("Diamond")
+    return tiers
+
+
 def collect_anchor_items(root: Path, player_level: int) -> list[str]:
     class_name_to_file: dict[str, Path] = {}
     for p in (root / "src" / "BazaarArena" / "ItemDatabase" / "Vanessa").rglob("*.cs"):
@@ -119,31 +113,35 @@ def collect_anchor_items(root: Path, player_level: int) -> list[str]:
         root / "src" / "BazaarArena" / "ItemDatabase" / "Vanessa" / "large" / "VanessaLarge.cs",
     ]
 
+    tier_list = register_tiers_for_player_level(player_level)
     names: list[str] = []
     for register_file in register_files:
-        if player_level >= 5:
-            class_names = parse_registered_class_names_for_tiers(register_file, ["Bronze", "Silver"])
-        else:
-            class_names = parse_registered_class_names(register_file)
+        class_names = parse_registered_class_names_for_tiers(register_file, tier_list)
         for class_name in class_names:
             file_path = class_name_to_file.get(class_name)
             if file_path is None:
                 raise RuntimeError(f"找不到类文件：{class_name}")
             names.append(parse_template_name(file_path))
 
-    # 特殊：Greedy lv5 会把烙刀展开为 Q1/Q2 两个锚定物品（输出需区分）。
-    if "烙刀" in names:
+    # 特殊：Greedy lv5+ 会把烙刀展开为 Q1/Q2 两个锚定物品（输出需区分）。
+    if player_level >= 5 and "烙刀" in names:
         names = [n for n in names if n != "烙刀"]
         names.extend(["烙刀（Q1）", "烙刀（Q2）"])
 
     if player_level < 5 and len(names) != 52:
-        raise RuntimeError(f"海盗铜物品数量不是 52，而是 {len(names)}。")
+        raise RuntimeError(f"海盗仅铜池物品数量不是 52，而是 {len(names)}。")
     return names
 
 
 def max_slots_for_player_level(level: int) -> int:
-    """与 BazaarArena.Core.Deck.MaxSlotsForLevel 一致（脚本使用 2–5）。"""
-    return {2: 6, 3: 8, 4: 10, 5: 10, 6: 10}[level]
+    """与 BazaarArena.Core.Deck.MaxSlotsForLevel 一致。"""
+    if level <= 1:
+        return 4
+    if level == 2:
+        return 6
+    if level == 3:
+        return 8
+    return 10
 
 
 def collect_burn_tag_items(root: Path) -> set[str]:
@@ -243,6 +241,9 @@ def main() -> int:
     args = parse_args()
     root = repo_root()
     level = args.level
+    if level < 2 or level > 20:
+        print("[ERROR] --level 须在 2～20 之间。", file=sys.stderr)
+        return 2
     out_rel = args.output or f"docs/greedy-vanessa-bronze-top1-l{level}.txt"
     raw_rel = args.raw_log or f"Logs/greedy/greedy-vanessa-bronze-top1-l{level}-raw.log"
     marker = f"l{level}"

@@ -70,7 +70,7 @@
 
 - **卡组**：P1 `ms_bladed_hoverboard_p1`（獠牙 铜 + 带刃悬浮板 银 相邻），P2 `ms_bladed_hoverboard_p2`（獠牙 铜）
 - **预期**：日志中出现「带刃悬浮板」与「伤害」（使用相邻物品时触发）
-- **目的**：验证 `UseOtherItem + InvokeTargetAdjacentToCaster` 的相邻触发语义
+- **目的**：验证 `UseOtherItem` 下 `Item` 为被使用物品，用 `AdjacentToCaster` 表达「与能力持有者相邻」
 
 ## 11. 元素深水炸弹（Elemental Depth Charge）
 
@@ -113,3 +113,9 @@
 - **卡组**：P1 `ms_repeater_use_this_item_p1`（连发步枪 银 + 葡萄弹 银），P2 `ms_repeater_use_this_item_p2`（獠牙 铜）
 - **预期**：日志中出现「连发步枪」「伤害」
 - **目的**：验证新增能力 `UseThisItem`：当其他弹药物品被使用时，连发步枪可绕过冷却直接进入施放队列并造成伤害
+
+## 18. 潜水头盔_S1（Diving Helmet S1，Vanessa）
+
+- **卡组**：P1 `ms_vanessa_diving_helmet_s1_p1`（潜水头盔_S1 银 + 食人鱼 铜），P2 `ms_vanessa_diving_helmet_s1_p2`（獠牙 铜）
+- **预期**：日志中出现「潜水头盔_S1」「护盾」「护盾提高」
+- **目的**：验证使用水系伙伴时对自身护盾的本场战斗增益；首条「护盾」来自施放，「护盾提高」来自 `UseOtherItem` 触发

@@ -94,6 +94,8 @@ public static class VanessaSmall
         db.DefaultMinTier = ItemTier.Gold;
         db.Register(PeskyPete.Template_S1());
         db.Register(Holsters.Template_S4());
+        db.Register(ThrowingKnives.Template());
+        db.Register(Blowgun.Template());
 
     }
 }

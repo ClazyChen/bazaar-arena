@@ -4,7 +4,7 @@ using ItemDb = BazaarArena.ItemDatabase.ItemDatabase;
 
 namespace BazaarArena.GreedyDeckFinder;
 
-/// <summary>海盗（Vanessa）最新版物品池（按玩家等级决定可选 MinTier）。</summary>
+/// <summary>海盗（Vanessa）最新版物品池（<see cref="GreedyLevelRules.IsMinTierAllowedInPool"/> 决定可选 MinTier）。</summary>
 public sealed class ItemPool
 {
     public IReadOnlyList<string> SmallNames { get; }
@@ -28,16 +28,8 @@ public sealed class ItemPool
             var t = db.GetTemplate(name);
             if (t == null || t.Hero != Hero.Vanessa)
                 continue;
-            if (playerLevel >= 5)
-            {
-                if (t.MinTier != ItemTier.Bronze && t.MinTier != ItemTier.Silver)
-                    continue;
-            }
-            else
-            {
-                if (t.MinTier != ItemTier.Bronze)
-                    continue;
-            }
+            if (!GreedyLevelRules.IsMinTierAllowedInPool(t.MinTier, playerLevel))
+                continue;
 
             switch (t.Size)
             {

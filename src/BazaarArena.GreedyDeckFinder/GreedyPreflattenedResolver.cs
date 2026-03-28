@@ -6,10 +6,7 @@ using ItemDb = BazaarArena.ItemDatabase.ItemDatabase;
 namespace BazaarArena.GreedyDeckFinder;
 
 /// <summary>
-/// Greedy 专用 resolver：启动时对物品池模板做一次性扁平化（Bronze 单值化），并按玩家等级预应用 overridable
-/// （2 级铜档一半、3 级铜档满值、4 级铜档与银档的平均值，向下取整）。
-/// 5 级：扁平化为银档，并对 overridable 应用银档默认值。
-/// 6 级：扁平化为银档，并对 overridable 应用银档与金档默认值的平均值（向下取整）。
+/// Greedy 专用 resolver：启动时对物品池模板按 <see cref="GreedyLevelRules.CombatTier"/> 扁平化为单档数值，并按 <see cref="GreedyLevelRules.ComputeOverridableValue"/> 预应用 OverridableAttributes。
 /// 同时为池内每件物品构造战斗 <see cref="ItemState"/> 原型；<see cref="BattleSimulator"/> 构建卡组时可只拷贝属性数组，避免对同模板重复 GetInt。
 /// </summary>
 internal sealed class GreedyPreflattenedResolver : IItemBattlePrototypeResolver
@@ -25,7 +22,7 @@ internal sealed class GreedyPreflattenedResolver : IItemBattlePrototypeResolver
         ["烙刀（Q2）"] = ("烙刀", 2),
     };
 
-    /// <param name="playerLevel">2：overridable 铜档一半；3：铜档满值；4：铜档与银档平均；5：银档默认；6：银档与金档平均。</param>
+    /// <param name="playerLevel">2–20；池子与档位、overridable 缩放见 <see cref="GreedyLevelRules"/>。</param>
     public GreedyPreflattenedResolver(ItemDb baseDb, ItemPool pool, int playerLevel)
     {
         _baseDb = baseDb;
@@ -69,7 +66,7 @@ internal sealed class GreedyPreflattenedResolver : IItemBattlePrototypeResolver
 
     private static ItemTemplate FlattenWithOverrides(ItemTemplate source, int playerLevel)
     {
-        var baseTier = playerLevel >= 5 ? ItemTier.Silver : ItemTier.Bronze;
+        var baseTier = GreedyLevelRules.CombatTier(playerLevel);
         var flat = new ItemTemplate
         {
             Name = source.Name,
@@ -94,28 +91,7 @@ internal sealed class GreedyPreflattenedResolver : IItemBattlePrototypeResolver
         {
             foreach (var kv in source.OverridableAttributes)
             {
-                int applied;
-                if (playerLevel == 5)
-                {
-                    applied = source.GetInt(kv.Key, ItemTier.Silver);
-                }
-                else if (playerLevel == 6)
-                {
-                    int silverVal = source.GetInt(kv.Key, ItemTier.Silver);
-                    int goldVal = source.GetInt(kv.Key, ItemTier.Gold);
-                    applied = (silverVal + goldVal) / 2;
-                }
-                else
-                {
-                    int bronzeVal = source.GetInt(kv.Key, ItemTier.Bronze);
-                    applied = playerLevel switch
-                    {
-                        2 => bronzeVal / 2,
-                        3 => bronzeVal,
-                        4 => (bronzeVal + source.GetInt(kv.Key, ItemTier.Silver)) / 2,
-                        _ => bronzeVal / 2,
-                    };
-                }
+                int applied = GreedyLevelRules.ComputeOverridableValue(source, kv.Key, playerLevel);
                 flat.SetIntByKey(kv.Key, applied);
             }
         }

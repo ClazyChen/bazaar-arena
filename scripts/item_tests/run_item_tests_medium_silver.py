@@ -37,6 +37,7 @@ MEDIUM_SILVER_TESTS = [
     {"name": "鱼雷_torpedo", "deck1": "ms_torpedo_p1", "deck2": "ms_torpedo_p2", "log_contains": ["鱼雷", "伤害提高"]},
     {"name": "恶鬼面具_oni_mask", "deck1": "ms_oni_mask_p1", "deck2": "ms_oni_mask_p2", "log_contains": ["恶鬼面具", "灼烧提高"]},
     {"name": "连发步枪_use_this_item_repeater", "deck1": "ms_repeater_use_this_item_p1", "deck2": "ms_repeater_use_this_item_p2", "log_contains": ["连发步枪", "伤害"]},
+    {"name": "潜水头盔_S1_vanessa_diving_helmet_s1", "deck1": "ms_vanessa_diving_helmet_s1_p1", "deck2": "ms_vanessa_diving_helmet_s1_p2", "log_contains": ["潜水头盔_S1", "护盾", "护盾提高"]},
 ]
 
 

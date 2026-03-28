@@ -34,6 +34,9 @@ public static class Ability
     /// <summary>治疗（Apply.Heal）。默认触发器 UseItem；定制用 .Override(...)。</summary>
     public static AbilityDefinition Heal => CreateBase(AbilityType.Heal, Core.Apply.Heal).Override(valueKey: Key.Heal, applyCritMultiplier: true);
 
+    /// <summary>己方阵营生命再生提高（Apply.Regen）。数值来自模板 <see cref="ItemTemplate.Regen"/> / <see cref="Key.Regen"/>；默认触发器 UseItem。</summary>
+    public static AbilityDefinition Regen => CreateBase(AbilityType.Regen, Core.Apply.Regen).Override(valueKey: Key.Regen, applyCritMultiplier: true);
+
     /// <summary>造成灼烧（Apply.Burn）。默认触发器 UseItem；定制用 .Override(...)。</summary>
     public static AbilityDefinition Burn => CreateBase(AbilityType.Burn, Core.Apply.Burn).Override(valueKey: Key.Burn, applyCritMultiplier: true);
 
@@ -109,6 +112,10 @@ public static class Ability
 
     /// <summary>使用此物品：将此物品直接加入施放队列，不消耗充能（绕过冷却）。常用于「使用其他某类物品时，使用此物品」。</summary>
     public static AbilityDefinition UseThisItem => CreateBase(AbilityType.UseThisItem, Core.Apply.UseThisItem).Override(
+        applyCritMultiplier: false);
+
+    /// <summary>解除己方无敌（Apply.ClearInvincible）。默认 UseItem；常与 BattleStart 无敌组合使用。</summary>
+    public static AbilityDefinition ClearInvincible => CreateBase(AbilityType.ClearInvincible, Core.Apply.ClearInvincible).Override(
         applyCritMultiplier: false);
 
     /// <summary>对满足目标条件的物品增加指定属性（限本场战斗）。attributeKey 如 Key.Damage、Key.Poison；amountKey 默认 Key.Custom_0。</summary>

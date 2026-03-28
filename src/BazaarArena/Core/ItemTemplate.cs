@@ -141,6 +141,8 @@ public class ItemTemplate
     public IntOrByTier Burn { get => GetIntOrByTier(Key.Burn); set => SetIntOrByTier(Key.Burn, value); }
     public IntOrByTier Poison { get => GetIntOrByTier(Key.Poison); set => SetIntOrByTier(Key.Poison, value); }
     public IntOrByTier Heal { get => GetIntOrByTier(Key.Heal); set => SetIntOrByTier(Key.Heal, value); }
+    /// <summary>生命再生量（写入己方阵营 Regen 的能力用，与 <see cref="Ability.Regen"/> / <see cref="Key.Regen"/> 对齐）。</summary>
+    public IntOrByTier Regen { get => GetIntOrByTier(Key.Regen); set => SetIntOrByTier(Key.Regen, value); }
     public IntOrByTier Shield { get => GetIntOrByTier(Key.Shield); set => SetIntOrByTier(Key.Shield, value); }
     public SecondsOrByTier Charge { get => SecondsOrByTier.FromMilliseconds(GetIntOrByTier(Key.Charge).ToList()); set => SetIntOrByTier(Key.Charge, [.. value.ToMilliseconds()]); }
     public IntOrByTier ChargeTargetCount { get => GetIntOrByTier(Key.ChargeTargetCount); set => SetIntOrByTier(Key.ChargeTargetCount, value); }

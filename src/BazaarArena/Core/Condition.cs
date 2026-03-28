@@ -46,7 +46,7 @@ public static class Condition
             && Math.Abs(ctx.Item.ItemIndex - ctx.Caster.ItemIndex) == 1 ? 1 : 0;
     });
 
-    /// <summary>触发器指向目标（InvokeTarget）与能力持有者（Caster）相邻（同侧左右一格）。用于「使用相邻物品时…」类被动触发条件。</summary>
+    /// <summary>触发器指向目标（InvokeTarget）与能力持有者（Caster）相邻。与 <see cref="AdjacentToCaster"/> 在 UseOtherItem 下等价（此时 Item 与 InvokeTarget 均为被使用物品）。优先用 <see cref="AdjacentToCaster"/> 表达「被使用物与施放者相邻」。</summary>
     public static Formula InvokeTargetAdjacentToCaster { get; } = new(ctx =>
     {
         return ctx.InvokeTarget != null

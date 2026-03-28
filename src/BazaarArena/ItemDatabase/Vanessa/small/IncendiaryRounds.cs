@@ -16,7 +16,7 @@ public static class IncendiaryRounds
             [
                 Ability.Burn.Override(
                     trigger: Trigger.UseOtherItem,
-                    additionalCondition: Condition.InvokeTargetAdjacentToCaster),
+                    additionalCondition: Condition.AdjacentToCaster),
             ],
         };
     }
@@ -33,7 +33,7 @@ public static class IncendiaryRounds
             [
                 Ability.Burn.Override(
                     trigger: Trigger.UseOtherItem,
-                    additionalCondition: Condition.InvokeTargetAdjacentToCaster),
+                    additionalCondition: Condition.AdjacentToCaster),
             ],
             Auras =
             [

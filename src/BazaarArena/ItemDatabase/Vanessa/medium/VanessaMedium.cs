@@ -85,5 +85,23 @@ public static class VanessaMedium
         db.Register(Lockbox.Template());
         db.Register(OniMask.Template());
         db.Register(CauterizingBlade.Template());
+        db.Register(DivingHelmet.Template_S1());
+
+        db.DefaultMinTier = ItemTier.Gold;
+        db.Register(Spyglass.Template());
+        db.Register(Spyglass.Template_S1());
+        db.Register(DivingHelmet.Template());
+        db.Register(Rowboat.Template());
+        db.Register(Piano.Template());
+        db.Register(PistolSword.Template());
+        db.Register(Tripwire.Template());
+        db.Register(SwashBuckle.Template());
+        db.Register(TurtleShell.Template());
+        db.Register(PowderKeg.Template());
+        db.Register(SniperRifle.Template());
+        db.Register(Anchor.Template());
+
+        db.DefaultMinTier = ItemTier.Diamond;
+        db.Register(Blunderbuss.Template());
     }
 }

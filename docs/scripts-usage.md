@@ -148,7 +148,7 @@ python scripts\webp_to_png.py
 ## 4. 物品测试与锚定贪心（Python）
 
 - **物品自动化测试**：Python 脚本在 **`scripts/item_tests/`**（如 `run_item_tests_small_bronze.py`）；CLI 使用的卡组集 JSON 在 **`Data/Decks/item_tests/`**（`test_*.json`）。在仓库根目录执行 `python scripts/item_tests/<脚本名>.py`。完整档位、命令与断言约定见 **`docs/cli-and-testing.md`**。
-- **锚定贪心批跑**：`scripts/run_greedy_vanessa_bronze_top1.py`（与物品测试脚本目录不同）。说明见 **`docs/greedy-deck-finder.md`**。
+- **锚定贪心批跑**：`scripts/run_greedy_vanessa_bronze_top1.py`（与物品测试脚本目录不同）。`--level` 等与 Greedy CLI 一致为 **2～20**，槽位与池子/战斗档位须与 **`GreedyLevelRules`** 对齐。说明见 **`docs/greedy-deck-finder.md`**。
 
 ---
 

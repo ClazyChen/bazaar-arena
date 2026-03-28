@@ -51,10 +51,25 @@ dotnet run --project src/BazaarArena.GreedyDeckFinder/BazaarArena.GreedyDeckFind
 - `--perf`：输出阶段耗时、BO 数、单局数与吞吐（含代表排列候选数、代表排列 BO 数、瑞士剪枝淘汰人数累计）；另输出 **`[性能·分解]`**：严格串行「胶水」分项（扩展桶、擂台初始化/波次间、瑞士、大循环、加赛）、`PlayBoNBatch`/`PlaySeriesBatch` 并行与串行批的墙钟及对局数、**胶水+各批墙钟与阶段合计的核对偏差**（应接近 0%）、并行 BO 占阶段比例及 `单局线程累计/perf墙钟` 估计有效并行度。
 - `--output <path>`：可选，结果写入文件
 - `--exclude-item <物品名[,物品名...]>`：可重复传，用于在生成过程中始终排除指定物品（**起始卡组内**的物品不可被排除）
+- `--level <L>`：玩家等级，**合法范围 2～20**（与 `GreedyLevelRules.MinPlayerLevel` / `MaxPlayerLevel` 一致；CLI 与 JSON `playerLevel` 同源）。用于：**槽位上限**（与 GUI `Deck.MaxSlotsForLevel` 对齐）、**物品池 MinTier 过滤**、**战斗扁平化档位**、**OverridableAttributes 预缩放**。详见下节。
+
+## 玩家等级（`--level`）与 `GreedyLevelRules`
+
+Greedy 的等级语义集中在 **`src/BazaarArena.GreedyDeckFinder/GreedyLevelRules.cs`**，**不要**与 GUI 卡组里的 **`Deck.TierAllowedForLevel`**（银 3 / 金 7 / 钻 10）混用。
+
+| 维度 | 规则摘要 |
+|------|----------|
+| **物品池**（模板 `MinTier` 是否入选） | 铜始终入选；**银 ≥5、金 ≥8、钻 ≥11** |
+| **战斗扁平化与槽位 `Tier`**（`CombatTier`） | **2–4 铜、5–7 银、8–10 金、11+ 钻** |
+| **Overridable 预写入扁平模板**（`ComputeOverridableValue`） | L≤1 为铜半值（当前 CLI 不用）；**2** 铜半、**3** 铜、**4–5** 铜银均、**6** 银、**7–8** 金银均、**9** 金、**10–11** 金钻均、**12** 钻、**13+** `钻 + (L−12)×(钻−金)/2` |
+
+启动时预扁平化按 **`CombatTier(L)`** 单值化模板读数，并为池内每件物品构造 **该档位** 的只读 **`ItemState` 原型**；`PrepareDeck` 在同档且无槽位 overrides 时拷贝原型数组以省 `GetInt`。
+
+批跑脚本 `scripts/run_greedy_vanessa_bronze_top1.py` 中的槽位上限、池子注册档位与上述规则应对齐（见脚本内注释与断言）。
 
 ## 性能实现说明
 
-- 启动时会对物品池模板做一次性预扁平化（Bronze 单值化 + 按玩家等级的 overridable 预应用），并为池内每件物品构造铜档 **`ItemState` 只读原型**（`IItemBattlePrototypeResolver`）；`BattleSimulator.PrepareDeck` 在铜档且无槽位 overrides 时通过拷贝原型属性数组构图，减少重复 `GetInt`。
+- 启动时会对物品池模板做一次性预扁平化（按 **`GreedyLevelRules.CombatTier`** 单值化 + 按玩家等级的 overridable 预应用），并为池内每件物品构造 **对应该战斗档位** 的 **`ItemState` 只读原型**（`IItemBattlePrototypeResolver`）；`BattleSimulator.PrepareDeck` 在同档且无槽位 overrides 时通过拷贝原型属性数组构图，减少重复 `GetInt`。
 - **并行架构**：进程内通常只有 **一个** `BattleSimulator` 实例；`workers>1` 时多个线程同时调用其 `Run`。因此 `Run` 不得依赖会跨调用互相覆盖的实例级本场状态；`PrepareDeck` 缓存须线程安全。详见 [greedy-deck-finder-performance-notes.md §3.6](./greedy-deck-finder-performance-notes.md) 与 `.cursor/rules/greedy-deck-finder.mdc`。
 - 对战评估器会缓存 `DeckRep.Signature()` 对应的 `Deck`，避免 BO 与系列赛内重复构建。
 - 代表排列阶段由全对全改为淘汰式，比赛数量从近 `O(n^2)` 降低到近 `O(n)`。

@@ -122,6 +122,12 @@
       { "itemName": "烙刀", "tier": 1, "overrides": { "Custom_1": 2 } },
       { "itemName": "星盘", "tier": 1 }
     ] } },
-    { "id": "ms_cauterizing_blade_q2_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+    { "id": "ms_cauterizing_blade_q2_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "ms_vanessa_diving_helmet_s1_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "潜水头盔_S1", "tier": 1 },
+      { "itemName": "食人鱼", "tier": 0 }
+    ] } },
+    { "id": "ms_vanessa_diving_helmet_s1_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
   ]
 }

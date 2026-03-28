@@ -194,6 +194,7 @@ public class ItemDatabase : IItemTemplateResolver
         AbilityType.Poison => DerivedTag.Poison,
         AbilityType.Heal => DerivedTag.Heal,
         AbilityType.Shield => DerivedTag.Shield,
+        AbilityType.Regen => DerivedTag.Regen,
         AbilityType.Charge => DerivedTag.Charge,
         AbilityType.Freeze => DerivedTag.Freeze,
         AbilityType.Slow => DerivedTag.Slow,

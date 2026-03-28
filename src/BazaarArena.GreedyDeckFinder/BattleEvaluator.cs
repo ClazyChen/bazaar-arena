@@ -253,7 +253,7 @@ public sealed class BattleEvaluator
     private Deck ToDeck(DeckRep rep)
     {
         var sig = rep.Signature();
-        var tier = _playerLevel >= 5 ? ItemTier.Silver : ItemTier.Bronze;
+        var tier = GreedyLevelRules.CombatTier(_playerLevel);
         return _deckCache.GetOrAdd(sig, _ =>
         {
             var slots = rep.ItemNames.Select(name => new DeckSlotEntry

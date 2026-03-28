@@ -171,4 +171,22 @@ public static class Apply
         ctx.CurrentSide.InvincibleRemainingMs += durationMs;
         ctx.LogEffect("无敌", durationMs, showCrit: false);
     };
+
+    /// <summary>将己方无敌剩余时间清零（不依赖数值 key）。</summary>
+    public static readonly Action<BattleContext, AbilityDefinition> ClearInvincible = (ctx, _) =>
+    {
+        if (ctx.CurrentSide.InvincibleRemainingMs <= 0) return;
+        ctx.CurrentSide.InvincibleRemainingMs = 0;
+        ctx.LogEffect("解除无敌", 0, showCrit: false);
+    };
+
+    /// <summary>提高己方阵营生命再生；数值来自 <see cref="AbilityDefinition.ValueKey"/>（默认 <see cref="Key.Regen"/>）。</summary>
+    public static readonly Action<BattleContext, AbilityDefinition> Regen = (ctx, ability) =>
+    {
+        int value = ctx.GetItemInt(ctx.Caster, ability.ValueKey!.Value);
+        if (ability.ApplyCritMultiplier && ctx.IsCritNow) value *= ctx.CurrentCritMultiplier;
+        if (value <= 0) return;
+        ctx.CurrentSide.Regen += value;
+        ctx.LogEffect("生命再生", value, showCrit: ability.ApplyCritMultiplier && ctx.IsCritNow);
+    };
 }

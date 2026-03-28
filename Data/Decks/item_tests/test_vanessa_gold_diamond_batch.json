@@ -1,0 +1,149 @@
+{
+  "version": "1.0",
+  "decks": [
+    { "id": "vgd_throw_knives_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "投掷飞刀", "tier": 2 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "vgd_throw_knives_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_blowgun_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "吹箭枪", "tier": 2 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "vgd_blowgun_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_spyglass_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "侦查望远镜", "tier": 2 },
+      { "itemName": "流星索", "tier": 0 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "vgd_spyglass_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_spyglass_s1_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "侦查望远镜_S1", "tier": 2 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "vgd_spyglass_s1_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_diving_helmet_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "潜水头盔", "tier": 2 },
+      { "itemName": "食人鱼", "tier": 0 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "vgd_diving_helmet_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_rowboat_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "划艇", "tier": 2 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "vgd_rowboat_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_piano_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "钢琴", "tier": 2 },
+      { "itemName": "三花", "tier": 0 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "vgd_piano_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_pistol_sword_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "刺刀手枪", "tier": 2 },
+      { "itemName": "左轮手枪", "tier": 0 }
+    ] } },
+    { "id": "vgd_pistol_sword_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_tripwire_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "绊索", "tier": 2 }] } },
+    { "id": "vgd_tripwire_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_swash_buckle_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "逞威风腰带扣", "tier": 2 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "vgd_swash_buckle_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_turtle_shell_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "水草", "tier": 0 },
+      { "itemName": "龟壳", "tier": 2 }
+    ] } },
+    { "id": "vgd_turtle_shell_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_powder_keg_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "火药桶", "tier": 2 }] } },
+    { "id": "vgd_powder_keg_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_sniper_rifle_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "狙击步枪", "tier": 2 }] } },
+    { "id": "vgd_sniper_rifle_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_anchor_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "船锚", "tier": 2 }] } },
+    { "id": "vgd_anchor_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_blunderbuss_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "雷筒", "tier": 3 },
+      { "itemName": "打火机", "tier": 0 }
+    ] } },
+    { "id": "vgd_blunderbuss_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_stealth_glider_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "潜行滑翔机", "tier": 2 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "vgd_stealth_glider_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_the_boulder_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "滚石", "tier": 2 }] } },
+    { "id": "vgd_the_boulder_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_tortuga_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "巨龟托图加", "tier": 2 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "vgd_tortuga_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_dam_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "大坝", "tier": 2 },
+      { "itemName": "獠牙", "tier": 0 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+    { "id": "vgd_dam_p2", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "獠牙", "tier": 0 },
+      { "itemName": "獠牙", "tier": 0 }
+    ] } },
+
+    { "id": "vgd_ballista_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "弩炮", "tier": 2 },
+      { "itemName": "葡萄弹", "tier": 0 }
+    ] } },
+    { "id": "vgd_ballista_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_slumbering_primordial_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "沉眠元初体", "tier": 2 },
+      { "itemName": "打火机", "tier": 0 }
+    ] } },
+    { "id": "vgd_slumbering_primordial_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_cannonade_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "火炮阵列", "tier": 2 },
+      { "itemName": "迷你弯刀", "tier": 0 }
+    ] } },
+    { "id": "vgd_cannonade_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_electric_eels_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "电鳗", "tier": 2 }] } },
+    { "id": "vgd_electric_eels_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_lighthouse_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "灯塔", "tier": 2 }] } },
+    { "id": "vgd_lighthouse_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_tropical_island_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "热带岛屿", "tier": 2 },
+      { "itemName": "抓钩", "tier": 0 }
+    ] } },
+    { "id": "vgd_tropical_island_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_iceberg_p1", "deck": { "playerLevel": 5, "slots": [{ "itemName": "冰山", "tier": 3 }] } },
+    { "id": "vgd_iceberg_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } },
+
+    { "id": "vgd_shipwreck_p1", "deck": { "playerLevel": 5, "slots": [
+      { "itemName": "食人鱼", "tier": 0 },
+      { "itemName": "船骸", "tier": 3 }
+    ] } },
+    { "id": "vgd_shipwreck_p2", "deck": { "playerLevel": 5, "slots": [{ "itemName": "獠牙", "tier": 0 }] } }
+  ]
+}

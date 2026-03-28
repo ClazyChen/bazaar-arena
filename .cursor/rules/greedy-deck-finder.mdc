@@ -26,5 +26,6 @@ alwaysApply: false
 - **不是「每线程一个模拟器」**：`Program` 只 `new` **一个** `BattleSimulator`，注入 `BattleEvaluator`；`workers>1` 时 **`Parallel.For` 内多线程同时调用同一实例的 `Run`**，用于共享 `PrepareDeck` 缓存、减少分配。见 `Program.cs` 与 `BattleEvaluator.PlayBoNBatch`。
 - **`Run` 必须可在多线程下安全重入**：**禁止** 把**仅属于单场对局**的可变状态（如本场 `BuildSessionTables` 结果、本场才有效的索引表）写入 **`BattleSimulator` 的实例字段**再被其他 `Run` 覆盖；应使用 **`Run` 内局部变量** 并赋给本场 `BattleState`（历史问题：实例字段存会话表会导致光环 id 与盘面错配、甚至 `GetAura` 越界）。
 - **共享缓存须线程安全**：同一模拟器上的 `_preparedDeckCache` 等若可能被并行 `PrepareDeck` 命中，读写须 **`lock` 或并发字典** 等，避免 `Dictionary` 并发写入损坏。
-- **Greedy 专用**：`GreedyPreflattenedResolver` 实现 `IItemBattlePrototypeResolver`，启动时为池内物品建铜档 **`ItemState` 原型**（只读）；`PrepareDeck` 在铜档且无槽位 overrides 时用 `new ItemState(proto)` 拷贝属性数组，减少重复 `GetInt`。原型 **不得** 在战斗过程中被写入。
+- **玩家等级与池子、档位（`GreedyLevelRules`）**：与 GUI 的 `Deck.TierAllowedForLevel`（银 3 / 金 7 / 钻 10）**不同**。Greedy 中：`MinTier` 进池门槛为 **≥5 含银、≥8 含金、≥11 含钻**；**战斗扁平化与槽位 `Tier`** 为 **2–4 铜、5–7 银、8–10 金、11+ 钻**；**OverridableAttributes** 按等级阶梯（2 铜半值、3 铜、4–5 铜银均、6 银、7–8 金银均、9 金、10–11 金钻均、12 钻、13+ 钻 + (L−12)×(钻−金)/2）。详见 `GreedyLevelRules.cs`。
+- **Greedy 专用**：`GreedyPreflattenedResolver` 实现 `IItemBattlePrototypeResolver`，启动时为池内物品按 **`GreedyLevelRules.CombatTier`** 建对应档 **`ItemState` 原型**（只读）；`PrepareDeck` 在同档且无槽位 overrides 时用 `new ItemState(proto)` 拷贝属性数组，减少重复 `GetInt`。原型 **不得** 在战斗过程中被写入。
 - **替代架构**：若改为每工作线程一个 `BattleSimulator`，可简化 `Run` 的跨调用隔离，但需权衡 **缓存是否分片/共享** 与内存；当前工程选择 **单实例 + 安全 `Run`**。

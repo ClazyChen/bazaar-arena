@@ -19,4 +19,6 @@ public static class Tag
     public const int Small = 1 << 14;
     public const int Medium = 1 << 15;
     public const int Large = 1 << 16;
+    /// <summary>陷阱（表格「陷阱」列）。</summary>
+    public const int Trap = 1 << 17;
 }

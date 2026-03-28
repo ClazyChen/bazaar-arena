@@ -20,7 +20,7 @@ public sealed class Config
     public bool Perf { get; set; } = false;
     public List<string> ExcludedItems { get; set; } = [];
 
-    /// <summary>玩家等级（仅支持 2、3、4、5 或 6）：影响槽位上限、对战 Deck.PlayerLevel、overridable 预应用尺度。</summary>
+    /// <summary>玩家等级（2–20）：影响槽位上限、对战 Deck.PlayerLevel、Greedy 池 MinTier、战斗档位与 overridable 预应用尺度（见 <see cref="GreedyLevelRules"/>）。</summary>
     public int PlayerLevel { get; set; } = 2;
 
     public static Config Parse(string[] args)
@@ -100,8 +100,8 @@ public sealed class Config
             }
         }
 
-        if (c.PlayerLevel != 2 && c.PlayerLevel != 3 && c.PlayerLevel != 4 && c.PlayerLevel != 5 && c.PlayerLevel != 6)
-            throw new ArgumentException("仅支持 --level 2、3、4、5 或 6。");
+        if (c.PlayerLevel < GreedyLevelRules.MinPlayerLevel || c.PlayerLevel > GreedyLevelRules.MaxPlayerLevel)
+            throw new ArgumentException($"--level 须在 {GreedyLevelRules.MinPlayerLevel}～{GreedyLevelRules.MaxPlayerLevel} 之间。");
 
         c.SeedOrderedItems = c.SeedOrderedItems
             .Where(x => !string.IsNullOrWhiteSpace(x))

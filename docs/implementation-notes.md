@@ -53,6 +53,7 @@
   - `Source` = 引起触发者（causeItem；无则 Caster）
   - `Item` = 引起触发者（通常与 Source 同一件）
   - `InvokeTarget` = 触发器指向目标（如 Slow/Freeze/Destroy 的被施加者；或 UseOtherItem 的“被使用物品”）
+  - **UseOtherItem**：`Item` 与 `InvokeTarget` 均为**被使用的那件物品**；「使用相邻物品时」只需 `Condition.AdjacentToCaster`（被使用物与 `Caster` 相邻），不必再写 `InvokeTargetAdjacentToCaster`。
   - 典型坑：`Trigger.Crit` 默认条件是 `SameSide`，若文案是“此物品暴击时”必须写 `condition: SameAsCaster`，否则会变成“任意己方暴击时”。
 - **效果目标筛选（ApplyToTargets / additionalTargetCondition）**
   - `Item` = 候选目标
@@ -500,7 +501,7 @@
 ### 设计选择
 
 - **只保留 `_intsByTier`**：扩展属性统一用 `Dictionary<string, List<int>>` 存储；单值（如 `CooldownMs = 2000`）存为长度为 1 的列表，读取时 `list.Count == 1` 则对所有 tier 返回该值。不再维护单独的 `_ints`，避免两套存储与同步问题。
-- **IntOrByTier**：在对象初始器中同时支持单值（`Damage = 40`）与按等级列表（`Damage = [25, 35, 45, 55]`）。通过隐式转换（`int` → 单元素列表，`int[]`/`List<int>` → 列表）和属性 setter 写入 `_intsByTier`。
+- **IntOrByTier**：在对象初始器中同时支持单值（`Damage = 40`）与按等级列表（`Damage = [25, 35, 45, 55]`）。通过隐式转换（`int` → 单元素列表，`int[]`/`List<int>` → 列表）和属性 setter 写入 `_intsByTier`。列表长度须与模板 **`MinTier`**（由 Register 写入）匹配：金起步物品只保留 **金、钻** 两档数值（2 个元素），勿写满铜银金钻四档。若各档**数值相同**（表格未分档），应写**单值**，勿写 `[X, X]`。
 - **Key 不对外暴露**：`KeyDamage`、`KeyCooldownMs` 等改为 `private const`，不提供 GetKey 等 API。调用方（如 ItemState、BattleSimulator）直接用字符串字面量 `"Damage"`、`"CooldownMs"` 调用 `GetInt(key, tier)`，简化依赖。
 - **未定义即默认值**：不使用 `ContainsKey`；`GetInt(key, tier, defaultValue)` 在 key 不存在时直接返回默认值。效果数值解析时若 `GetInt(key, tier)` 为 0 则用 `eff.Value` 作为 fallback。
 
@@ -1195,6 +1196,15 @@
 - **存储**：路径写入 **Data/last-collection.txt**（一行、完整路径）。App 提供 **GetLastCollectionPath()** / **SetLastCollectionPath(path)**。
 - **启动**：MainWindow 构造时先尝试打开 last-collection 中的路径；若无记录或文件不存在或打开失败，再尝试 **default.json**；若 default 也不存在则新建空卡组集并保存为 default。成功打开后调用 SetLastCollectionPath 更新记录。
 - **更新时机**：打开卡组集、新建并另存为、保存卡组集时弹出另存为并保存成功时，均调用 SetLastCollectionPath。
+
+---
+
+## GreedyDeckFinder 玩家等级（勿与 GUI 卡组门槛混用）
+
+- **唯一来源**：`src/BazaarArena.GreedyDeckFinder/GreedyLevelRules.cs`。CLI `--level` / 配置 `playerLevel` 合法 **2～20**。
+- **与 GUI 不同**：卡组编辑里的 **`Deck.TierAllowedForLevel`** 为银 3 / 金 7 / 钻 10；Greedy 池子 **`MinTier` 入选**为银 ≥5、金 ≥8、钻 ≥11；**战斗扁平化档位 `CombatTier`** 为 2–4 铜、5–7 银、8–10 金、11+ 钻。
+- **槽位上限**：Greedy 与 GUI 均可用 **`Deck.MaxSlotsForLevel`**（与 `--level` 一致）。
+- **预扁平化与原型**：`GreedyPreflattenedResolver` 按 `CombatTier` 建 `ItemState` 原型；`ComputeOverridableValue` 按等级阶梯写入 overridable。详见 **`docs/greedy-deck-finder.md`** 与 **`.cursor/rules/greedy-deck-finder.mdc`**。
 
 ---
 

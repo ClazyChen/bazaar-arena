@@ -86,7 +86,7 @@
 - **瑞士单轮合并**：整轮所有分数桶对局 **一次** `PlayBoNBatch`，避免按桶小批无法并行。
 - **并行阈值**：`BattleEvaluator` 中 `ParallelPairsMinCount = 2`（≥2 对且 `workers>1` 才 `Parallel.For`）。
 - **随机数**：瑞士子流（主 `Random` 每进瑞士只取 1 个种子）；`--seed` 时并行批内对局可用 **派生 `Random`** 做先后手/平局掷币；**批内对局顺序随机打乱** 时槽位与种子对应关系会变。**不追求** 与串行/旧版比特级一致（见 `greedy-deck-finder.mdc`）。
-- **Greedy 物品 `ItemState` 原型**（`IItemBattlePrototypeResolver` + `GreedyPreflattenedResolver`）：搜索启动时对池内每件物品构造铜档 `ItemState` 原型；`BattleSimulator.PrepareDeck` 在「铜档、无 overrides、解析器提供原型」时用 `new ItemState(proto)`（`Array.Copy`）代替对扁平模板逐键 `GetInt`，减少卡组缓存未命中时的构造开销。
+- **Greedy 物品 `ItemState` 原型**（`IItemBattlePrototypeResolver` + `GreedyPreflattenedResolver`）：搜索启动时对池内每件物品按 **`GreedyLevelRules.CombatTier(playerLevel)`** 构造对应档位 `ItemState` 原型；`BattleSimulator.PrepareDeck` 在「**战斗档位与原型一致**、无 overrides、解析器提供原型」时用 `new ItemState(proto)`（`Array.Copy`）代替对扁平模板逐键 `GetInt`，减少卡组缓存未命中时的构造开销。
 - **并行 `Run` 正确性**：`BattleSimulator` 原先将 `BuildSessionTables` 结果写入实例字段后再赋给本场 `BattleState`，多线程共用一个模拟器时会发生表与战场错配；已改为 **每场对局的局部 `sessionTables` 变量**，且 **`PrepareDeck` 缓存读写加锁**，避免并行下字典损坏或未定义行为。
 
 ---
@@ -107,7 +107,7 @@
 
 4. **验证**  
    - Release：`dotnet build ... -c Release`  
-   - 示例：`--anchor-item 狼筅 --level 4 --perf --workers 8`（物品池为 **Vanessa 铜**，锚点须在该池内）
+   - 示例：`--anchor-item 狼筅 --level 4 --perf --workers 8`（`level 4` 时池子为 **Vanessa 铜**、战斗扁平化为铜档；锚点须在该池内；高等级时池含更高 `MinTier`，见 `GreedyLevelRules`）
 
 ---
 

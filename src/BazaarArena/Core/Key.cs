@@ -24,6 +24,7 @@ public static class Key
     public const int Shield = Poison + 1;
     /// <summary>物品治疗量字段；阵营侧表示当前 <see cref="Hp"/>。</summary>
     public const int Heal = Shield + 1;
+    /// <summary>物品上「获得的生命再生量」字段；阵营侧同下标表示当前生命再生速率（与 <see cref="Ability.Regen"/> 对齐）。</summary>
     public const int Regen = Heal + 1;
     public const int CritRate = Regen + 1;
     public const int CritDamage = CritRate + 1;

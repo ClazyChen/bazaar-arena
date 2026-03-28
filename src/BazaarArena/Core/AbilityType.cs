@@ -20,4 +20,8 @@ public enum AbilityType
     GainGold = 15,
     Invincible = 16,
     UseThisItem = 17,
+    /// <summary>清除己方无敌剩余时间（用于「首次使用物品时解除无敌」等）。</summary>
+    ClearInvincible = 18,
+    /// <summary>提高己方阵营生命再生（写入阵营 Regen）；与 <see cref="Ability.Regen"/> / <see cref="Key.Regen"/> 对齐。</summary>
+    Regen = 19,
 }
