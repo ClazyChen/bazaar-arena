@@ -133,8 +133,8 @@ public class BattleSimulator
             // 4. 1000ms 倍数：剧毒、生命再生
             if (battleState.TimeMs > 0 && battleState.TimeMs % PoisonRegenTickIntervalMs == 0)
             {
-                SettlePoison(side0, side1, logSink, battleState.TimeMs);
-                SettlePoison(side1, side0, logSink, battleState.TimeMs);
+                SettlePoison(battleState, side0, side1, logSink, battleState.TimeMs);
+                SettlePoison(battleState, side1, side0, logSink, battleState.TimeMs);
                 SettleRegen(side0, logSink, battleState.TimeMs);
                 SettleRegen(side1, logSink, battleState.TimeMs);
             }
@@ -142,15 +142,15 @@ public class BattleSimulator
             // 5. 500ms 倍数：灼烧
             if (battleState.TimeMs > 0 && battleState.TimeMs % BurnTickIntervalMs == 0)
             {
-                SettleBurn(side0, side1, logSink, battleState.TimeMs);
-                SettleBurn(side1, side0, logSink, battleState.TimeMs);
+                SettleBurn(battleState, side0, side1, logSink, battleState.TimeMs);
+                SettleBurn(battleState, side1, side0, logSink, battleState.TimeMs);
             }
 
             // 6. 沙尘暴
             if (battleState.TimeMs >= SandstormStartMs && battleState.TimeMs < SandstormEndMs && battleState.TimeMs >= sandstormNextTickMs)
             {
-                ApplySandstorm(side0, sandstormDamage, logSink, battleState.TimeMs);
-                ApplySandstorm(side1, sandstormDamage, logSink, battleState.TimeMs);
+                ApplySandstorm(battleState, side0, side1, sandstormDamage, logSink, battleState.TimeMs);
+                ApplySandstorm(battleState, side1, side0, sandstormDamage, logSink, battleState.TimeMs);
                 logSink.OnSandstormTick(sandstormDamage, battleState.TimeMs);
                 if (sandstormIntervalMs > 140)
                 {
@@ -494,22 +494,36 @@ public class BattleSimulator
         }
     }
 
-    private static void SettleBurn(BattleSide victim, BattleSide opponent, IBattleLogSink logSink, int timeMs)
+    private static ItemState? PickCauseItem(BattleSide side)
+    {
+        for (int i = 0; i < side.Items.Count; i++)
+        {
+            var it = side.Items[i];
+            if (!it.Destroyed) return it;
+        }
+        return null;
+    }
+
+    private static void SettleBurn(BattleState battleState, BattleSide victim, BattleSide opponent, IBattleLogSink logSink, int timeMs)
     {
         if (victim.Burn <= 0) return;
         int damage = victim.Burn;
-        BattleSideDamage.ApplyDamageToSide(victim, damage, DamageShieldRule.Burn);
+        int actualHp = BattleSideDamage.ApplyDamageToSide(victim, damage, DamageShieldRule.Burn);
         int decay = RatioUtil.PercentFloor(victim.Burn, 3); // 衰减量：当前灼烧的 3%（至少为 1），灼烧 1 时衰减 1 变为 0
         victim.Burn = Math.Max(0, victim.Burn - decay);
         logSink.OnBurnTick(victim, damage, victim.Burn, timeMs);
+        if (actualHp > 0)
+            battleState.InvokeTrigger(Trigger.OppHpReduced, PickCauseItem(opponent), null, 1);
     }
 
-    private static void SettlePoison(BattleSide victim, BattleSide opponent, IBattleLogSink logSink, int timeMs)
+    private static void SettlePoison(BattleState battleState, BattleSide victim, BattleSide opponent, IBattleLogSink logSink, int timeMs)
     {
         if (victim.Poison <= 0) return;
         int damage = victim.Poison;
-        BattleSideDamage.ApplyDamageToSide(victim, damage, DamageShieldRule.PoisonTick);
+        int actualHp = BattleSideDamage.ApplyDamageToSide(victim, damage, DamageShieldRule.PoisonTick);
         logSink.OnPoisonTick(victim, damage, timeMs);
+        if (actualHp > 0)
+            battleState.InvokeTrigger(Trigger.OppHpReduced, PickCauseItem(opponent), null, 1);
     }
 
     private static void SettleRegen(BattleSide side, IBattleLogSink logSink, int timeMs)
@@ -520,9 +534,11 @@ public class BattleSimulator
         logSink.OnRegenTick(side, heal, timeMs);
     }
 
-    private static void ApplySandstorm(BattleSide side, int damage, IBattleLogSink logSink, int timeMs)
+    private static void ApplySandstorm(BattleState battleState, BattleSide victim, BattleSide opponent, int damage, IBattleLogSink logSink, int timeMs)
     {
-        _ = BattleSideDamage.ApplyDamageToSide(side, damage, DamageShieldRule.Standard);
+        int actualHp = BattleSideDamage.ApplyDamageToSide(victim, damage, DamageShieldRule.Standard);
+        if (actualHp > 0)
+            battleState.InvokeTrigger(Trigger.OppHpReduced, PickCauseItem(opponent), null, 1);
     }
 
 }

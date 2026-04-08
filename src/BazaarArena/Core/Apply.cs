@@ -16,6 +16,8 @@ public static class Apply
         bool lifeSteal = ctx.GetItemInt(ctx.Caster, Key.LifeSteal) != 0;
         if (lifeSteal && actualHp > 0) ctx.HealCaster(actualHp);
         ctx.LogEffect(lifeSteal ? "吸血" : "伤害", value, showCrit: ctx.IsCritNow);
+        if (actualHp > 0)
+            ctx.BattleState.InvokeTrigger(Trigger.OppHpReduced, ctx.Caster, null, 1);
     };
 
     public static readonly Action<BattleContext, AbilityDefinition> Burn = (ctx, ability) =>
@@ -58,8 +60,10 @@ public static class Apply
     {
         int requested = ctx.GetItemInt(ctx.Caster, ability.ValueKey!.Value);
         if (ctx.IsCritNow) requested *= ctx.CurrentCritMultiplier;
-        ctx.HealCasterWithDebuffClear(requested);
+        int actual = ctx.HealCasterWithDebuffClear(requested);
         ctx.LogEffect("治疗", requested, showCrit: ctx.IsCritNow);
+        if (actual > 0)
+            ctx.ReportTriggerCause(Trigger.Heal);
     };
 
     public static readonly Action<BattleContext, AbilityDefinition> GainGold = (ctx, ability) =>
@@ -188,5 +192,6 @@ public static class Apply
         if (value <= 0) return;
         ctx.CurrentSide.Regen += value;
         ctx.LogEffect("生命再生", value, showCrit: ability.ApplyCritMultiplier && ctx.IsCritNow);
+        ctx.ReportTriggerCause(Trigger.Regen);
     };
 }

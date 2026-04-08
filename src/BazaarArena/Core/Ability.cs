@@ -84,8 +84,11 @@ public static class Ability
         targetCondition: WithCooldownTarget(Condition.DifferentSide),
         targetCountKey: Key.FreezeTargetCount);
 
-    /// <summary>开始飞行：对己方满足目标条件且未飞行的物品设为飞行。Apply 从 <see cref="Key.Custom_0"/> 读施加值，须 &gt;0（<see cref="Apply.AddAttribute"/> 在 value≤0 时不执行）；未单独作他用时可设 <c>Custom_0 = 1</c>。默认 additionalTargetCondition 为 NotInFlight；日志「开始飞行」。</summary>
-    public static AbilityDefinition StartFlying => AddAttribute(Key.InFlight).Override(valueKey: Key.Custom_0, additionalTargetCondition: ~Condition.InFlight, effectLogName: "开始飞行");
+    /// <summary>开始飞行：对己方目标设为飞行。Apply 从 <see cref="Key.Custom_0"/> 读施加值，须 &gt;0（<see cref="Apply.AddAttribute"/> 在 value≤0 时不执行）；未单独作他用时可设 <c>Custom_0 = 1</c>。强制要求目标未飞行（NotInFlight），避免物品定义侧覆盖目标条件后丢失该约束。日志「开始飞行」。</summary>
+    public static AbilityDefinition StartFlying => AddAttribute(Key.InFlight).Override(
+        valueKey: Key.Custom_0,
+        targetCondition: Condition.SameSide & ~Condition.InFlight,
+        effectLogName: "开始飞行");
 
     /// <summary>摧毁（Apply.Destroy）。默认触发器 UseItem；目标默认敌方、未摧毁；摧毁己方或相邻等需 .Override(targetCondition: ...) 显式指定。</summary>
     public static AbilityDefinition Destroy => CreateBase(AbilityType.Destroy, Core.Apply.Destroy).Override(

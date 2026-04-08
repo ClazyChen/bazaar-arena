@@ -33,8 +33,14 @@ public static class Trigger
     public const int AboutToLose = 13;
     /// <summary>任意物品对目标施加「暴击率提高」时触发（由 AddAttribute(Key.CritRate) 上报）；InvokeTarget=被提高暴击率的物品；默认 Condition 为 SameSide。</summary>
     public const int CritRateIncreased = 14;
+    /// <summary>对方生命值降低时触发（直接伤害/灼烧/剧毒/沙尘暴 tick 造成实际扣血时上报）；来源=造成扣血一方的物品；默认 Condition 为 SameSide。</summary>
+    public const int OppHpReduced = 15;
+    /// <summary>任意物品施加治疗时触发（由 Apply.Heal 上报）；来源=施加治疗的物品；默认 Condition 为 SameSide。</summary>
+    public const int Heal = 16;
+    /// <summary>任意物品施加生命再生提高时触发（由 Apply.Regen 上报）；来源=施加生命再生的物品；默认 Condition 为 SameSide。</summary>
+    public const int Regen = 17;
     // 新增触发器时写在这里
     
     // 触发器的数量
-    public const int Count = 15;
+    public const int Count = 18;
 }

@@ -3,6 +3,8 @@ using BazaarArena.BattleSimulator;
 using BazaarArena.Core;
 using BazaarArena.DeckManager;
 using BazaarArena.ItemDatabase;
+using BazaarArena.ItemDatabase.Mak.Medium;
+using BazaarArena.ItemDatabase.Mak.Small;
 using BazaarArena.ItemDatabase.Vanessa.Large;
 using BazaarArena.ItemDatabase.Vanessa.Medium;
 using BazaarArena.ItemDatabase.Vanessa.Small;
@@ -28,6 +30,8 @@ CommonLarge.RegisterAll(db);
 VanessaSmall.RegisterAll(db);
 VanessaMedium.RegisterAll(db);
 VanessaLarge.RegisterAll(db);
+MakSmall.RegisterAll(db);
+MakMedium.RegisterAll(db);
 
 var defaultCollectionPath = Path.Combine(decksDir, "default.json");
 if (File.Exists(defaultCollectionPath))

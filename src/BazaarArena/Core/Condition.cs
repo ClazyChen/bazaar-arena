@@ -104,6 +104,23 @@ public static class Condition
     public static Formula OnlyWeaponWithCooldown { get; } =
         IsWeaponWithCooldownCandidate & Formula.Apply(Formula.Count(IsWeaponWithCooldownCandidate), n => n == 1 ? 1 : 0);
 
+    /// <summary>候选（Item）为敌方冷却时间最长的物品（并列视为都满足）。用于「减速敌方冷却时间最长的物品」等。</summary>
+    public static Formula OppHighestCooldown { get; } = new(ctx =>
+    {
+        if (ctx.Item.SideIndex == ctx.Caster.SideIndex) return 0;
+        if (ctx.Item.Destroyed) return 0;
+        int itemCd = ctx.GetItemInt(ctx.Item, Key.CooldownMs);
+        if (itemCd <= 0) return 0;
+        int max = 0;
+        foreach (var it in ctx.OppSide.Items)
+        {
+            if (it.Destroyed) continue;
+            int cd = ctx.BattleState.GetItemInt(it, Key.CooldownMs);
+            if (cd > max) max = cd;
+        }
+        return itemCd == max ? 1 : 0;
+    });
+
     /// <summary>能力持有者（Caster）的有效 Custom_0 为 0（含光环）；用于「首次」等。</summary>
     public static Formula CasterCustom0IsZero { get; } = new(ctx =>
         ctx.GetItemInt(ctx.Caster, Key.Custom_0) == 0 ? 1 : 0);

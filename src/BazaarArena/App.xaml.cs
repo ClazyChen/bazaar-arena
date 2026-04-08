@@ -2,6 +2,8 @@ using System.Windows;
 using BazaarArena.Core;
 using BazaarArena.DeckManager;
 using BazaarArena.ItemDatabase;
+using BazaarArena.ItemDatabase.Mak.Medium;
+using BazaarArena.ItemDatabase.Mak.Small;
 using BazaarArena.ItemDatabase.Vanessa.Large;
 using BazaarArena.ItemDatabase.Vanessa.Medium;
 using BazaarArena.ItemDatabase.Vanessa.Small;
@@ -62,5 +64,7 @@ public partial class App : Application
         VanessaSmall.RegisterAll(ItemDatabase);
         VanessaMedium.RegisterAll(ItemDatabase);
         VanessaLarge.RegisterAll(ItemDatabase);
+        MakSmall.RegisterAll(ItemDatabase);
+        MakMedium.RegisterAll(ItemDatabase);
     }
 }

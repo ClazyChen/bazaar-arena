@@ -58,7 +58,9 @@ public static class Key
     public const int Hero = Size + 1;
     /// <summary>获得无敌的持续时间（毫秒）。物品定义侧用 <see cref="ItemTemplate.Invincible"/> 以秒为单位写入。</summary>
     public const int InvincibleMs = Hero + 1;
-    public const int Custom_0 = InvincibleMs + 1;
+    /// <summary>任务完成进度 bitmap（如 Q1..Q5）；用于物品定义中的【Q】条件。</summary>
+    public const int Quest = InvincibleMs + 1;
+    public const int Custom_0 = Quest + 1;
     public const int Custom_1 = Custom_0 + 1;
     public const int Custom_2 = Custom_1 + 1;
     public const int Custom_3 = Custom_2 + 1;

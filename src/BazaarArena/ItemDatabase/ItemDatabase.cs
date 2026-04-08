@@ -265,6 +265,9 @@ public class ItemDatabase : IItemTemplateResolver
         if (triggerName == Trigger.Reload) return condition ?? Condition.SameSide;
         if (triggerName == Trigger.AboutToLose) return condition ?? Condition.CasterSideHpLEZero;
         if (triggerName == Trigger.CritRateIncreased) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.OppHpReduced) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.Heal) return condition ?? Condition.SameSide;
+        if (triggerName == Trigger.Regen) return condition ?? Condition.SameSide;
         return condition ?? Condition.Always;
     }
 }

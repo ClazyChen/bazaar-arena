@@ -170,6 +170,9 @@ public sealed partial class BattleContext
         {
             var t = side.Items[index];
             int pct = Math.Clamp(GetItemInt(t, Key.PercentFreezeReduction), 0, 100);
+            // 飞行物品：冻结减半（额外 +50% 减少）。
+            if (t.InFlight || GetItemInt(t, Key.InFlight) != 0)
+                pct = Math.Clamp(pct + 50, 0, 100);
             int effectiveMs = freezeMs - RatioUtil.PercentFloor(freezeMs, pct);
             t.FreezeRemainingMs += effectiveMs;
             return t.Template.Name;
@@ -184,6 +187,9 @@ public sealed partial class BattleContext
         {
             var t = side.Items[index];
             int pct = Math.Clamp(GetItemInt(t, Key.PercentSlowReduction), 0, 100);
+            // 飞行物品：减速减半（额外 +50% 减少）。
+            if (t.InFlight || GetItemInt(t, Key.InFlight) != 0)
+                pct = Math.Clamp(pct + 50, 0, 100);
             int effectiveMs = slowMs - RatioUtil.PercentFloor(slowMs, pct);
             t.SlowRemainingMs += effectiveMs;
             return t.Template.Name;
@@ -193,7 +199,14 @@ public sealed partial class BattleContext
     public void ApplyCharge(int chargeMs, int targetCount, Formula? targetCondition = null, string? effectLogName = null)
     {
         if (chargeMs <= 0 || targetCount <= 0) return;
-        var cond = (targetCondition ?? Condition.SameSide) & ~Condition.Destroyed & Condition.HasCooldown;
+        // 仅对「存在冷却且未满充能」的物品施加充能。
+        var notFullyCharged = new Formula(ctx =>
+        {
+            int cd = ctx.GetItemInt(ctx.Item, Key.CooldownMs);
+            if (cd <= 0) return 0;
+            return ctx.Item.ChargedTimeMs < cd ? 1 : 0;
+        });
+        var cond = (targetCondition ?? Condition.SameSide) & ~Condition.Destroyed & Condition.HasCooldown & notFullyCharged;
         ApplyToTargetsBothSides(targetCount, cond, effectLogName ?? "充能", chargeMs, (side, index) => ChargeItemAt(side, index, chargeMs), null);
     }
 
