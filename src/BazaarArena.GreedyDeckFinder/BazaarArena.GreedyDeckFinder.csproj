@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BazaarArena\BazaarArena.csproj" />
+    <ProjectReference Include="..\BazaarArena.Core\BazaarArena.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
