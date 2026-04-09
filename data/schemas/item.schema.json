@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BazaarArena items yaml (intermediate JSON form)",
+  "type": "object",
+  "required": ["schemaVersion", "hero", "items"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "hero": { "type": "string" },
+    "items": { "type": "array", "items": { "type": "object" } }
+  },
+  "additionalProperties": true
+}
+

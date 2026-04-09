@@ -1,0 +1,14 @@
+schemaVersion: 1
+hero: Vanessa
+items:
+  - nameZh: "示例物品"
+    nameEn: "ExampleItem"
+    version: 0
+    minTier: Bronze
+    size: Small
+    cooldownSeconds: 5
+    tags: []
+    desc: "▶ 造成 {Damage} 点伤害"
+    attributes:
+      Damage: [10, 15, 20, 25]
+
