@@ -23,6 +23,11 @@ public sealed class Config
     /// <summary>玩家等级（2–20）：影响槽位上限、对战 Deck.PlayerLevel、Greedy 池 MinTier、战斗档位与 overridable 预应用尺度（见 <see cref="GreedyLevelRules"/>）。</summary>
     public int PlayerLevel { get; set; } = 2;
 
+    /// <summary>
+    /// 搜索物品池所属英雄：默认仅海盗（Vanessa）。可用：Vanessa / Mak / Common / All。
+    /// </summary>
+    public int PoolHero { get; set; } = Core.Hero.Vanessa;
+
     public static Config Parse(string[] args)
     {
         string? configPath = null;
@@ -95,6 +100,24 @@ public sealed class Config
                         throw new ArgumentException("--level 需要整数参数");
                     c.PlayerLevel = lvl;
                     i++;
+                    break;
+                }
+                case "--pool-hero":
+                {
+                    if (i + 1 >= args.Length)
+                        throw new ArgumentException("--pool-hero 需要参数（Vanessa/Mak/Common/All）");
+                    var s = (args[++i] ?? string.Empty).Trim();
+                    if (s.Length == 0)
+                        throw new ArgumentException("--pool-hero 不能为空");
+                    var key = s.ToLowerInvariant();
+                    c.PoolHero = key switch
+                    {
+                        "vanessa" => Core.Hero.Vanessa,
+                        "mak" => Core.Hero.Mak,
+                        "common" => Core.Hero.Common,
+                        "all" => ItemPool.AllHeroes,
+                        _ => throw new ArgumentException($"未知 --pool-hero：{s}（可用：Vanessa/Mak/Common/All）"),
+                    };
                     break;
                 }
             }

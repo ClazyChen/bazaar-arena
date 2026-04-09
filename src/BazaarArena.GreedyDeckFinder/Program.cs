@@ -2,6 +2,8 @@ using System.Text;
 using BazaarArena.BattleSimulator;
 using BazaarArena.Core;
 using BazaarArena.ItemDatabase;
+using BazaarArena.ItemDatabase.Mak.Medium;
+using BazaarArena.ItemDatabase.Mak.Small;
 using BazaarArena.ItemDatabase.Vanessa.Large;
 using BazaarArena.ItemDatabase.Vanessa.Medium;
 using BazaarArena.ItemDatabase.Vanessa.Small;
@@ -30,13 +32,15 @@ public static class Program
         VanessaSmall.RegisterAll(db);
         VanessaMedium.RegisterAll(db);
         VanessaLarge.RegisterAll(db);
+        MakSmall.RegisterAll(db);
+        MakMedium.RegisterAll(db);
 
         foreach (var name in config.SeedOrderedItems)
         {
             if (config.ExcludedItems.Contains(name, StringComparer.Ordinal))
                 throw new ArgumentException($"起始卡组中的物品被排除：{name}");
         }
-        var pool = new ItemPool(db, config.PlayerLevel, config.ExcludedItems);
+        var pool = new ItemPool(db, config.PlayerLevel, config.PoolHero, config.ExcludedItems);
         IItemTemplateResolver resolver = new GreedyPreflattenedResolver(db, pool, config.PlayerLevel);
         var simulator = new SimulatorClass();
         var rng = config.Seed.HasValue ? new Random(config.Seed.Value) : new Random();

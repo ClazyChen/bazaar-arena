@@ -173,7 +173,8 @@
                                 <TextBlock Text="英雄：" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#ccc"/>
                                 <RadioButton x:Name="FilterHeroAll" GroupName="FilterHero" Content="全部" IsChecked="True" Margin="0,0,12,0" Foreground="#eee" Checked="ItemFilter_Changed"/>
                                 <RadioButton x:Name="FilterHeroCommon" GroupName="FilterHero" Content="公共" Margin="0,0,12,0" Foreground="#eee" Checked="ItemFilter_Changed"/>
-                                <RadioButton x:Name="FilterHeroVanessa" GroupName="FilterHero" Content="海盗" Margin="0,0,0,0" Foreground="#eee" Checked="ItemFilter_Changed"/>
+                                <RadioButton x:Name="FilterHeroVanessa" GroupName="FilterHero" Content="海盗" Margin="0,0,12,0" Foreground="#eee" Checked="ItemFilter_Changed"/>
+                                <RadioButton x:Name="FilterHeroMak" GroupName="FilterHero" Content="马克" Margin="0,0,0,0" Foreground="#eee" Checked="ItemFilter_Changed"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>

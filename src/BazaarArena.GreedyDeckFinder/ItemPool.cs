@@ -4,14 +4,16 @@ using ItemDb = BazaarArena.ItemDatabase.ItemDatabase;
 
 namespace BazaarArena.GreedyDeckFinder;
 
-/// <summary>海盗（Vanessa）最新版物品池（<see cref="GreedyLevelRules.IsMinTierAllowedInPool"/> 决定可选 MinTier）。</summary>
+/// <summary>指定英雄的最新版物品池（<see cref="GreedyLevelRules.IsMinTierAllowedInPool"/> 决定可选 MinTier）。</summary>
 public sealed class ItemPool
 {
+    public const int AllHeroes = -1;
+
     public IReadOnlyList<string> SmallNames { get; }
     public IReadOnlyList<string> MediumNames { get; }
     public IReadOnlyList<string> LargeNames { get; }
 
-    public ItemPool(ItemDb db, int playerLevel, IReadOnlyCollection<string>? excludedItems = null)
+    public ItemPool(ItemDb db, int playerLevel, int poolHero, IReadOnlyCollection<string>? excludedItems = null)
     {
         var latest = db.GetLatestOnlyNames();
         var small = new List<string>();
@@ -26,7 +28,9 @@ public sealed class ItemPool
             if (excluded.Contains(name))
                 continue;
             var t = db.GetTemplate(name);
-            if (t == null || t.Hero != Hero.Vanessa)
+            if (t == null)
+                continue;
+            if (poolHero != AllHeroes && t.Hero != poolHero)
                 continue;
             if (!GreedyLevelRules.IsMinTierAllowedInPool(t.MinTier, playerLevel))
                 continue;
@@ -40,7 +44,7 @@ public sealed class ItemPool
         }
 
         // 特殊：为烙刀生成 Q1/Q2 两个候选名（由 Greedy resolver 注入 Custom_1）。
-        if (!excluded.Contains("烙刀") && medium.Contains("烙刀", StringComparer.Ordinal))
+        if (poolHero == Hero.Vanessa && !excluded.Contains("烙刀") && medium.Contains("烙刀", StringComparer.Ordinal))
         {
             medium.Add("烙刀（Q1）");
             medium.Add("烙刀（Q2）");

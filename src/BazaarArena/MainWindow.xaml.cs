@@ -131,6 +131,7 @@ public partial class MainWindow
         {
             if (FilterHeroCommon?.IsChecked == true) heroAllowed.Add(Hero.Common);
             if (FilterHeroVanessa?.IsChecked == true) heroAllowed.Add(Hero.Vanessa);
+            if (FilterHeroMak?.IsChecked == true) heroAllowed.Add(Hero.Mak);
         }
 
         _filteredItemPoolEntries.Clear();
