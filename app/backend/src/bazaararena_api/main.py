@@ -10,6 +10,7 @@ from flask import Flask, abort, jsonify, request, send_file
 from bazaararena_api.db import default_db_path, get_connection, repo_root
 from bazaararena_api.deck_rules import max_slots_for_level
 from bazaararena_api.simulate_run import (
+    build_cli_repro_document,
     build_simulate_job,
     cached_cli_version_line,
     default_cli_path,
@@ -463,6 +464,68 @@ def create_app() -> Flask:
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
         return jsonify({"job": job, "used_seed": seed_q, "debug_level": debug_level})
+
+    @app.post("/api/simulate/save-cli-repro")
+    def save_cli_repro():
+        """将当前对战复现信息写入仓库 `samples/cli/`，供本地 bazaararena_cli 调试。"""
+        body = request.get_json(force=True, silent=True) or {}
+        d0 = body.get("deck_id_0")
+        d1 = body.get("deck_id_1")
+        seed = body.get("seed")
+        debug_level = (body.get("debug_level") or "detailed")
+        if isinstance(debug_level, str):
+            debug_level = debug_level.strip().lower()
+        max_events = body.get("max_events", 50000)
+        try:
+            deck_id_0 = int(d0)
+            deck_id_1 = int(d1)
+            seed_i = int(seed)
+            me = int(max_events) if max_events is not None else 50000
+        except (TypeError, ValueError):
+            return jsonify({"ok": False, "error": "deck_id_0、deck_id_1、seed 须为整数"}), 400
+        if seed is None or seed == "":
+            return jsonify({"ok": False, "error": "需要 seed 与对战模拟一致"}), 400
+        try:
+            doc = build_cli_repro_document(
+                deck_id_0,
+                deck_id_1,
+                seed_i,
+                debug_level=str(debug_level),
+                max_events=me,
+            )
+        except ValueError as e:
+            return jsonify({"ok": False, "error": str(e)}), 400
+
+        root = repo_root()
+        out_dir = root / "samples" / "cli"
+        try:
+            out_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            return jsonify({"ok": False, "error": f"无法创建目录 {out_dir}：{e}"}), 500
+
+        base_name = f"bazaararena-cli-repro-seed{seed_i}-d{deck_id_0}-vs-d{deck_id_1}.json"
+        path = out_dir / base_name
+        if path.is_file():
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            path = out_dir / (
+                f"bazaararena-cli-repro-seed{seed_i}-d{deck_id_0}-vs-d{deck_id_1}-{stamp}.json"
+            )
+        try:
+            path.write_text(
+                json.dumps(doc, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        except OSError as e:
+            return jsonify({"ok": False, "error": f"写入失败：{e}"}), 500
+
+        rel = path.relative_to(root)
+        return jsonify(
+            {
+                "ok": True,
+                "relativePath": str(rel).replace("\\", "/"),
+                "filename": path.name,
+            }
+        )
 
     @app.post("/api/simulate")
     def simulate():

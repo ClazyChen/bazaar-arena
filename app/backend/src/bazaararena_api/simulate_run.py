@@ -5,6 +5,7 @@ import os
 import secrets
 import subprocess
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 from bazaararena_api.db import get_connection, repo_root
@@ -104,6 +105,59 @@ def _deck_slots(conn, deck_id: int) -> list[dict[str, object]]:
         {"position": int(r["position"]), "item_name": r["item_name"], "tier": int(r["tier"])}
         for r in cur.fetchall()
     ]
+
+
+def _deck_repro_snapshot(conn, deck_id: int) -> dict[str, object]:
+    row = conn.execute(
+        "SELECT id, name, player_level FROM decks WHERE id = ?",
+        (deck_id,),
+    ).fetchone()
+    if not row:
+        raise ValueError(f"deck not found: {deck_id}")
+    slots = _deck_slots(conn, deck_id)
+    return {
+        "deckId": int(row["id"]),
+        "name": str(row["name"]),
+        "playerLevel": int(row["player_level"]),
+        "slots": slots,
+    }
+
+
+def build_cli_repro_document(
+    deck_id_0: int,
+    deck_id_1: int,
+    seed: int,
+    *,
+    debug_level: str = "detailed",
+    max_events: int = 50000,
+) -> dict[str, object]:
+    """
+    与 bazaararena_cli --input 兼容的 JSON（schemaVersion/mode/payload），
+    并附加 cliReproMeta（卡组快照等）；引擎解析时忽略未知顶层键。
+    """
+    conn = get_connection()
+    try:
+        d0 = _deck_repro_snapshot(conn, deck_id_0)
+        d1 = _deck_repro_snapshot(conn, deck_id_1)
+    finally:
+        conn.close()
+
+    job = build_simulate_job(
+        deck_id_0,
+        deck_id_1,
+        seed,
+        debug_level=debug_level,
+        max_events=max_events,
+    )
+    exported_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    out: dict[str, object] = {**job}
+    out["cliReproMeta"] = {
+        "exportedAt": exported_at,
+        "deck0_as_side0": d0,
+        "deck1_as_side1": d1,
+        "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。",
+    }
+    return out
 
 
 _ALLOWED_DEBUG = frozenset({"none", "summary", "detailed"})

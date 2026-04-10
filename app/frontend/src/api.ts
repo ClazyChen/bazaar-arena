@@ -161,3 +161,27 @@ export async function fetchReproJobJson(params: {
     if (params.max_events != null) q.set("max_events", String(params.max_events));
     return j(await fetch(`/api/simulate/repro-job?${q}`));
 }
+
+/** 将复现 JSON 写入仓库 `samples/cli/`（仅本地后端开发环境） */
+export async function postSaveCliRepro(body: {
+    deck_id_0: number;
+    deck_id_1: number;
+    seed: number;
+    debug_level?: "detailed" | "summary" | "none";
+    max_events?: number;
+}): Promise<{ ok: boolean; relativePath?: string; filename?: string; error?: string }> {
+    const payload: Record<string, unknown> = {
+        deck_id_0: body.deck_id_0,
+        deck_id_1: body.deck_id_1,
+        seed: body.seed,
+    };
+    if (body.debug_level != null) payload.debug_level = body.debug_level;
+    if (body.max_events != null) payload.max_events = body.max_events;
+    return j(
+        await fetch("/api/simulate/save-cli-repro", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        }),
+    );
+}

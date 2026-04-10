@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from "vue";
-import { fetchDeckSlots, fetchReproJobJson, postSimulate } from "@/api";
+import { fetchDeckSlots, postSaveCliRepro, postSimulate } from "@/api";
 import {
     dcardOuterWidthPx,
     itemArtAspectStyle,
@@ -35,11 +35,14 @@ const simEnvelope = ref<SimulateCliEnvelope | null>(null);
 const simErr = ref<string | null>(null);
 const battleLoading = ref(false);
 
-/** 最近一次成功 detailed 模拟的种子，用于 Summary 与 job 下载 */
+/** 最近一次成功 detailed 模拟的种子，用于 Summary 与保存 CLI 复现 JSON */
 const lastUsedSeed = ref<number | null>(null);
 const summaryLines = ref<string[]>([]);
 const summaryErr = ref<string | null>(null);
 const summaryLoading = ref(false);
+const saveReproLoading = ref(false);
+const saveReproErr = ref<string | null>(null);
+const saveReproPath = ref<string | null>(null);
 
 const timeline = computed((): PlaybackStep[] => {
     const env = simEnvelope.value;
@@ -132,6 +135,8 @@ watch(
         lastUsedSeed.value = null;
         summaryLines.value = [];
         summaryErr.value = null;
+        saveReproPath.value = null;
+        saveReproErr.value = null;
         slotsP1.value = [];
         slotsP2.value = [];
         playheadIndex.value = 0;
@@ -161,6 +166,8 @@ async function runBattle(): Promise<void> {
     lastUsedSeed.value = null;
     summaryLines.value = [];
     summaryErr.value = null;
+    saveReproPath.value = null;
+    saveReproErr.value = null;
     try {
         const env = await postSimulate({
             deck_id_0: id1,
@@ -211,29 +218,33 @@ async function fetchSummaryLog(): Promise<void> {
     }
 }
 
-async function downloadReproJob(dl: "summary" | "detailed"): Promise<void> {
+/** 将复现数据写入仓库 samples/cli/（需本地后端可写盘） */
+async function saveCliReproToSamples(): Promise<void> {
     const id1 = props.deckIdP1;
     const id2 = props.deckIdP2;
     const seed = lastUsedSeed.value;
     if (id1 === null || id2 === null || seed === null) return;
+    saveReproLoading.value = true;
+    saveReproErr.value = null;
+    saveReproPath.value = null;
     try {
-        const { job } = await fetchReproJobJson({
+        const res = await postSaveCliRepro({
             deck_id_0: id1,
             deck_id_1: id2,
             seed,
-            debug_level: dl,
+            debug_level: "detailed",
         });
-        const blob = new Blob([JSON.stringify(job, null, 2)], {
-            type: "application/json;charset=utf-8",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `bazaararena-repro-${dl}-seed-${seed}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+        if (!res.ok) {
+            saveReproErr.value = res.error || "保存失败";
+            return;
+        }
+        if (res.relativePath) {
+            saveReproPath.value = res.relativePath;
+        }
     } catch (e) {
-        summaryErr.value = e instanceof Error ? e.message : String(e);
+        saveReproErr.value = e instanceof Error ? e.message : String(e);
+    } finally {
+        saveReproLoading.value = false;
     }
 }
 
@@ -327,15 +338,15 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
             <details v-if="lastUsedSeed !== null" class="debug-loop" open>
                 <summary class="debug-sum">调试：Summary 与 CLI 复现（同种子）</summary>
                 <p class="debug-hint">
-                    闭环：在动画里发现问题 → 点「拉取 Summary 日志」阅读与引擎
+                    闭环：点「拉取 Summary 日志」与引擎
                     <code>debug.level=summary</code>
-                    一致的可读文本；本地将下载的
-                    <code>job.json</code>
-                    交给
-                    <code>bazaararena_cli --input job.json --output out.json</code>
-                    ，在生成 JSON 的
-                    <code>result.debug.lines</code>
-                    中核对。修改 C++ 后重编 CLI，再回到本页「再次对战」验证。
+                    文本对照；点「保存复现 JSON 到 samples/cli」由后端写入仓库
+                    <code>samples/cli/</code>
+                    ，供本地
+                    <code>bazaararena_cli --input … --output out.json</code>
+                    。顶层结构与对战模拟请求一致，并含
+                    <code>cliReproMeta</code>
+                    卡组快照。修改引擎后重编 CLI 再「再次对战」验证。
                 </p>
                 <div class="debug-row">
                     <span class="seed-label">种子 {{ lastUsedSeed }}</span>
@@ -348,13 +359,19 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                     >
                         {{ summaryLoading ? "拉取中…" : "拉取 Summary 日志" }}
                     </button>
-                    <button type="button" class="btn-sm" @click="downloadReproJob('summary')">
-                        下载 job（summary）
-                    </button>
-                    <button type="button" class="btn-sm" @click="downloadReproJob('detailed')">
-                        下载 job（detailed）
+                    <button
+                        type="button"
+                        class="btn-sm"
+                        :disabled="saveReproLoading"
+                        @click="saveCliReproToSamples"
+                    >
+                        {{ saveReproLoading ? "写入中…" : "保存复现 JSON 到 samples/cli" }}
                     </button>
                 </div>
+                <p v-if="saveReproPath" class="save-repro-ok">
+                    已写入：<code>{{ saveReproPath }}</code>
+                </p>
+                <p v-if="saveReproErr" class="err">{{ saveReproErr }}</p>
                 <p v-if="summaryErr" class="err">{{ summaryErr }}</p>
                 <pre v-if="summaryLines.length" class="summary-pre">{{ summaryLines.join("\n") }}</pre>
             </details>
@@ -947,5 +964,13 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+.save-repro-ok {
+    margin: 0.35rem 0 0;
+    font-size: 0.85rem;
+    color: #8fbc8f;
+}
+.save-repro-ok code {
+    color: #b8dcb8;
 }
 </style>
