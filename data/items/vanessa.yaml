@@ -86,12 +86,11 @@ items:
       - type: Damage
       - type: AddAttribute
         trigger: UseItem
+        key: CritRate
+        value: Custom_0
         ex_condition:
           type: And
           params:
             - type: HasTag
               params: [Weapon]
             - DifferentFromCaster
-        attribute: CritRate
-        value: Custom_0
-

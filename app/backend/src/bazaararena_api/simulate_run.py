@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import secrets
+import sys
 import subprocess
 import tempfile
 from datetime import datetime, timezone
@@ -19,33 +20,15 @@ def random_sim_seed() -> int:
 
 
 def default_cli_path() -> Path | None:
+    """默认使用仓库根目录 bin/ 下的 CLI（与 engine/CMakeLists.txt 中 RUNTIME_OUTPUT_DIRECTORY 一致）。"""
     env = os.environ.get("BAZAARARENA_CLI")
     if env:
         p = Path(env)
         return p if p.is_file() else None
     root = repo_root()
-    candidates = [
-        root / "engine" / "build" / "Release" / "bazaararena_cli.exe",
-        root / "engine" / "build" / "Debug" / "bazaararena_cli.exe",
-        root / "engine" / "build" / "bazaararena_cli.exe",
-        root / "engine" / "build" / "bazaararena_cli",
-        root / "engine" / "out" / "build" / "x64-Release" / "bazaararena_cli.exe",
-        root / "engine" / "out" / "build" / "x64-Debug" / "bazaararena_cli.exe",
-        root / "engine" / "cmake-build-release" / "bazaararena_cli",
-    ]
-    for c in candidates:
-        if c.is_file():
-            return c
-    engine = root / "engine"
-    if engine.is_dir():
-        for name in ("bazaararena_cli.exe", "bazaararena_cli"):
-            try:
-                for p in engine.rglob(name):
-                    if p.is_file():
-                        return p
-            except OSError:
-                pass
-    return None
+    name = "bazaararena_cli.exe" if sys.platform == "win32" else "bazaararena_cli"
+    canonical = root / "bin" / name
+    return canonical if canonical.is_file() else None
 
 
 # 每个 cli 路径只校验一次（与 C++ `PrintVersion` 中的 contract 字符串对齐）
@@ -88,8 +71,8 @@ def ensure_cli_identity(cli: Path) -> None:
             "bazaararena_cli --version 输出不符合对战模拟契约（应含 `contract=1` 与 `simulate+json`）。"
             f"当前输出（截断）：{merged[:900]!r}。"
             f"说明 {cli} 不是本仓库 engine/cli/main.cpp 编出的可执行文件（常见：同名占位程序或其它工程产物）。"
-            "请重新编译：`cmake --build <engine/build> --config Release --target bazaararena_cli`，"
-            "并设置 BAZAARARENA_CLI 指向该文件。"
+            "请重新编译：`cmake -S engine -B <build-dir> --build <build-dir> --config Release --target bazaararena_cli`"
+            "（产物在仓库根 `bin/`），或设置 BAZAARARENA_CLI 指向正确的可执行文件。"
         )
     first = merged.splitlines()[0].strip() if merged else ""
     _cli_version_line[key] = first[:700] if first else ""
@@ -228,7 +211,9 @@ def run_simulate_json(job: dict[str, object], timeout_sec: float = 120.0) -> dic
     cli = default_cli_path()
     if cli is None:
         raise FileNotFoundError(
-            "未找到 bazaararena_cli：请先编译 engine，或设置环境变量 BAZAARARENA_CLI 指向可执行文件"
+            "未找到 bazaararena_cli：请在仓库根执行 "
+            "`cmake -S engine -B <build-dir> && cmake --build <build-dir> --config Release --target bazaararena_cli`"
+            "（可执行文件应出现在 `<repo>/bin/`），或设置环境变量 BAZAARARENA_CLI 指向可执行文件。"
         )
 
     ensure_cli_identity(cli)
@@ -268,9 +253,9 @@ def run_simulate_json(job: dict[str, object], timeout_sec: float = 120.0) -> dic
                     " 当前现象：退出码为 0 但没有生成 --output 指定的文件，且标准输出像「版本号 + 物品列表」。"
                     "这说明该路径下的可执行文件很可能不是本仓库 engine/cli/main.cpp 编出来的对战模拟器"
                     "（同名文件被其它程序覆盖、或从未用当前源码重编）。"
-                    "请在本机重新编译：在 engine 构建目录执行 "
-                    "`cmake --build . --config Release --target bazaararena_cli`，"
-                    "或设置环境变量 BAZAARARENA_CLI 指向刚编出的 bazaararena_cli.exe。"
+                    "请在本机重新编译："
+                    "`cmake -S engine -B <build-dir> && cmake --build <build-dir> --config Release --target bazaararena_cli`"
+                    "（产物在仓库根 `bin/`），或设置环境变量 BAZAARARENA_CLI 指向正确的 bazaararena_cli。"
                 )
             elif proc.returncode == 0:
                 wrong_binary_hint = (

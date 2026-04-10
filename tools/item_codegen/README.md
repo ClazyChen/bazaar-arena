@@ -19,10 +19,10 @@ python tools/gen_items_sqlite.py
 
 ## 校验（建议本地/CI）
 
-1. **YAML → C++**：运行 `python tools/gen_items_cpp.py` 后，在 `engine/build` 中编译引擎，例如：
+1. **YAML → C++**：运行 `python tools/gen_items_cpp.py` 后，在 CMake 构建目录中编译引擎（`-B` 可任选；`bazaararena_cli` 输出在仓库根 `bin/`），例如：
 
    ```bash
-   cmake --build engine/build --config Debug
+   cmake -S engine -B build && cmake --build build --config Debug --target bazaararena_cli
    ```
 
 2. **YAML → SQLite**：运行 `python tools/gen_items_sqlite.py` 后，确认 `app/backend/data/bazaararena.db` 存在，且可用 `sqlite3` 查看 `items` / `deck_collections` 等表。

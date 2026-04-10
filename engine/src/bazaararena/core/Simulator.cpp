@@ -19,7 +19,11 @@ void Simulator::InvokeTrigger(int trigger, const ItemState* source, const ItemSt
         auto item_index = index & 0x0F;
         auto& ability_caster = sides[side_index].items[item_index];
         if (ability_caster.attrs[ItemKey::Destroyed] == 1) continue;
-        ctx.item = ctx.caster = &ability_caster;
+        if (source != nullptr) {
+            ctx.caster = &ability_caster;
+        } else {
+            ctx.item = ctx.caster = &ability_caster;
+        }
         for (int i = 0; i < ability_caster.templ->ability_count; i++) {
             auto& ability = ability_caster.templ->abilities[i];
             for (int j = 0; j < ability.trigger_entry_count; j++) {

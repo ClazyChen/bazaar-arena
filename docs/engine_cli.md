@@ -8,7 +8,13 @@
 - `bazaararena_cli --version`：打印可执行文件身份（含 `mode=simulate+json` 与 `contract=1`），用于确认**不是**其它同名程序。
 - `bazaararena_cli --help`：简要用法。
 
-若 HTTP 后端报告「未写出 out.json」且 stdout 出现与 JSON 无关的「物品列表」等，说明磁盘上的 `bazaararena_cli.exe` **不是**本仓库当前源码编出的对战 CLI，请清理后重新 `cmake --build ... --target bazaararena_cli`，并可用 `--version` 自检。
+### 可执行文件位置（约定）
+
+- 使用本仓库 [`engine/CMakeLists.txt`](../engine/CMakeLists.txt) 构建时，`bazaararena_cli` **固定生成在仓库根目录的 `bin/`** 下（Windows：`bin/bazaararena_cli.exe`；Unix：`bin/bazaararena_cli`）。
+- HTTP 后端在未设置环境变量 `BAZAARARENA_CLI` 时，**默认从上述 `bin/` 路径** 调用该文件（见 `app/backend/src/bazaararena_api/simulate_run.py` 的 `default_cli_path`）。部署或本地调试可通过 `BAZAARARENA_CLI` 指向其它路径以覆盖默认行为。
+- 自检：对 `bin/` 下的可执行文件运行 `--version`，应含 `mode=simulate+json` 与 `contract=1`。
+
+若 HTTP 后端报告「未写出 out.json」且 stdout 出现与 JSON 无关的「物品列表」等，说明实际调用的 `bazaararena_cli` **不是**本仓库当前源码编出的对战 CLI；请重新执行 `cmake -S engine -B <build-dir>` 与 `cmake --build <build-dir> --config Release --target bazaararena_cli` 并确认 `bin/` 下产物已更新，或正确设置 `BAZAARARENA_CLI`。
 
 ### HTTP `POST /api/simulate`（可选字段）
 

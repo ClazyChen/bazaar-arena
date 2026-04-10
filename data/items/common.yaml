@@ -37,13 +37,11 @@ items:
     Abilities:
       - type: AddAttribute
         key: Damage
-        value_key: Custom_0
+        value: Custom_0
         priority: High
         ex_target_condition:
-          type: And
-          params:
-            - type: HasTag
-              params: [Weapon]
+          type: HasTag
+          params: [Weapon]
   - Name: "符文手斧"
     Desc: "▶ 造成 {Damage} 伤害"
     Size: Small
