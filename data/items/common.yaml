@@ -1,4 +1,108 @@
 schemaVersion: 1
 hero: Common
-items: []
-
+items:
+  - Name: "獠牙"
+    Desc: "▶ 造成 {Damage} 伤害"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 3s
+    Damage: [5, 10, 20, 40]
+    Abilities:
+      - type: Damage
+  - Name: "岩浆核心"
+    Desc: "战斗开始时，造成 {Burn} 灼烧"
+    Size: Small
+    Tier: Bronze
+    Burn: [6, 9, 12, 15]
+    Abilities:
+      - type: Burn
+        trigger: BattleStart
+  - Name: "驯化蜘蛛"
+    Desc: "▶ 造成 {Poison} 剧毒"
+    Size: Small
+    Tier: Bronze
+    Tags: [Friend]
+    Cooldown: 6s
+    Poison: [1, 2, 3, 4]
+    Abilities:
+      - type: Poison
+  - Name: "举重手套"
+    Desc: "▶ 武器伤害提高 {Damage}（限本场战斗）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Tool, Apparel]
+    Cooldown: 5s
+    Custom_0: [1, 2, 3, 4]
+    Abilities:
+      - type: AddAttribute
+        value_key: Custom_0
+        priority: High
+        ex_target_condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Weapon]
+  - Name: "符文手斧"
+    Desc: "▶ 造成 {Damage} 伤害"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 8s
+    Damage: [15, 30, 60, 120]
+    Abilities:
+      - type: Damage
+  - Name: "放大镜"
+    Desc: "▶ 造成 {Damage} 伤害"
+    Size: Small
+    Tier: Bronze
+    Tags: [Tool, Weapon]
+    Cooldown: 6s
+    Damage: [20, 40, 80, 160]
+    Abilities:
+      - type: Damage
+  - Name: "古董剑"
+    Desc: "▶ 造成 {Damage} 伤害"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 5s
+    Damage: [5, 10, 20, 40]
+    Abilities:
+      - type: Damage
+  - Name: "轻步靴"
+    Desc: "相邻物品 {+Custom_0%} 暴击率"
+    Size: Small
+    Tier: Bronze
+    Tags: [Apparel]
+    Custom_0: [3, 6, 9, 12]
+    Auras:
+      - attribute: CritRate
+        condition: AdjacentToCaster
+        value:
+          type: Caster
+          params: [Custom_0]
+  - Name: "利爪"
+    Desc: "▶ 造成 {Damage} 伤害；此物品能造成双倍暴击伤害"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 5s
+    Damage: [10, 20, 40, 80]
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: CritDamage
+        value:
+          type: Constant
+          params: [100]
+        percent: true
+  - Name: "蓝蕉"
+    Desc: "▶ 治疗 {Heal} 生命值"
+    Size: Small
+    Tier: Bronze
+    Tags: [Food]
+    Cooldown: 10s
+    Heal: [10, 20, 40, 80]
+    Abilities:
+      - type: Heal

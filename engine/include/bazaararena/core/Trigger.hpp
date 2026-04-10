@@ -28,11 +28,13 @@ public:
     static constexpr int Haste = 16; // 任意物品施加加速时触发（Source = 加速来源，Target = 加速目标）
     static constexpr int Reload = 17; // 任意物品装填时触发（Source = 装填来源，Target = 装填目标）
     static constexpr int Charge = 18; // 任意物品充能时触发（Source = 充能来源，Target = 充能目标）
+    static constexpr int StartFlying = 19; // 任意物品开始飞行时触发（Source = 开始飞行来源，Target = 开始飞行目标）
+    static constexpr int StopFlying = 20; // 任意物品停止飞行时触发（Source = 停止飞行来源，Target = 停止飞行目标）
     
-    static constexpr int AboutToLose = 19; // 即将落败时触发（Source = Target = null）
-    static constexpr int CritRateIncreased = 20; // 暴击率提高时触发（Source = 暴击率提高来源，Target = 暴击率提高目标）
+    static constexpr int AboutToLose = 21; // 即将落败时触发（Source = Target = null）
+    static constexpr int CritRateIncreased = 22; // 暴击率提高时触发（Source = 暴击率提高来源，Target = 暴击率提高目标）
 
-    static constexpr int Count = 21; // 触发器数量
+    static constexpr int Count = 23; // 触发器数量
 };
 
 }

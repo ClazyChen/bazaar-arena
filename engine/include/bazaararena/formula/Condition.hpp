@@ -43,5 +43,14 @@ constexpr Formula HasCooldown = HasDerivedTag<DerivedTag::Cooldown>;
 constexpr Formula CanCrit = HasDerivedTag<DerivedTag::Crit>;
 
 constexpr Formula NotFullyCharged = Ne<Item<ItemKey::ChargedTime>, Item<ItemKey::Cooldown>>;
+constexpr Formula NotFrozen = Eq<Item<ItemKey::FreezeRemaining>, Constant<0>>;
+
+constexpr Formula AdjacentToCaster = And<
+    Eq<Item<ItemKey::SideIndex>, Caster<ItemKey::SideIndex>>,
+    Eq<Abs<Sub<Item<ItemKey::ItemIndex>, Caster<ItemKey::ItemIndex>>>, Constant<1>>
+>;
+
+constexpr Formula InFlight = Eq<Item<ItemKey::InFlight>, Constant<1>>;
+constexpr Formula NotInFlight = Not<InFlight>;
 
 }

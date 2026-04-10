@@ -22,14 +22,14 @@ public:
     // 触发器和触发条件列表的条目
     struct TriggerEntry {
         int trigger = Trigger::UseItem; // 触发器
-        const formula::Formula condition = formula::True; // 触发条件
+        formula::Formula condition = formula::True; // 触发条件
     };
 
     std::array<TriggerEntry, MaxTriggerEntries> trigger_entries;
     int trigger_entry_count = 0;
 
     // 选择目标条件
-    const formula::Formula target_condition;
+    formula::Formula target_condition = formula::True;
 
     // 能力对应值的 key
     int value_key = 0;

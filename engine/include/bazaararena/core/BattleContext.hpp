@@ -16,6 +16,8 @@ public:
     const ItemState* target; // 当前触发器的目标物品（如 UseItem 的被使用物、Slow 的减速目标）；无单独“目标”时与 source 一致（如触发灼烧、剧毒）
 
     int GetItemInt(const ItemState* item, int key) const; // 读取物品的某个属性（会受到光环的影响）
+    int GetItemIntRaw(const ItemState* item, int key) const; // 读取物品的某个属性（不受光环的影响）
+
     int GetSideInt(int key) const; // 读取能力/光环释放者所在阵营的某个属性
     int GetOppInt(int key) const; // 读取能力/光环释放者所在阵营的对手阵营的某个属性
 

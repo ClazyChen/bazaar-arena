@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bazaararena/core/BattleContext.hpp>
+#include <bazaararena/core/ItemKey.hpp>
 
 namespace bazaararena::formula {
 
@@ -23,14 +24,22 @@ constexpr Formula False = Constant<0>;
 // 当前正在被评估的物品的属性
 template<int key>
 constexpr Formula Item = [](const BattleContext& ctx) -> int { 
-    return ctx.GetItemInt(ctx.item, key); 
+    if constexpr (IsAuraEffect<key>) {
+        return ctx.GetItemInt(ctx.item, key);
+    } else {
+        return ctx.GetItemIntRaw(ctx.item, key);
+    }
 };
 
 // 能力/光环释放者物品的属性
 // 当 Caster = Item 时，等价于 Item，此时优先使用 Item
 template<int key>
 constexpr Formula Caster = [](const BattleContext& ctx) -> int { 
-    return ctx.GetItemInt(ctx.caster, key); 
+    if constexpr (IsAuraEffect<key>) {
+        return ctx.GetItemInt(ctx.caster, key);
+    } else {
+        return ctx.GetItemIntRaw(ctx.caster, key);
+    }
 };
 
 // 能力/光环释放者所在阵营的属性
@@ -108,6 +117,12 @@ constexpr Formula Gt = [](const BattleContext& ctx) -> int {
 template<Formula a, Formula b>
 constexpr Formula Ge = [](const BattleContext& ctx) -> int { 
     return a(ctx) >= b(ctx) ? 1 : 0; 
+};
+
+template<Formula a>
+constexpr Formula Abs = [](const BattleContext& ctx) -> int { 
+    int value = a(ctx);
+    return value >= 0 ? value : -value;
 };
 
 } // namespace bazaararena::formula

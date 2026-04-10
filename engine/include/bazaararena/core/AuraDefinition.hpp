@@ -8,8 +8,8 @@ namespace bazaararena::core {
 class AuraDefinition {
 public:
     int attribute = 0;
-    const formula::Formula condition = formula::True;
-    const formula::Formula value = formula::True;
+    formula::Formula condition = formula::True;
+    formula::Formula value = formula::True;
     bool percent = false;
 };
 

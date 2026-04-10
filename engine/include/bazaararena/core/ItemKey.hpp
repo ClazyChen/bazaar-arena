@@ -63,4 +63,41 @@ public:
     static constexpr int Count = Custom_3 + 1; // 物品状态属性数量
 };
 
+template <int key>
+constexpr bool IsAuraEffect = (
+    key == ItemKey::Damage ||
+    key == ItemKey::Burn ||
+    key == ItemKey::Poison ||
+    key == ItemKey::Shield ||
+    key == ItemKey::Heal ||
+    key == ItemKey::Regen ||
+    key == ItemKey::CritRate ||
+    key == ItemKey::CritDamage ||
+    key == ItemKey::Multicast ||
+    key == ItemKey::AmmoCap ||
+    key == ItemKey::Charge ||
+    key == ItemKey::ChargeTargetCount ||
+    key == ItemKey::Haste ||
+    key == ItemKey::HasteTargetCount ||
+    key == ItemKey::Slow ||
+    key == ItemKey::SlowTargetCount ||
+    key == ItemKey::PercentSlowReduction ||
+    key == ItemKey::Freeze ||
+    key == ItemKey::FreezeTargetCount ||
+    key == ItemKey::PercentFreezeReduction ||
+    key == ItemKey::Reload ||
+    key == ItemKey::ReloadTargetCount ||
+    key == ItemKey::DestroyTargetCount ||
+    key == ItemKey::RepairTargetCount ||
+    key == ItemKey::Value ||
+    key == ItemKey::LifeSteal ||
+    key == ItemKey::ModifyAttributeTargetCount ||
+    key == ItemKey::CooldownReduction ||
+    key == ItemKey::CooldownReductionPercent ||
+    key == ItemKey::Custom_0 ||
+    key == ItemKey::Custom_1 ||
+    key == ItemKey::Custom_2 ||
+    key == ItemKey::Custom_3
+);
+
 }  // namespace bazaararena::core

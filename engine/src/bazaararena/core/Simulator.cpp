@@ -39,9 +39,11 @@ void Simulator::InvokeTrigger(int trigger, const ItemState* source, const ItemSt
 }
 
 // 判断某个物品是否充能完成，如果充能完成且满足施放条件则加入施放队列
-void Simulator::CheckCharge(ItemState& item) {
+void Simulator::CheckCharge(ItemState& item, bool ignore_charge_remaining) {
+    if (item.attrs[ItemKey::Destroyed] == 1) return; // 被摧毁的物品无法施放
+    if (item.attrs[ItemKey::FreezeRemaining] > 0) return; // 被冻结的物品无法施放
     int cooldown = GetItemInt(&item, ItemKey::Cooldown);
-    if (item.attrs[ItemKey::ChargedTime] >= cooldown) { // 充能完成
+    if (ignore_charge_remaining || item.attrs[ItemKey::ChargedTime] >= cooldown) { // 充能完成
         if (item.attrs[ItemKey::DerivedTags] & DerivedTag::Ammo) {
             // 弹药物品充能完成
             if (item.attrs[ItemKey::AmmoRemaining] == 0) {
@@ -54,9 +56,15 @@ void Simulator::CheckCharge(ItemState& item) {
                 InvokeTrigger(Trigger::Ammo, &item, &item, 1);
             }
         }
-        // 正常充能完成，消耗所有充能并加入施放队列
-        item.attrs[ItemKey::ChargedTime] = 0;
-        cast_queue |= 1 << ((item.attrs[ItemKey::SideIndex] << 4) | item.attrs[ItemKey::ItemIndex]);
+        if (!ignore_charge_remaining) { // 如果忽略充能剩余时间，则不消耗充能
+            // 正常充能完成，消耗所有充能，并触发施放
+            item.attrs[ItemKey::ChargedTime] = 0;
+        }
+        int multicast = GetItemInt(&item, ItemKey::Multicast);
+        // 触发「施放」触发器（主动效果）
+        InvokeTrigger(Trigger::Cast, &item, &item, multicast);
+        // 触发「使用物品」触发器（被动效果）
+        InvokeTrigger(Trigger::UseItem, &item, &item, multicast);
     }
 }
 
@@ -146,29 +154,10 @@ int Simulator::Run(bool allow_tie) {
             sandstorm.next_tick += sandstorm.interval;
         }
 
-        // 8-9. 处理施放队列和能力队列，由于能力队列的效果（装填或充能）可能再次施放，所以需要循环处理
-        do {
+        // 8. 处理能力队列
+        ability_queue.Scan(this, time);
 
-            // 8. 处理施放队列
-            while (cast_queue != 0) {
-                int index = static_cast<int>(std::countr_zero(cast_queue));
-                cast_queue &= ~(1 << index);
-                auto side_index = index >> 4;
-                auto item_index = index & 0x0F;
-                auto& item = sides[side_index].items[item_index];
-                int multicast = GetItemInt(&item, ItemKey::Multicast);
-                // 触发「施放」触发器（主动效果）
-                InvokeTrigger(Trigger::Cast, &item, &item, multicast);
-                // 触发「使用物品」触发器（被动效果）
-                InvokeTrigger(Trigger::UseItem, &item, &item, multicast);
-            }
-
-            // 9. 处理能力队列
-            ability_queue.Scan(this, time);
-
-        } while (cast_queue != 0);
-
-        // 10. 检查胜负
+        // 9. 检查胜负
         bool dead0 = sides[0].attrs[SideKey::Hp] <= 0;
         bool dead1 = sides[1].attrs[SideKey::Hp] <= 0;
         if (dead0 || dead1) { // 即将落败，会触发救生圈等保命道具效果
@@ -200,7 +189,7 @@ int Simulator::Run(bool allow_tie) {
             return 0;
         }
 
-        // 11. 清理本帧的暴击状态
+        // 10. 清理本帧的暴击状态
         crit_bitmap = 0;
         crit_checked_bitmap = 0;
 

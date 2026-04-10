@@ -280,13 +280,22 @@ void AddAttribute(const AbilityDefinition& ability, const BattleContext& ctx) {
     int attribute = ctx.GetItemInt(ctx.caster, ability.value_key);
     BattleContext ctx_copy = ctx; // 复制一份上下文用于选择目标
     auto simulator = const_cast<Simulator*>(ctx.simulator);
-    int target_count = GetTargets(ability, ctx_copy, condition::NotDestroyed);
+    int target_count = 
+        ability.attribute_key == ItemKey::InFlight ?
+        GetTargets(ability, ctx_copy, formula::And<
+            condition::NotDestroyed,
+            condition::NotInFlight
+        >) :
+        GetTargets(ability, ctx_copy, condition::NotDestroyed);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
         target.attrs[ability.attribute_key] += attribute;
         if (ability.attribute_key == ItemKey::CritRate) {
             // 触发「暴击率提高」触发器
             simulator->InvokeTrigger(Trigger::CritRateIncreased, ctx.caster, &target, 1);
+        }
+        if (ability.attribute_key == ItemKey::InFlight) {
+            simulator->InvokeTrigger(Trigger::StartFlying, ctx.caster, &target, 1);
         }
     }
 }
@@ -296,10 +305,19 @@ void ReduceAttribute(const AbilityDefinition& ability, const BattleContext& ctx)
     int attribute = ctx.GetItemInt(ctx.caster, ability.value_key);
     BattleContext ctx_copy = ctx; // 复制一份上下文用于选择目标
     auto simulator = const_cast<Simulator*>(ctx.simulator);
-    int target_count = GetTargets(ability, ctx_copy, condition::NotDestroyed);
+    int target_count =     
+        ability.attribute_key == ItemKey::InFlight ?
+        GetTargets(ability, ctx_copy, formula::And<
+            condition::NotDestroyed,
+            condition::InFlight
+        >) :
+        GetTargets(ability, ctx_copy, condition::NotDestroyed);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
         target.attrs[ability.attribute_key] = std::max(0, target.attrs[ability.attribute_key] - attribute);
+        if (ability.attribute_key == ItemKey::InFlight) {
+            simulator->InvokeTrigger(Trigger::StopFlying, ctx.caster, &target, 1);
+        }
     }
 }
 
@@ -312,8 +330,16 @@ void GainGold(const AbilityDefinition& ability, const BattleContext& ctx) {
 
 // 立刻施放
 void Cast(const AbilityDefinition& ability, const BattleContext& ctx) {
+    BattleContext ctx_copy = ctx; // 复制一份上下文用于选择目标
     auto simulator = const_cast<Simulator*>(ctx.simulator);
-    simulator->cast_queue |= 1 << ((ctx.caster->attrs[ItemKey::SideIndex] << 4) | ctx.caster->attrs[ItemKey::ItemIndex]);
+    int target_count = GetTargets(ability, ctx_copy, formula::And<
+        condition::NotDestroyed,
+        condition::NotFrozen
+    >);
+    for (int i = 0; i < target_count; i++) {
+        auto& target = *simulator->targets[i];
+        
+    }
 }
 
 } // namespace bazaararena::core

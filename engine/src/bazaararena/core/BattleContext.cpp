@@ -5,6 +5,11 @@
 
 namespace bazaararena::core {
 
+// 读取物品的某个属性（不受光环的影响）
+int BattleContext::GetItemIntRaw(const ItemState* item, int key) const {
+    return item->attrs[key];
+}
+
 // 读取物品的某个属性（会受到光环的影响）
 int BattleContext::GetItemInt(const ItemState* item, int key) const {
     int base_value = item->attrs[key];

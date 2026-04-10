@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_library(bazaararena_engine STATIC
   src/engine/engine.cpp
+  src/bazaararena/data/ItemDatabase.cpp
+  src/bazaararena/data/items_generated.cpp
+  src/bazaararena/core/BattleContext.cpp
 )
 
 target_include_directories(bazaararena_engine PUBLIC

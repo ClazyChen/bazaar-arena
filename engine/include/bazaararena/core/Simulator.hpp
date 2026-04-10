@@ -58,9 +58,6 @@ public:
     // aura_bitmap[item_key] 的第 ((side_index << 4) | item_index) 位表示物品在 side_index 阵营中，第 item_index 个物品是否具有该物品属性
     std::array<unsigned int, ItemKey::Count> aura_bitmap;
 
-    // 在本帧等待被释放的物品（位图），语义和上述相同
-    unsigned int cast_queue;
-
     // 本帧的物品是否暴击（位图），语义和上述相同
     unsigned int crit_bitmap;
 
@@ -77,7 +74,8 @@ public:
     Random rng;
 
     // 判断某个物品是否充能完成，如果充能完成且满足施放条件则加入施放队列
-    void CheckCharge(ItemState& item);
+    // ignore_charge_remaining 表示是否忽略充能剩余时间，如果为 true，则不检查充能剩余时间，直接判断是否可以释放（用于“立刻使用“的效果判断）
+    void CheckCharge(ItemState& item, bool ignore_charge_remaining = false);
 
     // 调用触发器并执行相关效果
     void InvokeTrigger(int trigger, const ItemState* source, const ItemState* target, int count = 1);
