@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onUnmounted, ref } from "vue";
 import { useCatalogStore } from "@/stores/catalog";
 import { useBuilderSession } from "@/stores/builder";
 import {
     cycleTier,
+    dcardOuterWidthPx,
+    itemArtAspectStyle,
     maxSlotsForLevel,
     tierBorderColor,
     usedSlots,
@@ -24,9 +26,22 @@ const filterSize = ref<string>("all");
 const filterTier = ref<string>("all");
 const saveMsg = ref<string | null>(null);
 
+/** 卡组内卡牌拖拽：用于「拖出条带则移除」与条带内 drop 的协调 */
+const deckDragFrom = ref<number | null>(null);
+const deckDropOnStripHandled = ref(false);
+const stripWrapRef = ref<HTMLElement | null>(null);
+let lastDeckDragClient = { x: 0, y: 0 };
+
 const budget = computed(() => maxSlotsForLevel(session.editorLevel));
 const used = computed(() =>
     usedSlots(session.slots, (name) => catalog.byName.get(name)?.size ?? 1),
+);
+
+/** 剩余槽位（与游戏内体型占用一致），用于右侧空槽占位块数量 */
+const remainingSlotUnits = computed(() => Math.max(0, budget.value - used.value));
+
+const emptyGhostIndices = computed(() =>
+    Array.from({ length: remainingSlotUnits.value }, (_, i) => i),
 );
 
 const heroes = computed(() => {
@@ -46,16 +61,6 @@ const filteredPool = computed(() => {
         return true;
     });
 });
-
-function sizeLabel(sz: number): string {
-    if (sz === 1) return "小";
-    if (sz === 2) return "中";
-    return "大";
-}
-
-function tierLabel(t: number): string {
-    return ["铜", "银", "金", "钻", "传"][t] ?? String(t);
-}
 
 function onLevelChange(ev: Event): void {
     const v = Number((ev.target as HTMLSelectElement).value);
@@ -83,32 +88,149 @@ async function onSave(): Promise<void> {
 }
 
 function onPoolDragStart(itemName: string, ev: DragEvent): void {
-    ev.dataTransfer?.setData("application/x-bazaar", JSON.stringify({ kind: "pool", itemName }));
+    const payload = JSON.stringify({ kind: "pool", itemName });
+    ev.dataTransfer?.setData("application/x-bazaar", payload);
+    ev.dataTransfer?.setData("text/plain", itemName);
     ev.dataTransfer!.effectAllowed = "copyMove";
 }
 
+function onEditorDragOver(ev: DragEvent): void {
+    if (deckDragFrom.value !== null) {
+        lastDeckDragClient = { x: ev.clientX, y: ev.clientY };
+    }
+}
+
 function onDeckDragStart(index: number, ev: DragEvent): void {
-    ev.dataTransfer?.setData(
-        "application/x-bazaar",
-        JSON.stringify({ kind: "deck", index }),
-    );
+    deckDragFrom.value = index;
+    deckDropOnStripHandled.value = false;
+    lastDeckDragClient = { x: ev.clientX, y: ev.clientY };
+    const payload = JSON.stringify({ kind: "deck", index });
+    ev.dataTransfer?.setData("application/x-bazaar", payload);
+    ev.dataTransfer?.setData("text/plain", `deck:${index}`);
     ev.dataTransfer!.effectAllowed = "move";
+}
+
+function onDeckDragEnd(): void {
+    const from = deckDragFrom.value;
+    deckDragFrom.value = null;
+    const handled = deckDropOnStripHandled.value;
+    deckDropOnStripHandled.value = false;
+    if (handled || from === null) return;
+
+    let x = lastDeckDragClient.x;
+    let y = lastDeckDragClient.y;
+    const el = stripWrapRef.value;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const pad = 4;
+    const inside =
+        x >= r.left - pad &&
+        x <= r.right + pad &&
+        y >= r.top - pad &&
+        y <= r.bottom + pad;
+    if (inside) return;
+
+    const next = session.slots.slice();
+    if (from < 0 || from >= next.length) return;
+    next.splice(from, 1);
+    session.setSlots(next);
 }
 
 function parseDrop(ev: DragEvent): { kind: "pool"; itemName: string } | { kind: "deck"; index: number } | null {
     const raw = ev.dataTransfer?.getData("application/x-bazaar");
-    if (!raw) return null;
-    try {
-        return JSON.parse(raw) as
-            | { kind: "pool"; itemName: string }
-            | { kind: "deck"; index: number };
-    } catch {
-        return null;
+    if (raw) {
+        try {
+            return JSON.parse(raw) as
+                | { kind: "pool"; itemName: string }
+                | { kind: "deck"; index: number };
+        } catch {
+            /* fall through */
+        }
     }
+    const plain = ev.dataTransfer?.getData("text/plain")?.trim();
+    if (plain && !plain.startsWith("deck:")) {
+        return { kind: "pool", itemName: plain };
+    }
+    if (plain?.startsWith("deck:")) {
+        const n = Number(plain.slice("deck:".length));
+        if (Number.isInteger(n) && n >= 0) return { kind: "deck", index: n };
+    }
+    return null;
 }
 
 function onStripDragOver(ev: DragEvent): void {
     ev.preventDefault();
+}
+
+/**
+ * 卡组条带使用 flex gap 时，drop 目标常在 `.strip` / 间隙上；按指针 X 解析 insertBefore。
+ * 落在第 i 张卡片的 anchor 内时：左半表示插在「该卡之前」(i)，右半表示插在「该卡之后」(i+1)；
+ * 最后一张的右半为 n，才能接到真正队尾（原先整格只返回 i=n-1，只会变成倒数第二）。
+ */
+function insertIndexFromStripEvent(strip: HTMLElement, ev: DragEvent): number {
+    const n = session.slots.length;
+    const x = ev.clientX;
+    const y = ev.clientY;
+    for (const node of document.elementsFromPoint(x, y)) {
+        if (!(node instanceof Element)) continue;
+        if (node.closest(".slot-ghost")) return n;
+    }
+    for (const g of strip.querySelectorAll(".slot-ghost")) {
+        const r = g.getBoundingClientRect();
+        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return n;
+    }
+    const nonTail = [...strip.querySelectorAll(".slot-anchor:not(.tail)")] as HTMLElement[];
+    const tailEl = strip.querySelector(".slot-anchor.tail");
+    const tailRect = tailEl?.getBoundingClientRect() ?? null;
+
+    if (nonTail.length === 0) return 0;
+
+    if (tailRect && x >= tailRect.left && x <= tailRect.right) return n;
+
+    for (let i = 0; i < nonTail.length; i++) {
+        const r = nonTail[i].getBoundingClientRect();
+        if (x >= r.left && x <= r.right) {
+            const mid = (r.left + r.right) / 2;
+            return x < mid ? i : Math.min(i + 1, n);
+        }
+    }
+
+    if (x < nonTail[0].getBoundingClientRect().left) return 0;
+
+    for (let i = 0; i < nonTail.length - 1; i++) {
+        const ra = nonTail[i].getBoundingClientRect();
+        const rb = nonTail[i + 1].getBoundingClientRect();
+        if (x > ra.right && x < rb.left) return i + 1;
+    }
+
+    const lastR = nonTail[nonTail.length - 1].getBoundingClientRect();
+    if (tailRect && x > lastR.right && x < tailRect.left) return n;
+
+    if (tailRect && x > tailRect.right) return n;
+    if (!tailRect && x > lastR.right) return n;
+
+    let best = n;
+    let bestD = Infinity;
+    for (let i = 0; i < nonTail.length; i++) {
+        const r = nonTail[i].getBoundingClientRect();
+        const mid = (r.left + r.right) / 2;
+        const pick = x < mid ? i : Math.min(i + 1, n);
+        const d = Math.abs(x - mid);
+        if (d < bestD) {
+            bestD = d;
+            best = pick;
+        }
+    }
+    return best;
+}
+
+function onStripWrapDrop(ev: DragEvent): void {
+    const wrap = stripWrapRef.value;
+    if (!wrap) return;
+    const strip = wrap.querySelector(".strip");
+    if (!strip) return;
+    const insertBefore = insertIndexFromStripEvent(strip as HTMLElement, ev);
+    handleStripDrop(insertBefore, ev);
 }
 
 /** 将 `from` 移到「当前位于 insertBefore 的物品之前」的位置（insertBefore 为 length 表示末尾）。 */
@@ -125,7 +247,7 @@ function moveDeckEntry(from: number, insertBefore: number): void {
     session.setSlots(next);
 }
 
-function onStripDrop(insertBefore: number, ev: DragEvent): void {
+function handleStripDrop(insertBefore: number, ev: DragEvent): void {
     ev.preventDefault();
     ev.stopPropagation();
     const p = parseDrop(ev);
@@ -146,11 +268,16 @@ function onStripDrop(insertBefore: number, ev: DragEvent): void {
     }
 
     if (p.kind === "deck") {
+        deckDropOnStripHandled.value = true;
         const from = p.index;
         if (from === insertBefore || from === insertBefore - 1) return;
         moveDeckEntry(from, insertBefore);
     }
 }
+
+onUnmounted(() => {
+    deckDragFrom.value = null;
+});
 
 function onCardContextMenu(index: number, ev: MouseEvent): void {
     ev.preventDefault();
@@ -166,7 +293,7 @@ function onCardContextMenu(index: number, ev: MouseEvent): void {
 </script>
 
 <template>
-    <div class="editor">
+    <div class="editor" @dragover.capture="onEditorDragOver">
         <div v-if="deckId === null" class="empty">请从左侧选择一个卡组</div>
         <template v-else>
             <div class="top">
@@ -186,45 +313,71 @@ function onCardContextMenu(index: number, ev: MouseEvent): void {
                 <span v-if="saveMsg" class="msg">{{ saveMsg }}</span>
             </div>
 
-            <div class="strip-wrap" @dragover="onStripDragOver">
+            <div
+                ref="stripWrapRef"
+                class="strip-wrap"
+                @dragenter.prevent
+                @dragover="onStripDragOver"
+                @drop="onStripWrapDrop"
+            >
                 <div class="strip">
                     <div
                         v-for="(s, i) in session.slots"
                         :key="`${s.item_name}-${i}`"
                         class="slot-anchor"
-                        @dragover.prevent
-                        @drop.stop="onStripDrop(i, $event)"
                     >
                         <div
                             class="dcard"
                             :style="{
-                                flex: s ? catalog.byName.get(s.item_name)?.size ?? 1 : 1,
+                                width: `${dcardOuterWidthPx(catalog.byName.get(s.item_name)?.size ?? 1)}px`,
+                                flex: '0 0 auto',
                                 borderColor: tierBorderColor(s.tier),
                             }"
                             draggable="true"
                             @dragstart="onDeckDragStart(i, $event)"
+                            @dragend="onDeckDragEnd"
                             @contextmenu="onCardContextMenu(i, $event)"
                         >
-                            <img
-                                class="thumb"
-                                :src="webpUrl(s.item_name)"
-                                :alt="s.item_name"
-                                loading="lazy"
-                                decoding="async"
-                                @error="($event.target as HTMLImageElement).style.opacity = '0.2'"
-                            />
+                            <div
+                                class="dcard-art"
+                                :style="itemArtAspectStyle(catalog.byName.get(s.item_name)?.size ?? 1)"
+                            >
+                                <img
+                                    class="thumb"
+                                    draggable="false"
+                                    :src="webpUrl(s.item_name)"
+                                    :alt="s.item_name"
+                                    loading="lazy"
+                                    decoding="async"
+                                    @error="($event.target as HTMLImageElement).style.opacity = '0.2'"
+                                />
+                            </div>
                             <span class="cap">{{ s.item_name }}</span>
-                            <span class="tier">{{ tierLabel(s.tier) }}</span>
                         </div>
                     </div>
                     <div
-                        class="slot-anchor tail"
-                        @dragover.prevent
-                        @drop.stop="onStripDrop(session.slots.length, $event)"
-                    />
+                        v-for="i in emptyGhostIndices"
+                        :key="'ghost-' + i"
+                        class="slot-ghost"
+                        aria-hidden="true"
+                    >
+                        <div
+                            class="dcard dcard-ghost"
+                            :style="{
+                                width: `${dcardOuterWidthPx(1)}px`,
+                                flex: '0 0 auto',
+                            }"
+                        >
+                            <div class="dcard-art dcard-art-ghost" :style="itemArtAspectStyle(1)" />
+                            <span class="cap cap-ghost" />
+                        </div>
+                    </div>
+                    <div class="slot-anchor tail" />
                 </div>
             </div>
-            <p class="hint">右键物品循环等级（铜～钻）；从下方拖入添加；卡组内拖拽排序。</p>
+            <p class="hint">
+                右键物品循环等级（铜～钻）；从下方拖入添加；卡组内拖拽排序；将卡牌拖出上方虚线区域可移除。
+            </p>
 
             <div class="pool-head">
                 <span class="fil">
@@ -259,20 +412,26 @@ function onCardContextMenu(index: number, ev: MouseEvent): void {
                 <div
                     v-for="it in filteredPool"
                     :key="it.name"
-                    class="pcard"
+                    class="dcard"
+                    :style="{
+                        width: `${dcardOuterWidthPx(it.size)}px`,
+                        borderColor: tierBorderColor(it.min_tier),
+                    }"
                     draggable="true"
                     @dragstart="onPoolDragStart(it.name, $event)"
                 >
-                    <img
-                        class="thumb"
-                        :src="webpUrl(it.name)"
-                        :alt="it.name"
-                        loading="lazy"
-                        decoding="async"
-                        @error="($event.target as HTMLImageElement).style.opacity = '0.2'"
-                    />
-                    <span class="pname">{{ it.name }}</span>
-                    <span class="meta">{{ sizeLabel(it.size) }} · {{ tierLabel(it.min_tier) }}</span>
+                    <div class="dcard-art" :style="itemArtAspectStyle(it.size)">
+                        <img
+                            class="thumb"
+                            draggable="false"
+                            :src="webpUrl(it.name)"
+                            :alt="it.name"
+                            loading="lazy"
+                            decoding="async"
+                            @error="($event.target as HTMLImageElement).style.opacity = '0.2'"
+                        />
+                    </div>
+                    <span class="cap">{{ it.name }}</span>
                 </div>
             </div>
         </template>
@@ -334,9 +493,10 @@ function onCardContextMenu(index: number, ev: MouseEvent): void {
 .strip {
     display: flex;
     flex-wrap: nowrap;
-    align-items: stretch;
+    align-items: flex-start;
     gap: 6px;
-    min-height: 104px;
+    min-height: 0;
+    overflow-x: auto;
 }
 .slot-anchor {
     display: flex;
@@ -346,34 +506,62 @@ function onCardContextMenu(index: number, ev: MouseEvent): void {
     flex: 1;
     min-width: 24px;
 }
+.slot-ghost {
+    display: flex;
+    flex-shrink: 0;
+    min-width: 0;
+}
+.dcard.dcard-ghost {
+    border-color: #323844;
+    background: #1e2229;
+    cursor: default;
+}
+.dcard-art-ghost {
+    background: #1a1d23;
+}
+.cap-ghost {
+    min-height: 1.2em;
+    padding: 2px 4px 4px;
+    box-sizing: border-box;
+}
 .dcard {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    min-width: 56px;
-    padding: 4px;
+    align-items: stretch;
+    box-sizing: border-box;
+    min-width: 0;
+    flex-shrink: 0;
+    padding: 0;
+    overflow: hidden;
     border: 3px solid;
     border-radius: 8px;
     background: #1a1d24;
     cursor: grab;
 }
-.thumb {
-    width: 48px;
-    height: 48px;
+.dcard-art {
+    position: relative;
+    width: 100%;
+    flex-shrink: 0;
+    background: #14171c;
+}
+.dcard-art .thumb {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
 }
 .cap {
     font-size: 0.65rem;
     text-align: center;
     line-height: 1.1;
-    max-width: 96px;
+    max-width: 100%;
+    width: 100%;
+    padding: 2px 4px 4px;
+    box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-.tier {
-    font-size: 0.6rem;
-    color: #9aa3b2;
 }
 .hint {
     margin: 0;
@@ -395,41 +583,15 @@ function onCardContextMenu(index: number, ev: MouseEvent): void {
     color: #e8eaef;
 }
 .pool {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 6px;
     overflow: auto;
     flex: 1;
     min-height: 200px;
     padding: 4px;
     border: 1px solid #2f3540;
     border-radius: 8px;
-}
-.pcard {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 6px;
-    border-radius: 8px;
-    background: #262b34;
-    cursor: grab;
-    border: 1px solid #3d4450;
-}
-.pcard .thumb {
-    width: 56px;
-    height: 56px;
-}
-.pname {
-    font-size: 0.65rem;
-    text-align: center;
-    line-height: 1.1;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.meta {
-    font-size: 0.6rem;
-    color: #8b93a0;
 }
 </style>

@@ -36,6 +36,7 @@ items:
     Custom_0: [1, 2, 3, 4]
     Abilities:
       - type: AddAttribute
+        key: Damage
         value_key: Custom_0
         priority: High
         ex_target_condition:
@@ -137,3 +138,28 @@ items:
     AmmoCap: 6
     Abilities:
       - type: Heal
+  - Name: "守护神之壳"
+    Desc: "▶ 获得 {Shield} 护盾；触发剧毒时，为此物品充能 {ChargeSeconds} 秒"
+    Size: Medium
+    Tier: Silver
+    Tags: [Relic]
+    Cooldown: 7s
+    Shield: [75, 150, 300]
+    Charge: 2s
+    ChargeTargetCount: 1
+    Abilities:
+      - type: Shield
+      - type: Charge
+        trigger: Poison
+        target_condition: SameAsCaster
+        priority: Low
+  - Name: "哈库维发射器"
+    Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}"
+    Size: Large
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 3s
+    Damage: [100, 200, 400, 800]
+    AmmoCap: 1
+    Abilities:
+      - type: Damage
