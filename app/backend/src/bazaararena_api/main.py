@@ -64,7 +64,7 @@ def create_app() -> Flask:
 
         conn = get_connection()
         try:
-            q = "SELECT name, hero, size, min_tier, desc, tags_json, source_yaml, schema_version FROM items WHERE 1=1"
+            q = "SELECT name, hero, size, min_tier, desc, tags_json, source_yaml, schema_version, tooltip_attrs_json FROM items WHERE 1=1"
             params: list[object] = []
             if hero and hero != "all":
                 q += " AND hero = ?"
@@ -90,6 +90,11 @@ def create_app() -> Flask:
                     r["tags"] = json.loads(r.pop("tags_json") or "[]")
                 except json.JSONDecodeError:
                     r["tags"] = []
+                raw_tip = r.pop("tooltip_attrs_json", None)
+                try:
+                    r["tooltip_attrs"] = json.loads(raw_tip) if raw_tip else {}
+                except json.JSONDecodeError:
+                    r["tooltip_attrs"] = {}
             return jsonify({"items": rows})
         finally:
             conn.close()

@@ -5,7 +5,7 @@ items:
     Desc: "▶ 获得治疗，等量于此物品的价值的 {Custom_0} 倍；【局外】购买水系物品时，此物品的价值提高 {Custom_1}；【默认】已购买水系物品数量: {Custom_2}"
     Size: Small
     Tier: Bronze
-    Tags: [Relic, Aquatic]
+    Tags: [Aquatic, Relic]
     Cooldown: 4s
     Custom_0: [1, 2, 3, 4]
     Custom_1: [1, 2, 3, 4]

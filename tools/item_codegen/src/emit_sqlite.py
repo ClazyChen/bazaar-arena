@@ -11,6 +11,7 @@ from tools.item_codegen.src.emit_cpp import (
     _size_name_to_cpp,
     _tier_name_to_cpp,
 )
+from tools.item_codegen.src.tooltip_sqlite_data import tooltip_attrs_json_str
 
 
 def _ensure_schema(conn: sqlite3.Connection) -> None:
@@ -25,7 +26,8 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
             desc TEXT NOT NULL DEFAULT '',
             tags_json TEXT NOT NULL DEFAULT '[]',
             source_yaml TEXT,
-            schema_version INTEGER
+            schema_version INTEGER,
+            tooltip_attrs_json TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_items_hero ON items(hero);
         CREATE INDEX IF NOT EXISTS idx_items_size ON items(size);
@@ -75,6 +77,7 @@ def _build_item_rows(items: list[dict]) -> list[tuple]:
         tags = _as_str_list(_get_any(item, "Tags", "tags"))
         _, size_int = _size_name_to_cpp(_get_any(item, "Size", "size"), src=src)
         _, min_tier_idx = _tier_name_to_cpp(_get_any(item, "Tier", "minTier", "min_tier"), src=src)
+        tip = tooltip_attrs_json_str(item, min_tier_idx=min_tier_idx, src=src, item_name=item_name)
         rows.append(
             (
                 item_name,
@@ -85,9 +88,17 @@ def _build_item_rows(items: list[dict]) -> list[tuple]:
                 json.dumps(tags, ensure_ascii=False),
                 src,
                 None,
+                tip,
             )
         )
     return rows
+
+
+def _migrate_items_tooltip_column(conn: sqlite3.Connection) -> None:
+    cur = conn.execute("PRAGMA table_info(items)")
+    cols = {str(r[1]) for r in cur.fetchall()}
+    if "tooltip_attrs_json" not in cols:
+        conn.execute("ALTER TABLE items ADD COLUMN tooltip_attrs_json TEXT")
 
 
 def _sync_items(conn: sqlite3.Connection, rows: list[tuple]) -> None:
@@ -95,8 +106,8 @@ def _sync_items(conn: sqlite3.Connection, rows: list[tuple]) -> None:
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executemany(
         """
-        INSERT INTO items (name, hero, size, min_tier, desc, tags_json, source_yaml, schema_version)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO items (name, hero, size, min_tier, desc, tags_json, source_yaml, schema_version, tooltip_attrs_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(name) DO UPDATE SET
             hero = excluded.hero,
             size = excluded.size,
@@ -104,7 +115,8 @@ def _sync_items(conn: sqlite3.Connection, rows: list[tuple]) -> None:
             desc = excluded.desc,
             tags_json = excluded.tags_json,
             source_yaml = excluded.source_yaml,
-            schema_version = excluded.schema_version
+            schema_version = excluded.schema_version,
+            tooltip_attrs_json = excluded.tooltip_attrs_json
         """,
         rows,
     )
@@ -144,6 +156,7 @@ def emit_sqlite(items: list[dict], sqlite_path: str | Path) -> None:
     try:
         conn.execute("PRAGMA foreign_keys = ON")
         _ensure_schema(conn)
+        _migrate_items_tooltip_column(conn)
         rows = _build_item_rows(items)
         _sync_items(conn, rows)
         conn.commit()

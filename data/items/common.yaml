@@ -28,10 +28,10 @@ items:
     Abilities:
       - type: Poison
   - Name: "举重手套"
-    Desc: "▶ 武器伤害提高 {Damage}（限本场战斗）"
+    Desc: "▶ 武器伤害提高 {Custom_0}（限本场战斗）"
     Size: Small
     Tier: Bronze
-    Tags: [Tool, Apparel]
+    Tags: [Apparel, Tool]
     Cooldown: 5s
     Custom_0: [1, 2, 3, 4]
     Abilities:
@@ -57,7 +57,7 @@ items:
     Desc: "▶ 造成 {Damage} 伤害"
     Size: Small
     Tier: Bronze
-    Tags: [Tool, Weapon]
+    Tags: [Weapon, Tool]
     Cooldown: 6s
     Damage: [20, 40, 80, 160]
     Abilities:

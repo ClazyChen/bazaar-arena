@@ -7,7 +7,7 @@ class Tag final {
 public:
     static constexpr int Weapon = 1 << 0; // 武器
     static constexpr int Tool = 1 << 1; // 工具
-    static constexpr int Apparel = 1 << 2; // 服装
+    static constexpr int Apparel = 1 << 2; // 服饰
     static constexpr int Friend = 1 << 3; // 伙伴
     static constexpr int Food = 1 << 4; // 食物
     static constexpr int Tech = 1 << 5; // 科技

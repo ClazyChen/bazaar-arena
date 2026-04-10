@@ -5,6 +5,8 @@ export interface ItemRow {
     min_tier: number;
     desc: string;
     tags: string[];
+    /** tier 0..4 → 数值；时长类（Cooldown 等）为毫秒 */
+    tooltip_attrs?: Record<string, number[]> | null;
     source_yaml?: string | null;
     schema_version?: number | null;
 }

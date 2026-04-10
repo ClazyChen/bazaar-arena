@@ -12,6 +12,7 @@ import {
     webpUrl,
 } from "@/lib/deckMath";
 import { patchDeck, saveDeckSlots } from "@/api";
+import ItemTooltipAnchor from "@/components/ItemTooltipAnchor.vue";
 import type { DeckSlotEntry } from "@/types";
 
 const props = defineProps<{
@@ -326,34 +327,40 @@ function onCardContextMenu(index: number, ev: MouseEvent): void {
                         :key="`${s.item_name}-${i}`"
                         class="slot-anchor"
                     >
-                        <div
-                            class="dcard"
-                            :style="{
-                                width: `${dcardOuterWidthPx(catalog.byName.get(s.item_name)?.size ?? 1)}px`,
-                                flex: '0 0 auto',
-                                borderColor: tierBorderColor(s.tier),
-                            }"
-                            draggable="true"
-                            @dragstart="onDeckDragStart(i, $event)"
-                            @dragend="onDeckDragEnd"
-                            @contextmenu="onCardContextMenu(i, $event)"
+                        <ItemTooltipAnchor
+                            :item="catalog.byName.get(s.item_name)"
+                            mode="deck"
+                            :tier="s.tier"
                         >
                             <div
-                                class="dcard-art"
-                                :style="itemArtAspectStyle(catalog.byName.get(s.item_name)?.size ?? 1)"
+                                class="dcard"
+                                :style="{
+                                    width: `${dcardOuterWidthPx(catalog.byName.get(s.item_name)?.size ?? 1)}px`,
+                                    flex: '0 0 auto',
+                                    borderColor: tierBorderColor(s.tier),
+                                }"
+                                draggable="true"
+                                @dragstart="onDeckDragStart(i, $event)"
+                                @dragend="onDeckDragEnd"
+                                @contextmenu="onCardContextMenu(i, $event)"
                             >
-                                <img
-                                    class="thumb"
-                                    draggable="false"
-                                    :src="webpUrl(s.item_name)"
-                                    :alt="s.item_name"
-                                    loading="lazy"
-                                    decoding="async"
-                                    @error="($event.target as HTMLImageElement).style.opacity = '0.2'"
-                                />
+                                <div
+                                    class="dcard-art"
+                                    :style="itemArtAspectStyle(catalog.byName.get(s.item_name)?.size ?? 1)"
+                                >
+                                    <img
+                                        class="thumb"
+                                        draggable="false"
+                                        :src="webpUrl(s.item_name)"
+                                        :alt="s.item_name"
+                                        loading="lazy"
+                                        decoding="async"
+                                        @error="($event.target as HTMLImageElement).style.opacity = '0.2'"
+                                    />
+                                </div>
+                                <span class="cap">{{ s.item_name }}</span>
                             </div>
-                            <span class="cap">{{ s.item_name }}</span>
-                        </div>
+                        </ItemTooltipAnchor>
                     </div>
                     <div
                         v-for="i in emptyGhostIndices"
@@ -409,30 +416,30 @@ function onCardContextMenu(index: number, ev: MouseEvent): void {
                 </span>
             </div>
             <div class="pool">
-                <div
-                    v-for="it in filteredPool"
-                    :key="it.name"
-                    class="dcard"
-                    :style="{
-                        width: `${dcardOuterWidthPx(it.size)}px`,
-                        borderColor: tierBorderColor(it.min_tier),
-                    }"
-                    draggable="true"
-                    @dragstart="onPoolDragStart(it.name, $event)"
-                >
-                    <div class="dcard-art" :style="itemArtAspectStyle(it.size)">
-                        <img
-                            class="thumb"
-                            draggable="false"
-                            :src="webpUrl(it.name)"
-                            :alt="it.name"
-                            loading="lazy"
-                            decoding="async"
-                            @error="($event.target as HTMLImageElement).style.opacity = '0.2'"
-                        />
+                <ItemTooltipAnchor v-for="it in filteredPool" :key="it.name" :item="it" mode="pool">
+                    <div
+                        class="dcard"
+                        :style="{
+                            width: `${dcardOuterWidthPx(it.size)}px`,
+                            borderColor: tierBorderColor(it.min_tier),
+                        }"
+                        draggable="true"
+                        @dragstart="onPoolDragStart(it.name, $event)"
+                    >
+                        <div class="dcard-art" :style="itemArtAspectStyle(it.size)">
+                            <img
+                                class="thumb"
+                                draggable="false"
+                                :src="webpUrl(it.name)"
+                                :alt="it.name"
+                                loading="lazy"
+                                decoding="async"
+                                @error="($event.target as HTMLImageElement).style.opacity = '0.2'"
+                            />
+                        </div>
+                        <span class="cap">{{ it.name }}</span>
                     </div>
-                    <span class="cap">{{ it.name }}</span>
-                </div>
+                </ItemTooltipAnchor>
             </div>
         </template>
     </div>
