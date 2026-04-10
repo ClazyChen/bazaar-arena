@@ -1,4 +1,5 @@
 #include <bazaararena/core/BattleContext.hpp>
+#include <bazaararena/core/SideKey.hpp>
 #include <bazaararena/core/Simulator.hpp>
 #include <bazaararena/formula/Percent.hpp>
 #include <bit>
@@ -58,26 +59,37 @@ int BattleContext::GetOppInt(int key) const {
 
 // 计算满足某个条件的物品数量
 int BattleContext::CountItems(Formula condition) const {
+    BattleContext ctx = *this;
     int count = 0;
-    for (auto& item : simulator->sides[caster->attrs[ItemKey::SideIndex]].items) {
+    const int side_ix = caster->attrs[ItemKey::SideIndex];
+    const int n = simulator->sides[side_ix].attrs[SideKey::ItemCount];
+    for (int i = 0; i < n; i++) {
+        auto& item = simulator->sides[side_ix].items[i];
         if (item.attrs[ItemKey::Destroyed] == 1) continue;
-        if (condition(*this) != 0) count++;
+        ctx.item = &item;
+        if (condition(ctx) != 0) count++;
     }
     return count;
 }
 
-// 满足某个条件的最左侧的物品
+// 满足某个条件的最左侧的物品（扫描顺序：阵营 0→1，每阵营内物品槽 0→ItemCount-1）
 int BattleContext::IsLeftmostWith(Formula condition) const {
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 2; j++) {
-            auto* item = &simulator->sides[j].items[i];
-            if (item->attrs[ItemKey::Destroyed] == 1) continue;
-            if (condition(*this) != 0) {
-                return item == this->item ? 1 : 0;
+    BattleContext ctx = *this;
+    const ItemState* first = nullptr;
+    for (int sj = 0; sj < Simulator::SideCount && first == nullptr; sj++) {
+        const int n = simulator->sides[sj].attrs[SideKey::ItemCount];
+        for (int ii = 0; ii < n; ii++) {
+            auto& it = simulator->sides[sj].items[ii];
+            if (it.attrs[ItemKey::Destroyed] == 1) continue;
+            ctx.item = &it;
+            if (condition(ctx) != 0) {
+                first = &it;
+                break;
             }
         }
     }
-    return 0;
+    if (first == nullptr) return 0;
+    return this->item == first ? 1 : 0;
 }
 
 } // namespace bazaararena::core

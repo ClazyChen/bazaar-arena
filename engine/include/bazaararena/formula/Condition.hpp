@@ -27,11 +27,18 @@ constexpr Formula DifferentSide = Not<SameSide>;
 constexpr Formula Destroyed = Eq<Item<ItemKey::Destroyed>, Constant<1>>;
 constexpr Formula NotDestroyed = Ne<Item<ItemKey::Destroyed>, Constant<1>>;
 
+// 标签为位掩码，须 (bits & tag) != 0；不通过 And<Item, Constant> 组合（And 仅适用于 0/1 子式）。
 template<int tag>
-constexpr Formula HasTag = And<Item<ItemKey::Tags>, Constant<tag>>;
+constexpr Formula HasTag = [](const BattleContext& ctx) -> int {
+    const int bits = Item<ItemKey::Tags>(ctx);
+    return (bits & tag) != 0 ? 1 : 0;
+};
 
 template<int tag>
-constexpr Formula HasDerivedTag = And<Item<ItemKey::DerivedTags>, Constant<tag>>;
+constexpr Formula HasDerivedTag = [](const BattleContext& ctx) -> int {
+    const int bits = Item<ItemKey::DerivedTags>(ctx);
+    return (bits & tag) != 0 ? 1 : 0;
+};
 
 template<int tag>
 constexpr Formula NotHasTag = Not<HasTag<tag>>;

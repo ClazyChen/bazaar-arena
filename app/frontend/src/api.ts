@@ -126,12 +126,16 @@ export async function postSimulate(body: {
     deck_id_0: number;
     deck_id_1: number;
     seed?: number | null;
+    debug_level?: "detailed" | "summary" | "none";
+    max_events?: number;
 }): Promise<SimulateCliEnvelope> {
     const payload: Record<string, unknown> = {
         deck_id_0: body.deck_id_0,
         deck_id_1: body.deck_id_1,
     };
     if (body.seed != null) payload.seed = body.seed;
+    if (body.debug_level != null) payload.debug_level = body.debug_level;
+    if (body.max_events != null) payload.max_events = body.max_events;
     return j(
         await fetch("/api/simulate", {
             method: "POST",
@@ -139,4 +143,21 @@ export async function postSimulate(body: {
             body: JSON.stringify(payload),
         }),
     );
+}
+
+/** 获取与后端 POST /api/simulate 相同结构的 job，用于本地 `bazaararena_cli --input job.json` */
+export async function fetchReproJobJson(params: {
+    deck_id_0: number;
+    deck_id_1: number;
+    seed: number;
+    debug_level?: "detailed" | "summary" | "none";
+    max_events?: number;
+}): Promise<{ job: unknown; used_seed: number; debug_level: string }> {
+    const q = new URLSearchParams();
+    q.set("deck_id_0", String(params.deck_id_0));
+    q.set("deck_id_1", String(params.deck_id_1));
+    q.set("seed", String(params.seed));
+    q.set("debug_level", params.debug_level ?? "detailed");
+    if (params.max_events != null) q.set("max_events", String(params.max_events));
+    return j(await fetch(`/api/simulate/repro-job?${q}`));
 }

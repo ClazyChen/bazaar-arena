@@ -212,6 +212,7 @@ void Freeze(const AbilityDefinition& ability, const BattleContext& ctx) {
     BattleContext ctx_copy = ctx; // 复制一份上下文用于选择目标
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     int target_count = GetTargets(ability, ctx_copy, formula::And<
+        condition::HasCooldown,
         condition::NotDestroyed
     >);
     // 打印日志

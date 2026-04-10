@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 import subprocess
 import tempfile
 from pathlib import Path
@@ -9,6 +10,11 @@ from pathlib import Path
 from bazaararena_api.db import get_connection, repo_root
 
 TIER_TO_ENGINE = ("bronze", "silver", "gold", "diamond", "legendary")
+
+
+def random_sim_seed() -> int:
+    """供 HTTP 在未指定 seed 时使用；始终写入 job.payload.seed，便于与 CLI 本地复现一致。"""
+    return secrets.randbelow(1 << 31)
 
 
 def default_cli_path() -> Path | None:
@@ -43,6 +49,14 @@ def default_cli_path() -> Path | None:
 
 # 每个 cli 路径只校验一次（与 C++ `PrintVersion` 中的 contract 字符串对齐）
 _cli_identity_ok: set[str] = set()
+# 与上面 key 一致：供 HTTP 回传，便于 Web 端确认未指向陈旧 exe
+_cli_version_line: dict[str, str] = {}
+
+
+def cached_cli_version_line(cli: Path | None) -> str | None:
+    if cli is None:
+        return None
+    return _cli_version_line.get(str(cli.resolve()))
 
 
 def ensure_cli_identity(cli: Path) -> None:
@@ -76,6 +90,8 @@ def ensure_cli_identity(cli: Path) -> None:
             "请重新编译：`cmake --build <engine/build> --config Release --target bazaararena_cli`，"
             "并设置 BAZAARARENA_CLI 指向该文件。"
         )
+    first = merged.splitlines()[0].strip() if merged else ""
+    _cli_version_line[key] = first[:700] if first else ""
     _cli_identity_ok.add(key)
 
 
@@ -90,7 +106,17 @@ def _deck_slots(conn, deck_id: int) -> list[dict[str, object]]:
     ]
 
 
-def build_simulate_job(deck_id_0: int, deck_id_1: int, seed: int | None) -> dict[str, object]:
+_ALLOWED_DEBUG = frozenset({"none", "summary", "detailed"})
+
+
+def build_simulate_job(
+    deck_id_0: int,
+    deck_id_1: int,
+    seed: int,
+    *,
+    debug_level: str = "detailed",
+    max_events: int = 50000,
+) -> dict[str, object]:
     conn = get_connection()
     try:
         sides_payload: list[dict[str, object]] = []
@@ -124,13 +150,17 @@ def build_simulate_job(deck_id_0: int, deck_id_1: int, seed: int | None) -> dict
     finally:
         conn.close()
 
+    if debug_level not in _ALLOWED_DEBUG:
+        raise ValueError(f"debug_level must be one of {sorted(_ALLOWED_DEBUG)}")
+    dbg_enabled = debug_level != "none"
+    dbg_lv = debug_level if dbg_enabled else "none"
+
     payload: dict[str, object] = {
         "allowTie": True,
-        "debug": {"enabled": True, "level": "detailed", "maxEvents": 50000},
+        "debug": {"enabled": dbg_enabled, "level": dbg_lv, "maxEvents": int(max_events)},
         "sides": sides_payload,
+        "seed": int(seed),
     }
-    if seed is not None:
-        payload["seed"] = int(seed)
 
     return {
         "schemaVersion": 1,

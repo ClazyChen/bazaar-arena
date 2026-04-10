@@ -51,6 +51,13 @@ export interface SimulateCliEnvelope {
     error: string;
     jobId?: string;
     result?: SimulateResultBody;
+    /** 后端写入 job 的 RNG 种子，便于 Summary 复现与 GET repro-job */
+    usedSeed?: number;
+    requestedDebugLevel?: string;
+    /** 后端解析到的 bazaararena_cli 绝对路径（用于确认是否为新编引擎） */
+    bazaararenaCli?: string | null;
+    /** `bazaararena_cli --version` 首行 */
+    bazaararenaCliVersion?: string | null;
 }
 
 export interface SimulateResultBody {
@@ -64,6 +71,8 @@ export interface SimulateResultBody {
 export interface SimulateDebugBlock {
     level: string;
     events?: BattleDebugEvent[];
+    /** summary 模式：人类可读的逐行日志 */
+    lines?: string[];
     truncated?: boolean;
 }
 

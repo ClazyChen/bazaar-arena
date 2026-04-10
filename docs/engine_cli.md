@@ -10,6 +10,21 @@
 
 若 HTTP 后端报告「未写出 out.json」且 stdout 出现与 JSON 无关的「物品列表」等，说明磁盘上的 `bazaararena_cli.exe` **不是**本仓库当前源码编出的对战 CLI，请清理后重新 `cmake --build ... --target bazaararena_cli`，并可用 `--version` 自检。
 
+### HTTP `POST /api/simulate`（可选字段）
+
+- `debug_level`：`none` | `summary` | `detailed`（默认 `detailed`，与 Web 动画一致）
+- `seed`：整数；**省略时由服务端随机生成**，并在响应根级字段 `usedSeed` 回显（便于与 `summary` 二次请求、本地 CLI 对齐）
+- `max_events`：调试事件上限（默认 50000）
+
+同一场对战要对比「详细事件 vs 摘要行」时：先 `detailed` 拿 `usedSeed`，再对**同一卡组、同一 `seed`** 发 `summary` 即可。
+
+### HTTP `GET /api/simulate/repro-job`
+
+查询参数：`deck_id_0`、`deck_id_1`、**`seed`（必填）**、`debug_level`（默认 `detailed`）、`max_events`（可选）。  
+返回 `{ "job": { ...与 CLI 输入相同... }, "used_seed", "debug_level" }`，保存 `job` 为 `job.json` 后可在本地执行：
+
+`bazaararena_cli --input job.json --output out.json`
+
 ## 输入 JSON（通用字段）
 
 - `schemaVersion`: number

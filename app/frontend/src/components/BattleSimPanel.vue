@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from "vue";
-import { fetchDeckSlots, postSimulate } from "@/api";
+import { fetchDeckSlots, fetchReproJobJson, postSimulate } from "@/api";
 import {
     dcardOuterWidthPx,
     itemArtAspectStyle,
@@ -34,6 +34,12 @@ const slotsLoading = ref(false);
 const simEnvelope = ref<SimulateCliEnvelope | null>(null);
 const simErr = ref<string | null>(null);
 const battleLoading = ref(false);
+
+/** 最近一次成功 detailed 模拟的种子，用于 Summary 与 job 下载 */
+const lastUsedSeed = ref<number | null>(null);
+const summaryLines = ref<string[]>([]);
+const summaryErr = ref<string | null>(null);
+const summaryLoading = ref(false);
 
 const timeline = computed((): PlaybackStep[] => {
     const env = simEnvelope.value;
@@ -123,6 +129,9 @@ watch(
         slotsErr.value = null;
         simErr.value = null;
         simEnvelope.value = null;
+        lastUsedSeed.value = null;
+        summaryLines.value = [];
+        summaryErr.value = null;
         slotsP1.value = [];
         slotsP2.value = [];
         playheadIndex.value = 0;
@@ -149,16 +158,92 @@ async function runBattle(): Promise<void> {
     battleLoading.value = true;
     simErr.value = null;
     simEnvelope.value = null;
+    lastUsedSeed.value = null;
+    summaryLines.value = [];
+    summaryErr.value = null;
     try {
-        const env = await postSimulate({ deck_id_0: id1, deck_id_1: id2 });
+        const env = await postSimulate({
+            deck_id_0: id1,
+            deck_id_1: id2,
+            debug_level: "detailed",
+        });
         simEnvelope.value = env;
         if (!env.ok) {
             simErr.value = env.error || "模拟失败";
+            return;
+        }
+        if (typeof env.usedSeed === "number") {
+            lastUsedSeed.value = env.usedSeed;
         }
     } catch (e) {
         simErr.value = e instanceof Error ? e.message : String(e);
     } finally {
         battleLoading.value = false;
+    }
+}
+
+async function fetchSummaryLog(): Promise<void> {
+    const id1 = props.deckIdP1;
+    const id2 = props.deckIdP2;
+    const seed = lastUsedSeed.value;
+    if (id1 === null || id2 === null || seed === null) return;
+    summaryLoading.value = true;
+    summaryErr.value = null;
+    try {
+        const env = await postSimulate({
+            deck_id_0: id1,
+            deck_id_1: id2,
+            seed,
+            debug_level: "summary",
+        });
+        if (!env.ok) {
+            summaryErr.value = env.error || "Summary 请求失败";
+            summaryLines.value = [];
+            return;
+        }
+        const lines = env.result?.debug?.lines;
+        summaryLines.value = Array.isArray(lines) ? lines : [];
+    } catch (e) {
+        summaryErr.value = e instanceof Error ? e.message : String(e);
+        summaryLines.value = [];
+    } finally {
+        summaryLoading.value = false;
+    }
+}
+
+async function downloadReproJob(dl: "summary" | "detailed"): Promise<void> {
+    const id1 = props.deckIdP1;
+    const id2 = props.deckIdP2;
+    const seed = lastUsedSeed.value;
+    if (id1 === null || id2 === null || seed === null) return;
+    try {
+        const { job } = await fetchReproJobJson({
+            deck_id_0: id1,
+            deck_id_1: id2,
+            seed,
+            debug_level: dl,
+        });
+        const blob = new Blob([JSON.stringify(job, null, 2)], {
+            type: "application/json;charset=utf-8",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `bazaararena-repro-${dl}-seed-${seed}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        summaryErr.value = e instanceof Error ? e.message : String(e);
+    }
+}
+
+async function copySeed(): Promise<void> {
+    const s = lastUsedSeed.value;
+    if (s === null) return;
+    try {
+        await navigator.clipboard.writeText(String(s));
+    } catch {
+        summaryErr.value = "复制种子失败";
     }
 }
 
@@ -225,6 +310,54 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
             </div>
             <p v-if="slotsErr" class="err">{{ slotsErr }}</p>
             <p v-else-if="simErr" class="err">{{ simErr }}</p>
+            <p
+                v-if="
+                    simEnvelope?.ok &&
+                    (simEnvelope?.bazaararenaCliVersion || simEnvelope?.bazaararenaCli)
+                "
+                class="cli-meta"
+            >
+                <span class="cli-meta-label">模拟器</span>
+                <code class="cli-meta-ver">{{ simEnvelope?.bazaararenaCliVersion ?? "—" }}</code>
+                <span v-if="simEnvelope?.bazaararenaCli" class="cli-meta-path" :title="simEnvelope.bazaararenaCli">{{
+                    simEnvelope.bazaararenaCli
+                }}</span>
+            </p>
+
+            <details v-if="lastUsedSeed !== null" class="debug-loop" open>
+                <summary class="debug-sum">调试：Summary 与 CLI 复现（同种子）</summary>
+                <p class="debug-hint">
+                    闭环：在动画里发现问题 → 点「拉取 Summary 日志」阅读与引擎
+                    <code>debug.level=summary</code>
+                    一致的可读文本；本地将下载的
+                    <code>job.json</code>
+                    交给
+                    <code>bazaararena_cli --input job.json --output out.json</code>
+                    ，在生成 JSON 的
+                    <code>result.debug.lines</code>
+                    中核对。修改 C++ 后重编 CLI，再回到本页「再次对战」验证。
+                </p>
+                <div class="debug-row">
+                    <span class="seed-label">种子 {{ lastUsedSeed }}</span>
+                    <button type="button" class="btn-sm" @click="copySeed">复制种子</button>
+                    <button
+                        type="button"
+                        class="btn-sm primary"
+                        :disabled="summaryLoading"
+                        @click="fetchSummaryLog"
+                    >
+                        {{ summaryLoading ? "拉取中…" : "拉取 Summary 日志" }}
+                    </button>
+                    <button type="button" class="btn-sm" @click="downloadReproJob('summary')">
+                        下载 job（summary）
+                    </button>
+                    <button type="button" class="btn-sm" @click="downloadReproJob('detailed')">
+                        下载 job（detailed）
+                    </button>
+                </div>
+                <p v-if="summaryErr" class="err">{{ summaryErr }}</p>
+                <pre v-if="summaryLines.length" class="summary-pre">{{ summaryLines.join("\n") }}</pre>
+            </details>
 
             <div v-if="hasBattleResult" class="player-shell">
                 <div class="player-time">
@@ -466,6 +599,105 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     color: #f88;
     margin: 0;
     font-size: 0.9rem;
+}
+.cli-meta {
+    margin: 0;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: #8b95a5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.6rem;
+}
+.cli-meta-label {
+    color: #6d7685;
+    flex: 0 0 auto;
+}
+.cli-meta-ver {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    background: #252a33;
+    color: #a8e6a0;
+    flex: 0 1 auto;
+    max-width: 100%;
+    word-break: break-all;
+}
+.cli-meta-path {
+    flex: 1 1 100%;
+    font-size: 0.68rem;
+    color: #6a7382;
+    word-break: break-all;
+    opacity: 0.92;
+}
+.debug-loop {
+    border: 1px solid #3a4555;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    background: #1a1e26;
+}
+.debug-sum {
+    cursor: pointer;
+    color: #b8c0cc;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+.debug-hint {
+    margin: 0.5rem 0 0.65rem;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: #8b95a5;
+}
+.debug-hint code {
+    font-size: 0.76rem;
+    padding: 0.05rem 0.25rem;
+    border-radius: 3px;
+    background: #252a33;
+    color: #c5d0e0;
+}
+.debug-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.35rem;
+}
+.seed-label {
+    font-size: 0.82rem;
+    color: #9aa3b2;
+    font-variant-numeric: tabular-nums;
+}
+.btn-sm {
+    padding: 0.28rem 0.55rem;
+    border-radius: 6px;
+    border: 1px solid #3d4450;
+    background: #2a3038;
+    color: #e8eaef;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+.btn-sm.primary {
+    border-color: #4a7cbc;
+    background: #2a4a78;
+}
+.btn-sm:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+.summary-pre {
+    margin: 0.35rem 0 0;
+    padding: 0.5rem 0.65rem;
+    max-height: 280px;
+    overflow: auto;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #14171c;
+    border: 1px solid #2f3540;
+    border-radius: 6px;
+    color: #c8d0dc;
 }
 .player-shell {
     display: flex;

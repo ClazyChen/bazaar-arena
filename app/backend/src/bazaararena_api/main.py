@@ -9,7 +9,13 @@ from flask import Flask, abort, jsonify, request, send_file
 
 from bazaararena_api.db import default_db_path, get_connection, repo_root
 from bazaararena_api.deck_rules import max_slots_for_level
-from bazaararena_api.simulate_run import build_simulate_job, default_cli_path, run_simulate_json
+from bazaararena_api.simulate_run import (
+    build_simulate_job,
+    cached_cli_version_line,
+    default_cli_path,
+    random_sim_seed,
+    run_simulate_json,
+)
 
 
 def _utc_now_iso() -> str:
@@ -434,27 +440,64 @@ def create_app() -> Flask:
             }
         )
 
+    @app.get("/api/simulate/repro-job")
+    def simulate_repro_job():
+        """返回与 POST /api/simulate 相同结构的 job JSON，便于保存为 job.json 后用本地 CLI 调试。"""
+        d0 = request.args.get("deck_id_0", type=int)
+        d1 = request.args.get("deck_id_1", type=int)
+        seed_q = request.args.get("seed", type=int)
+        debug_level = (request.args.get("debug_level") or "detailed").strip().lower()
+        max_ev = request.args.get("max_events", type=int)
+        if d0 is None or d1 is None:
+            return jsonify({"error": "deck_id_0 and deck_id_1 are required integers"}), 400
+        if seed_q is None:
+            return jsonify({"error": "seed is required for repro job"}), 400
+        try:
+            job = build_simulate_job(
+                d0,
+                d1,
+                seed_q,
+                debug_level=debug_level,
+                max_events=max_ev if max_ev is not None else 50000,
+            )
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        return jsonify({"job": job, "used_seed": seed_q, "debug_level": debug_level})
+
     @app.post("/api/simulate")
     def simulate():
         body = request.get_json(force=True, silent=True) or {}
         d0 = body.get("deck_id_0")
         d1 = body.get("deck_id_1")
         seed = body.get("seed")
+        debug_level = (body.get("debug_level") or "detailed")
+        if isinstance(debug_level, str):
+            debug_level = debug_level.strip().lower()
+        max_events = body.get("max_events", 50000)
         try:
             deck_id_0 = int(d0)
             deck_id_1 = int(d1)
         except (TypeError, ValueError):
             return jsonify({"error": "deck_id_0 and deck_id_1 must be integers"}), 400
-        seed_i: int | None
         if seed is None or seed == "":
-            seed_i = None
+            seed_i = random_sim_seed()
         else:
             try:
                 seed_i = int(seed)
             except (TypeError, ValueError):
                 return jsonify({"error": "seed must be integer or omitted"}), 400
         try:
-            job = build_simulate_job(deck_id_0, deck_id_1, seed_i)
+            me = int(max_events) if max_events is not None else 50000
+        except (TypeError, ValueError):
+            return jsonify({"error": "max_events must be integer"}), 400
+        try:
+            job = build_simulate_job(
+                deck_id_0,
+                deck_id_1,
+                seed_i,
+                debug_level=str(debug_level),
+                max_events=me,
+            )
             out = run_simulate_json(job)
         except FileNotFoundError as e:
             return jsonify({"error": str(e)}), 503
@@ -465,6 +508,12 @@ def create_app() -> Flask:
             return jsonify({"error": str(e)}), 500
         except OSError as e:
             return jsonify({"error": str(e)}), 500
+        if isinstance(out, dict):
+            cli = default_cli_path()
+            out["usedSeed"] = seed_i
+            out["requestedDebugLevel"] = str(debug_level).strip().lower()
+            out["bazaararenaCli"] = str(cli.resolve()) if cli else None
+            out["bazaararenaCliVersion"] = cached_cli_version_line(cli)
         return jsonify(out)
 
     return app

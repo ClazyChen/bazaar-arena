@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "jobId": "simulate-freeze-gloves-001",
+  "mode": "simulate",
+  "payload": {
+    "seed": 12345,
+    "allowTie": true,
+    "debug": { "enabled": true, "level": "summary", "maxEvents": 20000 },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 5,
+        "items": [
+          { "key": "冰锥", "tier": "bronze" },
+          { "key": "举重手套", "tier": "bronze" },
+          { "key": "三花", "tier": "bronze" }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 5,
+        "items": [
+          { "key": "冰锥", "tier": "bronze" },
+          { "key": "举重手套", "tier": "bronze" },
+          { "key": "三花", "tier": "bronze" }
+        ]
+      }
+    ]
+  }
+}
