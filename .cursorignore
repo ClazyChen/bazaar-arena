@@ -9,3 +9,10 @@
 pictures/webp/
 # large raw logs
 docs/*-raw.log
+
+# 测试闭环：保留 samples 作为测试输入/输出目录
+!samples/
+!samples/**
+
+# 但忽略 samples 下的运行输出（避免噪声）
+samples/cli/out/

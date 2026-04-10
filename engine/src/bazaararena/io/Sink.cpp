@@ -168,7 +168,6 @@ void Sink::OnDamage(const core::Simulator& simulator, const core::ItemState& sou
     e["targetSide"] = static_cast<double>(1 - GetSideIndex(source));
     e["damage"] = static_cast<double>(damage);
     e["isCrit"] = is_crit;
-    e["isLifeSteal"] = is_life_steal;
     AppendEventWithTruncation(*this, std::move(e));
 }
 
@@ -398,6 +397,52 @@ void Sink::OnResistance(const core::Simulator& simulator, const core::ItemState&
         os << "玩家" << (GetSideIndex(source) + 1) << " 解除无敌";
     }
     AppendLineWithTruncation(*this, os.str());
+}
+
+void Sink::OnBurnTick(const core::Simulator& simulator, int side_index, int burn) {
+    if (sink_type != TypeSummary) return;
+    std::ostringstream os;
+    os << FormatTime(simulator.time);
+    os << "玩家" << (side_index + 1) << " 受到灼烧 " << burn;
+    AppendLineWithTruncation(*this, os.str());
+}
+
+void Sink::OnPoisonTick(const core::Simulator& simulator, int side_index, int poison) {
+    if (sink_type != TypeSummary) return;
+    std::ostringstream os;
+    os << FormatTime(simulator.time);
+    os << "玩家" << (side_index + 1) << " 受到剧毒 " << poison;
+    AppendLineWithTruncation(*this, os.str());
+}
+
+void Sink::OnRegenTick(const core::Simulator& simulator, int side_index, int regen) {
+    if (sink_type != TypeSummary) return;
+    std::ostringstream os;
+    os << FormatTime(simulator.time);
+    os << "玩家" << (side_index + 1) << " 受到生命再生 " << regen;
+    AppendLineWithTruncation(*this, os.str());
+}
+
+void Sink::OnSandstormTick(const core::Simulator& simulator, int side_index, int damage) {
+    if (sink_type == TypeNone) return;
+
+    if (sink_type == TypeSummary) {
+        std::ostringstream os;
+        os << FormatTime(simulator.time);
+        os << "玩家" << (side_index + 1) << " 受到沙尘暴 " << damage;
+        AppendLineWithTruncation(*this, os.str());
+        return;
+    }
+
+    // detailed: same shape as OnDamage (except no lifesteal field)
+    JsonObject e = MakeEventBase(simulator, "damage");
+    e["sourceSide"] = static_cast<double>(-1);
+    e["sourceItemIndex"] = static_cast<double>(-1);
+    e["sourceItemName"] = std::string("sandstorm");
+    e["targetSide"] = static_cast<double>(side_index);
+    e["damage"] = static_cast<double>(damage);
+    e["isCrit"] = false;
+    AppendEventWithTruncation(*this, std::move(e));
 }
 
 void Sink::OnGameEnd(const core::Simulator& simulator, int winner) {

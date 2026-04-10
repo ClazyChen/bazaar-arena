@@ -137,6 +137,23 @@ public:
     // 2 - 不进行输出（抗性改变效果会在 OnFrameEnd 中显示）
     void OnResistance(const core::Simulator& simulator, const core::ItemState& source, int old_resistance, int delta_resistance);
 
+    // Tick: 来自 side 状态的周期结算（无来源物品）
+    // summary: e.g. "[3.00s] 玩家1 受到灼烧 2"
+    // detailed: 不输出
+    void OnBurnTick(const core::Simulator& simulator, int side_index, int burn);
+
+    // summary: e.g. "[3.00s] 玩家1 受到剧毒 2"
+    // detailed: 不输出
+    void OnPoisonTick(const core::Simulator& simulator, int side_index, int poison);
+
+    // summary: e.g. "[3.00s] 玩家1 受到生命再生 2"
+    // detailed: 不输出
+    void OnRegenTick(const core::Simulator& simulator, int side_index, int regen);
+
+    // summary: e.g. "[3.00s] 玩家1 受到沙尘暴 2"
+    // detailed: 输出（格式与 OnDamage 相同）
+    void OnSandstormTick(const core::Simulator& simulator, int side_index, int damage);
+
     // 游戏结束时调用
     // 1 - e.g. "[3.00s] 玩家1 获胜"
     //     (is_draw = true 时："[3.00s] 平局")

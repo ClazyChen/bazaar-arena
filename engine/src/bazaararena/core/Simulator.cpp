@@ -111,7 +111,9 @@ int Simulator::Run(bool allow_tie) {
             for (int i = 0; i < SideCount; i++) {
                 if (sides[i].attrs[SideKey::Poison] > 0) {
                     // 如果有剧毒，则造成削减生命
-                    sides[i].ApplyDamage(sides[i].attrs[SideKey::Poison], false, true);
+                    const int poison = sides[i].attrs[SideKey::Poison];
+                    sink.OnPoisonTick(*this, i, poison);
+                    sides[i].ApplyDamage(poison, false, true);
                 }
             }
         }
@@ -121,9 +123,11 @@ int Simulator::Run(bool allow_tie) {
             for (int i = 0; i < SideCount; i++) {
                 if (sides[i].attrs[SideKey::Burn] > 0) {
                     // 如果有灼烧，则造成削减生命（会受到护盾影响）
-                    sides[i].ApplyDamage(sides[i].attrs[SideKey::Burn], true, false);
+                    const int burn = sides[i].attrs[SideKey::Burn];
+                    sink.OnBurnTick(*this, i, burn);
+                    sides[i].ApplyDamage(burn, true, false);
                     // 灼烧衰减 3%
-                    int decay = formula::PercentFloor(sides[i].attrs[SideKey::Burn], 3);
+                    int decay = formula::PercentFloor(burn, 3);
                     sides[i].attrs[SideKey::Burn] = std::max(0, sides[i].attrs[SideKey::Burn] - decay);
                 }
             }
@@ -134,7 +138,9 @@ int Simulator::Run(bool allow_tie) {
             for (int i = 0; i < SideCount; i++) {
                 if (sides[i].attrs[SideKey::Regen] > 0) {
                     // 如果有生命再生，则治疗生命
-                    sides[i].ApplyHeal(sides[i].attrs[SideKey::Regen]);
+                    const int regen = sides[i].attrs[SideKey::Regen];
+                    sink.OnRegenTick(*this, i, regen);
+                    sides[i].ApplyHeal(regen);
                 }
             }
         }
@@ -142,6 +148,7 @@ int Simulator::Run(bool allow_tie) {
         // 7. 处理沙尘暴
         if (time >= sandstorm.next_tick) {
             for (int i = 0; i < SideCount; i++) {
+                sink.OnSandstormTick(*this, i, sandstorm.damage);
                 sides[i].ApplyDamage(sandstorm.damage, false, false);
             }
             // 沙尘暴的间隔递减或伤害递增
