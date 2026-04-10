@@ -9,6 +9,7 @@
 #include <bazaararena/core/Simulator.hpp>
 #include <bazaararena/core/SimulatorInit.hpp>
 #include <bazaararena/core/SideKey.hpp>
+#include <bazaararena/engine.hpp>
 #include <bazaararena/io/JsonLite.hpp>
 #include <bazaararena/io/SideStateBuilder.hpp>
 #include <bazaararena/io/SinkExport.hpp>
@@ -99,7 +100,42 @@ struct Args {
     std::string outputPath;
 };
 
-std::optional<Args> ParseArgs(int argc, char** argv) {
+enum class CliMode { Simulate, Version, Help };
+
+struct CliInvocation {
+    CliMode mode = CliMode::Simulate;
+    Args simulate;
+};
+
+/** 与 HTTP 层协同：用于确认 exe 为本仓库「对战 JSON」CLI，而非其它同名程序。 */
+static constexpr int kCliContractVersion = 1;
+
+static void PrintUsage(std::ostream& os) {
+    os << "usage: bazaararena_cli --input <input.json> --output <output.json>\n"
+          "       bazaararena_cli --version\n"
+          "       bazaararena_cli --help\n";
+}
+
+static void PrintVersion(std::ostream& os) {
+    const bazaararena::EngineVersion v = bazaararena::GetEngineVersion();
+    os << "bazaararena_cli mode=simulate+json contract=" << kCliContractVersion << "\n"
+       << "engine_version=" << v.major << '.' << v.minor << '.' << v.patch << "\n";
+}
+
+std::optional<CliInvocation> ParseInvocation(int argc, char** argv) {
+    for (int i = 1; i < argc; i++) {
+        const std::string_view tok = argv[i];
+        if (tok == "--version") {
+            return CliInvocation{CliMode::Version, {}};
+        }
+    }
+    for (int i = 1; i < argc; i++) {
+        const std::string_view tok = argv[i];
+        if (tok == "--help" || tok == "-h") {
+            return CliInvocation{CliMode::Help, {}};
+        }
+    }
+
     Args a;
     for (int i = 1; i < argc; i++) {
         const std::string_view tok = argv[i];
@@ -110,7 +146,7 @@ std::optional<Args> ParseArgs(int argc, char** argv) {
         }
     }
     if (a.inputPath.empty() || a.outputPath.empty()) return std::nullopt;
-    return a;
+    return CliInvocation{CliMode::Simulate, std::move(a)};
 }
 
 std::optional<std::string> ReadAllText(const std::string& path, std::string& err) {
@@ -159,12 +195,22 @@ io::JsonObject MakeErrorOut(int schemaVersion, const std::string& jobId, const s
 }  // namespace
 
 int main(int argc, char** argv) {
-    const auto argsOpt = ParseArgs(argc, argv);
-    if (!argsOpt) {
-        std::cerr << "usage: bazaararena_cli --input <input.json> --output <output.json>\n";
+    const auto invOpt = ParseInvocation(argc, argv);
+    if (!invOpt) {
+        PrintUsage(std::cerr);
         return 2;
     }
-    const auto& args = *argsOpt;
+    const CliInvocation& inv = *invOpt;
+    if (inv.mode == CliMode::Version) {
+        PrintVersion(std::cout);
+        return 0;
+    }
+    if (inv.mode == CliMode::Help) {
+        PrintUsage(std::cout);
+        return 0;
+    }
+
+    const Args& args = inv.simulate;
     if (args.outputPath == "-") {
         EnableVirtualTerminalIfPossible();
     }

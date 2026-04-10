@@ -16,6 +16,7 @@ static std::optional<int> ParseTier(std::string_view s) {
     if (s == "silver") return core::ItemTier::Silver;
     if (s == "gold") return core::ItemTier::Gold;
     if (s == "diamond") return core::ItemTier::Diamond;
+    if (s == "legendary") return core::ItemTier::Legendary;
     return std::nullopt;
 }
 

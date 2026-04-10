@@ -4,6 +4,7 @@ import type {
     DeckSlotEntry,
     DeckSlotsResponse,
     ItemRow,
+    SimulateCliEnvelope,
 } from "@/types";
 
 async function j<T>(r: Response): Promise<T> {
@@ -117,6 +118,25 @@ export async function saveDeckSlots(
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ slots }),
+        }),
+    );
+}
+
+export async function postSimulate(body: {
+    deck_id_0: number;
+    deck_id_1: number;
+    seed?: number | null;
+}): Promise<SimulateCliEnvelope> {
+    const payload: Record<string, unknown> = {
+        deck_id_0: body.deck_id_0,
+        deck_id_1: body.deck_id_1,
+    };
+    if (body.seed != null) payload.seed = body.seed;
+    return j(
+        await fetch("/api/simulate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
         }),
     );
 }

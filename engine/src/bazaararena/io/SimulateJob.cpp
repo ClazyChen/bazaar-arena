@@ -15,7 +15,7 @@ static bool IsAllowedDebugLevel(std::string_view s) {
 }
 
 static bool IsAllowedTier(std::string_view s) {
-    return s == "bronze" || s == "silver" || s == "gold" || s == "diamond";
+    return s == "bronze" || s == "silver" || s == "gold" || s == "diamond" || s == "legendary";
 }
 
 static std::optional<int> ReadOptionalInt(const JsonValue& v) {

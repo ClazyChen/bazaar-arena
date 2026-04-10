@@ -5,6 +5,10 @@
 ## 命令行
 
 - `bazaararena_cli --input <input.json> --output <output.json>`
+- `bazaararena_cli --version`：打印可执行文件身份（含 `mode=simulate+json` 与 `contract=1`），用于确认**不是**其它同名程序。
+- `bazaararena_cli --help`：简要用法。
+
+若 HTTP 后端报告「未写出 out.json」且 stdout 出现与 JSON 无关的「物品列表」等，说明磁盘上的 `bazaararena_cli.exe` **不是**本仓库当前源码编出的对战 CLI，请清理后重新 `cmake --build ... --target bazaararena_cli`，并可用 `--version` 自检。
 
 ## 输入 JSON（通用字段）
 

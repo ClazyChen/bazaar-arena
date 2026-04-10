@@ -9,6 +9,7 @@ from flask import Flask, abort, jsonify, request, send_file
 
 from bazaararena_api.db import default_db_path, get_connection, repo_root
 from bazaararena_api.deck_rules import max_slots_for_level
+from bazaararena_api.simulate_run import build_simulate_job, default_cli_path, run_simulate_json
 
 
 def _utc_now_iso() -> str:
@@ -424,7 +425,47 @@ def create_app() -> Flask:
 
     @app.get("/api/meta")
     def meta():
-        return jsonify({"db_path": str(default_db_path())})
+        cli = default_cli_path()
+        return jsonify(
+            {
+                "db_path": str(default_db_path()),
+                "bazaararena_cli": str(cli) if cli else None,
+                "bazaararena_cli_configured": cli is not None,
+            }
+        )
+
+    @app.post("/api/simulate")
+    def simulate():
+        body = request.get_json(force=True, silent=True) or {}
+        d0 = body.get("deck_id_0")
+        d1 = body.get("deck_id_1")
+        seed = body.get("seed")
+        try:
+            deck_id_0 = int(d0)
+            deck_id_1 = int(d1)
+        except (TypeError, ValueError):
+            return jsonify({"error": "deck_id_0 and deck_id_1 must be integers"}), 400
+        seed_i: int | None
+        if seed is None or seed == "":
+            seed_i = None
+        else:
+            try:
+                seed_i = int(seed)
+            except (TypeError, ValueError):
+                return jsonify({"error": "seed must be integer or omitted"}), 400
+        try:
+            job = build_simulate_job(deck_id_0, deck_id_1, seed_i)
+            out = run_simulate_json(job)
+        except FileNotFoundError as e:
+            return jsonify({"error": str(e)}), 503
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        except RuntimeError as e:
+            # 使用 500 而非 502，避免与「反向代理连不上后端」的 502 混淆
+            return jsonify({"error": str(e)}), 500
+        except OSError as e:
+            return jsonify({"error": str(e)}), 500
+        return jsonify(out)
 
     return app
 

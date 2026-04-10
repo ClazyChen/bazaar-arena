@@ -43,3 +43,45 @@ export interface DeckSlotPayload {
     item_name: string;
     tier: number;
 }
+
+/** 引擎 CLI 顶层输出（stdin job → stdout JSON） */
+export interface SimulateCliEnvelope {
+    schemaVersion: number;
+    ok: boolean;
+    error: string;
+    jobId?: string;
+    result?: SimulateResultBody;
+}
+
+export interface SimulateResultBody {
+    winner: number;
+    isDraw: boolean;
+    endTimeMs: number;
+    final?: unknown;
+    debug?: SimulateDebugBlock;
+}
+
+export interface SimulateDebugBlock {
+    level: string;
+    events?: BattleDebugEvent[];
+    truncated?: boolean;
+}
+
+export type BattleDebugEvent = FrameEndEvent | Record<string, unknown>;
+
+export interface FrameEndEvent {
+    t: number;
+    kind: "frame_end";
+    sides: FrameEndSideSnapshot[];
+}
+
+export interface FrameEndSideSnapshot {
+    side: number;
+    maxHp: number;
+    hp: number;
+    shield: number;
+    burn: number;
+    poison: number;
+    regen: number;
+    resistance: number;
+}

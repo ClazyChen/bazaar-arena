@@ -10,6 +10,7 @@ import {
     patchDeck,
     reorderDecks,
 } from "@/api";
+import BattleSimPanel from "@/components/BattleSimPanel.vue";
 import DeckEditor from "@/components/DeckEditor.vue";
 import DeckListPanel from "@/components/DeckListPanel.vue";
 import { useBuilderSession } from "@/stores/builder";
@@ -26,8 +27,18 @@ const session = useBuilderSession();
 
 const collectionId = computed(() => Number(props.id));
 const decks = ref<DeckRow[]>([]);
-const currentDeckId = ref<number | null>(null);
+/** 卡组编辑模式下当前选中的卡组 */
+const editorDeckId = ref<number | null>(null);
+const viewMode = ref<"edit" | "battle">("edit");
+/** 进入对战时锁定为玩家1 */
+const p1DeckId = ref<number | null>(null);
+/** 对战模式下左侧列表切换玩家2 */
+const p2DeckId = ref<number | null>(null);
 const err = ref<string | null>(null);
+
+const listSelectedId = computed(() =>
+    viewMode.value === "battle" ? p2DeckId.value : editorDeckId.value,
+);
 
 async function loadDecks(): Promise<void> {
     const cid = collectionId.value;
@@ -43,18 +54,45 @@ async function loadDeckIntoSession(deckId: number): Promise<void> {
     session.resetFromServer(data.player_level, entries);
 }
 
-async function trySelectDeck(deckId: number): Promise<void> {
+function deckLabel(id: number | null): string | undefined {
+    if (id === null) return undefined;
+    return decks.value.find((d) => d.id === id)?.name;
+}
+
+async function selectDeckForEdit(deckId: number): Promise<void> {
     if (session.dirty) {
         const ok = window.confirm("当前卡组有未保存更改，确定切换？");
         if (!ok) return;
     }
-    currentDeckId.value = deckId;
+    editorDeckId.value = deckId;
     await loadDeckIntoSession(deckId);
+}
+
+function onSelectDeckFromList(deckId: number): void {
+    if (viewMode.value === "battle") {
+        p2DeckId.value = deckId;
+        return;
+    }
+    void selectDeckForEdit(deckId);
+}
+
+function switchToEdit(): void {
+    viewMode.value = "edit";
+}
+
+function enterBattle(): void {
+    if (editorDeckId.value === null) {
+        window.alert("请先选择一个卡组");
+        return;
+    }
+    p1DeckId.value = editorDeckId.value;
+    p2DeckId.value = editorDeckId.value;
+    viewMode.value = "battle";
 }
 
 async function refreshAndSelect(deckId: number): Promise<void> {
     await loadDecks();
-    currentDeckId.value = deckId;
+    editorDeckId.value = deckId;
     await loadDeckIntoSession(deckId);
 }
 
@@ -64,9 +102,9 @@ onMounted(async () => {
         await catalog.load();
         await loadDecks();
         if (decks.value.length > 0) {
-            await trySelectDeck(decks.value[0].id);
+            await selectDeckForEdit(decks.value[0].id);
         } else {
-            currentDeckId.value = null;
+            editorDeckId.value = null;
             session.resetFromServer(5, []);
         }
     } catch (e) {
@@ -90,13 +128,13 @@ async function onCreateDeck(): Promise<void> {
     const name = window.prompt("卡组名称", "新卡组");
     if (name === null) return;
     const n = name.trim() || "新卡组";
-    const inherit = decks.value.find((d) => d.id === currentDeckId.value);
+    const inherit = decks.value.find((d) => d.id === editorDeckId.value);
     const pl = inherit ? inherit.player_level : 5;
     try {
         const row = await createDeck(collectionId.value, n, pl);
         session.resetFromServer(row.player_level, []);
         await loadDecks();
-        currentDeckId.value = row.id;
+        editorDeckId.value = row.id;
     } catch (e) {
         window.alert(e instanceof Error ? e.message : String(e));
     }
@@ -128,15 +166,27 @@ async function onRenameDeck(id: number): Promise<void> {
 
 async function onRemoveDeck(id: number): Promise<void> {
     if (!window.confirm("确定删除该卡组？")) return;
+    const wasP1 = viewMode.value === "battle" && id === p1DeckId.value;
+    const wasP2 = viewMode.value === "battle" && id === p2DeckId.value;
+    const wasEditor = editorDeckId.value === id;
     try {
         await deleteDeck(id);
-        if (currentDeckId.value === id) {
-            currentDeckId.value = null;
-            session.resetFromServer(5, []);
-        }
         await loadDecks();
-        if (decks.value.length > 0 && currentDeckId.value === null) {
-            await trySelectDeck(decks.value[0].id);
+
+        if (wasP1) {
+            viewMode.value = "edit";
+            p1DeckId.value = null;
+            p2DeckId.value = null;
+        } else if (wasP2) {
+            p2DeckId.value = p1DeckId.value ?? decks.value[0]?.id ?? null;
+        }
+
+        if (wasEditor) {
+            editorDeckId.value = null;
+            session.resetFromServer(5, []);
+            if (decks.value.length > 0) {
+                await selectDeckForEdit(decks.value[0].id);
+            }
         }
     } catch (e) {
         window.alert(e instanceof Error ? e.message : String(e));
@@ -157,6 +207,29 @@ async function onReorderDeck(order: number[]): Promise<void> {
     <div class="page">
         <header class="bar">
             <button type="button" class="back" @click="goHome">← 主页</button>
+            <div class="mode-nav" aria-label="界面切换">
+                <button
+                    type="button"
+                    class="mode-btn"
+                    :class="{ active: viewMode === 'edit' }"
+                    title="卡组编辑"
+                    @click="switchToEdit"
+                >
+                    ‹
+                </button>
+                <span class="mode-label">{{
+                    viewMode === "edit" ? "卡组编辑" : "对战模拟"
+                }}</span>
+                <button
+                    type="button"
+                    class="mode-btn"
+                    :class="{ active: viewMode === 'battle' }"
+                    title="对战模拟"
+                    @click="enterBattle"
+                >
+                    ›
+                </button>
+            </div>
             <span class="title">卡组集 #{{ collectionId }}</span>
         </header>
         <p v-if="err" class="err">{{ err }}</p>
@@ -164,8 +237,8 @@ async function onReorderDeck(order: number[]): Promise<void> {
             <aside class="side">
                 <DeckListPanel
                     :decks="decks"
-                    :selected-id="currentDeckId"
-                    @select="trySelectDeck"
+                    :selected-id="listSelectedId"
+                    @select="onSelectDeckFromList"
                     @create="onCreateDeck"
                     @duplicate="onDuplicateDeck"
                     @rename="onRenameDeck"
@@ -174,7 +247,14 @@ async function onReorderDeck(order: number[]): Promise<void> {
                 />
             </aside>
             <main class="main">
-                <DeckEditor :deck-id="currentDeckId" />
+                <DeckEditor v-if="viewMode === 'edit'" :deck-id="editorDeckId" />
+                <BattleSimPanel
+                    v-else
+                    :deck-id-p1="p1DeckId"
+                    :deck-id-p2="p2DeckId"
+                    :p1-deck-name="deckLabel(p1DeckId)"
+                    :p2-deck-name="deckLabel(p2DeckId)"
+                />
             </main>
         </div>
     </div>
@@ -194,12 +274,45 @@ async function onReorderDeck(order: number[]): Promise<void> {
     padding: 0.5rem 1rem;
     border-bottom: 1px solid #2f3540;
     flex-shrink: 0;
+    flex-wrap: wrap;
 }
 .back {
     border: none;
     background: transparent;
     color: #7ab8ff;
     cursor: pointer;
+}
+.mode-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 8px;
+    border: 1px solid #3d4450;
+    background: #22262e;
+}
+.mode-btn {
+    border: none;
+    background: transparent;
+    color: #9aa3b2;
+    font-size: 1.35rem;
+    line-height: 1;
+    padding: 0 0.25rem;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.mode-btn:hover {
+    color: #e8eaef;
+    background: #2f3540;
+}
+.mode-btn.active {
+    color: #7ab8ff;
+}
+.mode-label {
+    font-size: 0.85rem;
+    color: #c5cad3;
+    min-width: 4.5rem;
+    text-align: center;
 }
 .title {
     color: #9aa3b2;

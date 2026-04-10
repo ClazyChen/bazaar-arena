@@ -1,0 +1,207 @@
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import tempfile
+from pathlib import Path
+
+from bazaararena_api.db import get_connection, repo_root
+
+TIER_TO_ENGINE = ("bronze", "silver", "gold", "diamond", "legendary")
+
+
+def default_cli_path() -> Path | None:
+    env = os.environ.get("BAZAARARENA_CLI")
+    if env:
+        p = Path(env)
+        return p if p.is_file() else None
+    root = repo_root()
+    candidates = [
+        root / "engine" / "build" / "Release" / "bazaararena_cli.exe",
+        root / "engine" / "build" / "Debug" / "bazaararena_cli.exe",
+        root / "engine" / "build" / "bazaararena_cli.exe",
+        root / "engine" / "build" / "bazaararena_cli",
+        root / "engine" / "out" / "build" / "x64-Release" / "bazaararena_cli.exe",
+        root / "engine" / "out" / "build" / "x64-Debug" / "bazaararena_cli.exe",
+        root / "engine" / "cmake-build-release" / "bazaararena_cli",
+    ]
+    for c in candidates:
+        if c.is_file():
+            return c
+    engine = root / "engine"
+    if engine.is_dir():
+        for name in ("bazaararena_cli.exe", "bazaararena_cli"):
+            try:
+                for p in engine.rglob(name):
+                    if p.is_file():
+                        return p
+            except OSError:
+                pass
+    return None
+
+
+# 每个 cli 路径只校验一次（与 C++ `PrintVersion` 中的 contract 字符串对齐）
+_cli_identity_ok: set[str] = set()
+
+
+def ensure_cli_identity(cli: Path) -> None:
+    """
+    调用 `bazaararena_cli --version`：若返回 0，则必须含 contract=1（与 engine/cli/main.cpp 一致）。
+    若返回非 0，视为旧版无 --version，不拦截。
+    用于在跑模拟前发现「同名但非对战 JSON CLI」的可执行文件。
+    """
+    key = str(cli.resolve())
+    if key in _cli_identity_ok:
+        return
+    try:
+        proc = subprocess.run(
+            [str(cli), "--version"],
+            cwd=str(cli.parent),
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+    except OSError as e:
+        raise RuntimeError(f"无法执行 {cli} --version：{e}") from e
+    merged = ((proc.stdout or "") + "\n" + (proc.stderr or "")).strip()
+    if proc.returncode != 0:
+        _cli_identity_ok.add(key)
+        return
+    if "contract=1" not in merged or "simulate+json" not in merged:
+        raise RuntimeError(
+            "bazaararena_cli --version 输出不符合对战模拟契约（应含 `contract=1` 与 `simulate+json`）。"
+            f"当前输出（截断）：{merged[:900]!r}。"
+            f"说明 {cli} 不是本仓库 engine/cli/main.cpp 编出的可执行文件（常见：同名占位程序或其它工程产物）。"
+            "请重新编译：`cmake --build <engine/build> --config Release --target bazaararena_cli`，"
+            "并设置 BAZAARARENA_CLI 指向该文件。"
+        )
+    _cli_identity_ok.add(key)
+
+
+def _deck_slots(conn, deck_id: int) -> list[dict[str, object]]:
+    cur = conn.execute(
+        "SELECT position, item_name, tier FROM deck_slots WHERE deck_id = ? ORDER BY position",
+        (deck_id,),
+    )
+    return [
+        {"position": int(r["position"]), "item_name": r["item_name"], "tier": int(r["tier"])}
+        for r in cur.fetchall()
+    ]
+
+
+def build_simulate_job(deck_id_0: int, deck_id_1: int, seed: int | None) -> dict[str, object]:
+    conn = get_connection()
+    try:
+        sides_payload: list[dict[str, object]] = []
+        for did in (deck_id_0, deck_id_1):
+            row = conn.execute(
+                "SELECT id, player_level FROM decks WHERE id = ?",
+                (did,),
+            ).fetchone()
+            if not row:
+                raise ValueError(f"deck not found: {did}")
+            level = int(row["player_level"])
+            slots = _deck_slots(conn, did)
+            items: list[dict[str, str]] = []
+            for s in slots:
+                tier_i = int(s["tier"])
+                if tier_i < 0 or tier_i > 4:
+                    raise ValueError(f"invalid tier {tier_i} for deck {did}")
+                items.append(
+                    {
+                        "key": str(s["item_name"]),
+                        "tier": TIER_TO_ENGINE[tier_i],
+                    }
+                )
+            sides_payload.append(
+                {
+                    "sideId": len(sides_payload),
+                    "level": level,
+                    "items": items,
+                }
+            )
+    finally:
+        conn.close()
+
+    payload: dict[str, object] = {
+        "allowTie": True,
+        "debug": {"enabled": True, "level": "detailed", "maxEvents": 50000},
+        "sides": sides_payload,
+    }
+    if seed is not None:
+        payload["seed"] = int(seed)
+
+    return {
+        "schemaVersion": 1,
+        "jobId": f"http-{deck_id_0}-vs-{deck_id_1}",
+        "mode": "simulate",
+        "payload": payload,
+    }
+
+
+def run_simulate_json(job: dict[str, object], timeout_sec: float = 120.0) -> dict[str, object]:
+    cli = default_cli_path()
+    if cli is None:
+        raise FileNotFoundError(
+            "未找到 bazaararena_cli：请先编译 engine，或设置环境变量 BAZAARARENA_CLI 指向可执行文件"
+        )
+
+    ensure_cli_identity(cli)
+
+    with tempfile.TemporaryDirectory() as td:
+        td_path = Path(td)
+        in_path = td_path / "in.json"
+        out_path = td_path / "out.json"
+        in_path.write_text(json.dumps(job, ensure_ascii=False), encoding="utf-8")
+        try:
+            proc = subprocess.run(
+                [str(cli), "--input", str(in_path), "--output", str(out_path)],
+                cwd=str(cli.parent),
+                capture_output=True,
+                text=True,
+                timeout=timeout_sec,
+            )
+        except subprocess.TimeoutExpired:
+            raise RuntimeError("bazaararena_cli timed out") from None
+        except OSError as e:
+            raise RuntimeError(
+                f"无法启动 bazaararena_cli（{cli}）：{e}。若已编译，请设置环境变量 BAZAARARENA_CLI 指向可执行文件。"
+            ) from e
+
+        if not out_path.is_file():
+            err_parts = [
+                f"exit={proc.returncode}",
+                f"cli={cli}",
+            ]
+            if proc.stderr and proc.stderr.strip():
+                err_parts.append(f"stderr={proc.stderr.strip()[:4000]}")
+            if proc.stdout and proc.stdout.strip():
+                err_parts.append(f"stdout={proc.stdout.strip()[:2000]}")
+            wrong_binary_hint = ""
+            if proc.returncode == 0 and "items=" in (proc.stdout or ""):
+                wrong_binary_hint = (
+                    " 当前现象：退出码为 0 但没有生成 --output 指定的文件，且标准输出像「版本号 + 物品列表」。"
+                    "这说明该路径下的可执行文件很可能不是本仓库 engine/cli/main.cpp 编出来的对战模拟器"
+                    "（同名文件被其它程序覆盖、或从未用当前源码重编）。"
+                    "请在本机重新编译：在 engine 构建目录执行 "
+                    "`cmake --build . --config Release --target bazaararena_cli`，"
+                    "或设置环境变量 BAZAARARENA_CLI 指向刚编出的 bazaararena_cli.exe。"
+                )
+            elif proc.returncode == 0:
+                wrong_binary_hint = (
+                    " 退出码为 0 但未写出输出文件：请确认 BAZAARARENA_CLI 指向的是"
+                    "本仓库编译的 bazaararena_cli（应支持 --input/--output 并写出 JSON）。"
+                )
+            raise RuntimeError(
+                "bazaararena_cli 未写出输出文件（out.json）。"
+                + wrong_binary_hint
+                + " 其它常见原因：缺少 MSVC 运行库导致进程异常、输入路径无法读取。"
+                + " 详情：" + " | ".join(err_parts)
+            )
+
+        try:
+            raw = out_path.read_text(encoding="utf-8")
+            return json.loads(raw)
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"bazaararena_cli 输出不是合法 JSON：{e}") from e
