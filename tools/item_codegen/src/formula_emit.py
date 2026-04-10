@@ -150,6 +150,8 @@ def _emit_named_leaf(name: str, *, where: str) -> str:
         "NotFullyCharged": "NotFullyCharged",
         "NotFrozen": "NotFrozen",
         "AdjacentToCaster": "AdjacentToCaster",
+        "LeftOfCaster": "LeftOfCaster",
+        "RightOfCaster": "RightOfCaster",
         "InFlight": "InFlight",
         "NotInFlight": "NotInFlight",
     }
@@ -243,6 +245,12 @@ def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
             raise ValueError(f"{where}: NotHasDerivedTag 需要 1 个 DerivedTag 名")
         dname = _key_name(params[0], "DerivedTag", where)
         return f"NotHasDerivedTag<{_derived_tag_cpp(dname)}>"
+
+    if typ == "Leftmost":
+        if len(params) != 1:
+            raise ValueError(f"{where}: Leftmost 需要 1 个条件子式")
+        inner = emit_formula_ast(params[0], where=f"{where}.0")
+        return f"Leftmost<{inner}>"
 
     raise ValueError(f"{where}: 未知的公式类型：{typ}")
 

@@ -5,8 +5,6 @@
 **/packages/
 **/publish/
 
-# Raw images
-pictures/webp/
 # large raw logs
 docs/*-raw.log
 

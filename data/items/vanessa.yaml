@@ -57,10 +57,10 @@ items:
         ex_condition:
           type: Leftmost
           params:
-            type: And
-            params:
-              - DifferentSide
-              - HasCooldown
+            - type: And
+              params:
+                - DifferentSide
+                - HasCooldown
   - Name: "流星索"
     Desc: "▶ 造成 {Damage} 伤害；▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；弹药：{AmmoCap}"
     Size: Small
@@ -91,7 +91,7 @@ items:
           params:
             - type: HasTag
               params: [Weapon]
-            - type: DifferentFromCaster
+            - DifferentFromCaster
         attribute: CritRate
         value: Custom_0
 
