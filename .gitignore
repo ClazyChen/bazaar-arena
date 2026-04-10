@@ -48,6 +48,12 @@ pictures/webp/
 # Cursor（本地 IDE 文件）
 .cursor/
 
+# CMake / build 产物
+build/
+
+# VSCode / Cursor workspace settings（本地）
+.vscode/
+
 # Python
 __pycache__/
 *.pyc
