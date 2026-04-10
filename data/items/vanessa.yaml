@@ -1,3 +1,46 @@
 schemaVersion: 1
 hero: Vanessa
-items: []
+items:
+  - Name: "龙涎香"
+    Desc: "▶ 获得治疗，等量于此物品价值的 {Custom_0} 倍；【局外】购买水系物品时，此物品的价值提高 {Custom_1}；【默认】已购买水系物品数量: {Custom_2}"
+    Size: Small
+    Tier: Bronze
+    Tags: [Relic, Aquatic]
+    Cooldown: 4s
+    Custom_0: [1, 2, 3, 4]
+    Custom_1: [1, 2, 3, 4]
+    Custom_2: [4, 8, 12, 16]
+    Abilities:
+      - type: Heal
+    Auras:
+      - attribute: Heal
+        value:
+          type: Mul
+          params:
+            - type: Caster
+              params: [Value]
+            - type: Caster
+              params: [Custom_0]
+      - attribute: Value
+        value:
+          type: Mul
+          params:
+            - type: Caster
+              params: [Custom_1]
+            - type: Caster
+              params: [Custom_2]
+  - Name: "刺刀"
+    Desc: "使用此物品左侧的武器时，造成 {Damage} 伤害"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Damage: [10, 20, 40, 80]
+    Abilities:
+      - type: Damage
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - LeftOfCaster
+            - type: HasTag
+              params: [Weapon]

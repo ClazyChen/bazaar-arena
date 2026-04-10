@@ -6,6 +6,7 @@
 #include <bazaararena/formula/Percent.hpp>
 #include <bazaararena/formula/Condition.hpp>
 
+#include <algorithm>
 
 namespace bazaararena::core {
 
@@ -152,7 +153,7 @@ int GetTargets(const AbilityDefinition& ability, BattleContext& ctx, formula::Fo
     // 如果候选数量小于目标数量，则返回所有候选均为目标，全部返回
     if (candidate_count < target_count) return candidate_count;
     // 否则，随机打乱候选物品，然后返回前 target_count 个
-    std::shuffle(simulator->targets.begin(), simulator->targets.begin() + candidate_count, simulator->rng);
+    std::shuffle(simulator->targets.begin(), simulator->targets.begin() + candidate_count, simulator->rng.rng);
     return target_count;
 }
 

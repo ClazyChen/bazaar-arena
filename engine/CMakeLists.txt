@@ -9,6 +9,14 @@ add_library(bazaararena_engine STATIC
   src/bazaararena/data/ItemDatabase.cpp
   src/bazaararena/data/items_generated.cpp
   src/bazaararena/core/BattleContext.cpp
+  src/bazaararena/core/AbilityApply.cpp
+  src/bazaararena/core/AbilityDefinition.cpp
+  src/bazaararena/core/AbilityQueue.cpp
+  src/bazaararena/core/SideState.cpp
+  src/bazaararena/core/Simulator.cpp
+  src/bazaararena/io/JsonLite.cpp
+  src/bazaararena/io/SimulateJob.cpp
+  src/bazaararena/io/SideStateBuilder.cpp
 )
 
 target_include_directories(bazaararena_engine PUBLIC

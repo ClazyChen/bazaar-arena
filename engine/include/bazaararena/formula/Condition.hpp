@@ -50,6 +50,16 @@ constexpr Formula AdjacentToCaster = And<
     Eq<Abs<Sub<Item<ItemKey::ItemIndex>, Caster<ItemKey::ItemIndex>>>, Constant<1>>
 >;
 
+constexpr Formula LeftOfCaster = And<
+    Eq<Item<ItemKey::SideIndex>, Caster<ItemKey::SideIndex>>,
+    Eq<Sub<Caster<ItemKey::ItemIndex>, Item<ItemKey::ItemIndex>>, Constant<1>>
+>;
+
+constexpr Formula RightOfCaster = And<
+    Eq<Item<ItemKey::SideIndex>, Caster<ItemKey::SideIndex>>,
+    Eq<Sub<Item<ItemKey::ItemIndex>, Caster<ItemKey::ItemIndex>>, Constant<1>>
+>;
+
 constexpr Formula InFlight = Eq<Item<ItemKey::InFlight>, Constant<1>>;
 constexpr Formula NotInFlight = Not<InFlight>;
 

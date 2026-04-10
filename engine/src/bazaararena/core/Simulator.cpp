@@ -14,7 +14,7 @@ void Simulator::InvokeTrigger(int trigger, const ItemState* source, const ItemSt
     BattleContext ctx = { this, source, source, source, target };
     while (trigger_bitmap != 0) {
         int index = static_cast<int>(std::countr_zero(trigger_bitmap));
-        trigger_bitmap &= ~(1 << index);
+        trigger_bitmap &= ~(1u << index);
         auto side_index = index >> 4;
         auto item_index = index & 0x0F;
         auto& ability_caster = sides[side_index].items[item_index];
@@ -30,7 +30,7 @@ void Simulator::InvokeTrigger(int trigger, const ItemState* source, const ItemSt
                         ApplyAbility({ 0, 1, 0, ctx.caster, ctx.source, ctx.target });
                     }
                 } else {
-                    ability_queue.Enqueue(index << 3 | i, ability.priority, ctx, count);
+                    ability_queue.Enqueue((index << 3) | i, ability.priority, ctx, count);
                 }
                 break;
             }
@@ -70,7 +70,6 @@ void Simulator::CheckCharge(ItemState& item, bool ignore_charge_remaining) {
 
 // 执行一次模拟，返回胜方（0 或 1）或 -1 表示平局
 int Simulator::Run(bool allow_tie) {
-    
     // 进行每一帧的模拟
     while (time < sandstorm.End) {
 
@@ -193,6 +192,7 @@ int Simulator::Run(bool allow_tie) {
         crit_bitmap = 0;
         crit_checked_bitmap = 0;
 
+        time += Frame;
     }
 
     // 时间结束时战斗未结束

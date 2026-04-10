@@ -106,3 +106,34 @@ items:
     Heal: [10, 20, 40, 80]
     Abilities:
       - type: Heal
+  - Name: "冰锥"
+    Desc: "战斗开始时，冻结 {FreezeTargetCount} 件物品 {Freeze} 秒"
+    Size: Small
+    Tier: Bronze
+    Freeze: [3s, 4s, 5s, 6s]
+    FreezeTargetCount: 1
+    Abilities:
+      - type: Freeze
+        trigger: BattleStart
+  - Name: "毒刺"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；吸血"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 7s
+    Damage: [5, 10, 20, 40]
+    Slow: 1s
+    SlowTargetCount: [1, 2, 3, 4]
+    LifeSteal: 100
+    Abilities:
+      - type: Damage
+      - type: Slow
+  - Name: "肥皂块"
+    Desc: "▶ 治疗 {Heal} 生命值；弹药：6"
+    Size: Small
+    Tier: Bronze
+    Cooldown: 2s
+    Heal: [20, 40, 80, 160]
+    AmmoCap: 6
+    Abilities:
+      - type: Heal

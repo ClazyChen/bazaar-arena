@@ -7,11 +7,13 @@ namespace bazaararena::core {
 
 // 读取物品的某个属性（不受光环的影响）
 int BattleContext::GetItemIntRaw(const ItemState* item, int key) const {
+    if (item == nullptr) return 0;
     return item->attrs[key];
 }
 
 // 读取物品的某个属性（会受到光环的影响）
 int BattleContext::GetItemInt(const ItemState* item, int key) const {
+    if (item == nullptr) return 0;
     int base_value = item->attrs[key];
     auto aura_bitmap = simulator->aura_bitmap[key];
     BattleContext ctx = *this;

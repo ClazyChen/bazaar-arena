@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "jobId": "simulate-minimal-001",
+  "mode": "simulate",
+  "payload": {
+    "seed": 12345,
+    "allowTie": true,
+    "debug": { "enabled": true, "level": "summary", "maxEvents": 2000 },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 5,
+        "items": [
+          { "key": "獠牙", "tier": "bronze" }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 5,
+        "items": [
+          { "key": "獠牙", "tier": "bronze" }
+        ]
+      }
+    ]
+  }
+}
+
