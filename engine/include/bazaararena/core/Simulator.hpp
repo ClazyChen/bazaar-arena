@@ -7,6 +7,7 @@
 #include <bazaararena/core/Trigger.hpp>
 #include <bazaararena/core/SideState.hpp>
 #include <bazaararena/core/AbilityQueue.hpp>
+#include <bazaararena/io/Sink.hpp>
 
 namespace bazaararena::core {
 
@@ -72,6 +73,9 @@ public:
 
     // 随机数生成器
     Random rng;
+
+    // 输出流
+    io::Sink sink;
 
     // 判断某个物品是否充能完成，如果充能完成且满足施放条件则加入施放队列
     // ignore_charge_remaining 表示是否忽略充能剩余时间，如果为 true，则不检查充能剩余时间，直接判断是否可以释放（用于“立刻使用“的效果判断）

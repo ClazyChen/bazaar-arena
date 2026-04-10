@@ -63,4 +63,20 @@ constexpr Formula RightOfCaster = And<
 constexpr Formula InFlight = Eq<Item<ItemKey::InFlight>, Constant<1>>;
 constexpr Formula NotInFlight = Not<InFlight>;
 
+template<Formula condition>
+constexpr Formula Count = [](const BattleContext& ctx) -> int {
+    return ctx.CountItems(condition);
+};
+
+template<Formula condition>
+constexpr Formula Only = And<
+    condition,
+    Eq<Count<condition>, Constant<1>>
+>;
+
+template<Formula condition>
+constexpr Formula Leftmost = [](const BattleContext& ctx) -> int {
+    return ctx.IsLeftmostWith(condition);
+};
+
 }

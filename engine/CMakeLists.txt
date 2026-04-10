@@ -15,6 +15,7 @@ add_library(bazaararena_engine STATIC
   src/bazaararena/core/SideState.cpp
   src/bazaararena/core/Simulator.cpp
   src/bazaararena/io/JsonLite.cpp
+  src/bazaararena/io/Sink.cpp
   src/bazaararena/io/SimulateJob.cpp
   src/bazaararena/io/SideStateBuilder.cpp
 )

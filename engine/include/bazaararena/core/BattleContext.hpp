@@ -21,6 +21,15 @@ public:
     int GetSideInt(int key) const; // 读取能力/光环释放者所在阵营的某个属性
     int GetOppInt(int key) const; // 读取能力/光环释放者所在阵营的对手阵营的某个属性
 
+    // 公式类型（函数指针），和 formula::Formula 一致
+    using Formula = int(*)(const BattleContext&);
+
+    // 计算满足某个条件的物品数量
+    int CountItems(Formula condition) const;
+
+    // 满足某个条件的最左侧的物品
+    int IsLeftmostWith(Formula condition) const;
+
 };
 
 }

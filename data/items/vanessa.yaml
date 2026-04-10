@@ -2,7 +2,7 @@ schemaVersion: 1
 hero: Vanessa
 items:
   - Name: "龙涎香"
-    Desc: "▶ 获得治疗，等量于此物品价值的 {Custom_0} 倍；【局外】购买水系物品时，此物品的价值提高 {Custom_1}；【默认】已购买水系物品数量: {Custom_2}"
+    Desc: "▶ 获得治疗，等量于此物品的价值的 {Custom_0} 倍；【局外】购买水系物品时，此物品的价值提高 {Custom_1}；【默认】已购买水系物品数量: {Custom_2}"
     Size: Small
     Tier: Bronze
     Tags: [Relic, Aquatic]
@@ -44,3 +44,54 @@ items:
             - LeftOfCaster
             - type: HasTag
               params: [Weapon]
+  - Name: "舱底蠕虫"
+    Desc: "敌方使用最左侧的物品时，造成 {Damage} 伤害；吸血"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Damage: [10, 20, 40, 80]
+    LifeSteal: 100
+    Abilities:
+      - type: Damage
+        trigger: UseItem
+        ex_condition:
+          type: Leftmost
+          params:
+            type: And
+            params:
+              - DifferentSide
+              - HasCooldown
+  - Name: "流星索"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 4s
+    Damage: [20, 40, 80, 160]
+    Slow: [1s, 2s, 3s, 4s]
+    SlowTargetCount: 1
+    AmmoCap: 2
+    Abilities:
+      - type: Damage
+      - type: Slow
+  - Name: "三花"
+    Desc: "▶ 造成 {Damage} 伤害；使用其他武器时，此物品暴击率提高 {+Custom_0%}（限本场战斗）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 6s
+    Damage: [15, 30, 60, 120]
+    Custom_0: [5, 10, 15, 20]
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Weapon]
+            - type: DifferentFromCaster
+        attribute: CritRate
+        value: Custom_0
+

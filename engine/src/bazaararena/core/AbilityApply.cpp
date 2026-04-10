@@ -32,12 +32,21 @@ bool CheckCrit(const AbilityDefinition& ability, const BattleContext& ctx) {
 // 造成伤害
 void Damage(const AbilityDefinition& ability, const BattleContext& ctx) {
     int damage = ctx.GetItemInt(ctx.caster, ability.value_key);
-    if (CheckCrit(ability, ctx)) {
+    bool is_crit = CheckCrit(ability, ctx);
+    if (is_crit) {
         damage *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& opp = simulator->sides[1 - ctx.caster->attrs[ItemKey::SideIndex]];
     opp.ApplyDamage(damage, false, false);
+    // 结算吸血
+    int life_steal = ctx.GetItemInt(ctx.caster, ItemKey::LifeSteal);
+    if (life_steal > 0) {
+        auto& side = simulator->sides[ctx.caster->attrs[ItemKey::SideIndex]];
+        side.ApplyHeal(formula::PercentFloor(damage, life_steal));
+    }
+    // 打印日志
+    simulator->sink.OnDamage(*simulator, *ctx.caster, damage, is_crit, life_steal > 0);
     // 触发「伤害」触发器
     simulator->InvokeTrigger(Trigger::Damage, ctx.caster, &opp.items[0], 1);
 }
@@ -45,12 +54,15 @@ void Damage(const AbilityDefinition& ability, const BattleContext& ctx) {
 // 造成灼烧
 void Burn(const AbilityDefinition& ability, const BattleContext& ctx) {
     int damage = ctx.GetItemInt(ctx.caster, ability.value_key);
-    if (CheckCrit(ability, ctx)) {
+    bool is_crit = CheckCrit(ability, ctx);
+    if (is_crit) {
         damage *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& opp = simulator->sides[1 - ctx.caster->attrs[ItemKey::SideIndex]];
     opp.attrs[SideKey::Burn] += damage;
+    // 打印日志
+    simulator->sink.OnBurn(*simulator, *ctx.caster, damage, is_crit);
     // 触发「灼烧」触发器
     simulator->InvokeTrigger(Trigger::Burn, ctx.caster, &opp.items[0], 1);
 }
@@ -58,12 +70,15 @@ void Burn(const AbilityDefinition& ability, const BattleContext& ctx) {
 // 造成剧毒
 void Poison(const AbilityDefinition& ability, const BattleContext& ctx) {
     int damage = ctx.GetItemInt(ctx.caster, ability.value_key);
-    if (CheckCrit(ability, ctx)) {
+    bool is_crit = CheckCrit(ability, ctx);
+    if (is_crit) {
         damage *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& opp = simulator->sides[1 - ctx.caster->attrs[ItemKey::SideIndex]];
     opp.attrs[SideKey::Poison] += damage;
+    // 打印日志
+    simulator->sink.OnPoison(*simulator, *ctx.caster, damage, is_crit, false);
     // 触发「中毒」触发器
     simulator->InvokeTrigger(Trigger::Poison, ctx.caster, &opp.items[0], 1);
 }
@@ -71,7 +86,8 @@ void Poison(const AbilityDefinition& ability, const BattleContext& ctx) {
 // 治疗
 void Heal(const AbilityDefinition& ability, const BattleContext& ctx) {
     int heal = ctx.GetItemInt(ctx.caster, ability.value_key);
-    if (CheckCrit(ability, ctx)) {
+    bool is_crit = CheckCrit(ability, ctx);
+    if (is_crit) {
         heal *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
@@ -81,6 +97,8 @@ void Heal(const AbilityDefinition& ability, const BattleContext& ctx) {
     int clear = formula::PercentFloor(heal, 5);
     side.attrs[SideKey::Burn] = std::max(0, side.attrs[SideKey::Burn] - clear);
     side.attrs[SideKey::Poison] = std::max(0, side.attrs[SideKey::Poison] - clear);
+    // 打印日志
+    simulator->sink.OnHeal(*simulator, *ctx.caster, heal, is_crit);
     // 触发「治疗」触发器
     simulator->InvokeTrigger(Trigger::Heal, ctx.caster, &side.items[0], 1);
 }
@@ -88,12 +106,15 @@ void Heal(const AbilityDefinition& ability, const BattleContext& ctx) {
 // 生命再生
 void Regen(const AbilityDefinition& ability, const BattleContext& ctx) {
     int regen = ctx.GetItemInt(ctx.caster, ability.value_key);
-    if (CheckCrit(ability, ctx)) {
+    bool is_crit = CheckCrit(ability, ctx);
+    if (is_crit) {
         regen *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& side = simulator->sides[ctx.caster->attrs[ItemKey::SideIndex]];
     side.attrs[SideKey::Regen] += regen;
+    // 打印日志
+    simulator->sink.OnRegen(*simulator, *ctx.caster, regen, is_crit);
     // 触发「生命再生」触发器
     simulator->InvokeTrigger(Trigger::Regen, ctx.caster, &side.items[0], 1);
 }
@@ -101,24 +122,27 @@ void Regen(const AbilityDefinition& ability, const BattleContext& ctx) {
 // 抗性
 void Resistance(const AbilityDefinition& ability, const BattleContext& ctx) {
     int resistance = ctx.GetItemInt(ctx.caster, ability.value_key);
-    if (CheckCrit(ability, ctx)) {
-        resistance *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
-    }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& side = simulator->sides[ctx.caster->attrs[ItemKey::SideIndex]];
+    int old_resistance = side.attrs[SideKey::Resistance];
     side.attrs[SideKey::Resistance] += resistance;
     // 目前没有效果需要在抗性触发器中处理，不实现触发器
+    // 打印日志
+    simulator->sink.OnResistance(*simulator, *ctx.caster, old_resistance, resistance);
 }
 
 // 自身施加剧毒
 void PoisonSelf(const AbilityDefinition& ability, const BattleContext& ctx) {
     int damage = ctx.GetItemInt(ctx.caster, ability.value_key);
-    if (CheckCrit(ability, ctx)) {
+    bool is_crit = CheckCrit(ability, ctx);
+    if (is_crit) {
         damage *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& side = simulator->sides[ctx.caster->attrs[ItemKey::SideIndex]];
     side.attrs[SideKey::Poison] += damage;
+    // 打印日志
+    simulator->sink.OnPoison(*simulator, *ctx.caster, damage, is_crit, true);
     // 触发「剧毒」触发器
     simulator->InvokeTrigger(Trigger::Poison, ctx.caster, &side.items[0], 1);
 }
@@ -126,12 +150,15 @@ void PoisonSelf(const AbilityDefinition& ability, const BattleContext& ctx) {
 // 获得护盾
 void Shield(const AbilityDefinition& ability, const BattleContext& ctx) {
     int shield = ctx.GetItemInt(ctx.caster, ability.value_key);
-    if (CheckCrit(ability, ctx)) {
+    bool is_crit = CheckCrit(ability, ctx);
+    if (is_crit) {
         shield *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& side = simulator->sides[ctx.caster->attrs[ItemKey::SideIndex]];
     side.attrs[SideKey::Shield] += shield;
+    // 打印日志
+    simulator->sink.OnShield(*simulator, *ctx.caster, shield, is_crit);
     // 触发「护盾」触发器
     simulator->InvokeTrigger(Trigger::Shield, ctx.caster, &side.items[0], 1);
 }
@@ -168,6 +195,8 @@ void Charge(const AbilityDefinition& ability, const BattleContext& ctx) {
         condition::NotFullyCharged
         >
     );
+    // 打印日志
+    simulator->sink.OnCharge(*simulator, *ctx.caster, target_count, charge);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
         target.attrs[ItemKey::ChargedTime] += charge;
@@ -185,6 +214,8 @@ void Freeze(const AbilityDefinition& ability, const BattleContext& ctx) {
     int target_count = GetTargets(ability, ctx_copy, formula::And<
         condition::NotDestroyed
     >);
+    // 打印日志
+    simulator->sink.OnFreeze(*simulator, *ctx.caster, target_count, freeze);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
         target.attrs[ItemKey::FreezeRemaining] += freeze;
@@ -202,6 +233,8 @@ void Slow(const AbilityDefinition& ability, const BattleContext& ctx) {
         condition::HasCooldown,
         condition::NotDestroyed
     >);
+    // 打印日志
+    simulator->sink.OnSlow(*simulator, *ctx.caster, target_count, slow);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
         target.attrs[ItemKey::SlowRemaining] += slow;
@@ -219,6 +252,8 @@ void Haste(const AbilityDefinition& ability, const BattleContext& ctx) {
         condition::HasCooldown,
         condition::NotDestroyed
     >);
+    // 打印日志
+    simulator->sink.OnHaste(*simulator, *ctx.caster, target_count, haste);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
         target.attrs[ItemKey::HasteRemaining] += haste;
@@ -239,6 +274,8 @@ void Reload(const AbilityDefinition& ability, const BattleContext& ctx) {
             formula::Item<ItemKey::AmmoRemaining>, 
             formula::Item<ItemKey::AmmoCap>>
     >);
+    // 打印日志
+    simulator->sink.OnReload(*simulator, *ctx.caster, target_count, reload);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
         target.attrs[ItemKey::AmmoRemaining] = std::min(target.attrs[ItemKey::AmmoRemaining] + reload, ctx.GetItemInt(&target, ItemKey::AmmoCap));
@@ -253,6 +290,8 @@ void Repair(const AbilityDefinition& ability, const BattleContext& ctx) {
     BattleContext ctx_copy = ctx; // 复制一份上下文用于选择目标
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     int target_count = GetTargets(ability, ctx_copy, condition::Destroyed);
+    // 打印日志
+    simulator->sink.OnRepair(*simulator, *ctx.caster, target_count);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
         target.attrs[ItemKey::Destroyed] = 0;
@@ -267,6 +306,8 @@ void Destroy(const AbilityDefinition& ability, const BattleContext& ctx) {
     BattleContext ctx_copy = ctx; // 复制一份上下文用于选择目标
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     int target_count = GetTargets(ability, ctx_copy, condition::NotDestroyed);
+    // 打印日志
+    simulator->sink.OnDestroy(*simulator, *ctx.caster, target_count);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
         // 触发「摧毁」触发器
@@ -288,6 +329,8 @@ void AddAttribute(const AbilityDefinition& ability, const BattleContext& ctx) {
             condition::NotInFlight
         >) :
         GetTargets(ability, ctx_copy, condition::NotDestroyed);
+    // 打印日志
+    simulator->sink.OnAttributeIncrease(*simulator, *ctx.caster, target_count, ability.attribute_key, attribute);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
         target.attrs[ability.attribute_key] += attribute;
@@ -313,6 +356,8 @@ void ReduceAttribute(const AbilityDefinition& ability, const BattleContext& ctx)
             condition::InFlight
         >) :
         GetTargets(ability, ctx_copy, condition::NotDestroyed);
+    // 打印日志
+    simulator->sink.OnAttributeDecrease(*simulator, *ctx.caster, target_count, ability.attribute_key, attribute);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
         target.attrs[ability.attribute_key] = std::max(0, target.attrs[ability.attribute_key] - attribute);
@@ -339,7 +384,8 @@ void Cast(const AbilityDefinition& ability, const BattleContext& ctx) {
     >);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
-        
+        // 直接使用，忽略充能剩余时间
+        simulator->CheckCharge(target, true);
     }
 }
 

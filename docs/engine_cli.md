@@ -99,7 +99,8 @@
     - `hp/shield/burn/poison/regen/resistance/gold/income/maxHp`: number（最终快照）
 - `debug`: object（仅当 `debug.enabled=true` 且 level!=none 时输出）
   - `level`: string
-  - `events`: array（事件流，可能被截断）
+  - `lines`: array（仅当 level=summary；逐行纯文本日志）
+  - `events`: array（仅当 level=detailed；JSON 事件流，可能被截断）
   - `truncated`: boolean
 
 ### 输出示例

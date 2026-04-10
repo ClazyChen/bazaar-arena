@@ -169,45 +169,68 @@ int Simulator::Run(bool allow_tie) {
         
         if (dead0 && dead1) {
             if (allow_tie) {
-                return -1;
+                const int winner = -1;
+                sink.OnGameEnd(*this, winner);
+                return winner;
             } else {
                 // 双方生命均 <= 0，根据双方剩余生命值决定胜负
                 int hp0 = sides[0].attrs[SideKey::Hp];
                 int hp1 = sides[1].attrs[SideKey::Hp];
                 if (hp0 > hp1) {
-                    return 0;
+                    const int winner = 0;
+                    sink.OnGameEnd(*this, winner);
+                    return winner;
                 } else if (hp1 > hp0) {
-                    return 1;
+                    const int winner = 1;
+                    sink.OnGameEnd(*this, winner);
+                    return winner;
                 } else {
-                    return rng.Next(2);
+                    const int winner = rng.Next(2);
+                    sink.OnGameEnd(*this, winner);
+                    return winner;
                 }
             }
         } else if (dead0) {
-            return 1;
+            const int winner = 1;
+            sink.OnGameEnd(*this, winner);
+            return winner;
         } else if (dead1) {
-            return 0;
+            const int winner = 0;
+            sink.OnGameEnd(*this, winner);
+            return winner;
         }
 
         // 10. 清理本帧的暴击状态
         crit_bitmap = 0;
         crit_checked_bitmap = 0;
 
+        // 11. 打印日志
+        sink.OnFrameEnd(*this);
+
         time += Frame;
     }
 
     // 时间结束时战斗未结束
     if (allow_tie) {
-        return -1;
+        const int winner = -1;
+        sink.OnGameEnd(*this, winner);
+        return winner;
     } else {
         // 时间结束时战斗未结束，根据双方剩余生命和护盾的和决定胜负
         int hp_shield_0 = sides[0].attrs[SideKey::Hp] + sides[0].attrs[SideKey::Shield];
         int hp_shield_1 = sides[1].attrs[SideKey::Hp] + sides[1].attrs[SideKey::Shield];
         if (hp_shield_0 > hp_shield_1) {
-            return 0;
+            const int winner = 0;
+            sink.OnGameEnd(*this, winner);
+            return winner;
         } else if (hp_shield_1 > hp_shield_0) {
-            return 1;
+            const int winner = 1;
+            sink.OnGameEnd(*this, winner);
+            return winner;
         } else {
-            return rng.Next(2);
+            const int winner = rng.Next(2);
+            sink.OnGameEnd(*this, winner);
+            return winner;
         }
     }
 }

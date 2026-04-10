@@ -9,6 +9,7 @@
 #include <bazaararena/core/SideKey.hpp>
 #include <bazaararena/io/JsonLite.hpp>
 #include <bazaararena/io/SideStateBuilder.hpp>
+#include <bazaararena/io/SinkExport.hpp>
 #include <bazaararena/io/SimulateJob.hpp>
 
 namespace io = bazaararena::io;
@@ -121,11 +122,23 @@ int main(int argc, char** argv) {
 
     core::InitializeSimulator(sim);
 
+    // debug sink
+    sim.sink.Clear();
+    sim.sink.max_events = job.debug.maxEvents;
+    if (!job.debug.enabled || job.debug.level == "none") {
+        sim.sink.sink_type = io::Sink::TypeNone;
+    } else if (job.debug.level == "summary") {
+        sim.sink.sink_type = io::Sink::TypeSummary;
+    } else if (job.debug.level == "detailed") {
+        sim.sink.sink_type = io::Sink::TypeDetailed;
+    } else {
+        sim.sink.sink_type = io::Sink::TypeNone;
+    }
+
     int winner = -1;
     bool isDraw = false;
 
     io::JsonObject result;
-    io::JsonObject debugObj;
     winner = sim.Run(job.allowTie);
     isDraw = (winner < 0);
 
@@ -153,9 +166,8 @@ int main(int argc, char** argv) {
     result["final"] = std::move(finalObj);
 
     if (job.debug.enabled && job.debug.level != "none") {
-        debugObj["level"] = job.debug.level;
-        debugObj["events"] = io::JsonArray{};
-        debugObj["truncated"] = false;
+        io::JsonObject debugObj;
+        io::FillDebugJson(debugObj, sim.sink);
         result["debug"] = std::move(debugObj);
     }
 

@@ -56,4 +56,28 @@ int BattleContext::GetOppInt(int key) const {
     return simulator->sides[1 - caster->attrs[ItemKey::SideIndex]].attrs[key];
 }
 
+// 计算满足某个条件的物品数量
+int BattleContext::CountItems(Formula condition) const {
+    int count = 0;
+    for (auto& item : simulator->sides[caster->attrs[ItemKey::SideIndex]].items) {
+        if (item.attrs[ItemKey::Destroyed] == 1) continue;
+        if (condition(*this) != 0) count++;
+    }
+    return count;
+}
+
+// 满足某个条件的最左侧的物品
+int BattleContext::IsLeftmostWith(Formula condition) const {
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 2; j++) {
+            auto* item = &simulator->sides[j].items[i];
+            if (item->attrs[ItemKey::Destroyed] == 1) continue;
+            if (condition(*this) != 0) {
+                return item == this->item ? 1 : 0;
+            }
+        }
+    }
+    return 0;
+}
+
 } // namespace bazaararena::core
