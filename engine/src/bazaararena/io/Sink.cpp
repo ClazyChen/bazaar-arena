@@ -184,6 +184,41 @@ static JsonObject MakeEventBase(const core::Simulator& simulator, std::string ki
     return o;
 }
 
+static JsonArray BuildDetailedItemsArray(const core::Simulator& simulator, int sideIndex) {
+    JsonArray items;
+    const int item_count = simulator.sides[sideIndex].attrs[core::SideKey::ItemCount];
+    items.reserve(static_cast<size_t>(std::max(0, item_count)));
+    for (int j = 0; j < item_count; j++) {
+        const auto& item = simulator.sides[sideIndex].items[j];
+        JsonObject it;
+        it["itemIndex"] = static_cast<double>(j);
+        it["name"] = std::string(GetItemName(item));
+
+        it["Damage"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Damage));
+        it["Burn"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Burn));
+        it["Poison"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Poison));
+        it["Regen"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Regen));
+        it["Shield"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Shield));
+        it["Heal"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Heal));
+        it["Value"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Value));
+        it["Multicast"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Multicast));
+        it["AmmoCap"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::AmmoCap));
+        it["Cooldown"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Cooldown));
+        it["LifeSteal"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::LifeSteal));
+
+        it["AmmoRemaining"] = static_cast<double>(item.attrs[core::ItemKey::AmmoRemaining]);
+        it["InFlight"] = static_cast<double>(item.attrs[core::ItemKey::InFlight]);
+        it["Destroyed"] = static_cast<double>(item.attrs[core::ItemKey::Destroyed]);
+        it["ChargedTime"] = static_cast<double>(item.attrs[core::ItemKey::ChargedTime]);
+        it["FreezeRemaining"] = static_cast<double>(item.attrs[core::ItemKey::FreezeRemaining]);
+        it["SlowRemaining"] = static_cast<double>(item.attrs[core::ItemKey::SlowRemaining]);
+        it["HasteRemaining"] = static_cast<double>(item.attrs[core::ItemKey::HasteRemaining]);
+
+        items.emplace_back(std::move(it));
+    }
+    return items;
+}
+
 static void AddItemRef(JsonObject& o, std::string_view prefix, const core::ItemState& item) {
     const int side = GetSideIndex(item);
     const int idx = GetItemIndex(item);
@@ -199,6 +234,10 @@ static void AddItemRef(JsonObject& o, std::string_view prefix, const core::ItemS
 }
 
 }  // namespace
+
+void AppendDetailedSideItemsJson(JsonObject& sideOut, const core::Simulator& simulator, int sideIndex) {
+    sideOut["items"] = BuildDetailedItemsArray(simulator, sideIndex);
+}
 
 void Sink::OnFrameEnd(const core::Simulator& simulator) {
     if (sink_type != TypeDetailed) return;
@@ -218,40 +257,7 @@ void Sink::OnFrameEnd(const core::Simulator& simulator) {
         s["regen"] = static_cast<double>(a[core::SideKey::Regen]);
         s["resistance"] = static_cast<double>(a[core::SideKey::Resistance]);
 
-        JsonArray items;
-        const int item_count = simulator.sides[si].attrs[core::SideKey::ItemCount];
-        items.reserve(static_cast<size_t>(std::max(0, item_count)));
-        for (int j = 0; j < item_count; j++) {
-            const auto& item = simulator.sides[si].items[j];
-            JsonObject it;
-            it["itemIndex"] = static_cast<double>(j);
-            it["name"] = std::string(GetItemName(item));
-
-            // Effective values (considering auras)
-            it["Damage"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Damage));
-            it["Burn"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Burn));
-            it["Poison"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Poison));
-            it["Regen"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Regen));
-            it["Shield"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Shield));
-            it["Heal"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Heal));
-            it["Value"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Value));
-            it["Multicast"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Multicast));
-            it["AmmoCap"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::AmmoCap));
-            it["Cooldown"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::Cooldown));
-            it["LifeSteal"] = static_cast<double>(simulator.GetItemInt(&item, core::ItemKey::LifeSteal));
-
-            // State values (raw runtime)
-            it["AmmoRemaining"] = static_cast<double>(item.attrs[core::ItemKey::AmmoRemaining]);
-            it["InFlight"] = static_cast<double>(item.attrs[core::ItemKey::InFlight]);
-            it["Destroyed"] = static_cast<double>(item.attrs[core::ItemKey::Destroyed]);
-            it["ChargedTime"] = static_cast<double>(item.attrs[core::ItemKey::ChargedTime]);
-            it["FreezeRemaining"] = static_cast<double>(item.attrs[core::ItemKey::FreezeRemaining]);
-            it["SlowRemaining"] = static_cast<double>(item.attrs[core::ItemKey::SlowRemaining]);
-            it["HasteRemaining"] = static_cast<double>(item.attrs[core::ItemKey::HasteRemaining]);
-
-            items.emplace_back(std::move(it));
-        }
-        s["items"] = std::move(items);
+        s["items"] = BuildDetailedItemsArray(simulator, si);
         sides.emplace_back(std::move(s));
     }
     e["sides"] = std::move(sides);

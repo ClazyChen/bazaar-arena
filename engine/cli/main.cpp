@@ -298,6 +298,9 @@ int main(int argc, char** argv) {
         s["resistance"] = static_cast<double>(a[core::SideKey::Resistance]);
         s["gold"] = static_cast<double>(a[core::SideKey::Gold]);
         s["income"] = static_cast<double>(a[core::SideKey::Income]);
+        if (job.debug.enabled && job.debug.level == "detailed") {
+            io::AppendDetailedSideItemsJson(s, sim, si);
+        }
         sidesArr.emplace_back(std::move(s));
     }
     finalObj["sides"] = std::move(sidesArr);

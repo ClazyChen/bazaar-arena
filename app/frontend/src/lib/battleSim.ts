@@ -1,7 +1,9 @@
 import type {
     BattleDebugEvent,
     FrameEndEvent,
+    FrameEndItemSnapshot,
     FrameEndSideSnapshot,
+    HpDamageEvent,
     SimulateResultBody,
 } from "@/types";
 
@@ -32,6 +34,26 @@ export function extractFrameEnds(events: BattleDebugEvent[] | undefined): FrameE
     return out;
 }
 
+function parseItemSnapshots(raw: unknown): FrameEndItemSnapshot[] | undefined {
+    if (!Array.isArray(raw) || raw.length === 0) return undefined;
+    const out: FrameEndItemSnapshot[] = [];
+    for (const it of raw) {
+        if (!it || typeof it !== "object") continue;
+        const o = it as Record<string, unknown>;
+        const idxRaw = o.itemIndex;
+        const itemIndex =
+            typeof idxRaw === "number" ? idxRaw : typeof idxRaw === "string" ? Number(idxRaw) : out.length;
+        out.push({
+            itemIndex: Number.isFinite(itemIndex) ? itemIndex : out.length,
+            ChargedTime: Number(o.ChargedTime ?? 0),
+            Cooldown: Number(o.Cooldown ?? 0),
+            Damage: Number(o.Damage ?? 0),
+            name: typeof o.name === "string" ? o.name : undefined,
+        });
+    }
+    return out.length > 0 ? out : undefined;
+}
+
 function parseFinalSides(final: unknown): FrameEndSideSnapshot[] | null {
     if (!final || typeof final !== "object") return null;
     const raw = (final as { sides?: unknown }).sides;
@@ -50,9 +72,70 @@ function parseFinalSides(final: unknown): FrameEndSideSnapshot[] | null {
             poison: Number(o.poison),
             regen: Number(o.regen),
             resistance: Number(o.resistance),
+            items: parseItemSnapshots(o.items),
         });
     }
     return out;
+}
+
+/** 充能遮罩高度比例：0 不显示；满充能为 1 */
+export function chargeOverlayFill(chargedMs: number, cooldownMs: number): number {
+    if (cooldownMs <= 0 || chargedMs <= 0) return 0;
+    return Math.min(1, chargedMs / cooldownMs);
+}
+
+/** 解析 detailed 中 `kind: "damage"`（含沙尘暴等同形事件） */
+export function extractHpDamageEvents(events: BattleDebugEvent[] | undefined): HpDamageEvent[] {
+    if (!events?.length) return [];
+    const out: HpDamageEvent[] = [];
+    for (const e of events) {
+        if (!e || typeof e !== "object") continue;
+        const o = e as Record<string, unknown>;
+        if (o.kind !== "damage") continue;
+        const t = o.t;
+        const damage = o.damage;
+        const targetSideRaw = o.targetSide;
+        if (typeof t !== "number" || typeof damage !== "number") continue;
+        if (!Number.isFinite(t) || !Number.isFinite(damage) || damage <= 0) continue;
+        const ts =
+            typeof targetSideRaw === "number"
+                ? targetSideRaw
+                : typeof targetSideRaw === "string"
+                  ? Number(targetSideRaw)
+                  : NaN;
+        if (ts !== 0 && ts !== 1) continue;
+        out.push({
+            t,
+            damage,
+            targetSide: ts as 0 | 1,
+            isCrit: o.isCrit === true,
+        });
+    }
+    out.sort((a, b) => (a.t !== b.t ? a.t - b.t : a.targetSide - b.targetSide));
+    return out;
+}
+
+/**
+ * 将伤害归属到时间轴步：区间 (T_{i-1}, T_i]，T_{-1} = -1。
+ */
+export function hpDamageEventsForStep(
+    steps: PlaybackStep[],
+    all: HpDamageEvent[],
+    stepIndex: number,
+): { side0: HpDamageEvent[]; side1: HpDamageEvent[] } {
+    const empty = { side0: [] as HpDamageEvent[], side1: [] as HpDamageEvent[] };
+    if (stepIndex < 0 || stepIndex >= steps.length) return empty;
+    const prevT = stepIndex > 0 ? steps[stepIndex - 1].tMs : -1;
+    const curT = steps[stepIndex].tMs;
+    const side0: HpDamageEvent[] = [];
+    const side1: HpDamageEvent[] = [];
+    for (const ev of all) {
+        if (ev.t > prevT && ev.t <= curT) {
+            if (ev.targetSide === 0) side0.push(ev);
+            else side1.push(ev);
+        }
+    }
+    return { side0, side1 };
 }
 
 /**

@@ -2,6 +2,8 @@
 import { computed, onUnmounted, ref, watch } from "vue";
 import { fetchDeckSlots, postSaveCliRepro, postSimulate } from "@/api";
 import {
+    chargeOverlayRgba,
+    DAMAGE_KEYWORD_RGB,
     dcardOuterWidthPx,
     itemArtAspectStyle,
     tierBorderColor,
@@ -10,12 +12,21 @@ import {
 import {
     BATTLE_TICK_MS,
     buildPlaybackTimeline,
+    chargeOverlayFill,
+    extractHpDamageEvents,
     formatTimeSec,
+    hpDamageEventsForStep,
     type PlaybackStep,
 } from "@/lib/battleSim";
 import { useCatalogStore } from "@/stores/catalog";
 import ItemTooltipAnchor from "@/components/ItemTooltipAnchor.vue";
-import type { DeckSlotPayload, FrameEndSideSnapshot, SimulateCliEnvelope } from "@/types";
+import type {
+    DeckSlotPayload,
+    FrameEndItemSnapshot,
+    FrameEndSideSnapshot,
+    HpDamageEvent,
+    SimulateCliEnvelope,
+} from "@/types";
 
 const props = defineProps<{
     deckIdP1: number | null;
@@ -91,16 +102,6 @@ const maxPlayhead = computed(() => Math.max(0, timeline.value.length - 1));
 const currentTMs = computed(() => timeline.value[playheadIndex.value]?.tMs ?? 0);
 const endTMs = computed(() => timeline.value[timeline.value.length - 1]?.tMs ?? 0);
 
-watch(timeline, (steps) => {
-    playheadIndex.value = 0;
-    playing.value = false;
-    if (steps.length === 0) return;
-});
-
-watch(maxPlayhead, (m) => {
-    if (playheadIndex.value > m) playheadIndex.value = m;
-});
-
 const currentSides = computed((): FrameEndSideSnapshot[] | null => {
     const steps = timeline.value;
     if (steps.length === 0) return null;
@@ -115,6 +116,80 @@ const hasBattleResult = computed(
     () => Boolean(simEnvelope.value?.ok && timeline.value.length > 0),
 );
 
+const hpDamageEventsAll = computed(() =>
+    extractHpDamageEvents(simEnvelope.value?.result?.debug?.events),
+);
+
+/** 飘字独立队列：随步进追加，动画结束移除，避免播放时每帧被清空 */
+interface HpFloatItem {
+    id: number;
+    ev: HpDamageEvent;
+}
+
+const hpFloatActiveP1 = ref<HpFloatItem[]>([]);
+const hpFloatActiveP2 = ref<HpFloatItem[]>([]);
+let nextHpFloatId = 0;
+
+function clearHpFloats(): void {
+    hpFloatActiveP1.value = [];
+    hpFloatActiveP2.value = [];
+}
+
+function removeHpFloatP1(id: number): void {
+    hpFloatActiveP1.value = hpFloatActiveP1.value.filter((x) => x.id !== id);
+}
+
+function removeHpFloatP2(id: number): void {
+    hpFloatActiveP2.value = hpFloatActiveP2.value.filter((x) => x.id !== id);
+}
+
+function appendFloatsForStep(idx: number): void {
+    const steps = timeline.value;
+    if (steps.length === 0) return;
+    const all = hpDamageEventsAll.value;
+    const { side0, side1 } = hpDamageEventsForStep(steps, all, idx);
+    const add0 = side0.map((ev) => ({ id: ++nextHpFloatId, ev }));
+    const add1 = side1.map((ev) => ({ id: ++nextHpFloatId, ev }));
+    if (add0.length > 0) {
+        hpFloatActiveP1.value = [...hpFloatActiveP1.value, ...add0];
+    }
+    if (add1.length > 0) {
+        hpFloatActiveP2.value = [...hpFloatActiveP2.value, ...add1];
+    }
+}
+
+watch(playheadIndex, (idx, prevIdx) => {
+    const steps = timeline.value;
+    if (steps.length === 0) {
+        clearHpFloats();
+        return;
+    }
+    if (prevIdx !== undefined && idx - prevIdx !== 1) {
+        clearHpFloats();
+    }
+    appendFloatsForStep(idx);
+});
+
+watch(timeline, (steps) => {
+    playing.value = false;
+    clearHpFloats();
+    const prevPh = playheadIndex.value;
+    playheadIndex.value = 0;
+    if (steps.length === 0) return;
+    if (prevPh === playheadIndex.value) {
+        appendFloatsForStep(0);
+    }
+});
+
+watch(maxPlayhead, (m) => {
+    if (playheadIndex.value > m) playheadIndex.value = m;
+});
+
+function hpFloatLabel(ev: HpDamageEvent): string {
+    const n = Math.round(ev.damage);
+    return ev.isCrit ? `−${n}!` : `−${n}`;
+}
+
 function outcomeForSide(sideIndex: 0 | 1): { text: string; cls: string } | null {
     const r = simEnvelope.value?.result;
     if (!r || !simEnvelope.value?.ok) return null;
@@ -125,6 +200,102 @@ function outcomeForSide(sideIndex: 0 | 1): { text: string; cls: string } | null 
 
 const p1Outcome = computed(() => outcomeForSide(0));
 const p2Outcome = computed(() => outcomeForSide(1));
+
+function itemSnapshotForSlot(
+    side: FrameEndSideSnapshot | null,
+    slotIndex: number,
+): FrameEndItemSnapshot | null {
+    if (!side?.items?.length) return null;
+    const by = side.items.find((x) => x.itemIndex === slotIndex);
+    if (by) return by;
+    return side.items[slotIndex] ?? null;
+}
+
+function itemChargeOverlayStyle(
+    side: FrameEndSideSnapshot | null,
+    slotIndex: number,
+): Record<string, string> | undefined {
+    const it = itemSnapshotForSlot(side, slotIndex);
+    if (!it) return undefined;
+    const fill = chargeOverlayFill(it.ChargedTime, it.Cooldown);
+    if (fill <= 0) return undefined;
+    return {
+        height: `${fill * 100}%`,
+        background: chargeOverlayRgba(0.38),
+    };
+}
+
+const p1ChargeOverlayStyles = computed((): (Record<string, string> | undefined)[] => {
+    const side = side0.value;
+    const n = slotsP1.value.length;
+    const out: (Record<string, string> | undefined)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemChargeOverlayStyle(side, i));
+    }
+    return out;
+});
+
+const p2ChargeOverlayStyles = computed((): (Record<string, string> | undefined)[] => {
+    const side = side1.value;
+    const n = slotsP2.value.length;
+    const out: (Record<string, string> | undefined)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemChargeOverlayStyle(side, i));
+    }
+    return out;
+});
+
+/** 徽章宽度 = 小物品（size=1）外宽的 40%；高为宽的一半（2:1） */
+const DAMAGE_BADGE_WIDTH_PX = dcardOuterWidthPx(1) * 0.4;
+
+function itemDamageBadge(
+    side: FrameEndSideSnapshot | null,
+    slotIndex: number,
+): { widthPx: number; heightPx: number; fontPx: number; text: string } | null {
+    const it = itemSnapshotForSlot(side, slotIndex);
+    const d = it?.Damage;
+    if (d === undefined || !Number.isFinite(d) || d <= 0) return null;
+    const widthPx = DAMAGE_BADGE_WIDTH_PX;
+    const heightPx = widthPx / 2;
+    return {
+        widthPx,
+        heightPx,
+        fontPx: Math.max(8, Math.min(11, widthPx * 0.36)),
+        text: String(Math.round(d)),
+    };
+}
+
+const p1DamageBadges = computed(() => {
+    const side = side0.value;
+    const n = slotsP1.value.length;
+    const out: ({ widthPx: number; heightPx: number; fontPx: number; text: string } | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemDamageBadge(side, i));
+    }
+    return out;
+});
+
+const p2DamageBadges = computed(() => {
+    const side = side1.value;
+    const n = slotsP2.value.length;
+    const out: ({ widthPx: number; heightPx: number; fontPx: number; text: string } | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemDamageBadge(side, i));
+    }
+    return out;
+});
+
+/** 模拟器版本/路径与调试区默认折叠，由「调试信息」按钮展开 */
+const showSimDebugPanel = ref(false);
+
+const canShowSimDebug = computed(() => {
+    const env = simEnvelope.value;
+    if (!env?.ok) return false;
+    return (
+        lastUsedSeed.value !== null ||
+        Boolean(env.bazaararenaCliVersion || env.bazaararenaCli)
+    );
+});
 
 watch(
     () => [props.deckIdP1, props.deckIdP2] as const,
@@ -141,6 +312,7 @@ watch(
         slotsP2.value = [];
         playheadIndex.value = 0;
         playing.value = false;
+        showSimDebugPanel.value = false;
         if (id1 === null || id2 === null) return;
         slotsLoading.value = true;
         try {
@@ -316,65 +488,77 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                 >
                     {{ hasBattleResult ? "再次对战" : "开始对战" }}
                 </button>
+                <button
+                    v-if="canShowSimDebug"
+                    type="button"
+                    class="btn-sm debug-toggle"
+                    :aria-expanded="showSimDebugPanel"
+                    @click="showSimDebugPanel = !showSimDebugPanel"
+                >
+                    {{ showSimDebugPanel ? "收起调试" : "调试信息" }}
+                </button>
                 <span v-if="slotsLoading" class="hint">加载卡组…</span>
                 <span v-else-if="battleLoading" class="hint">模拟中…</span>
             </div>
             <p v-if="slotsErr" class="err">{{ slotsErr }}</p>
             <p v-else-if="simErr" class="err">{{ simErr }}</p>
-            <p
-                v-if="
-                    simEnvelope?.ok &&
-                    (simEnvelope?.bazaararenaCliVersion || simEnvelope?.bazaararenaCli)
-                "
-                class="cli-meta"
-            >
-                <span class="cli-meta-label">模拟器</span>
-                <code class="cli-meta-ver">{{ simEnvelope?.bazaararenaCliVersion ?? "—" }}</code>
-                <span v-if="simEnvelope?.bazaararenaCli" class="cli-meta-path" :title="simEnvelope.bazaararenaCli">{{
-                    simEnvelope.bazaararenaCli
-                }}</span>
-            </p>
 
-            <details v-if="lastUsedSeed !== null" class="debug-loop" open>
-                <summary class="debug-sum">调试：Summary 与 CLI 复现（同种子）</summary>
-                <p class="debug-hint">
-                    闭环：点「拉取 Summary 日志」与引擎
-                    <code>debug.level=summary</code>
-                    文本对照；点「保存复现 JSON 到 samples/cli」由后端写入仓库
-                    <code>samples/cli/</code>
-                    ，供本地
-                    <code>bazaararena_cli --input … --output out.json</code>
-                    。顶层结构与对战模拟请求一致，并含
-                    <code>cliReproMeta</code>
-                    卡组快照。修改引擎后重编 CLI 再「再次对战」验证。
+            <div v-show="showSimDebugPanel && canShowSimDebug" class="sim-debug-wrap">
+                <p
+                    v-if="
+                        simEnvelope?.ok &&
+                        (simEnvelope?.bazaararenaCliVersion || simEnvelope?.bazaararenaCli)
+                    "
+                    class="cli-meta"
+                >
+                    <span class="cli-meta-label">模拟器</span>
+                    <code class="cli-meta-ver">{{ simEnvelope?.bazaararenaCliVersion ?? "—" }}</code>
+                    <span v-if="simEnvelope?.bazaararenaCli" class="cli-meta-path" :title="simEnvelope.bazaararenaCli">{{
+                        simEnvelope.bazaararenaCli
+                    }}</span>
                 </p>
-                <div class="debug-row">
-                    <span class="seed-label">种子 {{ lastUsedSeed }}</span>
-                    <button type="button" class="btn-sm" @click="copySeed">复制种子</button>
-                    <button
-                        type="button"
-                        class="btn-sm primary"
-                        :disabled="summaryLoading"
-                        @click="fetchSummaryLog"
-                    >
-                        {{ summaryLoading ? "拉取中…" : "拉取 Summary 日志" }}
-                    </button>
-                    <button
-                        type="button"
-                        class="btn-sm"
-                        :disabled="saveReproLoading"
-                        @click="saveCliReproToSamples"
-                    >
-                        {{ saveReproLoading ? "写入中…" : "保存复现 JSON 到 samples/cli" }}
-                    </button>
+
+                <div v-if="lastUsedSeed !== null" class="debug-loop">
+                    <h3 class="debug-sum">调试：Summary 与 CLI 复现（同种子）</h3>
+                    <p class="debug-hint">
+                        闭环：点「拉取 Summary 日志」与引擎
+                        <code>debug.level=summary</code>
+                        文本对照；点「保存复现 JSON 到 samples/cli」由后端写入仓库
+                        <code>samples/cli/</code>
+                        ，供本地
+                        <code>bazaararena_cli --input … --output out.json</code>
+                        。顶层结构与对战模拟请求一致，并含
+                        <code>cliReproMeta</code>
+                        卡组快照。修改引擎后重编 CLI 再「再次对战」验证。
+                    </p>
+                    <div class="debug-row">
+                        <span class="seed-label">种子 {{ lastUsedSeed }}</span>
+                        <button type="button" class="btn-sm" @click="copySeed">复制种子</button>
+                        <button
+                            type="button"
+                            class="btn-sm primary"
+                            :disabled="summaryLoading"
+                            @click="fetchSummaryLog"
+                        >
+                            {{ summaryLoading ? "拉取中…" : "拉取 Summary 日志" }}
+                        </button>
+                        <button
+                            type="button"
+                            class="btn-sm"
+                            :disabled="saveReproLoading"
+                            @click="saveCliReproToSamples"
+                        >
+                            {{ saveReproLoading ? "写入中…" : "保存复现 JSON 到 samples/cli" }}
+                        </button>
+                    </div>
+                    <p v-if="saveReproPath" class="save-repro-ok">
+                        已写入：<code>{{ saveReproPath }}</code>
+                    </p>
+                    <p v-if="saveReproErr" class="err">{{ saveReproErr }}</p>
+                    <p v-if="summaryErr" class="err">{{ summaryErr }}</p>
+                    <pre v-if="summaryLines.length" class="summary-pre">{{ summaryLines.join("\n") }}</pre>
                 </div>
-                <p v-if="saveReproPath" class="save-repro-ok">
-                    已写入：<code>{{ saveReproPath }}</code>
-                </p>
-                <p v-if="saveReproErr" class="err">{{ saveReproErr }}</p>
-                <p v-if="summaryErr" class="err">{{ summaryErr }}</p>
-                <pre v-if="summaryLines.length" class="summary-pre">{{ summaryLines.join("\n") }}</pre>
-            </details>
+            </div>
 
             <div v-if="hasBattleResult" class="player-shell">
                 <div class="player-time">
@@ -452,18 +636,30 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                 </header>
                 <div v-if="side0" class="hud">
                     <div class="nums">
-                        <span class="hp-white">{{ Math.round(side0.hp) }}</span>
                         <span v-if="side0.burn > 0" class="burn">灼{{ Math.round(side0.burn) }}</span>
                         <span v-if="side0.poison > 0" class="poison">毒{{ Math.round(side0.poison) }}</span>
                         <span v-if="side0.regen > 0" class="regen">再{{ Math.round(side0.regen) }}</span>
                     </div>
-                    <div class="bars">
-                        <div v-if="side0.shield > 0" class="bar shield-bar">
-                            <div class="fill" :style="{ width: `${shieldFrac(side0) * 100}%` }" />
-                            <span class="bar-label shield-label">{{ Math.round(side0.shield) }}</span>
+                    <div class="hud-bars-stack">
+                        <div v-if="hpFloatActiveP1.length" class="hp-float-layer">
+                            <span
+                                v-for="item in hpFloatActiveP1"
+                                :key="item.id"
+                                class="hp-float"
+                                :class="{ 'hp-float--crit': item.ev.isCrit }"
+                                :style="{ color: DAMAGE_KEYWORD_RGB }"
+                                @animationend="removeHpFloatP1(item.id)"
+                            >{{ hpFloatLabel(item.ev) }}</span>
                         </div>
-                        <div class="bar hp-bar">
-                            <div class="fill hp-fill" :style="{ width: `${hpFrac(side0) * 100}%` }" />
+                        <div class="bars">
+                            <div v-if="side0.shield > 0" class="bar shield-bar">
+                                <div class="fill" :style="{ width: `${shieldFrac(side0) * 100}%` }" />
+                                <span class="bar-label shield-label">{{ Math.round(side0.shield) }}</span>
+                            </div>
+                            <div class="bar hp-bar">
+                                <div class="fill hp-fill" :style="{ width: `${hpFrac(side0) * 100}%` }" />
+                                <span class="hp-on-bar">{{ Math.round(side0.hp) }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -498,6 +694,23 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             loading="lazy"
                                             decoding="async"
                                             @error="($event.target as HTMLImageElement).style.opacity = '0.2'"
+                                        />
+                                        <div
+                                            v-if="p1DamageBadges[i]"
+                                            class="damage-badge"
+                                            :style="{
+                                                width: `${p1DamageBadges[i]!.widthPx}px`,
+                                                height: `${p1DamageBadges[i]!.heightPx}px`,
+                                                fontSize: `${p1DamageBadges[i]!.fontPx}px`,
+                                                background: DAMAGE_KEYWORD_RGB,
+                                            }"
+                                        >
+                                            {{ p1DamageBadges[i]!.text }}
+                                        </div>
+                                        <div
+                                            v-if="p1ChargeOverlayStyles[i]"
+                                            class="charge-overlay"
+                                            :style="p1ChargeOverlayStyles[i]"
                                         />
                                     </div>
                                     <span class="cap">{{ s.item_name }}</span>
@@ -547,6 +760,23 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             decoding="async"
                                             @error="($event.target as HTMLImageElement).style.opacity = '0.2'"
                                         />
+                                        <div
+                                            v-if="p2DamageBadges[i]"
+                                            class="damage-badge"
+                                            :style="{
+                                                width: `${p2DamageBadges[i]!.widthPx}px`,
+                                                height: `${p2DamageBadges[i]!.heightPx}px`,
+                                                fontSize: `${p2DamageBadges[i]!.fontPx}px`,
+                                                background: DAMAGE_KEYWORD_RGB,
+                                            }"
+                                        >
+                                            {{ p2DamageBadges[i]!.text }}
+                                        </div>
+                                        <div
+                                            v-if="p2ChargeOverlayStyles[i]"
+                                            class="charge-overlay"
+                                            :style="p2ChargeOverlayStyles[i]"
+                                        />
                                     </div>
                                     <span class="cap">{{ s.item_name }}</span>
                                 </div>
@@ -556,18 +786,30 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                 </div>
                 <div v-if="side1" class="hud hud-below">
                     <div class="nums">
-                        <span class="hp-white">{{ Math.round(side1.hp) }}</span>
                         <span v-if="side1.burn > 0" class="burn">灼{{ Math.round(side1.burn) }}</span>
                         <span v-if="side1.poison > 0" class="poison">毒{{ Math.round(side1.poison) }}</span>
                         <span v-if="side1.regen > 0" class="regen">再{{ Math.round(side1.regen) }}</span>
                     </div>
-                    <div class="bars">
-                        <div v-if="side1.shield > 0" class="bar shield-bar">
-                            <div class="fill" :style="{ width: `${shieldFrac(side1) * 100}%` }" />
-                            <span class="bar-label shield-label">{{ Math.round(side1.shield) }}</span>
+                    <div class="hud-bars-stack">
+                        <div v-if="hpFloatActiveP2.length" class="hp-float-layer">
+                            <span
+                                v-for="item in hpFloatActiveP2"
+                                :key="item.id"
+                                class="hp-float"
+                                :class="{ 'hp-float--crit': item.ev.isCrit }"
+                                :style="{ color: DAMAGE_KEYWORD_RGB }"
+                                @animationend="removeHpFloatP2(item.id)"
+                            >{{ hpFloatLabel(item.ev) }}</span>
                         </div>
-                        <div class="bar hp-bar">
-                            <div class="fill hp-fill" :style="{ width: `${hpFrac(side1) * 100}%` }" />
+                        <div class="bars">
+                            <div v-if="side1.shield > 0" class="bar shield-bar">
+                                <div class="fill" :style="{ width: `${shieldFrac(side1) * 100}%` }" />
+                                <span class="bar-label shield-label">{{ Math.round(side1.shield) }}</span>
+                            </div>
+                            <div class="bar hp-bar">
+                                <div class="fill hp-fill" :style="{ width: `${hpFrac(side1) * 100}%` }" />
+                                <span class="hp-on-bar">{{ Math.round(side1.hp) }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -648,6 +890,14 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     word-break: break-all;
     opacity: 0.92;
 }
+.sim-debug-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+.debug-toggle {
+    flex: 0 0 auto;
+}
 .debug-loop {
     border: 1px solid #3a4555;
     border-radius: 8px;
@@ -655,7 +905,7 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     background: #1a1e26;
 }
 .debug-sum {
-    cursor: pointer;
+    margin: 0;
     color: #b8c0cc;
     font-size: 0.88rem;
     font-weight: 600;
@@ -841,9 +1091,57 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    overflow: visible;
 }
 .hud-below {
     margin-top: 0.35rem;
+}
+.hud-bars-stack {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: min(100%, 640px);
+}
+.hp-float-layer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 0.35rem 0.55rem;
+    padding-bottom: 6px;
+    pointer-events: none;
+    z-index: 3;
+}
+.hp-float {
+    display: inline-block;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.25rem;
+    line-height: 1.15;
+    pointer-events: none;
+    text-shadow:
+        0 0 3px #1a1d24,
+        0 1px 2px rgba(0, 0, 0, 0.75);
+    animation: hpFloatUp 0.88s ease-out forwards;
+}
+.hp-float--crit {
+    font-size: 1.58rem;
+}
+@keyframes hpFloatUp {
+    from {
+        transform: translateY(4px);
+        opacity: 0.98;
+    }
+    to {
+        transform: translateY(-28px);
+        opacity: 0;
+    }
 }
 .nums {
     display: flex;
@@ -853,9 +1151,21 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     font-size: 0.95rem;
     line-height: 1.2;
 }
-.hp-white {
+.hp-on-bar {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #ffffff;
     font-weight: 600;
+    font-size: 0.88rem;
+    line-height: 1;
+    pointer-events: none;
+    text-shadow:
+        0 0 3px #1a1d24,
+        0 1px 2px rgba(0, 0, 0, 0.85);
 }
 .burn {
     color: #ff9f45;
@@ -870,11 +1180,11 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    max-width: 420px;
+    width: 100%;
 }
 .bar {
     position: relative;
-    height: 14px;
+    height: 18px;
     border-radius: 4px;
     background: #2a2f38;
     overflow: hidden;
@@ -940,6 +1250,23 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     background: #1a1d24;
     cursor: default;
 }
+.damage-badge {
+    position: absolute;
+    left: 50%;
+    top: 3px;
+    transform: translateX(-50%);
+    z-index: 1;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    pointer-events: none;
+    border-radius: 2px;
+}
 .dcard-art {
     position: relative;
     width: 100%;
@@ -952,6 +1279,15 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     width: 100%;
     height: 100%;
     object-fit: contain;
+    z-index: 0;
+}
+.charge-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    pointer-events: none;
 }
 .cap {
     font-size: 0.65rem;

@@ -1,5 +1,5 @@
 import type { ItemRow } from "@/types";
-import { tierBorderColor } from "@/lib/deckMath";
+import { CHARGE_KEYWORD_RGB, DAMAGE_KEYWORD_RGB, tierBorderColor } from "@/lib/deckMath";
 
 /** 与 engine/cli ColorizeSummaryLine 关键词配色一致；仅包裹匹配到的子串 */
 const KEYWORD_COLORS: { needle: string; color: string }[] = [
@@ -8,14 +8,14 @@ const KEYWORD_COLORS: { needle: string; color: string }[] = [
     { needle: "生命再生", color: "rgb(142, 234, 49)" },
     { needle: "弹药", color: "rgb(255, 142, 0)" },
     { needle: "装填", color: "rgb(255, 142, 0)" },
-    { needle: "加速", color: "rgb(0, 236, 195)" },
-    { needle: "充能", color: "rgb(0, 236, 195)" },
+    { needle: "加速", color: CHARGE_KEYWORD_RGB },
+    { needle: "充能", color: CHARGE_KEYWORD_RGB },
     { needle: "冻结", color: "rgb(63, 200, 247)" },
     { needle: "护盾", color: "rgb(244, 207, 32)" },
     { needle: "飞行", color: "rgb(244, 207, 32)" },
-    { needle: "伤害", color: "rgb(245, 80, 61)" },
-    { needle: "暴击率", color: "rgb(245, 80, 61)" },
-    { needle: "暴击伤害", color: "rgb(245, 80, 61)" },
+    { needle: "伤害", color: DAMAGE_KEYWORD_RGB },
+    { needle: "暴击率", color: DAMAGE_KEYWORD_RGB },
+    { needle: "暴击伤害", color: DAMAGE_KEYWORD_RGB },
     { needle: "摧毁", color: "rgb(255, 50, 120)" },
     { needle: "剧毒", color: "rgb(14, 190, 79)" },
     { needle: "修复", color: "rgb(143, 252, 188)" },

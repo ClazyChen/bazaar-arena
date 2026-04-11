@@ -78,10 +78,28 @@ export interface SimulateDebugBlock {
 
 export type BattleDebugEvent = FrameEndEvent | Record<string, unknown>;
 
+/** detailed：`kind === "damage"`，承伤方为 targetSide */
+export interface HpDamageEvent {
+    t: number;
+    targetSide: 0 | 1;
+    damage: number;
+    isCrit: boolean;
+}
+
 export interface FrameEndEvent {
     t: number;
     kind: "frame_end";
     sides: FrameEndSideSnapshot[];
+}
+
+/** `frame_end` / 可选 `final.sides[]` 中每件物品的精简快照 */
+export interface FrameEndItemSnapshot {
+    itemIndex: number;
+    ChargedTime: number;
+    Cooldown: number;
+    /** 引擎有效伤害（含光环）；无则 0 */
+    Damage?: number;
+    name?: string;
 }
 
 export interface FrameEndSideSnapshot {
@@ -93,4 +111,6 @@ export interface FrameEndSideSnapshot {
     poison: number;
     regen: number;
     resistance: number;
+    /** detailed：`frame_end` 与 `result.final.sides[]` 均含（与引擎一致） */
+    items?: FrameEndItemSnapshot[];
 }

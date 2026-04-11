@@ -162,5 +162,7 @@ public:
     void OnGameEnd(const core::Simulator& simulator, int winner);
 };
 
+/** 与 `frame_end` 中每侧 `items` 结构一致；供 CLI 在 detailed 时写入 `result.final.sides[]` */
+void AppendDetailedSideItemsJson(JsonObject& sideOut, const core::Simulator& simulator, int sideIndex);
 
 }

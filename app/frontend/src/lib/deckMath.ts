@@ -1,3 +1,14 @@
+/** 与 itemTooltip KEYWORD_COLORS「充能」「加速」一致 */
+export const CHARGE_KEYWORD_RGB = "rgb(0, 236, 195)";
+
+/** 与 itemTooltip「伤害」关键词一致 */
+export const DAMAGE_KEYWORD_RGB = "rgb(245, 80, 61)";
+
+/** 对战卡面充能遮罩（与 CHARGE_KEYWORD_RGB 同色、半透明） */
+export function chargeOverlayRgba(alpha: number): string {
+    return `rgba(0, 236, 195, ${alpha})`;
+}
+
 /** 与后端 legacy Deck.MaxSlotsForLevel 一致 */
 export function maxSlotsForLevel(level: number): number {
     if (level <= 1) return 4;
