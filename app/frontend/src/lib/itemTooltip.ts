@@ -1,5 +1,5 @@
 import type { ItemRow } from "@/types";
-import { CHARGE_KEYWORD_RGB, DAMAGE_KEYWORD_RGB, tierBorderColor } from "@/lib/deckMath";
+import { CHARGE_KEYWORD_RGB, DAMAGE_KEYWORD_RGB, FREEZE_KEYWORD_RGB, tierBorderColor } from "@/lib/deckMath";
 
 /** 与 engine/cli ColorizeSummaryLine 关键词配色一致；仅包裹匹配到的子串 */
 const KEYWORD_COLORS: { needle: string; color: string }[] = [
@@ -10,7 +10,7 @@ const KEYWORD_COLORS: { needle: string; color: string }[] = [
     { needle: "装填", color: "rgb(255, 142, 0)" },
     { needle: "加速", color: CHARGE_KEYWORD_RGB },
     { needle: "充能", color: CHARGE_KEYWORD_RGB },
-    { needle: "冻结", color: "rgb(63, 200, 247)" },
+    { needle: "冻结", color: FREEZE_KEYWORD_RGB },
     { needle: "护盾", color: "rgb(244, 207, 32)" },
     { needle: "飞行", color: "rgb(244, 207, 32)" },
     { needle: "伤害", color: DAMAGE_KEYWORD_RGB },
@@ -242,6 +242,20 @@ function formatDescHtml(
     }
     out += colorizePlainText(desc.slice(last));
     return out;
+}
+
+/**
+ * 与 `buildItemTooltipHtml` 中「冷却时间」是否展示及 deck 档位取值一致。
+ * 目录无有效冷却（如仅战斗开始触发的冰锥）时返回 null。
+ */
+export function itemCooldownMsForDeckTier(item: ItemRow | undefined, tier: number): number | null {
+    if (!item) return null;
+    const cdArr = item.tooltip_attrs?.Cooldown;
+    if (!cdArr?.length) return null;
+    if (!cdArr.some((v) => v > 0)) return null;
+    const tDeck = Math.min(Math.max(tier, 0), 4);
+    const ms = cdArr[tDeck] ?? cdArr[0] ?? 0;
+    return ms > 0 ? ms : null;
 }
 
 export function buildItemTooltipHtml(

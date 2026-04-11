@@ -4,9 +4,22 @@ export const CHARGE_KEYWORD_RGB = "rgb(0, 236, 195)";
 /** 与 itemTooltip「伤害」关键词一致 */
 export const DAMAGE_KEYWORD_RGB = "rgb(245, 80, 61)";
 
+/** 与 itemTooltip「冻结」关键词一致 */
+export const FREEZE_KEYWORD_RGB = "rgb(63, 200, 247)";
+
 /** 对战卡面充能遮罩（与 CHARGE_KEYWORD_RGB 同色、半透明） */
 export function chargeOverlayRgba(alpha: number): string {
     return `rgba(0, 236, 195, ${alpha})`;
+}
+
+/** 对战卡面「未充能」遮罩（黑色半透明，覆盖剩余 uncharged 比例） */
+export function unchargedOverlayRgba(alpha: number): string {
+    return `rgba(0, 0, 0, ${alpha})`;
+}
+
+/** 对战卡面冻结遮罩（与 FREEZE_KEYWORD_RGB 同色、半透明） */
+export function freezeOverlayRgba(alpha: number): string {
+    return `rgba(63, 200, 247, ${alpha})`;
 }
 
 /** 与后端 legacy Deck.MaxSlotsForLevel 一致 */

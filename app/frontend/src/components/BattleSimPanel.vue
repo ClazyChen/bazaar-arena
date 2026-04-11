@@ -2,17 +2,20 @@
 import { computed, onUnmounted, ref, watch } from "vue";
 import { fetchDeckSlots, postSaveCliRepro, postSimulate } from "@/api";
 import {
-    chargeOverlayRgba,
+    CHARGE_KEYWORD_RGB,
     DAMAGE_KEYWORD_RGB,
+    FREEZE_KEYWORD_RGB,
     dcardOuterWidthPx,
+    freezeOverlayRgba,
     itemArtAspectStyle,
     tierBorderColor,
+    unchargedOverlayRgba,
     webpUrl,
 } from "@/lib/deckMath";
 import {
     BATTLE_TICK_MS,
     buildPlaybackTimeline,
-    chargeOverlayFill,
+    unchargedOverlayFill,
     extractHpDamageEvents,
     formatTimeSec,
     hpDamageEventsForStep,
@@ -20,6 +23,7 @@ import {
 } from "@/lib/battleSim";
 import { useCatalogStore } from "@/stores/catalog";
 import ItemTooltipAnchor from "@/components/ItemTooltipAnchor.vue";
+import { itemCooldownMsForDeckTier } from "@/lib/itemTooltip";
 import type {
     DeckSlotPayload,
     FrameEndItemSnapshot,
@@ -214,14 +218,39 @@ function itemSnapshotForSlot(
 function itemChargeOverlayStyle(
     side: FrameEndSideSnapshot | null,
     slotIndex: number,
+    slot: DeckSlotPayload | undefined,
 ): Record<string, string> | undefined {
+    const row = slot ? catalog.byName.get(slot.item_name) : undefined;
+    if (itemCooldownMsForDeckTier(row, slot?.tier ?? 0) === null) return undefined;
     const it = itemSnapshotForSlot(side, slotIndex);
     if (!it) return undefined;
-    const fill = chargeOverlayFill(it.ChargedTime, it.Cooldown);
+    const cd = it.Cooldown;
+    if (!Number.isFinite(cd) || cd <= 0) return undefined;
+    const fill = unchargedOverlayFill(it.ChargedTime, cd);
     if (fill <= 0) return undefined;
     return {
         height: `${fill * 100}%`,
-        background: chargeOverlayRgba(0.38),
+        background: unchargedOverlayRgba(0.38),
+    };
+}
+
+/** 充能推进位置：黑色未充能遮罩下缘的横向线（与 tooltip「充能」同色） */
+function itemChargeFrontierLineStyle(
+    side: FrameEndSideSnapshot | null,
+    slotIndex: number,
+    slot: DeckSlotPayload | undefined,
+): Record<string, string> | undefined {
+    const row = slot ? catalog.byName.get(slot.item_name) : undefined;
+    if (itemCooldownMsForDeckTier(row, slot?.tier ?? 0) === null) return undefined;
+    const it = itemSnapshotForSlot(side, slotIndex);
+    if (!it) return undefined;
+    const cd = it.Cooldown;
+    if (!Number.isFinite(cd) || cd <= 0) return undefined;
+    const fill = unchargedOverlayFill(it.ChargedTime, cd);
+    if (fill <= 0) return undefined;
+    return {
+        top: `${fill * 100}%`,
+        background: CHARGE_KEYWORD_RGB,
     };
 }
 
@@ -230,7 +259,7 @@ const p1ChargeOverlayStyles = computed((): (Record<string, string> | undefined)[
     const n = slotsP1.value.length;
     const out: (Record<string, string> | undefined)[] = [];
     for (let i = 0; i < n; i++) {
-        out.push(itemChargeOverlayStyle(side, i));
+        out.push(itemChargeOverlayStyle(side, i, slotsP1.value[i]));
     }
     return out;
 });
@@ -240,7 +269,27 @@ const p2ChargeOverlayStyles = computed((): (Record<string, string> | undefined)[
     const n = slotsP2.value.length;
     const out: (Record<string, string> | undefined)[] = [];
     for (let i = 0; i < n; i++) {
-        out.push(itemChargeOverlayStyle(side, i));
+        out.push(itemChargeOverlayStyle(side, i, slotsP2.value[i]));
+    }
+    return out;
+});
+
+const p1ChargeFrontierLineStyles = computed((): (Record<string, string> | undefined)[] => {
+    const side = side0.value;
+    const n = slotsP1.value.length;
+    const out: (Record<string, string> | undefined)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemChargeFrontierLineStyle(side, i, slotsP1.value[i]));
+    }
+    return out;
+});
+
+const p2ChargeFrontierLineStyles = computed((): (Record<string, string> | undefined)[] => {
+    const side = side1.value;
+    const n = slotsP2.value.length;
+    const out: (Record<string, string> | undefined)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemChargeFrontierLineStyle(side, i, slotsP2.value[i]));
     }
     return out;
 });
@@ -281,6 +330,43 @@ const p2DamageBadges = computed(() => {
     const out: ({ widthPx: number; heightPx: number; fontPx: number; text: string } | null)[] = [];
     for (let i = 0; i < n; i++) {
         out.push(itemDamageBadge(side, i));
+    }
+    return out;
+});
+
+function itemFreezeBadge(
+    side: FrameEndSideSnapshot | null,
+    slotIndex: number,
+): { widthPx: number; heightPx: number; fontPx: number; text: string } | null {
+    const it = itemSnapshotForSlot(side, slotIndex);
+    const fr = it?.FreezeRemaining ?? 0;
+    if (!Number.isFinite(fr) || fr <= 0) return null;
+    const widthPx = DAMAGE_BADGE_WIDTH_PX;
+    const heightPx = widthPx / 2;
+    return {
+        widthPx,
+        heightPx,
+        fontPx: Math.max(8, Math.min(11, widthPx * 0.36)),
+        text: (fr / 1000).toFixed(1),
+    };
+}
+
+const p1FreezeBadges = computed(() => {
+    const side = side0.value;
+    const n = slotsP1.value.length;
+    const out: ({ widthPx: number; heightPx: number; fontPx: number; text: string } | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemFreezeBadge(side, i));
+    }
+    return out;
+});
+
+const p2FreezeBadges = computed(() => {
+    const side = side1.value;
+    const n = slotsP2.value.length;
+    const out: ({ widthPx: number; heightPx: number; fontPx: number; text: string } | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemFreezeBadge(side, i));
     }
     return out;
 });
@@ -696,6 +782,21 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             @error="($event.target as HTMLImageElement).style.opacity = '0.2'"
                                         />
                                         <div
+                                            v-if="p1ChargeOverlayStyles[i]"
+                                            class="charge-overlay"
+                                            :style="p1ChargeOverlayStyles[i]"
+                                        />
+                                        <div
+                                            v-if="p1ChargeFrontierLineStyles[i]"
+                                            class="charge-frontier-line"
+                                            :style="p1ChargeFrontierLineStyles[i]"
+                                        />
+                                        <div
+                                            v-if="p1FreezeBadges[i]"
+                                            class="freeze-full-overlay"
+                                            :style="{ background: freezeOverlayRgba(0.38) }"
+                                        />
+                                        <div
                                             v-if="p1DamageBadges[i]"
                                             class="damage-badge"
                                             :style="{
@@ -708,10 +809,17 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             {{ p1DamageBadges[i]!.text }}
                                         </div>
                                         <div
-                                            v-if="p1ChargeOverlayStyles[i]"
-                                            class="charge-overlay"
-                                            :style="p1ChargeOverlayStyles[i]"
-                                        />
+                                            v-if="p1FreezeBadges[i]"
+                                            class="freeze-time-badge"
+                                            :style="{
+                                                width: `${p1FreezeBadges[i]!.widthPx}px`,
+                                                height: `${p1FreezeBadges[i]!.heightPx}px`,
+                                                fontSize: `${p1FreezeBadges[i]!.fontPx}px`,
+                                                background: FREEZE_KEYWORD_RGB,
+                                            }"
+                                        >
+                                            {{ p1FreezeBadges[i]!.text }}
+                                        </div>
                                     </div>
                                     <span class="cap">{{ s.item_name }}</span>
                                 </div>
@@ -761,6 +869,21 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             @error="($event.target as HTMLImageElement).style.opacity = '0.2'"
                                         />
                                         <div
+                                            v-if="p2ChargeOverlayStyles[i]"
+                                            class="charge-overlay"
+                                            :style="p2ChargeOverlayStyles[i]"
+                                        />
+                                        <div
+                                            v-if="p2ChargeFrontierLineStyles[i]"
+                                            class="charge-frontier-line"
+                                            :style="p2ChargeFrontierLineStyles[i]"
+                                        />
+                                        <div
+                                            v-if="p2FreezeBadges[i]"
+                                            class="freeze-full-overlay"
+                                            :style="{ background: freezeOverlayRgba(0.38) }"
+                                        />
+                                        <div
                                             v-if="p2DamageBadges[i]"
                                             class="damage-badge"
                                             :style="{
@@ -773,10 +896,17 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             {{ p2DamageBadges[i]!.text }}
                                         </div>
                                         <div
-                                            v-if="p2ChargeOverlayStyles[i]"
-                                            class="charge-overlay"
-                                            :style="p2ChargeOverlayStyles[i]"
-                                        />
+                                            v-if="p2FreezeBadges[i]"
+                                            class="freeze-time-badge"
+                                            :style="{
+                                                width: `${p2FreezeBadges[i]!.widthPx}px`,
+                                                height: `${p2FreezeBadges[i]!.heightPx}px`,
+                                                fontSize: `${p2FreezeBadges[i]!.fontPx}px`,
+                                                background: FREEZE_KEYWORD_RGB,
+                                            }"
+                                        >
+                                            {{ p2FreezeBadges[i]!.text }}
+                                        </div>
                                     </div>
                                     <span class="cap">{{ s.item_name }}</span>
                                 </div>
@@ -1255,7 +1385,7 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     left: 50%;
     top: 3px;
     transform: translateX(-50%);
-    z-index: 1;
+    z-index: 4;
     box-sizing: border-box;
     display: flex;
     align-items: center;
@@ -1285,9 +1415,41 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 0;
+    top: 0;
     z-index: 2;
     pointer-events: none;
+}
+.charge-frontier-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    z-index: 2;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+.freeze-full-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+}
+.freeze-time-badge {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    pointer-events: none;
+    border-radius: 2px;
 }
 .cap {
     font-size: 0.65rem;

@@ -99,6 +99,8 @@ export interface FrameEndItemSnapshot {
     Cooldown: number;
     /** 引擎有效伤害（含光环）；无则 0 */
     Damage?: number;
+    /** 剩余冻结时间（毫秒），与引擎 `FreezeRemaining` 一致 */
+    FreezeRemaining?: number;
     name?: string;
 }
 

@@ -48,6 +48,7 @@ function parseItemSnapshots(raw: unknown): FrameEndItemSnapshot[] | undefined {
             ChargedTime: Number(o.ChargedTime ?? 0),
             Cooldown: Number(o.Cooldown ?? 0),
             Damage: Number(o.Damage ?? 0),
+            FreezeRemaining: Number(o.FreezeRemaining ?? 0),
             name: typeof o.name === "string" ? o.name : undefined,
         });
     }
@@ -78,10 +79,10 @@ function parseFinalSides(final: unknown): FrameEndSideSnapshot[] | null {
     return out;
 }
 
-/** 充能遮罩高度比例：0 不显示；满充能为 1 */
-export function chargeOverlayFill(chargedMs: number, cooldownMs: number): number {
-    if (cooldownMs <= 0 || chargedMs <= 0) return 0;
-    return Math.min(1, chargedMs / cooldownMs);
+/** 未充能遮罩高度比例：0 表示已充满或无需显示；接近 1 表示几乎全未充能 */
+export function unchargedOverlayFill(chargedMs: number, cooldownMs: number): number {
+    if (cooldownMs <= 0) return 0;
+    return Math.max(0, Math.min(1, 1 - chargedMs / cooldownMs));
 }
 
 /** 解析 detailed 中 `kind: "damage"`（含沙尘暴等同形事件） */
