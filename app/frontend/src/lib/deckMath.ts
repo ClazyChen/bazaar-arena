@@ -7,8 +7,23 @@ export const DAMAGE_KEYWORD_RGB = "rgb(245, 80, 61)";
 /** 与 itemTooltip「冻结」关键词一致 */
 export const FREEZE_KEYWORD_RGB = "rgb(63, 200, 247)";
 
+/** 与 itemTooltip「护盾」「飞行」关键词一致 */
+export const SHIELD_KEYWORD_RGB = "rgb(244, 207, 32)";
+
 /** 与 itemTooltip「弹药」「装填」关键词一致 */
 export const AMMO_KEYWORD_RGB = "rgb(255, 142, 0)";
+
+/** 与 itemTooltip「灼烧」关键词一致 */
+export const BURN_KEYWORD_RGB = "rgb(255, 159, 69)";
+
+/** 与 itemTooltip「剧毒」关键词一致 */
+export const POISON_KEYWORD_RGB = "rgb(14, 190, 79)";
+
+/** 与 itemTooltip「治疗」关键词一致 */
+export const HEAL_KEYWORD_RGB = "rgb(97, 176, 60)";
+
+/** 与 itemTooltip「生命再生」关键词一致 */
+export const REGEN_KEYWORD_RGB = "rgb(142, 234, 49)";
 
 /** 对战卡面充能遮罩（与 CHARGE_KEYWORD_RGB 同色、半透明） */
 export function chargeOverlayRgba(alpha: number): string {

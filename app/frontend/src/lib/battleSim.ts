@@ -3,7 +3,8 @@ import type {
     FrameEndEvent,
     FrameEndItemSnapshot,
     FrameEndSideSnapshot,
-    HpDamageEvent,
+    HudFloatEvent,
+    HudFloatKind,
     SimulateResultBody,
 } from "@/types";
 
@@ -48,6 +49,11 @@ function parseItemSnapshots(raw: unknown): FrameEndItemSnapshot[] | undefined {
             ChargedTime: Number(o.ChargedTime ?? 0),
             Cooldown: Number(o.Cooldown ?? 0),
             Damage: Number(o.Damage ?? 0),
+            Shield: Number(o.Shield ?? 0),
+            Heal: Number(o.Heal ?? 0),
+            Burn: Number(o.Burn ?? 0),
+            Poison: Number(o.Poison ?? 0),
+            Regen: Number(o.Regen ?? 0),
             FreezeRemaining: Number(o.FreezeRemaining ?? 0),
             AmmoCap: Number(o.AmmoCap ?? 0),
             AmmoRemaining: Number(o.AmmoRemaining ?? 0),
@@ -87,51 +93,87 @@ export function unchargedOverlayFill(chargedMs: number, cooldownMs: number): num
     return Math.max(0, Math.min(1, 1 - chargedMs / cooldownMs));
 }
 
-/** 解析 detailed 中 `kind: "damage"`（含沙尘暴等同形事件） */
-export function extractHpDamageEvents(events: BattleDebugEvent[] | undefined): HpDamageEvent[] {
+function parseSide01(v: unknown): 0 | 1 | null {
+    const n = typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN;
+    if (n === 0 || n === 1) return n;
+    return null;
+}
+
+const FLOAT_KIND_ORDER: Record<HudFloatKind, number> = {
+    damage: 0,
+    burn: 1,
+    poison: 2,
+    heal: 3,
+    regen: 4,
+};
+
+/**
+ * 解析 detailed 中飘字相关事件：`damage` / `burn` / `poison` / `heal` / `regen`（与引擎 Sink 字段一致）。
+ */
+export function extractHudFloatEvents(events: BattleDebugEvent[] | undefined): HudFloatEvent[] {
     if (!events?.length) return [];
-    const out: HpDamageEvent[] = [];
+    const out: HudFloatEvent[] = [];
     for (const e of events) {
         if (!e || typeof e !== "object") continue;
         const o = e as Record<string, unknown>;
-        if (o.kind !== "damage") continue;
         const t = o.t;
-        const damage = o.damage;
-        const targetSideRaw = o.targetSide;
-        if (typeof t !== "number" || typeof damage !== "number") continue;
-        if (!Number.isFinite(t) || !Number.isFinite(damage) || damage <= 0) continue;
-        const ts =
-            typeof targetSideRaw === "number"
-                ? targetSideRaw
-                : typeof targetSideRaw === "string"
-                  ? Number(targetSideRaw)
-                  : NaN;
-        if (ts !== 0 && ts !== 1) continue;
-        out.push({
-            t,
-            damage,
-            targetSide: ts as 0 | 1,
-            isCrit: o.isCrit === true,
-        });
+        if (typeof t !== "number" || !Number.isFinite(t)) continue;
+        const kind = o.kind;
+        if (kind === "damage") {
+            const damage = o.damage;
+            const ts = parseSide01(o.targetSide);
+            if (typeof damage !== "number" || !Number.isFinite(damage) || damage <= 0 || ts === null) continue;
+            out.push({
+                t,
+                targetSide: ts,
+                kind: "damage",
+                amount: damage,
+                isCrit: o.isCrit === true,
+            });
+        } else if (kind === "burn") {
+            const burn = o.burn;
+            const ts = parseSide01(o.targetSide);
+            if (typeof burn !== "number" || !Number.isFinite(burn) || burn <= 0 || ts === null) continue;
+            out.push({ t, targetSide: ts, kind: "burn", amount: burn, isCrit: o.isCrit === true });
+        } else if (kind === "poison") {
+            const poison = o.poison;
+            const ts = parseSide01(o.targetSide);
+            if (typeof poison !== "number" || !Number.isFinite(poison) || poison <= 0 || ts === null) continue;
+            out.push({ t, targetSide: ts, kind: "poison", amount: poison, isCrit: o.isCrit === true });
+        } else if (kind === "heal") {
+            const heal = o.heal;
+            const ts = parseSide01(o.sourceSide);
+            if (typeof heal !== "number" || !Number.isFinite(heal) || heal <= 0 || ts === null) continue;
+            out.push({ t, targetSide: ts, kind: "heal", amount: heal, isCrit: o.isCrit === true });
+        } else if (kind === "regen") {
+            const regen = o.regen;
+            const ts = parseSide01(o.targetSide);
+            if (typeof regen !== "number" || !Number.isFinite(regen) || regen <= 0 || ts === null) continue;
+            out.push({ t, targetSide: ts, kind: "regen", amount: regen, isCrit: o.isCrit === true });
+        }
     }
-    out.sort((a, b) => (a.t !== b.t ? a.t - b.t : a.targetSide - b.targetSide));
+    out.sort((a, b) => {
+        if (a.t !== b.t) return a.t - b.t;
+        if (a.targetSide !== b.targetSide) return a.targetSide - b.targetSide;
+        return FLOAT_KIND_ORDER[a.kind] - FLOAT_KIND_ORDER[b.kind];
+    });
     return out;
 }
 
 /**
- * 将伤害归属到时间轴步：区间 (T_{i-1}, T_i]，T_{-1} = -1。
+ * 将飘字事件归属到时间轴步：区间 (T_{i-1}, T_i]，T_{-1} = -1。
  */
-export function hpDamageEventsForStep(
+export function hudFloatEventsForStep(
     steps: PlaybackStep[],
-    all: HpDamageEvent[],
+    all: HudFloatEvent[],
     stepIndex: number,
-): { side0: HpDamageEvent[]; side1: HpDamageEvent[] } {
-    const empty = { side0: [] as HpDamageEvent[], side1: [] as HpDamageEvent[] };
+): { side0: HudFloatEvent[]; side1: HudFloatEvent[] } {
+    const empty = { side0: [] as HudFloatEvent[], side1: [] as HudFloatEvent[] };
     if (stepIndex < 0 || stepIndex >= steps.length) return empty;
     const prevT = stepIndex > 0 ? steps[stepIndex - 1].tMs : -1;
     const curT = steps[stepIndex].tMs;
-    const side0: HpDamageEvent[] = [];
-    const side1: HpDamageEvent[] = [];
+    const side0: HudFloatEvent[] = [];
+    const side1: HudFloatEvent[] = [];
     for (const ev of all) {
         if (ev.t > prevT && ev.t <= curT) {
             if (ev.targetSide === 0) side0.push(ev);

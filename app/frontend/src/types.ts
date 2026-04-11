@@ -78,11 +78,15 @@ export interface SimulateDebugBlock {
 
 export type BattleDebugEvent = FrameEndEvent | Record<string, unknown>;
 
-/** detailed：`kind === "damage"`，承伤方为 targetSide */
-export interface HpDamageEvent {
+/** detailed 飘字：与引擎 `debug.events` 中各 kind 对应 */
+export type HudFloatKind = "damage" | "burn" | "poison" | "heal" | "regen";
+
+export interface HudFloatEvent {
     t: number;
+    /** 在该侧 HUD 上显示（承伤 / 承受 DoT / 获得治疗与再生等） */
     targetSide: 0 | 1;
-    damage: number;
+    kind: HudFloatKind;
+    amount: number;
     isCrit: boolean;
 }
 
@@ -99,6 +103,12 @@ export interface FrameEndItemSnapshot {
     Cooldown: number;
     /** 引擎有效伤害（含光环）；无则 0 */
     Damage?: number;
+    /** 与引擎 `Shield` / `Heal` / `Burn` / `Poison` / `Regen` 物品快照一致 */
+    Shield?: number;
+    Heal?: number;
+    Burn?: number;
+    Poison?: number;
+    Regen?: number;
     /** 剩余冻结时间（毫秒），与引擎 `FreezeRemaining` 一致 */
     FreezeRemaining?: number;
     /** 弹药上限 / 剩余弹药，与引擎 `AmmoCap` / `AmmoRemaining` 一致 */

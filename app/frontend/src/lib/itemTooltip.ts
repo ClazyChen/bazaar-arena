@@ -1,32 +1,37 @@
 import type { ItemRow } from "@/types";
 import {
     AMMO_KEYWORD_RGB,
+    BURN_KEYWORD_RGB,
     CHARGE_KEYWORD_RGB,
     DAMAGE_KEYWORD_RGB,
     FREEZE_KEYWORD_RGB,
+    HEAL_KEYWORD_RGB,
+    POISON_KEYWORD_RGB,
+    REGEN_KEYWORD_RGB,
+    SHIELD_KEYWORD_RGB,
     tierBorderColor,
 } from "@/lib/deckMath";
 
 /** 与 engine/cli ColorizeSummaryLine 关键词配色一致；仅包裹匹配到的子串 */
 const KEYWORD_COLORS: { needle: string; color: string }[] = [
-    { needle: "治疗", color: "rgb(97, 176, 60)" },
+    { needle: "治疗", color: HEAL_KEYWORD_RGB },
     { needle: "生命上限", color: "rgb(97, 176, 60)" },
-    { needle: "生命再生", color: "rgb(142, 234, 49)" },
+    { needle: "生命再生", color: REGEN_KEYWORD_RGB },
     { needle: "弹药", color: AMMO_KEYWORD_RGB },
     { needle: "装填", color: AMMO_KEYWORD_RGB },
     { needle: "加速", color: CHARGE_KEYWORD_RGB },
     { needle: "充能", color: CHARGE_KEYWORD_RGB },
     { needle: "冻结", color: FREEZE_KEYWORD_RGB },
-    { needle: "护盾", color: "rgb(244, 207, 32)" },
-    { needle: "飞行", color: "rgb(244, 207, 32)" },
+    { needle: "护盾", color: SHIELD_KEYWORD_RGB },
+    { needle: "飞行", color: SHIELD_KEYWORD_RGB },
     { needle: "伤害", color: DAMAGE_KEYWORD_RGB },
     { needle: "暴击率", color: DAMAGE_KEYWORD_RGB },
     { needle: "暴击伤害", color: DAMAGE_KEYWORD_RGB },
     { needle: "摧毁", color: "rgb(255, 50, 120)" },
-    { needle: "剧毒", color: "rgb(14, 190, 79)" },
+    { needle: "剧毒", color: POISON_KEYWORD_RGB },
     { needle: "修复", color: "rgb(143, 252, 188)" },
     { needle: "减速", color: "rgb(203, 159, 110)" },
-    { needle: "灼烧", color: "rgb(255, 159, 69)" },
+    { needle: "灼烧", color: BURN_KEYWORD_RGB },
 ];
 
 const MS_DISPLAY_KEYS = new Set(["Cooldown", "Haste", "Slow", "Freeze", "Charge"]);

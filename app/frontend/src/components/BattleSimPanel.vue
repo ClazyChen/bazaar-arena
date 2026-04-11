@@ -3,9 +3,14 @@ import { computed, onUnmounted, ref, watch } from "vue";
 import { fetchDeckSlots, postSaveCliRepro, postSimulate } from "@/api";
 import {
     AMMO_KEYWORD_RGB,
+    BURN_KEYWORD_RGB,
     CHARGE_KEYWORD_RGB,
     DAMAGE_KEYWORD_RGB,
     FREEZE_KEYWORD_RGB,
+    HEAL_KEYWORD_RGB,
+    POISON_KEYWORD_RGB,
+    REGEN_KEYWORD_RGB,
+    SHIELD_KEYWORD_RGB,
     dcardOuterWidthPx,
     freezeOverlayRgba,
     itemArtAspectStyle,
@@ -17,9 +22,9 @@ import {
     BATTLE_TICK_MS,
     buildPlaybackTimeline,
     unchargedOverlayFill,
-    extractHpDamageEvents,
+    extractHudFloatEvents,
     formatTimeSec,
-    hpDamageEventsForStep,
+    hudFloatEventsForStep,
     type PlaybackStep,
 } from "@/lib/battleSim";
 import { useCatalogStore } from "@/stores/catalog";
@@ -29,7 +34,7 @@ import type {
     DeckSlotPayload,
     FrameEndItemSnapshot,
     FrameEndSideSnapshot,
-    HpDamageEvent,
+    HudFloatEvent,
     SimulateCliEnvelope,
 } from "@/types";
 
@@ -121,14 +126,14 @@ const hasBattleResult = computed(
     () => Boolean(simEnvelope.value?.ok && timeline.value.length > 0),
 );
 
-const hpDamageEventsAll = computed(() =>
-    extractHpDamageEvents(simEnvelope.value?.result?.debug?.events),
+const hudFloatEventsAll = computed(() =>
+    extractHudFloatEvents(simEnvelope.value?.result?.debug?.events),
 );
 
 /** 飘字独立队列：随步进追加，动画结束移除，避免播放时每帧被清空 */
 interface HpFloatItem {
     id: number;
-    ev: HpDamageEvent;
+    ev: HudFloatEvent;
 }
 
 const hpFloatActiveP1 = ref<HpFloatItem[]>([]);
@@ -151,8 +156,8 @@ function removeHpFloatP2(id: number): void {
 function appendFloatsForStep(idx: number): void {
     const steps = timeline.value;
     if (steps.length === 0) return;
-    const all = hpDamageEventsAll.value;
-    const { side0, side1 } = hpDamageEventsForStep(steps, all, idx);
+    const all = hudFloatEventsAll.value;
+    const { side0, side1 } = hudFloatEventsForStep(steps, all, idx);
     const add0 = side0.map((ev) => ({ id: ++nextHpFloatId, ev }));
     const add1 = side1.map((ev) => ({ id: ++nextHpFloatId, ev }));
     if (add0.length > 0) {
@@ -190,9 +195,29 @@ watch(maxPlayhead, (m) => {
     if (playheadIndex.value > m) playheadIndex.value = m;
 });
 
-function hpFloatLabel(ev: HpDamageEvent): string {
-    const n = Math.round(ev.damage);
+function hudFloatLabel(ev: HudFloatEvent): string {
+    const n = Math.round(ev.amount);
+    if (ev.kind === "heal" || ev.kind === "regen") {
+        return ev.isCrit ? `+${n}!` : `+${n}`;
+    }
     return ev.isCrit ? `−${n}!` : `−${n}`;
+}
+
+function hudFloatColor(ev: HudFloatEvent): string {
+    switch (ev.kind) {
+        case "damage":
+            return DAMAGE_KEYWORD_RGB;
+        case "burn":
+            return BURN_KEYWORD_RGB;
+        case "poison":
+            return POISON_KEYWORD_RGB;
+        case "heal":
+            return HEAL_KEYWORD_RGB;
+        case "regen":
+            return REGEN_KEYWORD_RGB;
+        default:
+            return DAMAGE_KEYWORD_RGB;
+    }
 }
 
 function outcomeForSide(sideIndex: 0 | 1): { text: string; cls: string } | null {
@@ -295,42 +320,78 @@ const p2ChargeFrontierLineStyles = computed((): (Record<string, string> | undefi
     return out;
 });
 
-/** 徽章宽度 = 小物品（size=1）外宽的 40%；高为宽的一半（2:1） */
+/** 单枚徽章最大宽度 = 小物品（size=1）外宽的 40%；高为宽的一半（2:1） */
 const DAMAGE_BADGE_WIDTH_PX = dcardOuterWidthPx(1) * 0.4;
+const STAT_BADGE_GAP_PX = 2;
+const STAT_BADGE_ROW_PAD_PX = 4;
 
-function itemDamageBadge(
-    side: FrameEndSideSnapshot | null,
-    slotIndex: number,
-): { widthPx: number; heightPx: number; fontPx: number; text: string } | null {
-    const it = itemSnapshotForSlot(side, slotIndex);
-    const d = it?.Damage;
-    if (d === undefined || !Number.isFinite(d) || d <= 0) return null;
-    const widthPx = DAMAGE_BADGE_WIDTH_PX;
-    const heightPx = widthPx / 2;
-    return {
-        widthPx,
-        heightPx,
-        fontPx: Math.max(8, Math.min(11, widthPx * 0.36)),
-        text: String(Math.round(d)),
-    };
+interface ItemStatBadge {
+    text: string;
+    background: string;
+    widthPx: number;
+    heightPx: number;
+    fontPx: number;
 }
 
-const p1DamageBadges = computed(() => {
+const STAT_BADGE_DEFS: { key: keyof Pick<FrameEndItemSnapshot, "Damage" | "Shield" | "Heal" | "Burn" | "Poison" | "Regen">; bg: string }[] = [
+    { key: "Damage", bg: DAMAGE_KEYWORD_RGB },
+    { key: "Shield", bg: SHIELD_KEYWORD_RGB },
+    { key: "Heal", bg: HEAL_KEYWORD_RGB },
+    { key: "Burn", bg: BURN_KEYWORD_RGB },
+    { key: "Poison", bg: POISON_KEYWORD_RGB },
+    { key: "Regen", bg: REGEN_KEYWORD_RGB },
+];
+
+function itemStatBadgeRow(
+    side: FrameEndSideSnapshot | null,
+    slotIndex: number,
+    dcardOuterPx: number,
+): ItemStatBadge[] | null {
+    const it = itemSnapshotForSlot(side, slotIndex);
+    if (!it) return null;
+    const slices: { v: number; bg: string }[] = [];
+    for (const { key, bg } of STAT_BADGE_DEFS) {
+        const raw = it[key];
+        const v = typeof raw === "number" ? raw : Number(raw ?? 0);
+        if (!Number.isFinite(v) || v <= 0) continue;
+        slices.push({ v, bg });
+    }
+    if (slices.length === 0) return null;
+    const n = slices.length;
+    const available = Math.max(
+        0,
+        dcardOuterPx - STAT_BADGE_ROW_PAD_PX - STAT_BADGE_GAP_PX * (n - 1),
+    );
+    const eachW = Math.max(12, Math.min(DAMAGE_BADGE_WIDTH_PX, available / n));
+    const heightPx = eachW / 2;
+    const fontPx = Math.max(6, Math.min(11, eachW * 0.36));
+    return slices.map(({ v, bg }) => ({
+        text: String(Math.round(v)),
+        background: bg,
+        widthPx: eachW,
+        heightPx,
+        fontPx,
+    }));
+}
+
+const p1StatBadgeRows = computed((): (ItemStatBadge[] | null)[] => {
     const side = side0.value;
     const n = slotsP1.value.length;
-    const out: ({ widthPx: number; heightPx: number; fontPx: number; text: string } | null)[] = [];
+    const out: (ItemStatBadge[] | null)[] = [];
     for (let i = 0; i < n; i++) {
-        out.push(itemDamageBadge(side, i));
+        const sz = catalog.byName.get(slotsP1.value[i].item_name)?.size ?? 1;
+        out.push(itemStatBadgeRow(side, i, dcardOuterWidthPx(sz)));
     }
     return out;
 });
 
-const p2DamageBadges = computed(() => {
+const p2StatBadgeRows = computed((): (ItemStatBadge[] | null)[] => {
     const side = side1.value;
     const n = slotsP2.value.length;
-    const out: ({ widthPx: number; heightPx: number; fontPx: number; text: string } | null)[] = [];
+    const out: (ItemStatBadge[] | null)[] = [];
     for (let i = 0; i < n; i++) {
-        out.push(itemDamageBadge(side, i));
+        const sz = catalog.byName.get(slotsP2.value[i].item_name)?.size ?? 1;
+        out.push(itemStatBadgeRow(side, i, dcardOuterWidthPx(sz)));
     }
     return out;
 });
@@ -758,11 +819,6 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                     <span v-if="p1Outcome" class="outcome" :class="p1Outcome.cls">{{ p1Outcome.text }}</span>
                 </header>
                 <div v-if="side0" class="hud">
-                    <div class="nums">
-                        <span v-if="side0.burn > 0" class="burn">灼{{ Math.round(side0.burn) }}</span>
-                        <span v-if="side0.poison > 0" class="poison">毒{{ Math.round(side0.poison) }}</span>
-                        <span v-if="side0.regen > 0" class="regen">再{{ Math.round(side0.regen) }}</span>
-                    </div>
                     <div class="hud-bars-stack">
                         <div v-if="hpFloatActiveP1.length" class="hp-float-layer">
                             <span
@@ -770,9 +826,9 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                 :key="item.id"
                                 class="hp-float"
                                 :class="{ 'hp-float--crit': item.ev.isCrit }"
-                                :style="{ color: DAMAGE_KEYWORD_RGB }"
+                                :style="{ color: hudFloatColor(item.ev) }"
                                 @animationend="removeHpFloatP1(item.id)"
-                            >{{ hpFloatLabel(item.ev) }}</span>
+                            >{{ hudFloatLabel(item.ev) }}</span>
                         </div>
                         <div class="bars">
                             <div v-if="side0.shield > 0" class="bar shield-bar">
@@ -781,7 +837,18 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                             </div>
                             <div class="bar hp-bar">
                                 <div class="fill hp-fill" :style="{ width: `${hpFrac(side0) * 100}%` }" />
-                                <span class="hp-on-bar">{{ Math.round(side0.hp) }}</span>
+                                <div class="hp-on-bar hp-bar-stats">
+                                    <span class="hp-bar-num hp-bar-num--hp">{{ Math.round(side0.hp) }}</span>
+                                    <span v-if="side0.burn > 0" class="hp-bar-num hp-bar-num--burn">{{
+                                        Math.round(side0.burn)
+                                    }}</span>
+                                    <span v-if="side0.poison > 0" class="hp-bar-num hp-bar-num--poison">{{
+                                        Math.round(side0.poison)
+                                    }}</span>
+                                    <span v-if="side0.regen > 0" class="hp-bar-num hp-bar-num--regen">{{
+                                        Math.round(side0.regen)
+                                    }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -833,17 +900,20 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             class="freeze-full-overlay"
                                             :style="{ background: freezeOverlayRgba(0.38) }"
                                         />
-                                        <div
-                                            v-if="p1DamageBadges[i]"
-                                            class="damage-badge"
-                                            :style="{
-                                                width: `${p1DamageBadges[i]!.widthPx}px`,
-                                                height: `${p1DamageBadges[i]!.heightPx}px`,
-                                                fontSize: `${p1DamageBadges[i]!.fontPx}px`,
-                                                background: DAMAGE_KEYWORD_RGB,
-                                            }"
-                                        >
-                                            {{ p1DamageBadges[i]!.text }}
+                                        <div v-if="p1StatBadgeRows[i]?.length" class="stat-badges-row">
+                                            <div
+                                                v-for="(bd, bi) in p1StatBadgeRows[i]!"
+                                                :key="bi"
+                                                class="stat-badge"
+                                                :style="{
+                                                    width: `${bd.widthPx}px`,
+                                                    height: `${bd.heightPx}px`,
+                                                    fontSize: `${bd.fontPx}px`,
+                                                    background: bd.background,
+                                                }"
+                                            >
+                                                {{ bd.text }}
+                                            </div>
                                         </div>
                                         <div
                                             v-if="p1FreezeBadges[i]"
@@ -937,17 +1007,20 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             class="freeze-full-overlay"
                                             :style="{ background: freezeOverlayRgba(0.38) }"
                                         />
-                                        <div
-                                            v-if="p2DamageBadges[i]"
-                                            class="damage-badge"
-                                            :style="{
-                                                width: `${p2DamageBadges[i]!.widthPx}px`,
-                                                height: `${p2DamageBadges[i]!.heightPx}px`,
-                                                fontSize: `${p2DamageBadges[i]!.fontPx}px`,
-                                                background: DAMAGE_KEYWORD_RGB,
-                                            }"
-                                        >
-                                            {{ p2DamageBadges[i]!.text }}
+                                        <div v-if="p2StatBadgeRows[i]?.length" class="stat-badges-row">
+                                            <div
+                                                v-for="(bd, bi) in p2StatBadgeRows[i]!"
+                                                :key="bi"
+                                                class="stat-badge"
+                                                :style="{
+                                                    width: `${bd.widthPx}px`,
+                                                    height: `${bd.heightPx}px`,
+                                                    fontSize: `${bd.fontPx}px`,
+                                                    background: bd.background,
+                                                }"
+                                            >
+                                                {{ bd.text }}
+                                            </div>
                                         </div>
                                         <div
                                             v-if="p2FreezeBadges[i]"
@@ -986,11 +1059,6 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                     </div>
                 </div>
                 <div v-if="side1" class="hud hud-below">
-                    <div class="nums">
-                        <span v-if="side1.burn > 0" class="burn">灼{{ Math.round(side1.burn) }}</span>
-                        <span v-if="side1.poison > 0" class="poison">毒{{ Math.round(side1.poison) }}</span>
-                        <span v-if="side1.regen > 0" class="regen">再{{ Math.round(side1.regen) }}</span>
-                    </div>
                     <div class="hud-bars-stack">
                         <div v-if="hpFloatActiveP2.length" class="hp-float-layer">
                             <span
@@ -998,9 +1066,9 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                 :key="item.id"
                                 class="hp-float"
                                 :class="{ 'hp-float--crit': item.ev.isCrit }"
-                                :style="{ color: DAMAGE_KEYWORD_RGB }"
+                                :style="{ color: hudFloatColor(item.ev) }"
                                 @animationend="removeHpFloatP2(item.id)"
-                            >{{ hpFloatLabel(item.ev) }}</span>
+                            >{{ hudFloatLabel(item.ev) }}</span>
                         </div>
                         <div class="bars">
                             <div v-if="side1.shield > 0" class="bar shield-bar">
@@ -1009,7 +1077,18 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                             </div>
                             <div class="bar hp-bar">
                                 <div class="fill hp-fill" :style="{ width: `${hpFrac(side1) * 100}%` }" />
-                                <span class="hp-on-bar">{{ Math.round(side1.hp) }}</span>
+                                <div class="hp-on-bar hp-bar-stats">
+                                    <span class="hp-bar-num hp-bar-num--hp">{{ Math.round(side1.hp) }}</span>
+                                    <span v-if="side1.burn > 0" class="hp-bar-num hp-bar-num--burn">{{
+                                        Math.round(side1.burn)
+                                    }}</span>
+                                    <span v-if="side1.poison > 0" class="hp-bar-num hp-bar-num--poison">{{
+                                        Math.round(side1.poison)
+                                    }}</span>
+                                    <span v-if="side1.regen > 0" class="hp-bar-num hp-bar-num--regen">{{
+                                        Math.round(side1.regen)
+                                    }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1344,14 +1423,6 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
         opacity: 0;
     }
 }
-.nums {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.5rem;
-    font-size: 0.95rem;
-    line-height: 1.2;
-}
 .hp-on-bar {
     position: absolute;
     inset: 0;
@@ -1359,23 +1430,36 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ffffff;
+    pointer-events: none;
+}
+.hp-bar-stats {
+    flex-wrap: wrap;
+    gap: 0 0.45rem;
+    row-gap: 0;
+    max-width: 100%;
+    padding: 0 4px;
+    box-sizing: border-box;
+}
+.hp-bar-num {
     font-weight: 600;
     font-size: 0.88rem;
     line-height: 1;
-    pointer-events: none;
+    font-variant-numeric: tabular-nums;
     text-shadow:
         0 0 3px #1a1d24,
         0 1px 2px rgba(0, 0, 0, 0.85);
 }
-.burn {
-    color: #ff9f45;
+.hp-bar-num--hp {
+    color: #ffffff;
 }
-.poison {
-    color: #0ebe4f;
+.hp-bar-num--burn {
+    color: rgb(255, 159, 69);
 }
-.regen {
-    color: #8eea31;
+.hp-bar-num--poison {
+    color: rgb(14, 190, 79);
+}
+.hp-bar-num--regen {
+    color: rgb(142, 234, 49);
 }
 .bars {
     display: flex;
@@ -1451,13 +1535,27 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     background: #1a1d24;
     cursor: default;
 }
-.damage-badge {
+.stat-badges-row {
     position: absolute;
     left: 50%;
     top: 3px;
     transform: translateX(-50%);
     z-index: 4;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2px;
+    max-width: calc(100% - 4px);
+    pointer-events: none;
+    padding: 0 2px;
     box-sizing: border-box;
+}
+.stat-badge {
+    box-sizing: border-box;
+    flex: 0 1 auto;
+    min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1465,7 +1563,6 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     line-height: 1;
-    pointer-events: none;
     border-radius: 2px;
 }
 .dcard-art {
