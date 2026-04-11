@@ -56,6 +56,11 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
             position INTEGER NOT NULL,
             item_name TEXT NOT NULL,
             tier INTEGER NOT NULL,
+            custom_0 INTEGER,
+            custom_1 INTEGER,
+            custom_2 INTEGER,
+            custom_3 INTEGER,
+            quest INTEGER,
             FOREIGN KEY (deck_id) REFERENCES decks(id) ON DELETE CASCADE,
             FOREIGN KEY (item_name) REFERENCES items(name),
             UNIQUE(deck_id, position)
@@ -99,6 +104,17 @@ def _migrate_items_tooltip_column(conn: sqlite3.Connection) -> None:
     cols = {str(r[1]) for r in cur.fetchall()}
     if "tooltip_attrs_json" not in cols:
         conn.execute("ALTER TABLE items ADD COLUMN tooltip_attrs_json TEXT")
+
+
+def _migrate_deck_slots_attr_columns(conn: sqlite3.Connection) -> None:
+    cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='deck_slots'")
+    if cur.fetchone() is None:
+        return
+    cur = conn.execute("PRAGMA table_info(deck_slots)")
+    cols = {str(r[1]) for r in cur.fetchall()}
+    for name in ("custom_0", "custom_1", "custom_2", "custom_3", "quest"):
+        if name not in cols:
+            conn.execute(f"ALTER TABLE deck_slots ADD COLUMN {name} INTEGER")
 
 
 def _sync_items(conn: sqlite3.Connection, rows: list[tuple]) -> None:
@@ -157,6 +173,7 @@ def emit_sqlite(items: list[dict], sqlite_path: str | Path) -> None:
         conn.execute("PRAGMA foreign_keys = ON")
         _ensure_schema(conn)
         _migrate_items_tooltip_column(conn)
+        _migrate_deck_slots_attr_columns(conn)
         rows = _build_item_rows(items)
         _sync_items(conn, rows)
         conn.commit()

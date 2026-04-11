@@ -15,6 +15,9 @@ export const useBuilderSession = defineStore("builderSession", () => {
         slots.value = serverSlots.map((s) => ({
             item_name: s.item_name,
             tier: s.tier,
+            ...(s.attrs_override && Object.keys(s.attrs_override).length > 0
+                ? { attrs_override: { ...s.attrs_override } }
+                : {}),
         }));
         dirty.value = false;
     }

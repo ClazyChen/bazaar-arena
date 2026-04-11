@@ -26,9 +26,19 @@ export interface CollectionRow {
     created_at?: string | null;
 }
 
+/** 与后端 / 引擎 attrsOverride 键名一致（小写 snake） */
+export interface DeckSlotAttrsOverride {
+    custom_0?: number;
+    custom_1?: number;
+    custom_2?: number;
+    custom_3?: number;
+    quest?: number;
+}
+
 export interface DeckSlotEntry {
     item_name: string;
     tier: number;
+    attrs_override?: DeckSlotAttrsOverride;
 }
 
 export interface DeckSlotsResponse {
@@ -42,6 +52,7 @@ export interface DeckSlotPayload {
     position: number;
     item_name: string;
     tier: number;
+    attrs_override?: DeckSlotAttrsOverride;
 }
 
 /** 引擎 CLI 顶层输出（stdin job → stdout JSON） */

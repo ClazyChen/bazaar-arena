@@ -53,10 +53,11 @@ static bool ApplySideOverride(core::SideState& out, const SideSpec& spec, std::s
 }
 
 static void ApplyItemCustomOverrides(core::ItemState& item, const ItemSpec& spec) {
-    if (spec.custom_0) item.attrs[core::ItemKey::Custom_0] = *spec.custom_0;
-    if (spec.custom_1) item.attrs[core::ItemKey::Custom_1] = *spec.custom_1;
-    if (spec.custom_2) item.attrs[core::ItemKey::Custom_2] = *spec.custom_2;
-    if (spec.custom_3) item.attrs[core::ItemKey::Custom_3] = *spec.custom_3;
+    if (spec.custom_0.has_value()) item.attrs[core::ItemKey::Custom_0] = *spec.custom_0;
+    if (spec.custom_1.has_value()) item.attrs[core::ItemKey::Custom_1] = *spec.custom_1;
+    if (spec.custom_2.has_value()) item.attrs[core::ItemKey::Custom_2] = *spec.custom_2;
+    if (spec.custom_3.has_value()) item.attrs[core::ItemKey::Custom_3] = *spec.custom_3;
+    if (spec.quest.has_value()) item.attrs[core::ItemKey::Quest] = *spec.quest;
 }
 
 }  // namespace

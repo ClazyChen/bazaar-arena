@@ -17,6 +17,18 @@ def default_db_path() -> Path:
     return repo_root() / "app" / "backend" / "data" / "bazaararena.db"
 
 
+def _migrate_deck_slots_attr_columns(conn: sqlite3.Connection) -> None:
+    """与 tools/item_codegen emit_sqlite 一致：为 deck_slots 补全 Custom/Quest 可空列。"""
+    cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='deck_slots'")
+    if cur.fetchone() is None:
+        return
+    cur = conn.execute("PRAGMA table_info(deck_slots)")
+    cols = {str(r[1]) for r in cur.fetchall()}
+    for name in ("custom_0", "custom_1", "custom_2", "custom_3", "quest"):
+        if name not in cols:
+            conn.execute(f"ALTER TABLE deck_slots ADD COLUMN {name} INTEGER")
+
+
 def get_connection() -> sqlite3.Connection:
     path = default_db_path()
     if not path.exists():
@@ -24,4 +36,6 @@ def get_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(str(path))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    _migrate_deck_slots_attr_columns(conn)
+    conn.commit()
     return conn

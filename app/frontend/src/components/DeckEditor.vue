@@ -11,12 +11,22 @@ import {
     usedSlots,
     webpUrl,
 } from "@/lib/deckMath";
+import {
+    attrsOverrideFromDraft,
+    draftFromSlot,
+    type SlotAttrDraft,
+} from "@/lib/deckSlotAttrs";
 import { patchDeck, saveDeckSlots } from "@/api";
 import ItemTooltipAnchor from "@/components/ItemTooltipAnchor.vue";
 import type { DeckSlotEntry } from "@/types";
 
 const props = defineProps<{
     deckId: number | null;
+}>();
+
+const emit = defineEmits<{
+    /** 保存成功（含等级/槽位写入服务端）后通知父级刷新卡组列表等 */
+    saved: [];
 }>();
 
 const catalog = useCatalogStore();
@@ -26,6 +36,16 @@ const filterHero = ref<string>("all");
 const filterSize = ref<string>("all");
 const filterTier = ref<string>("all");
 const saveMsg = ref<string | null>(null);
+
+/** 双击编辑 Custom/Quest */
+const editIndex = ref<number | null>(null);
+const editDraft = ref<SlotAttrDraft>({
+    custom_0: 0,
+    custom_1: 0,
+    custom_2: 0,
+    custom_3: 0,
+    quest: 0,
+});
 
 /** 卡组内卡牌拖拽：用于「拖出条带则移除」与条带内 drop 的协调 */
 const deckDragFrom = ref<number | null>(null);
@@ -44,6 +64,12 @@ const remainingSlotUnits = computed(() => Math.max(0, budget.value - used.value)
 const emptyGhostIndices = computed(() =>
     Array.from({ length: remainingSlotUnits.value }, (_, i) => i),
 );
+
+const editSlotTitle = computed(() => {
+    const i = editIndex.value;
+    if (i === null) return "";
+    return session.slots[i]?.item_name ?? "";
+});
 
 const heroes = computed(() => {
     const s = new Set<string>();
@@ -83,6 +109,7 @@ async function onSave(): Promise<void> {
         await saveDeckSlots(props.deckId, session.slots);
         session.syncSavedLevel(session.editorLevel);
         saveMsg.value = "已保存";
+        emit("saved");
     } catch (e) {
         saveMsg.value = e instanceof Error ? e.message : String(e);
     }
@@ -291,6 +318,47 @@ function onCardContextMenu(index: number, ev: MouseEvent): void {
     next[index] = { ...e, tier: nt };
     session.setSlots(next);
 }
+
+function openSlotEditor(index: number): void {
+    const s = session.slots[index];
+    if (!s) return;
+    const it = catalog.byName.get(s.item_name);
+    editIndex.value = index;
+    editDraft.value = draftFromSlot(s, it, s.tier);
+}
+
+function closeSlotEditorCancel(): void {
+    editIndex.value = null;
+}
+
+function onSlotEditReset(): void {
+    const i = editIndex.value;
+    if (i === null) return;
+    const s = session.slots[i];
+    const it = catalog.byName.get(s.item_name);
+    editDraft.value = draftFromSlot({ tier: s.tier }, it, s.tier);
+}
+
+function draftIsValid(d: SlotAttrDraft): boolean {
+    const vals = [d.custom_0, d.custom_1, d.custom_2, d.custom_3, d.quest];
+    return vals.every((v) => typeof v === "number" && Number.isFinite(v));
+}
+
+function onSlotEditConfirm(): void {
+    const i = editIndex.value;
+    if (i === null) return;
+    if (!draftIsValid(editDraft.value)) {
+        window.alert("请输入有效整数。");
+        return;
+    }
+    const s = session.slots[i];
+    const it = catalog.byName.get(s.item_name);
+    const ao = attrsOverrideFromDraft(it, s.tier, editDraft.value);
+    const next = session.slots.slice();
+    next[i] = { ...s, attrs_override: ao };
+    session.setSlots(next);
+    editIndex.value = null;
+}
 </script>
 
 <template>
@@ -331,6 +399,7 @@ function onCardContextMenu(index: number, ev: MouseEvent): void {
                             :item="catalog.byName.get(s.item_name)"
                             mode="deck"
                             :tier="s.tier"
+                            :attrs-override="s.attrs_override"
                         >
                             <div
                                 class="dcard"
@@ -342,6 +411,7 @@ function onCardContextMenu(index: number, ev: MouseEvent): void {
                                 draggable="true"
                                 @dragstart="onDeckDragStart(i, $event)"
                                 @dragend="onDeckDragEnd"
+                                @dblclick.stop="openSlotEditor(i)"
                                 @contextmenu="onCardContextMenu(i, $event)"
                             >
                                 <div
@@ -383,8 +453,58 @@ function onCardContextMenu(index: number, ev: MouseEvent): void {
                 </div>
             </div>
             <p class="hint">
-                右键物品循环等级（铜～钻）；从下方拖入添加；卡组内拖拽排序；将卡牌拖出上方虚线区域可移除。
+                右键物品循环等级（铜～钻）；双击物品可复写 Custom0–3 与 Quest；从下方拖入添加；卡组内拖拽排序；将卡牌拖出上方虚线区域可移除。
             </p>
+
+            <Teleport to="body">
+                <div
+                    v-if="editIndex !== null"
+                    class="slot-attr-overlay"
+                    tabindex="-1"
+                    @click.self="closeSlotEditorCancel"
+                    @keydown.escape="closeSlotEditorCancel"
+                >
+                    <div class="slot-attr-panel" role="dialog" aria-modal="true" @click.stop>
+                        <div class="slot-attr-head">
+                            <h3 class="slot-attr-title">物品数值复写</h3>
+                            <p class="slot-attr-sub">{{ editSlotTitle }}</p>
+                        </div>
+                        <div class="slot-attr-fields">
+                            <label class="slot-attr-row"
+                                ><span>Custom 0</span
+                                ><input v-model.number="editDraft.custom_0" type="number" step="1"
+                            /></label>
+                            <label class="slot-attr-row"
+                                ><span>Custom 1</span
+                                ><input v-model.number="editDraft.custom_1" type="number" step="1"
+                            /></label>
+                            <label class="slot-attr-row"
+                                ><span>Custom 2</span
+                                ><input v-model.number="editDraft.custom_2" type="number" step="1"
+                            /></label>
+                            <label class="slot-attr-row"
+                                ><span>Custom 3</span
+                                ><input v-model.number="editDraft.custom_3" type="number" step="1"
+                            /></label>
+                            <label class="slot-attr-row"
+                                ><span>Quest</span
+                                ><input v-model.number="editDraft.quest" type="number" step="1"
+                            /></label>
+                        </div>
+                        <div class="slot-attr-actions">
+                            <button type="button" class="slot-attr-btn secondary" @click="onSlotEditReset">
+                                重置
+                            </button>
+                            <button type="button" class="slot-attr-btn secondary" @click="closeSlotEditorCancel">
+                                取消
+                            </button>
+                            <button type="button" class="slot-attr-btn primary" @click="onSlotEditConfirm">
+                                确定
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Teleport>
 
             <div class="pool-head">
                 <span class="fil">
@@ -600,5 +720,85 @@ function onCardContextMenu(index: number, ev: MouseEvent): void {
     padding: 4px;
     border: 1px solid #2f3540;
     border-radius: 8px;
+}
+
+.slot-attr-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 1rem;
+    box-sizing: border-box;
+}
+.slot-attr-panel {
+    width: min(360px, 100%);
+    border-radius: 10px;
+    border: 1px solid #3d4450;
+    background: #1e2229;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+.slot-attr-head {
+    margin-bottom: 0.75rem;
+}
+.slot-attr-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e8eaef;
+}
+.slot-attr-sub {
+    margin: 0.35rem 0 0;
+    font-size: 0.85rem;
+    color: #9aa3b2;
+    word-break: break-all;
+}
+.slot-attr-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.slot-attr-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    color: #c4cad6;
+}
+.slot-attr-row input {
+    width: 8rem;
+    padding: 0.3rem 0.45rem;
+    border-radius: 4px;
+    border: 1px solid #3d4450;
+    background: #22262e;
+    color: #e8eaef;
+}
+.slot-attr-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+.slot-attr-btn {
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #3d4450;
+    background: #2a303a;
+    color: #e8eaef;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.slot-attr-btn.primary {
+    border-color: #3d6fb8;
+    background: #2a4a78;
+    color: #fff;
+}
+.slot-attr-btn.secondary:hover {
+    background: #323844;
 }
 </style>

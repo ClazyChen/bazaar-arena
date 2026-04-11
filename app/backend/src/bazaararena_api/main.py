@@ -8,6 +8,7 @@ from urllib.parse import unquote
 from flask import Flask, abort, jsonify, request, send_file
 
 from bazaararena_api.db import default_db_path, get_connection, repo_root
+from bazaararena_api.slot_attrs import api_slot_dict_from_row, parse_attrs_override_from_put_entry
 from bazaararena_api.deck_rules import max_slots_for_level
 from bazaararena_api.simulate_run import (
     build_cli_repro_document,
@@ -328,13 +329,31 @@ def create_app() -> Flask:
             conn.commit()
             new_id = int(conn.execute("SELECT last_insert_rowid()").fetchone()[0])
             slots = conn.execute(
-                "SELECT position, item_name, tier FROM deck_slots WHERE deck_id = ? ORDER BY position",
+                """
+                SELECT position, item_name, tier, custom_0, custom_1, custom_2, custom_3, quest
+                FROM deck_slots WHERE deck_id = ? ORDER BY position
+                """,
                 (did,),
             ).fetchall()
             for s in slots:
                 conn.execute(
-                    "INSERT INTO deck_slots (deck_id, position, item_name, tier) VALUES (?, ?, ?, ?)",
-                    (new_id, int(s["position"]), str(s["item_name"]), int(s["tier"])),
+                    """
+                    INSERT INTO deck_slots (
+                        deck_id, position, item_name, tier,
+                        custom_0, custom_1, custom_2, custom_3, quest
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        new_id,
+                        int(s["position"]),
+                        str(s["item_name"]),
+                        int(s["tier"]),
+                        s["custom_0"],
+                        s["custom_1"],
+                        s["custom_2"],
+                        s["custom_3"],
+                        s["quest"],
+                    ),
                 )
             conn.commit()
             r = conn.execute(
@@ -355,10 +374,13 @@ def create_app() -> Flask:
             if not deck:
                 return jsonify({"error": "not found"}), 404
             cur = conn.execute(
-                "SELECT position, item_name, tier FROM deck_slots WHERE deck_id = ? ORDER BY position",
+                """
+                SELECT position, item_name, tier, custom_0, custom_1, custom_2, custom_3, quest
+                FROM deck_slots WHERE deck_id = ? ORDER BY position
+                """,
                 (did,),
             )
-            slots = [{"position": int(r["position"]), "item_name": r["item_name"], "tier": int(r["tier"])} for r in cur]
+            slots = [api_slot_dict_from_row(r) for r in cur]
             return jsonify(
                 {
                     "deck_id": did,
@@ -392,7 +414,7 @@ def create_app() -> Flask:
             item_by_name = {r["name"]: (int(r["size"]), int(r["min_tier"])) for r in item_rows}
 
             total = 0
-            normalized: list[tuple[str, int]] = []
+            normalized: list[tuple[str, int, int | None, int | None, int | None, int | None, int | None]] = []
             for i, entry in enumerate(slots_in):
                 if not isinstance(entry, dict):
                     return jsonify({"error": f"slots[{i}] invalid"}), 400
@@ -405,6 +427,10 @@ def create_app() -> Flask:
                     tier_i = int(tier)
                 except (TypeError, ValueError):
                     return jsonify({"error": f"slots[{i}] invalid tier"}), 400
+                try:
+                    c0, c1, c2, c3, quest = parse_attrs_override_from_put_entry(entry, i)
+                except ValueError as e:
+                    return jsonify({"error": str(e)}), 400
                 if item_name not in item_by_name:
                     return jsonify({"error": f"unknown item: {item_name}"}), 400
                 size_i, min_tier = item_by_name[item_name]
@@ -417,13 +443,18 @@ def create_app() -> Flask:
                 total += size_i
                 if total > budget:
                     return jsonify({"error": "exceeds slot budget for this level"}), 400
-                normalized.append((item_name, tier_i))
+                normalized.append((item_name, tier_i, c0, c1, c2, c3, quest))
 
             conn.execute("DELETE FROM deck_slots WHERE deck_id = ?", (did,))
-            for pos, (item_name, tier_i) in enumerate(normalized):
+            for pos, (item_name, tier_i, c0, c1, c2, c3, quest) in enumerate(normalized):
                 conn.execute(
-                    "INSERT INTO deck_slots (deck_id, position, item_name, tier) VALUES (?, ?, ?, ?)",
-                    (did, pos, item_name, tier_i),
+                    """
+                    INSERT INTO deck_slots (
+                        deck_id, position, item_name, tier,
+                        custom_0, custom_1, custom_2, custom_3, quest
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (did, pos, item_name, tier_i, c0, c1, c2, c3, quest),
                 )
             conn.commit()
             return jsonify({"ok": True, "max_slots": budget, "used_slots": total})

@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from bazaararena_api.db import get_connection, repo_root
+from bazaararena_api.slot_attrs import api_slot_dict_from_row, engine_attrs_override_from_slot_dict
 
 TIER_TO_ENGINE = ("bronze", "silver", "gold", "diamond", "legendary")
 
@@ -81,13 +82,13 @@ def ensure_cli_identity(cli: Path) -> None:
 
 def _deck_slots(conn, deck_id: int) -> list[dict[str, object]]:
     cur = conn.execute(
-        "SELECT position, item_name, tier FROM deck_slots WHERE deck_id = ? ORDER BY position",
+        """
+        SELECT position, item_name, tier, custom_0, custom_1, custom_2, custom_3, quest
+        FROM deck_slots WHERE deck_id = ? ORDER BY position
+        """,
         (deck_id,),
     )
-    return [
-        {"position": int(r["position"]), "item_name": r["item_name"], "tier": int(r["tier"])}
-        for r in cur.fetchall()
-    ]
+    return [api_slot_dict_from_row(r) for r in cur.fetchall()]
 
 
 def _deck_repro_snapshot(conn, deck_id: int) -> dict[str, object]:
@@ -166,17 +167,19 @@ def build_simulate_job(
                 raise ValueError(f"deck not found: {did}")
             level = int(row["player_level"])
             slots = _deck_slots(conn, did)
-            items: list[dict[str, str]] = []
+            items: list[dict[str, object]] = []
             for s in slots:
                 tier_i = int(s["tier"])
                 if tier_i < 0 or tier_i > 4:
                     raise ValueError(f"invalid tier {tier_i} for deck {did}")
-                items.append(
-                    {
-                        "key": str(s["item_name"]),
-                        "tier": TIER_TO_ENGINE[tier_i],
-                    }
-                )
+                item: dict[str, object] = {
+                    "key": str(s["item_name"]),
+                    "tier": TIER_TO_ENGINE[tier_i],
+                }
+                eng_ao = engine_attrs_override_from_slot_dict(s)
+                if eng_ao:
+                    item["attrsOverride"] = eng_ao
+                items.append(item)
             sides_payload.append(
                 {
                     "sideId": len(sides_payload),

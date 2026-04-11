@@ -18,21 +18,24 @@ const emit = defineEmits<{
 
 const dragId = ref<number | null>(null);
 
-function label(d: DeckRow): string {
+function deckRowLabel(d: DeckRow): string {
     return `[${d.player_level}] ${d.name}`;
 }
 
-function onDragStart(id: number): void {
+/** 拖动手柄发起拖动（避免整行 draggable + 内嵌 button 导致无法拖动） */
+function onHandleDragStart(ev: DragEvent, id: number): void {
     dragId.value = id;
+    ev.dataTransfer?.setData("text/plain", String(id));
+    ev.dataTransfer!.effectAllowed = "move";
 }
 
 function onDragEnd(): void {
     dragId.value = null;
 }
 
-function onDropOver(targetId: number): void {
+function onDropOver(targetId: number, ev: DragEvent): void {
+    ev.preventDefault();
     const from = dragId.value;
-    dragId.value = null;
     if (from === null || from === targetId) return;
     const ids = props.decks.map((d) => d.id);
     const fi = ids.indexOf(from);
@@ -56,14 +59,18 @@ function onDropOver(targetId: number): void {
                 :key="d.id"
                 class="row"
                 :class="{ active: selectedId === d.id }"
-                draggable="true"
-                @dragstart="onDragStart(d.id)"
-                @dragend="onDragEnd"
                 @dragover.prevent
-                @drop="onDropOver(d.id)"
+                @drop.prevent="onDropOver(d.id, $event)"
             >
+                <span
+                    class="drag-handle"
+                    title="拖动排序"
+                    draggable="true"
+                    @dragstart="onHandleDragStart($event, d.id)"
+                    @dragend="onDragEnd"
+                >≡</span>
                 <button type="button" class="row-main" @click="emit('select', d.id)">
-                    {{ label(d) }}
+                    {{ deckRowLabel(d) }}
                 </button>
                 <span class="ops">
                     <button type="button" class="mini" title="复制" @click.stop="emit('duplicate', d.id)">
@@ -112,6 +119,23 @@ function onDropOver(targetId: number): void {
     gap: 0.25rem;
     border-radius: 6px;
     margin-bottom: 2px;
+}
+.drag-handle {
+    flex-shrink: 0;
+    width: 1.25rem;
+    text-align: center;
+    cursor: grab;
+    user-select: none;
+    color: #6a7380;
+    font-size: 0.95rem;
+    line-height: 1;
+    padding: 0.35rem 0.1rem;
+}
+.drag-handle:active {
+    cursor: grabbing;
+}
+.drag-handle:hover {
+    color: #b8c0cc;
 }
 .row.active {
     background: #2a3648;

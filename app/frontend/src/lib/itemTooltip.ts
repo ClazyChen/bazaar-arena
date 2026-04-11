@@ -1,4 +1,4 @@
-import type { ItemRow } from "@/types";
+import type { DeckSlotAttrsOverride, ItemRow } from "@/types";
 import {
     AMMO_KEYWORD_RGB,
     BURN_KEYWORD_RGB,
@@ -136,6 +136,23 @@ function getTierArray(attrs: Record<string, number[]> | null | undefined, key: s
     return a;
 }
 
+/** Desc 占位符引擎键名 → 卡组 attrs_override 字段（仅这些键支持「已复写」展示） */
+const DESC_KEY_TO_DECK_OVERRIDE: Partial<Record<string, keyof DeckSlotAttrsOverride>> = {
+    Custom_0: "custom_0",
+    Custom_1: "custom_1",
+    Custom_2: "custom_2",
+    Custom_3: "custom_3",
+    Quest: "quest",
+};
+
+function getDeckAttrOverride(engineKey: string, o?: DeckSlotAttrsOverride | null): number | undefined {
+    if (!o) return undefined;
+    const field = DESC_KEY_TO_DECK_OVERRIDE[engineKey];
+    if (!field) return undefined;
+    const v = o[field];
+    return v !== undefined && v !== null ? v : undefined;
+}
+
 function valuesAllEqual(arr: number[], eps = 1e-6): boolean {
     if (arr.length <= 1) return true;
     const f = arr[0];
@@ -182,6 +199,8 @@ function formatLadderColoredHtml(
         .join('<span style="opacity:0.55"> » </span>');
 }
 
+const OVERRIDDEN_SUFFIX_HTML = `<span style="opacity:0.82;font-weight:400;color:#9aa3b2">${escapeHtml("（已复写）")}</span>`;
+
 /** Desc 占位符内展示的 HTML（已含上色与前后缀） */
 function formatPlaceholderValueHtml(
     key: string,
@@ -191,19 +210,22 @@ function formatPlaceholderValueHtml(
     minTier: number,
     leadingPlus: boolean,
     trailingPercent: boolean,
+    attrsOverride?: DeckSlotAttrsOverride | null,
 ): string {
-    if (!arr || arr.length === 0) {
+    const ov = mode === "deck" ? getDeckAttrOverride(key, attrsOverride) : undefined;
+    if ((!arr || arr.length === 0) && ov === undefined) {
         return escapeHtml("—");
     }
     const t = Math.min(Math.max(tier, 0), 4);
     if (mode === "deck") {
-        const v = arr[t] ?? arr[0];
-        const core = valuesAllEqual(arr)
-            ? formatNumericDefaultHtml(key, v)
-            : formatNumericTierHtml(key, v, t);
-        return wrapAffixes(core, leadingPlus, trailingPercent);
+        const v = ov !== undefined ? ov : arr![t] ?? arr![0];
+        const core = formatNumericDefaultHtml(key, v);
+        const wrapped = wrapAffixes(core, leadingPlus, trailingPercent);
+        return ov !== undefined ? wrapped + OVERRIDDEN_SUFFIX_HTML : wrapped;
     }
-    const sliced = sliceTierValuesForPoolDisplay(arr, minTier);
+    // pool：首段守卫已保证有阶梯数据（无 attrs 时不会进入此处）
+    const poolArr = arr as number[];
+    const sliced = sliceTierValuesForPoolDisplay(poolArr, minTier);
     if (sliced.length === 0) return escapeHtml("?");
     const startTier = Math.min(Math.max(minTier, 0), 4);
     if (sliced.length === 1 || valuesAllEqual(sliced)) {
@@ -234,6 +256,7 @@ function formatDescHtml(
     mode: "deck" | "pool",
     tier: number,
     minTier: number,
+    attrsOverride?: DeckSlotAttrsOverride | null,
 ): string {
     const re = /\{([^}]+)\}/g;
     let out = "";
@@ -245,9 +268,21 @@ function formatDescHtml(
         const inner = m[1] ?? "";
         const { key, leadingPlus, trailingPercent } = normalizePlaceholderInner(inner);
         const arr = getTierArray(attrs, key);
-        const innerHtml = arr
-            ? formatPlaceholderValueHtml(key, arr, mode, tier, minTier, leadingPlus, trailingPercent)
-            : escapeHtml("—");
+        const hasDeckOverride =
+            mode === "deck" && getDeckAttrOverride(key, attrsOverride) !== undefined;
+        const innerHtml =
+            arr || hasDeckOverride
+                ? formatPlaceholderValueHtml(
+                      key,
+                      arr,
+                      mode,
+                      tier,
+                      minTier,
+                      leadingPlus,
+                      trailingPercent,
+                      attrsOverride,
+                  )
+                : escapeHtml("—");
         out += `<span class="it-ph">${innerHtml}</span>`;
         last = m.index + m[0].length;
     }
@@ -271,7 +306,7 @@ export function itemCooldownMsForDeckTier(item: ItemRow | undefined, tier: numbe
 
 export function buildItemTooltipHtml(
     item: ItemRow,
-    opts: { mode: "deck" | "pool"; tier?: number },
+    opts: { mode: "deck" | "pool"; tier?: number; attrs_override?: DeckSlotAttrsOverride | null },
 ): string {
     const attrs = item.tooltip_attrs ?? null;
     const tier = opts.tier ?? 0;
@@ -286,9 +321,7 @@ export function buildItemTooltipHtml(
         let cdInnerHtml: string;
         if (opts.mode === "deck") {
             const v = cdArr[tDeck] ?? cdArr[0];
-            cdInnerHtml = valuesAllEqual(cdArr)
-                ? formatNumericDefaultHtml("Cooldown", v)
-                : formatNumericTierHtml("Cooldown", v, tDeck);
+            cdInnerHtml = formatNumericDefaultHtml("Cooldown", v);
         } else {
             const sliced = sliceTierValuesForPoolDisplay(cdArr, minTier);
             const startTier = Math.min(Math.max(minTier, 0), 4);
@@ -303,7 +336,14 @@ export function buildItemTooltipHtml(
     }
 
     const descProcessed = preprocessDescForTooltip(item.desc);
-    const descHtml = formatDescHtml(descProcessed, attrs, opts.mode, tier, minTier);
+    const descHtml = formatDescHtml(
+        descProcessed,
+        attrs,
+        opts.mode,
+        tier,
+        minTier,
+        opts.mode === "deck" ? opts.attrs_override : undefined,
+    );
 
     return `<div class="it-tip"><div class="it-name">${name}</div>${sizeLine}${cooldownBlock}<div class="it-desc">${descHtml}</div></div>`;
 }

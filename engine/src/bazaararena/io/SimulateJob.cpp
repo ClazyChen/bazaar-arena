@@ -72,8 +72,9 @@ static bool ReadAttrsOverrideItem(const JsonValue& obj, ItemSpec& item, std::str
         else if (k == "custom_1") item.custom_1 = *vi;
         else if (k == "custom_2") item.custom_2 = *vi;
         else if (k == "custom_3") item.custom_3 = *vi;
+        else if (k == "quest") item.quest = *vi;
         else {
-            err = "payload.sides[*].items[*].attrsOverride only allows custom_0..custom_3";
+            err = "payload.sides[*].items[*].attrsOverride only allows custom_0..custom_3, quest";
             return false;
         }
     }

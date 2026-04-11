@@ -28,6 +28,9 @@ int BattleContext::GetItemInt(const ItemState* item, int key) const {
         ctx.caster = &aura_caster;
         for (int i = 0; i < aura_caster.templ->aura_count; i++) {
             auto& aura = aura_caster.templ->auras[i];
+            // 只累计「目标属性为当前读取的 key」的光环；否则多光环物品（如同时改 Heal 与 Value）
+            // 会在读 Value 时仍执行 Heal 光环公式，而 Heal 公式含 Caster<Value>，导致无限递归与栈溢出。
+            if (aura.attribute != key) continue;
             if (aura.condition(ctx) == 0) continue;
             auto aura_value = aura.value(ctx);
             if (aura.percent) {

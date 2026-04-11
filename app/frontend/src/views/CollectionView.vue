@@ -247,7 +247,7 @@ async function onReorderDeck(order: number[]): Promise<void> {
                 />
             </aside>
             <main class="main">
-                <DeckEditor v-if="viewMode === 'edit'" :deck-id="editorDeckId" />
+                <DeckEditor v-if="viewMode === 'edit'" :deck-id="editorDeckId" @saved="loadDecks" />
                 <BattleSimPanel
                     v-else
                     :deck-id-p1="p1DeckId"

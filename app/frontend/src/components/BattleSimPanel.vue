@@ -864,6 +864,7 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                 :item="catalog.byName.get(s.item_name)"
                                 mode="deck"
                                 :tier="s.tier"
+                                :attrs-override="s.attrs_override"
                             >
                                 <div
                                     class="dcard"
@@ -971,6 +972,7 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                 :item="catalog.byName.get(s.item_name)"
                                 mode="deck"
                                 :tier="s.tier"
+                                :attrs-override="s.attrs_override"
                             >
                                 <div
                                     class="dcard"

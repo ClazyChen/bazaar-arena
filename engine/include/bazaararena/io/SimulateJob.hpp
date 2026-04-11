@@ -20,6 +20,7 @@ struct ItemSpec final {
     std::optional<int> custom_1;
     std::optional<int> custom_2;
     std::optional<int> custom_3;
+    std::optional<int> quest;
 };
 
 struct SideSpec final {

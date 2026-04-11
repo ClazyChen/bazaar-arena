@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from "vue";
-import type { ItemRow } from "@/types";
+import type { DeckSlotAttrsOverride, ItemRow } from "@/types";
 import { buildItemTooltipHtml } from "@/lib/itemTooltip";
 
 const props = defineProps<{
@@ -8,6 +8,8 @@ const props = defineProps<{
     mode: "deck" | "pool";
     /** 卡组内物品当前稀有度档位 0..4 */
     tier?: number;
+    /** 卡组模式下 Custom/Quest 复写，用于 Desc 占位符与「已复写」标注 */
+    attrsOverride?: DeckSlotAttrsOverride | null;
 }>();
 
 const show = ref(false);
@@ -21,6 +23,7 @@ const html = computed(() => {
     return buildItemTooltipHtml(props.item, {
         mode: props.mode,
         tier: props.tier ?? 0,
+        attrs_override: props.mode === "deck" ? props.attrsOverride : undefined,
     });
 });
 
