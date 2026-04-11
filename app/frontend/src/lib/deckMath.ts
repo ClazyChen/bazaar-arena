@@ -7,6 +7,9 @@ export const DAMAGE_KEYWORD_RGB = "rgb(245, 80, 61)";
 /** 与 itemTooltip「冻结」关键词一致 */
 export const FREEZE_KEYWORD_RGB = "rgb(63, 200, 247)";
 
+/** 与 itemTooltip「弹药」「装填」关键词一致 */
+export const AMMO_KEYWORD_RGB = "rgb(255, 142, 0)";
+
 /** 对战卡面充能遮罩（与 CHARGE_KEYWORD_RGB 同色、半透明） */
 export function chargeOverlayRgba(alpha: number): string {
     return `rgba(0, 236, 195, ${alpha})`;

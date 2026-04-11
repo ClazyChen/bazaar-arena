@@ -1,13 +1,19 @@
 import type { ItemRow } from "@/types";
-import { CHARGE_KEYWORD_RGB, DAMAGE_KEYWORD_RGB, FREEZE_KEYWORD_RGB, tierBorderColor } from "@/lib/deckMath";
+import {
+    AMMO_KEYWORD_RGB,
+    CHARGE_KEYWORD_RGB,
+    DAMAGE_KEYWORD_RGB,
+    FREEZE_KEYWORD_RGB,
+    tierBorderColor,
+} from "@/lib/deckMath";
 
 /** 与 engine/cli ColorizeSummaryLine 关键词配色一致；仅包裹匹配到的子串 */
 const KEYWORD_COLORS: { needle: string; color: string }[] = [
     { needle: "治疗", color: "rgb(97, 176, 60)" },
     { needle: "生命上限", color: "rgb(97, 176, 60)" },
     { needle: "生命再生", color: "rgb(142, 234, 49)" },
-    { needle: "弹药", color: "rgb(255, 142, 0)" },
-    { needle: "装填", color: "rgb(255, 142, 0)" },
+    { needle: "弹药", color: AMMO_KEYWORD_RGB },
+    { needle: "装填", color: AMMO_KEYWORD_RGB },
     { needle: "加速", color: CHARGE_KEYWORD_RGB },
     { needle: "充能", color: CHARGE_KEYWORD_RGB },
     { needle: "冻结", color: FREEZE_KEYWORD_RGB },

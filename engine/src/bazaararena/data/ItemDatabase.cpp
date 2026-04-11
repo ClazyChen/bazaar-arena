@@ -19,6 +19,7 @@ int ComputeDerivedTags(const core::ItemTemplate& templ) {
     // 用 Bronze tier 做静态推导（此阶段派生标签不考虑随 tier 变化）
     const auto& attrs = templ.attributes[core::ItemTier::Bronze];
     if (attrs[core::ItemKey::Cooldown] > 0) tags |= core::DerivedTag::Cooldown;
+    if (attrs[core::ItemKey::AmmoCap] > 0) tags |= core::DerivedTag::Ammo;
 
     for (int i = 0; i < templ.ability_count; i++) {
         switch (templ.abilities[i].type) {

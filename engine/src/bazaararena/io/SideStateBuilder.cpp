@@ -113,6 +113,11 @@ BuildSideStateResult BuildSideState(const SideSpec& spec) {
         item.attrs[core::ItemKey::Tier] = *tierOpt;
 
         ApplyItemCustomOverrides(item, it);
+
+        const int ammoCap = item.attrs[core::ItemKey::AmmoCap];
+        if (ammoCap > 0) {
+            item.attrs[core::ItemKey::AmmoRemaining] = ammoCap;
+        }
     }
 
     return {.side = out, .error = ""};

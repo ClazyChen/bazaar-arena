@@ -2,6 +2,7 @@
 import { computed, onUnmounted, ref, watch } from "vue";
 import { fetchDeckSlots, postSaveCliRepro, postSimulate } from "@/api";
 import {
+    AMMO_KEYWORD_RGB,
     CHARGE_KEYWORD_RGB,
     DAMAGE_KEYWORD_RGB,
     FREEZE_KEYWORD_RGB,
@@ -367,6 +368,42 @@ const p2FreezeBadges = computed(() => {
     const out: ({ widthPx: number; heightPx: number; fontPx: number; text: string } | null)[] = [];
     for (let i = 0; i < n; i++) {
         out.push(itemFreezeBadge(side, i));
+    }
+    return out;
+});
+
+/** 弹药圆点：从左向右；消耗从右侧扣减（左侧为仍装填的弹药） */
+function itemAmmoPips(
+    side: FrameEndSideSnapshot | null,
+    slotIndex: number,
+): { cap: number; remaining: number } | null {
+    const it = itemSnapshotForSlot(side, slotIndex);
+    if (!it) return null;
+    const cap = it.AmmoCap ?? 0;
+    if (!Number.isFinite(cap) || cap <= 0) return null;
+    let rem = it.AmmoRemaining ?? 0;
+    if (!Number.isFinite(rem)) rem = 0;
+    const c = Math.round(cap);
+    rem = Math.max(0, Math.min(c, Math.round(rem)));
+    return { cap: c, remaining: rem };
+}
+
+const p1AmmoPips = computed((): ({ cap: number; remaining: number } | null)[] => {
+    const side = side0.value;
+    const n = slotsP1.value.length;
+    const out: ({ cap: number; remaining: number } | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemAmmoPips(side, i));
+    }
+    return out;
+});
+
+const p2AmmoPips = computed((): ({ cap: number; remaining: number } | null)[] => {
+    const side = side1.value;
+    const n = slotsP2.value.length;
+    const out: ({ cap: number; remaining: number } | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemAmmoPips(side, i));
     }
     return out;
 });
@@ -820,6 +857,23 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                         >
                                             {{ p1FreezeBadges[i]!.text }}
                                         </div>
+                                        <div
+                                            v-if="p1AmmoPips[i]"
+                                            class="ammo-pips"
+                                            :style="{ '--ammo-dot': AMMO_KEYWORD_RGB }"
+                                        >
+                                            <span
+                                                v-for="pipIdx in p1AmmoPips[i]!.cap"
+                                                :key="pipIdx"
+                                                class="ammo-pip"
+                                                :class="{ 'ammo-pip--empty': pipIdx > p1AmmoPips[i]!.remaining }"
+                                            >
+                                                <span
+                                                    v-if="pipIdx <= p1AmmoPips[i]!.remaining"
+                                                    class="ammo-pip-dot"
+                                                />
+                                            </span>
+                                        </div>
                                     </div>
                                     <span class="cap">{{ s.item_name }}</span>
                                 </div>
@@ -906,6 +960,23 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             }"
                                         >
                                             {{ p2FreezeBadges[i]!.text }}
+                                        </div>
+                                        <div
+                                            v-if="p2AmmoPips[i]"
+                                            class="ammo-pips"
+                                            :style="{ '--ammo-dot': AMMO_KEYWORD_RGB }"
+                                        >
+                                            <span
+                                                v-for="pipIdx in p2AmmoPips[i]!.cap"
+                                                :key="pipIdx"
+                                                class="ammo-pip"
+                                                :class="{ 'ammo-pip--empty': pipIdx > p2AmmoPips[i]!.remaining }"
+                                            >
+                                                <span
+                                                    v-if="pipIdx <= p2AmmoPips[i]!.remaining"
+                                                    class="ammo-pip-dot"
+                                                />
+                                            </span>
                                         </div>
                                     </div>
                                     <span class="cap">{{ s.item_name }}</span>
@@ -1433,6 +1504,40 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     inset: 0;
     z-index: 3;
     pointer-events: none;
+}
+.ammo-pips {
+    position: absolute;
+    left: 50%;
+    bottom: 4px;
+    transform: translateX(-50%);
+    z-index: 6;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 3px;
+    pointer-events: none;
+}
+.ammo-pip {
+    box-sizing: border-box;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ammo-dot, rgb(255, 142, 0));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: transparent;
+}
+.ammo-pip--empty {
+    border: none;
+    background: #ffffff;
+}
+.ammo-pip-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--ammo-dot, rgb(255, 142, 0));
 }
 .freeze-time-badge {
     position: absolute;

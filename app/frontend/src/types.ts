@@ -101,6 +101,9 @@ export interface FrameEndItemSnapshot {
     Damage?: number;
     /** 剩余冻结时间（毫秒），与引擎 `FreezeRemaining` 一致 */
     FreezeRemaining?: number;
+    /** 弹药上限 / 剩余弹药，与引擎 `AmmoCap` / `AmmoRemaining` 一致 */
+    AmmoCap?: number;
+    AmmoRemaining?: number;
     name?: string;
 }
 

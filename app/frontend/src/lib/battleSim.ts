@@ -49,6 +49,8 @@ function parseItemSnapshots(raw: unknown): FrameEndItemSnapshot[] | undefined {
             Cooldown: Number(o.Cooldown ?? 0),
             Damage: Number(o.Damage ?? 0),
             FreezeRemaining: Number(o.FreezeRemaining ?? 0),
+            AmmoCap: Number(o.AmmoCap ?? 0),
+            AmmoRemaining: Number(o.AmmoRemaining ?? 0),
             name: typeof o.name === "string" ? o.name : undefined,
         });
     }
