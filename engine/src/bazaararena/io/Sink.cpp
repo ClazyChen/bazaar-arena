@@ -6,11 +6,123 @@
 
 #include <iomanip>
 #include <sstream>
+#include <string_view>
 
 namespace bazaararena::io {
 namespace core = bazaararena::core;
 
 namespace {
+
+/** Summary 行中「某某提高/降低」前的属性名（与 ItemKey 一一对应）。 */
+static std::string_view ItemKeyZhForAttributeModify(int attribute) {
+    using IK = core::ItemKey;
+    switch (attribute) {
+        case IK::Id:
+            return "模板ID";
+        case IK::SideIndex:
+            return "阵营";
+        case IK::ItemIndex:
+            return "物品位";
+        case IK::Damage:
+            return "伤害";
+        case IK::Burn:
+            return "灼烧";
+        case IK::Poison:
+            return "剧毒";
+        case IK::Shield:
+            return "护盾";
+        case IK::Heal:
+            return "治疗";
+        case IK::Regen:
+            return "生命再生";
+        case IK::CritRate:
+            return "暴击率";
+        case IK::CritDamage:
+            return "暴击伤害";
+        case IK::Multicast:
+            return "多重释放";
+        case IK::AmmoCap:
+            return "最大弹药";
+        case IK::AmmoRemaining:
+            return "剩余弹药";
+        case IK::Charge:
+            return "充能时间";
+        case IK::ChargeTargetCount:
+            return "充能目标数";
+        case IK::Haste:
+            return "加速时间";
+        case IK::HasteTargetCount:
+            return "加速目标数";
+        case IK::Slow:
+            return "减速时间";
+        case IK::SlowTargetCount:
+            return "减速目标数";
+        case IK::PercentSlowReduction:
+            return "减速抗性";
+        case IK::Freeze:
+            return "冻结时间";
+        case IK::FreezeTargetCount:
+            return "冻结目标数";
+        case IK::PercentFreezeReduction:
+            return "冻结抗性";
+        case IK::Reload:
+            return "装填";
+        case IK::ReloadTargetCount:
+            return "装填目标数";
+        case IK::DestroyTargetCount:
+            return "摧毁目标数";
+        case IK::RepairTargetCount:
+            return "修复目标数";
+        case IK::InFlight:
+            return "飞行";
+        case IK::Destroyed:
+            return "已摧毁";
+        case IK::Cooldown:
+            return "冷却时间";
+        case IK::ChargedTime:
+            return "已充能时间";
+        case IK::FreezeRemaining:
+            return "冻结剩余";
+        case IK::SlowRemaining:
+            return "减速剩余";
+        case IK::HasteRemaining:
+            return "加速剩余";
+        case IK::Value:
+            return "价值";
+        case IK::Tags:
+            return "标签";
+        case IK::DerivedTags:
+            return "衍生标签";
+        case IK::Size:
+            return "大小";
+        case IK::Quest:
+            return "任务";
+        case IK::LifeSteal:
+            return "生命窃取";
+        case IK::ModifyAttributeTargetCount:
+            return "修改属性目标数";
+        case IK::Hero:
+            return "英雄";
+        case IK::MinTier:
+            return "最小等级";
+        case IK::Tier:
+            return "等级";
+        case IK::CooldownReduction:
+            return "冷却缩减";
+        case IK::CooldownReductionPercent:
+            return "冷却缩减百分比";
+        case IK::Custom_0:
+            return "自定义0";
+        case IK::Custom_1:
+            return "自定义1";
+        case IK::Custom_2:
+            return "自定义2";
+        case IK::Custom_3:
+            return "自定义3";
+        default:
+            return {};
+    }
+}
 
 static std::string FormatTime(int time_ms) {
     std::ostringstream os;
@@ -360,7 +472,15 @@ void Sink::OnAttributeIncrease(const core::Simulator& simulator, const core::Ite
         AppendLineWithTruncation(*this, os.str());
         return;
     }
-    os << "属性提高 " << value << "（attr=" << attribute << "） → " << FormatTargetItemNames(simulator, target_count);
+    {
+        const std::string_view label = ItemKeyZhForAttributeModify(attribute);
+        if (!label.empty()) {
+            os << label << "提高 " << value;
+        } else {
+            os << "属性提高 " << value << "（attr=" << attribute << "）";
+        }
+        os << " → " << FormatTargetItemNames(simulator, target_count);
+    }
     AppendLineWithTruncation(*this, os.str());
 }
 
@@ -376,7 +496,15 @@ void Sink::OnAttributeDecrease(const core::Simulator& simulator, const core::Ite
         AppendLineWithTruncation(*this, os.str());
         return;
     }
-    os << "属性降低 " << value << "（attr=" << attribute << "） → " << FormatTargetItemNames(simulator, target_count);
+    {
+        const std::string_view label = ItemKeyZhForAttributeModify(attribute);
+        if (!label.empty()) {
+            os << label << "降低 " << value;
+        } else {
+            os << "属性降低 " << value << "（attr=" << attribute << "）";
+        }
+        os << " → " << FormatTargetItemNames(simulator, target_count);
+    }
     AppendLineWithTruncation(*this, os.str());
 }
 
