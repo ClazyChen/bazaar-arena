@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
-#include <map>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -128,6 +127,45 @@ std::vector<CandidateState> SwissTournament::RunSwissAndPickTop(std::vector<Cand
     const int take = std::min(top_count, static_cast<int>(active.size()));
     out.reserve(static_cast<size_t>(take));
     for (int i = 0; i < take; i++) out.push_back(*active[static_cast<size_t>(i)]);
+    return out;
+}
+
+std::vector<CandidateState> SwissTournament::RunRoundRobinAndPickTop(std::vector<CandidateState> candidates, int top_k, int games_per_pair,
+    BattleEvaluator& evaluator, std::mt19937& rng) {
+    for (auto& c : candidates) c.round_robin_score = 0;
+    const size_t n = candidates.size();
+    if (n >= 2) {
+        std::vector<std::pair<DeckRep, DeckRep>> pairs;
+        for (size_t i = 0; i < n; i++) {
+            for (size_t j = i + 1; j < n; j++) pairs.emplace_back(candidates[i].representative, candidates[j].representative);
+        }
+        const auto pts = evaluator.PlaySeriesBatch(pairs, games_per_pair);
+        size_t idx = 0;
+        for (size_t i = 0; i < n; i++) {
+            for (size_t j = i + 1; j < n; j++, idx++) {
+                candidates[i].round_robin_score += pts[idx].a;
+                candidates[j].round_robin_score += pts[idx].b;
+            }
+        }
+    }
+
+    std::vector<size_t> order(n);
+    for (size_t i = 0; i < n; i++) order[i] = i;
+    std::vector<unsigned> tie_break(n);
+    std::uniform_int_distribution<unsigned> uni;
+    for (size_t i = 0; i < n; i++) tie_break[i] = uni(rng);
+    std::sort(order.begin(), order.end(), [&](size_t ai, size_t bi) {
+        const CandidateState& a = candidates[ai];
+        const CandidateState& b = candidates[bi];
+        if (a.round_robin_score != b.round_robin_score) return a.round_robin_score > b.round_robin_score;
+        if (a.swiss_score != b.swiss_score) return a.swiss_score > b.swiss_score;
+        return tie_break[ai] < tie_break[bi];
+    });
+
+    const int take = std::min(top_k, static_cast<int>(n));
+    std::vector<CandidateState> out;
+    out.reserve(static_cast<size_t>(take));
+    for (int i = 0; i < take; i++) out.push_back(std::move(candidates[order[static_cast<size_t>(i)]]));
     return out;
 }
 

@@ -17,6 +17,10 @@ struct SwissTournament {
     static void RunRoundRobinAndAnchorMargin(std::vector<CandidateState>& candidates, int games_per_pair, bool compute_anchor,
         const std::unordered_set<std::string>& seed_names, BattleEvaluator& evaluator);
 
+    /// 全循环赛后按 RR、瑞士分、随机 tie-break 取 TopK（与 legacy `RunRoundRobinAndPickTop` 一致；不含锚点增广）。
+    static std::vector<CandidateState> RunRoundRobinAndPickTop(std::vector<CandidateState> candidates, int top_k, int games_per_pair,
+        BattleEvaluator& evaluator, std::mt19937& rng);
+
     /// λ/μ 贪心选 TopK（MMR）。
     static std::vector<CandidateState> GreedyPickByObjective(std::vector<CandidateState> candidates, int top_k, double lambda_anchor,
         double mu_diversity, bool diversity_exclude_seeds, const std::unordered_set<std::string>& seed_names, std::mt19937& rng);

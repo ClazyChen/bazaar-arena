@@ -11,6 +11,58 @@
 #include <unordered_map>
 
 namespace bazaararena::gdf {
+namespace {
+
+/// 对「已给定的一组槽位顺序」（例如同 multiset 下的插入位变体，或多路径合并后的各路代表）做循环赛取代表；并列两人 BoN，多于两人则对并列子集递归，深度上限后备字典序最小 Signature。
+static DeckRep PickBestByRoundRobinAmongDeckRepsImpl(const std::vector<DeckRep>& reps, BattleEvaluator& eval, int games_per_pair, int depth) {
+    if (reps.empty()) throw std::runtime_error("PickBestByRoundRobinAmongDeckReps: empty");
+    if (reps.size() == 1) return reps[0];
+
+    std::vector<std::pair<DeckRep, DeckRep>> pairs;
+    const size_t m = reps.size();
+    for (size_t i = 0; i < m; i++) {
+        for (size_t j = i + 1; j < m; j++) pairs.emplace_back(reps[i], reps[j]);
+    }
+    const auto pts = eval.PlaySeriesBatch(pairs, games_per_pair);
+    std::vector<double> score(m, 0);
+    size_t idx = 0;
+    for (size_t i = 0; i < m; i++) {
+        for (size_t j = i + 1; j < m; j++, idx++) {
+            score[i] += pts[idx].a;
+            score[j] += pts[idx].b;
+        }
+    }
+    double top_s = score[0];
+    for (size_t i = 1; i < m; i++) top_s = std::max(top_s, score[i]);
+    std::vector<size_t> tops;
+    for (size_t i = 0; i < m; i++) {
+        if (std::abs(score[i] - top_s) <= 1e-9) tops.push_back(i);
+    }
+    if (tops.size() == 1) return reps[tops[0]];
+    if (tops.size() == 2) {
+        const int w = eval.PlayBoN(reps[tops[0]], reps[tops[1]]);
+        return w == 0 ? reps[tops[0]] : reps[tops[1]];
+    }
+    constexpr int kMaxTieMergeDepth = 12;
+    if (depth < kMaxTieMergeDepth) {
+        std::vector<DeckRep> sub;
+        sub.reserve(tops.size());
+        for (size_t ti : tops) sub.push_back(reps[ti]);
+        return PickBestByRoundRobinAmongDeckRepsImpl(sub, eval, games_per_pair, depth + 1);
+    }
+    size_t pick = tops[0];
+    for (size_t t = 1; t < tops.size(); t++) {
+        const size_t ti = tops[t];
+        if (reps[ti].Signature() < reps[pick].Signature()) pick = ti;
+    }
+    return reps[pick];
+}
+
+static DeckRep PickBestByRoundRobinAmongDeckReps(const std::vector<DeckRep>& reps, BattleEvaluator& eval, int games_per_pair) {
+    return PickBestByRoundRobinAmongDeckRepsImpl(reps, eval, games_per_pair, 0);
+}
+
+}  // namespace
 
 GreedySearcher::GreedySearcher(const ItemPool& pool, BattleEvaluator& evaluator, std::mt19937& rng, const GreedyConfig& config,
     const std::unordered_set<std::string>& seed_items)
@@ -27,120 +79,33 @@ std::vector<DeckRep> GreedySearcher::BuildInsertionReps(const DeckRep& prev, con
     return reps;
 }
 
-std::vector<DeckRep> GreedySearcher::RunDeckKnockoutMany(std::vector<std::vector<DeckRep>> sources) {
-    struct Tourn {
-        int index = 0;
-        std::vector<DeckRep> alive;
-    };
-    std::vector<Tourn> tournaments;
-    tournaments.reserve(sources.size());
-    for (int i = 0; i < static_cast<int>(sources.size()); i++) {
-        auto alive = std::move(sources[static_cast<size_t>(i)]);
-        std::shuffle(alive.begin(), alive.end(), rng_);
-        tournaments.push_back({i, std::move(alive)});
-    }
-
-    while (true) {
-        std::vector<std::pair<DeckRep, DeckRep>> pairs;
-        std::vector<std::tuple<int, size_t, size_t>> pair_members;
-
-        int alive_tournament_count = 0;
-        for (auto& t : tournaments) {
-            if (t.alive.size() <= 1) continue;
-            alive_tournament_count++;
-            for (size_t i = 0; i + 1 < t.alive.size(); i += 2) {
-                pair_members.emplace_back(t.index, i, i + 1);
-                pairs.emplace_back(t.alive[i], t.alive[i + 1]);
-            }
-        }
-        if (alive_tournament_count == 0) break;
-        if (pairs.empty()) break;
-
-        std::vector<int> winners = evaluator_.PlayBoNBatch(pairs);
-
-        std::vector<std::vector<DeckRep>> next_by_t(tournaments.size());
-        for (size_t pi = 0; pi < pairs.size(); pi++) {
-            const auto& [t_idx, ia, ib] = pair_members[pi];
-            const int w = winners[pi];
-            auto& al = tournaments[static_cast<size_t>(t_idx)].alive;
-            next_by_t[static_cast<size_t>(t_idx)].push_back(w == 0 ? al[ia] : al[ib]);
-        }
-        for (auto& t : tournaments) {
-            if (t.alive.size() <= 1) continue;
-            auto& nxt = next_by_t[static_cast<size_t>(t.index)];
-            if ((t.alive.size() & 1u) != 0u) nxt.push_back(t.alive.back());
-            t.alive = std::move(nxt);
-        }
-    }
-
-    std::vector<DeckRep> result(tournaments.size());
-    for (size_t i = 0; i < tournaments.size(); i++) result[i] = std::move(tournaments[i].alive[0]);
-    return result;
-}
-
-std::vector<CandidateState> GreedySearcher::RunCandidateKnockoutMany(std::vector<std::vector<CandidateState>> sources) {
-    struct Tourn {
-        int index = 0;
-        std::vector<CandidateState> alive;
-    };
-    std::vector<Tourn> tournaments;
-    tournaments.reserve(sources.size());
-    for (int i = 0; i < static_cast<int>(sources.size()); i++) {
-        auto alive = std::move(sources[static_cast<size_t>(i)]);
-        std::shuffle(alive.begin(), alive.end(), rng_);
-        tournaments.push_back({i, std::move(alive)});
-    }
-
-    while (true) {
-        std::vector<std::pair<DeckRep, DeckRep>> pairs;
-        std::vector<std::tuple<int, size_t, size_t>> pair_members;
-
-        int alive_tournament_count = 0;
-        for (auto& t : tournaments) {
-            if (t.alive.size() <= 1) continue;
-            alive_tournament_count++;
-            for (size_t i = 0; i + 1 < t.alive.size(); i += 2) {
-                pair_members.emplace_back(t.index, i, i + 1);
-                pairs.emplace_back(t.alive[i].representative, t.alive[i + 1].representative);
-            }
-        }
-        if (alive_tournament_count == 0) break;
-        if (pairs.empty()) break;
-
-        std::vector<int> winners = evaluator_.PlayBoNBatch(pairs);
-
-        std::vector<std::vector<CandidateState>> next_by_t(tournaments.size());
-        for (size_t pi = 0; pi < pairs.size(); pi++) {
-            const auto& [t_idx, ia, ib] = pair_members[pi];
-            const int w = winners[pi];
-            auto& al = tournaments[static_cast<size_t>(t_idx)].alive;
-            next_by_t[static_cast<size_t>(t_idx)].push_back(w == 0 ? al[ia] : al[ib]);
-        }
-        for (auto& t : tournaments) {
-            if (t.alive.size() <= 1) continue;
-            auto& nxt = next_by_t[static_cast<size_t>(t.index)];
-            if ((t.alive.size() & 1u) != 0u) nxt.push_back(t.alive.back());
-            t.alive = std::move(nxt);
-        }
-    }
+std::vector<CandidateState> GreedySearcher::ResolveConflictBuckets(std::unordered_map<std::string, std::vector<CandidateState>>& buckets) {
+    std::vector<std::pair<std::string, std::vector<CandidateState>>> entries;
+    entries.reserve(buckets.size());
+    for (auto& kv : buckets) entries.emplace_back(std::move(kv.first), std::move(kv.second));
+    std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
 
     std::vector<CandidateState> out;
-    out.reserve(tournaments.size());
-    for (auto& t : tournaments) out.push_back(std::move(t.alive[0]));
-    return out;
-}
-
-std::vector<CandidateState> GreedySearcher::ResolveConflictBuckets(std::unordered_map<std::string, std::vector<CandidateState>>& buckets) {
-    std::vector<CandidateState> singletons;
-    std::vector<std::vector<CandidateState>> multi;
-    for (auto& kv : buckets) {
-        if (kv.second.size() == 1) singletons.push_back(std::move(kv.second[0]));
-        else multi.push_back(std::move(kv.second));
+    out.reserve(entries.size());
+    for (auto& [combo_key, bucket] : entries) {
+        (void)combo_key;
+        if (bucket.empty()) continue;
+        if (bucket.size() == 1) {
+            CandidateState one = std::move(bucket[0]);
+            out.push_back(std::move(one));
+            continue;
+        }
+        std::vector<DeckRep> reps;
+        reps.reserve(bucket.size());
+        for (const auto& c : bucket) reps.push_back(c.representative);
+        DeckRep best = PickBestByRoundRobinAmongDeckReps(reps, evaluator_, config_.best_of);
+        CandidateState merged;
+        merged.combo_key = bucket[0].combo_key;
+        merged.size_sum = bucket[0].size_sum;
+        merged.representative = std::move(best);
+        out.push_back(std::move(merged));
     }
-    if (multi.empty()) return singletons;
-    auto winners = RunCandidateKnockoutMany(std::move(multi));
-    singletons.insert(singletons.end(), std::make_move_iterator(winners.begin()), std::make_move_iterator(winners.end()));
-    return singletons;
+    return out;
 }
 
 std::vector<CandidateState> GreedySearcher::ResolveFinalTopTieByPlayoff(std::vector<CandidateState> stage2) {
@@ -243,8 +208,13 @@ std::unordered_map<int, std::vector<CandidateState>> GreedySearcher::Run(const s
                     rep_jobs.push_back(BuildInsertionReps(prev.representative, item));
                 }
                 if (rep_jobs.empty()) continue;
-                std::vector<DeckRep> reps = RunDeckKnockoutMany(std::move(rep_jobs));
-                for (const auto& rep : reps) {
+                std::vector<DeckRep> picked_reps;
+                picked_reps.reserve(rep_jobs.size());
+                for (const auto& insertions : rep_jobs) {
+                    DeckRep pick = PickBestByRoundRobinAmongDeckReps(insertions, evaluator_, config_.best_of);
+                    picked_reps.push_back(std::move(pick));
+                }
+                for (const auto& rep : picked_reps) {
                     CandidateState st;
                     st.combo_key = BuildComboKey(rep.item_names);
                     st.representative = rep;
@@ -262,10 +232,14 @@ std::unordered_map<int, std::vector<CandidateState>> GreedySearcher::Run(const s
         auto stage1 = SwissTournament::RunSwissAndPickTop(std::move(candidates), rounds, top_km, evaluator_, rng_);
 
         const bool compute_anchor = config_.lambda_anchor > 0;
-        SwissTournament::RunRoundRobinAndAnchorMargin(stage1, config_.best_of, compute_anchor, seed_items_, evaluator_);
-
-        std::vector<CandidateState> stage2 = SwissTournament::GreedyPickByObjective(std::move(stage1), config_.top_k, config_.lambda_anchor,
-            config_.mu_diversity, config_.diversity_exclude_seeds, seed_items_, rng_);
+        std::vector<CandidateState> stage2;
+        if (config_.lambda_anchor == 0 && config_.mu_diversity == 0) {
+            stage2 = SwissTournament::RunRoundRobinAndPickTop(std::move(stage1), config_.top_k, config_.best_of, evaluator_, rng_);
+        } else {
+            SwissTournament::RunRoundRobinAndAnchorMargin(stage1, config_.best_of, compute_anchor, seed_items_, evaluator_);
+            stage2 = SwissTournament::GreedyPickByObjective(std::move(stage1), config_.top_k, config_.lambda_anchor, config_.mu_diversity,
+                config_.diversity_exclude_seeds, seed_items_, rng_);
+        }
 
         if (s == max_size_sum) stage2 = ResolveFinalTopTieByPlayoff(std::move(stage2));
 

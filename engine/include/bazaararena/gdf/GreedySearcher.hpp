@@ -47,10 +47,6 @@ private:
 
     std::vector<CandidateState> ResolveConflictBuckets(std::unordered_map<std::string, std::vector<CandidateState>>& buckets);
 
-    std::vector<DeckRep> RunDeckKnockoutMany(std::vector<std::vector<DeckRep>> sources);
-
-    std::vector<CandidateState> RunCandidateKnockoutMany(std::vector<std::vector<CandidateState>> sources);
-
     std::vector<CandidateState> ResolveFinalTopTieByPlayoff(std::vector<CandidateState> stage2);
 };
 

@@ -1,6 +1,8 @@
 #include <bazaararena/gdf/BattleEvaluator.hpp>
 
+#include <bazaararena/core/ItemKey.hpp>
 #include <bazaararena/core/SideKey.hpp>
+#include <bazaararena/core/SideState.hpp>
 #include <bazaararena/core/Simulator.hpp>
 #include <bazaararena/core/SimulatorInit.hpp>
 #include <bazaararena/gdf/GdfLevelRules.hpp>
@@ -44,12 +46,20 @@ core::Simulator& TlsBattleSimulator() {
     return sim;
 }
 
-static int RunSingleBattleReturn(core::Simulator& sim, const core::SideState& side_a, const core::SideState& side_b, int swap, int rng_seed) {
-    sim.sink.sink_type = io::Sink::TypeNone;
-    sim.sink.max_events = 0;
-    sim.sink.truncated = false;
-    sim.sink.Clear();
+/// `GdfSideBuilder::BuildSideSpecFromDeck` 固定 `sideId=0`，缓存中物品的 `ItemKey::SideIndex` 均为 0。
+/// 装入 `sim.sides[1]` 前必须改为 1，否则 `AbilityApply` 等用 `SideIndex` 解析对手时会打到己方（与 CLI 的两侧 `sideId` 不一致）。
+static void PatchPhysicalSideSlot(core::SideState& side, int physical_slot) {
+    if (physical_slot < 0 || physical_slot >= core::Simulator::SideCount) return;
+    side.attrs[core::SideKey::Id] = physical_slot;
+    const int n = side.attrs[core::SideKey::ItemCount];
+    for (int i = 0; i < n && i < static_cast<int>(core::SideState::MaxItems); i++) {
+        side.items[static_cast<size_t>(i)].attrs[core::ItemKey::SideIndex] = physical_slot;
+    }
+}
 
+/// 与 `engine/cli/main.cpp` 中 `RunBatchSlice` 每局循环一致：先装两侧与沙尘暴，再清 sink、播种、InitializeSimulator，最后 Run。
+/// 配合 `thread_local` 复用 `Simulator`，避免每局堆分配，同时保证局间状态与 CLI 批量对战一致。
+static int RunSingleBattleReturn(core::Simulator& sim, const core::SideState& side_a, const core::SideState& side_b, int swap, int rng_seed) {
     if (swap == 0) {
         sim.sides[0] = side_a;
         sim.sides[1] = side_b;
@@ -58,6 +68,10 @@ static int RunSingleBattleReturn(core::Simulator& sim, const core::SideState& si
         sim.sides[1] = side_a;
     }
     sim.sandstorm = core::Simulator::SandStorm{};
+    sim.sink.sink_type = io::Sink::TypeNone;
+    sim.sink.max_events = 0;
+    sim.sink.truncated = false;
+    sim.sink.Clear();
     sim.rng.Seed(rng_seed);
     core::InitializeSimulator(sim);
     return sim.Run(true);
@@ -68,7 +82,7 @@ static int RunSingleBattleReturn(core::Simulator& sim, const core::SideState& si
 BattleEvaluator::BattleEvaluator(int best_of, int workers, int player_level)
     : best_of_(best_of), workers_(std::max(0, workers)), player_level_(player_level), combat_tier_(GdfLevelRules::CombatTier(player_level)) {}
 
-const core::SideState& BattleEvaluator::ToSide(const DeckRep& rep) {
+core::SideState BattleEvaluator::ToSide(const DeckRep& rep) {
     const std::string sig = rep.Signature();
     {
         std::shared_lock<std::shared_mutex> lk(deck_cache_mu_);
@@ -103,10 +117,18 @@ std::vector<size_t> BattleEvaluator::CreateShuffledOrder(size_t count, std::mt19
 }
 
 int BattleEvaluator::PlaySingleGameForSeries(const DeckRep& a, const DeckRep& b, unsigned game_word) {
-    const core::SideState& side_a = ToSide(a);
-    const core::SideState& side_b = ToSide(b);
+    core::SideState side_a = ToSide(a);
+    core::SideState side_b = ToSide(b);
     const int swap = static_cast<int>(game_word & 1u);
     const int rng_seed = static_cast<int>(game_word ^ (game_word >> 16));
+
+    if (swap == 0) {
+        PatchPhysicalSideSlot(side_a, 0);
+        PatchPhysicalSideSlot(side_b, 1);
+    } else {
+        PatchPhysicalSideSlot(side_b, 0);
+        PatchPhysicalSideSlot(side_a, 1);
+    }
 
     core::Simulator& sim = TlsBattleSimulator();
     const int w_run = RunSingleBattleReturn(sim, side_a, side_b, swap, rng_seed);
@@ -130,10 +152,18 @@ int BattleEvaluator::PlaySingleGameForSeries(const DeckRep& a, const DeckRep& b,
 }
 
 int BattleEvaluator::PlaySingleGameForBoN(const DeckRep& a, const DeckRep& b, unsigned game_word) {
-    const core::SideState& side_a = ToSide(a);
-    const core::SideState& side_b = ToSide(b);
+    core::SideState side_a = ToSide(a);
+    core::SideState side_b = ToSide(b);
     const int swap = static_cast<int>(game_word & 1u);
     const int rng_seed = static_cast<int>(game_word ^ (game_word >> 16));
+
+    if (swap == 0) {
+        PatchPhysicalSideSlot(side_a, 0);
+        PatchPhysicalSideSlot(side_b, 1);
+    } else {
+        PatchPhysicalSideSlot(side_b, 0);
+        PatchPhysicalSideSlot(side_a, 1);
+    }
 
     core::Simulator& sim = TlsBattleSimulator();
     const int w = RunSingleBattleReturn(sim, side_a, side_b, swap, rng_seed);

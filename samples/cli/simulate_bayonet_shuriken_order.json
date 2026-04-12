@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "jobId": "bayonet-shuriken-order",
+  "mode": "simulate",
+  "payload": {
+    "seed": 1,
+    "allowTie": true,
+    "debug": { "enabled": false, "level": "none", "maxEvents": 0 },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 2,
+        "items": [
+          { "key": "刺刀", "tier": "bronze" },
+          { "key": "手里剑", "tier": "bronze" }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 2,
+        "items": [
+          { "key": "手里剑", "tier": "bronze" },
+          { "key": "刺刀", "tier": "bronze" }
+        ]
+      }
+    ]
+  }
+}

@@ -4,6 +4,7 @@
 #include <bazaararena/data/ItemDatabase.hpp>
 
 namespace bazaararena::gdf {
+namespace core = bazaararena::core;
 
 std::string TierStringFromCombatTier(int combat_tier) {
     using namespace bazaararena::core;

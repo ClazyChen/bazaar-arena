@@ -41,7 +41,8 @@ private:
     mutable std::shared_mutex deck_cache_mu_;
     std::unordered_map<std::string, bazaararena::core::SideState> deck_cache_;
 
-    const bazaararena::core::SideState& ToSide(const DeckRep& rep);
+    /// 在持锁期间从缓存拷贝，避免调用方持有悬空引用（map 重哈希或其它线程写入）。
+    bazaararena::core::SideState ToSide(const DeckRep& rep);
 
     /// game_word：驱动 swap 与 sim.rng 的低位熵（不要求密码学随机）。
     int PlaySingleGameForSeries(const DeckRep& a, const DeckRep& b, unsigned game_word);
