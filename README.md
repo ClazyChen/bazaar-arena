@@ -8,5 +8,5 @@
 - `engine/`：C++ 计算层（核心库 + 调试 CLI）。
 - `app/`：Web 应用（后端 Flask + 前端 Vue）。
 - `infra/`：容器、部署与开发环境配置。
-- `docs/`：新栈架构、协议与开发指南。
+- `docs/`：新栈架构、协议与开发指南；Greedy Deck Finder 见 `docs/bazaararena_gdf.md`。
 
