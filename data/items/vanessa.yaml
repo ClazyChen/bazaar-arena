@@ -675,3 +675,101 @@ items:
         trigger: Burn
         target_condition: SameAsCaster
         priority: Low
+  - Name: "木桶"
+    Desc: "▶ 获得 {Shield} 护盾；使用相邻物品时，此物品的护盾提高 {Custom_0}（限本场战斗）"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Tool]
+    Cooldown: 6s
+    Shield: 20
+    Custom_0: [10, 20, 30, 40]
+    Abilities:
+      - type: Shield
+      - type: AddAttribute
+        trigger: UseItem
+        condition: AdjacentToCaster
+        target_condition: SameAsCaster
+        key: Shield
+        value: Custom_0
+        priority: High
+  - Name: "沙滩充气球"
+    Desc: "▶ 加速 {HasteTargetCount} 件水系或玩具物品 {Haste} 秒"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Aquatic, Toy]
+    Cooldown: 5s
+    Haste: 2s
+    HasteTargetCount: [2, 3, 4, 5]
+    Abilities:
+      - type: Haste
+        ex_target_condition:
+          type: Or
+          params:
+            - type: HasTag
+              params: [Aquatic]
+            - type: HasTag
+              params: [Toy]
+  - Name: "火炮"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 造成灼烧，等量于此物品伤害的 {Custom_0%}；弹药：{AmmoCap}"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 4s
+    Damage: [40, 80, 120, 160]
+    Custom_0: 10
+    AmmoCap: 2
+    Abilities:
+      - type: Damage
+        priority: Highest
+      - type: Burn
+        priority: High
+    Auras:
+      - attribute: Burn
+        value:
+          type: PercentFloor
+          params:
+            - type: Caster
+              params: [Damage]
+            - type: Caster
+              params: [Custom_0]
+  - Name: "珊瑚护甲"
+    Desc: "▶ 获得 {Shield} 护盾；【局外】购买水系物品时，此物品的护盾提高 {Custom_0}；【默认】已购买水系物品数量: {Custom_1}"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Aquatic, Apparel]
+    Cooldown: 6s
+    Shield: 50
+    Custom_0: [10, 20, 30, 40]
+    Custom_1: [4, 8, 12, 16]
+    Abilities:
+      - type: Shield
+    Auras:
+      - attribute: Shield
+        value:
+          type: Mul
+          params:
+            - type: Caster
+              params: [Custom_0]
+            - type: Caster
+              params: [Custom_1]
+  - Name: "弯刀"
+    Desc: "▶ 造成 {Damage} 伤害；如果有敌方物品被减速，此物品 {+Custom_0%} 暴击率"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 3s
+    Damage: [12, 24, 48, 96]
+    Custom_0: 100
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: CritRate
+        ex_condition:
+          type: Count
+          params:
+            - type: And
+              params:
+                - DifferentSide
+                - type: Item
+                  params: [SlowRemaining]
+        value: Custom_0

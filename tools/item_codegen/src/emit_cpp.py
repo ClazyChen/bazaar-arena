@@ -532,6 +532,7 @@ def emit_cpp_static_data(items: list[dict]) -> str:
     out.append('#include "bazaararena/core/Tag.hpp"')
     out.append('#include "bazaararena/core/Trigger.hpp"')
     out.append('#include "bazaararena/formula/Formula.hpp"')
+    out.append('#include "bazaararena/formula/Percent.hpp"')
     out.append('#include "bazaararena/formula/Condition.hpp"')
     out.append('#include "bazaararena/literals/duration.hpp"')
     out.append("")

@@ -74,10 +74,10 @@ constexpr Formula Opp = [](const BattleContext& ctx) -> int {
     return ctx.GetOppInt(key); 
 };
 
-// 公式的组合计算（约定：子式为 0/1；位掩码成员检测请用 HasTag / HasDerivedTag 等专用公式，勿直接套入 And）
+// 公式的组合计算（条件语义：子式 0 为假、非 0 为真；勿用按位 & 与 Count 等相组合，否则偶数计数会被截断为 0）
 template<Formula... formulas>
-constexpr Formula And = [](const BattleContext& ctx) -> int { 
-    return (formulas(ctx) & ... & 1);
+constexpr Formula And = [](const BattleContext& ctx) -> int {
+    return ((formulas(ctx) != 0) && ...) ? 1 : 0;
 };
 
 template<Formula... formulas>

@@ -262,6 +262,13 @@ def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
         dname = _key_name(params[0], "DerivedTag", where)
         return f"NotHasDerivedTag<{_derived_tag_cpp(dname)}>"
 
+    if typ == "PercentFloor":
+        if len(params) != 2:
+            raise ValueError(f"{where}: PercentFloor 需要 2 个公式参数（基础值与百分比）")
+        left = emit_formula_ast(params[0], where=f"{where}.0")
+        right = emit_formula_ast(params[1], where=f"{where}.1")
+        return f"formula::PercentFloorExpr<{left}, {right}>"
+
     if typ == "Leftmost":
         if len(params) != 1:
             raise ValueError(f"{where}: Leftmost 需要 1 个条件子式")

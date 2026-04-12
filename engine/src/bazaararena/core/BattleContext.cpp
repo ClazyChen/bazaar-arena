@@ -60,17 +60,18 @@ int BattleContext::GetOppInt(int key) const {
     return simulator->sides[1 - caster->attrs[ItemKey::SideIndex]].attrs[key];
 }
 
-// 计算满足某个条件的物品数量
+// 计算满足某个条件的物品数量（双方所有物品；条件内可用 SameSide / DifferentSide 等）
 int BattleContext::CountItems(Formula condition) const {
     BattleContext ctx = *this;
     int count = 0;
-    const int side_ix = caster->attrs[ItemKey::SideIndex];
-    const int n = simulator->sides[side_ix].attrs[SideKey::ItemCount];
-    for (int i = 0; i < n; i++) {
-        auto& item = simulator->sides[side_ix].items[i];
-        if (item.attrs[ItemKey::Destroyed] == 1) continue;
-        ctx.item = &item;
-        if (condition(ctx) != 0) count++;
+    for (int sj = 0; sj < Simulator::SideCount; sj++) {
+        const int n = simulator->sides[sj].attrs[SideKey::ItemCount];
+        for (int i = 0; i < n; i++) {
+            auto& item = simulator->sides[sj].items[i];
+            if (item.attrs[ItemKey::Destroyed] == 1) continue;
+            ctx.item = &item;
+            if (condition(ctx) != 0) count++;
+        }
     }
     return count;
 }

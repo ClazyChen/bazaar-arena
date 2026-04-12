@@ -17,4 +17,10 @@ constexpr Formula Percent = [](const BattleContext& ctx) -> int {
     return PercentFloor(a(ctx), pct);
 };
 
+// 动态百分比（两子式求值后交给 PercentFloor，供 YAML 光环等）
+template<Formula a, Formula b>
+constexpr Formula PercentFloorExpr = [](const BattleContext& ctx) -> int {
+    return PercentFloor(a(ctx), b(ctx));
+};
+
 } // namespace bazaararena::formula
