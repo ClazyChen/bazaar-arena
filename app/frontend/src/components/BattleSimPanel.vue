@@ -13,6 +13,7 @@ import {
     REGEN_KEYWORD_RGB,
     SHIELD_KEYWORD_RGB,
     dcardOuterWidthPx,
+    flightStripRgba,
     freezeOverlayRgba,
     itemArtAspectStyle,
     tierBorderColor,
@@ -594,6 +595,33 @@ const p2SlowBadges = computed((): (ItemTimeBadge | null)[] => {
     return out;
 });
 
+function itemInFlightStrip(side: FrameEndSideSnapshot | null, slotIndex: number): boolean {
+    const it = itemSnapshotForSlot(side, slotIndex);
+    if (!it) return false;
+    const v = it.InFlight ?? 0;
+    return Number.isFinite(v) && v > 0;
+}
+
+const p1InFlightStrip = computed((): boolean[] => {
+    const side = side0.value;
+    const n = slotsP1.value.length;
+    const out: boolean[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemInFlightStrip(side, i));
+    }
+    return out;
+});
+
+const p2InFlightStrip = computed((): boolean[] => {
+    const side = side1.value;
+    const n = slotsP2.value.length;
+    const out: boolean[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemInFlightStrip(side, i));
+    }
+    return out;
+});
+
 /** 弹药圆点：从左向右；消耗从右侧扣减（左侧为仍装填的弹药） */
 function itemAmmoPips(
     side: FrameEndSideSnapshot | null,
@@ -1076,6 +1104,11 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             />
                                         </div>
                                         <div
+                                            v-if="p1InFlightStrip[i]"
+                                            class="inflight-strip"
+                                            :style="{ '--inflight-strip-bg': flightStripRgba(0.88) }"
+                                        />
+                                        <div
                                             v-if="p1FreezeBadges[i]"
                                             class="freeze-full-overlay"
                                             :style="{ background: freezeOverlayRgba(0.38) }"
@@ -1223,6 +1256,11 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                                 "
                                             />
                                         </div>
+                                        <div
+                                            v-if="p2InFlightStrip[i]"
+                                            class="inflight-strip"
+                                            :style="{ '--inflight-strip-bg': flightStripRgba(0.88) }"
+                                        />
                                         <div
                                             v-if="p2FreezeBadges[i]"
                                             class="freeze-full-overlay"
@@ -1879,6 +1917,66 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
     border-top: 6px solid var(--charge-arrow-color, rgb(0, 236, 195));
+}
+/* 飞行：顶条，高于充能层(z2)、低于冻结罩(z3) —— 与 charge 同层但位于其后，故盖在充能遮罩之上 */
+.inflight-strip {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 3px;
+    z-index: 2;
+    pointer-events: none;
+    box-sizing: border-box;
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.35);
+    background: var(--inflight-strip-bg, rgba(244, 207, 32, 0.88));
+    overflow: hidden;
+}
+/* 细纹理横向流动 */
+.inflight-strip::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.14) 0 1px,
+        transparent 1px 5px
+    );
+    background-size: 6px 100%;
+    animation: inflightStripMicro 0.55s linear infinite;
+    opacity: 0.95;
+}
+/* 高光带扫过，强调「在动」 */
+.inflight-strip::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 50%;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.5) 48%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    animation: inflightStripSheen 1.05s linear infinite;
+}
+@keyframes inflightStripMicro {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: 6px 0;
+    }
+}
+@keyframes inflightStripSheen {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(260%);
+    }
 }
 .freeze-full-overlay {
     position: absolute;

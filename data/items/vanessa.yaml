@@ -193,3 +193,47 @@ items:
         trigger: UseItem
         ex_condition: InFlight
         target_condition: SameAsCaster
+  - Name: "葡萄弹"
+    Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；使用其他弹药物品时，为此物品装填 {Reload} 弹药"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 4s
+    Damage: [30, 60, 120, 240]
+    AmmoCap: 1
+    Reload: 1
+    Abilities:
+      - type: Damage
+      - type: Reload
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - DifferentFromCaster
+            - type: HasDerivedTag
+              params: [Ammo]
+        target_condition: SameAsCaster
+        priority: Lowest
+  - Name: "抓钩"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Tool]
+    Cooldown: 7s
+    Damage: [20, 40, 80, 160]
+    Slow: 1s
+    SlowTargetCount: [1, 2, 3, 4]
+    Abilities:
+      - type: Damage
+      - type: Slow
+  - Name: "手雷"
+    Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；暴击率：{CritRate%}"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 5s
+    Damage: [50, 100, 150, 200]
+    AmmoCap: 1
+    CritRate: 25
+    Abilities:
+      - type: Damage

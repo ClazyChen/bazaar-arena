@@ -59,6 +59,7 @@ function parseItemSnapshots(raw: unknown): FrameEndItemSnapshot[] | undefined {
             SlowRemaining: Number(o.SlowRemaining ?? 0),
             AmmoCap: Number(o.AmmoCap ?? 0),
             AmmoRemaining: Number(o.AmmoRemaining ?? 0),
+            InFlight: Number(o.InFlight ?? 0),
             name: typeof o.name === "string" ? o.name : undefined,
         });
     }

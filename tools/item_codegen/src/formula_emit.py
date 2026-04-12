@@ -169,6 +169,13 @@ def _emit_children(params: list[object], *, where: str) -> list[str]:
 
 
 def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
+    # 无参 { type: Leaf } 与字符串叶子等价（如 DifferentFromCaster）
+    if len(params) == 0:
+        try:
+            return _emit_named_leaf(typ, where=where)
+        except ValueError:
+            pass
+
     # 组合子（formula 命名空间）
     nary = ("And", "Or", "Xor", "Add", "Sub", "Mul", "Eq", "Ne", "Lt", "Le", "Gt", "Ge")
     if typ in nary:

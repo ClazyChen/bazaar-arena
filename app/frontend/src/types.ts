@@ -129,6 +129,8 @@ export interface FrameEndItemSnapshot {
     /** 弹药上限 / 剩余弹药，与引擎 `AmmoCap` / `AmmoRemaining` 一致 */
     AmmoCap?: number;
     AmmoRemaining?: number;
+    /** 是否在飞行中，与引擎 `InFlight` 一致（非 0 视为是） */
+    InFlight?: number;
     name?: string;
 }
 

@@ -43,6 +43,11 @@ export function freezeOverlayRgba(alpha: number): string {
     return `rgba(63, 200, 247, ${alpha})`;
 }
 
+/** 对战卡面「飞行」顶条（与 SHIELD_KEYWORD_RGB 同色、半透明） */
+export function flightStripRgba(alpha: number): string {
+    return `rgba(244, 207, 32, ${alpha})`;
+}
+
 /** 与后端 legacy Deck.MaxSlotsForLevel 一致 */
 export function maxSlotsForLevel(level: number): number {
     if (level <= 1) return 4;
