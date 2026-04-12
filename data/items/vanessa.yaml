@@ -302,17 +302,21 @@ items:
     Auras:
       - attribute: Multicast
         value:
-          type: Count
+          type: Mul
           params:
-            - type: And
+            - type: Count
               params:
-                - AdjacentToCaster
-                - type: Or
+                - type: And
                   params:
-                    - type: HasTag
-                      params: [Friend]
-                    - type: HasTag
-                      params: [Ray]
+                    - AdjacentToCaster
+                    - type: Or
+                      params:
+                        - type: HasTag
+                          params: [Friend]
+                        - type: HasTag
+                          params: [Ray]
+            - type: Caster
+              params: [Custom_0]
   - Name: "水母"
     Desc: "▶ 造成 {Poison} 剧毒；使用相邻的水系物品时，加速此物品 {Haste} 秒"
     Size: Small
@@ -366,3 +370,112 @@ items:
         target_condition: SameAsCaster
         key: Burn
         value: Custom_1
+  - Name: "独角鲸"
+    Desc: "▶ 造成 {Damage} 伤害"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Aquatic, Friend]
+    Cooldown: 3s
+    Damage: [5, 10, 20, 40]
+    Abilities:
+      - type: Damage
+  - Name: "珍珠"
+    Desc: "▶ 获得 {Shield} 护盾；使用其他水系物品时，为此物品充能 1 秒"
+    Size: Small
+    Tier: Bronze
+    Tags: [Aquatic]
+    Cooldown: 5s
+    Shield: [10, 20, 30, 40]
+    Charge: 1s
+    Abilities:
+      - type: Shield
+        priority: Low
+      - type: Charge
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Aquatic]
+            - DifferentFromCaster
+        target_condition: SameAsCaster
+        priority: Low
+  - Name: "鹦鹉皮特"
+    Desc: "▶ 造成 {Burn} 灼烧；▶ 此物品开始飞行；每有一件相邻的伙伴或地产，此物品 {+Custom_1} 多重释放"
+    Size: Small
+    Tier: Bronze
+    Tags: [Friend]
+    Cooldown: [8s, 7s, 6s, 5s]
+    Burn: 2
+    Custom_0: 1
+    Custom_1: 1
+    Abilities:
+      - type: Burn
+      - type: AddAttribute
+        key: InFlight
+        value: Custom_0
+        target_condition: SameAsCaster
+    Auras:
+      - attribute: Multicast
+        value:
+          type: Mul
+          params:
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - type: AdjacentToCaster
+                    - type: Or
+                      params:
+                        - type: HasTag
+                          params: [Friend]
+                        - type: HasTag
+                          params: [Property]
+            - type: Caster
+              params: [Custom_1]
+  - Name: "宠物石"
+    Desc: "▶ 造成 {Damage} 伤害；若此物品是己方唯一的伙伴，己方物品 {+Custom_0%} 暴击率"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Friend, Toy]
+    Cooldown: 6s
+    Damage: [10, 20, 40, 80]
+    Custom_0: [10, 15, 20, 25]
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: And
+          params:
+            - type: Only
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - type: HasTag
+                      params: [Friend]
+        value: Custom_0
+  - Name: "食人鱼"
+    Desc: "▶ 造成 {Damage} 伤害；使用其他伙伴或食物时，为此物品充能 1 秒"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Aquatic, Friend]
+    Cooldown: [8s, 7s, 6s, 5s]
+    Damage: 15
+    Charge: 1s
+    Abilities:
+      - type: Damage
+      - type: Charge
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - type: Or
+              params:
+                - type: HasTag
+                  params: [Friend]
+                - type: HasTag
+                  params: [Food]
+            - DifferentFromCaster
+        target_condition: SameAsCaster
