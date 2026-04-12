@@ -11,6 +11,7 @@ _DURATION_SUFFIX_RE = re.compile(r"^(\d+(?:\.\d+)?)(?:s|_s)$")
 _YAML_FIELD_ALIASES: dict[str, str] = {
     "cooldown": "Cooldown",
     "cooldownSeconds": "Cooldown",
+    "ModifyTargetCount": "ModifyAttributeTargetCount",
 }
 
 # 与引擎 ItemKey 一致：YAML 中秒字面量写入为毫秒

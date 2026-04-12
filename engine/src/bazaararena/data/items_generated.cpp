@@ -25,7 +25,7 @@ using namespace bazaararena::condition;
 namespace core = bazaararena::core;
 namespace formula = bazaararena::formula;
 
-static const std::array<GeneratedItem, 23> kItems = {
+static const std::array<GeneratedItem, 25> kItems = {
     GeneratedItem{
         .key = "三花",
         .templ = []() {
@@ -623,7 +623,7 @@ static const std::array<GeneratedItem, 23> kItems = {
         a.trigger_entry_count = 1;
         a.trigger_entries[0].trigger = core::Trigger::Haste;
         a.trigger_entries[0].condition = TargetSameAsCaster;
-        a.target_condition = SameSide;
+        a.target_condition = formula::And<SameSide, SameAsCaster>;
         a.value_key = core::ItemKey::Custom_0;
         a.attribute_key = core::ItemKey::Poison;
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
@@ -736,6 +736,64 @@ static const std::array<GeneratedItem, 23> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
+        .key = "珊瑚",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "珊瑚";
+    t.desc = "▶ 治疗 {Heal} 生命值；【局外】购买水系物品时，此物品的治疗提高 {Custom_0}；【默认】已购买水系物品数量: {Custom_1}";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Bronze;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Aquatic | core::Tag::Relic);
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 5_s;
+    t.attributes[0][core::ItemKey::Custom_0] = 5;
+    t.attributes[1][core::ItemKey::Custom_0] = 10;
+    t.attributes[2][core::ItemKey::Custom_0] = 15;
+    t.attributes[3][core::ItemKey::Custom_0] = 20;
+    t.attributes[4][core::ItemKey::Custom_0] = 20;
+    t.attributes[0][core::ItemKey::Custom_1] = 4;
+    t.attributes[1][core::ItemKey::Custom_1] = 8;
+    t.attributes[2][core::ItemKey::Custom_1] = 12;
+    t.attributes[3][core::ItemKey::Custom_1] = 16;
+    t.attributes[4][core::ItemKey::Custom_1] = 16;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Heal] = 20;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Heal;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = Always;
+        a.value_key = core::ItemKey::Heal;
+    }
+    t.aura_count = 0;
+    {
+        auto& g = t.auras[t.aura_count++];
+        g.attribute = core::ItemKey::Heal;
+        g.condition = SameAsCaster;
+        g.value = formula::Mul<formula::Caster<core::ItemKey::Custom_0>, formula::Caster<core::ItemKey::Custom_1>>;
+        g.percent = false;
+    }
     return t;
 }(),
     },
@@ -1030,6 +1088,86 @@ static const std::array<GeneratedItem, 23> kItems = {
         g.value = formula::Caster<core::ItemKey::Custom_0>;
         g.percent = false;
     }
+    return t;
+}(),
+    },
+    GeneratedItem{
+        .key = "飞鱼",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "飞鱼";
+    t.desc = "▶ 造成 {Damage} 伤害；▶ 此物品和 {ModifyTargetCount} 件相邻物品开始飞行；使用飞行物品时，加速此物品 {Haste} 秒";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Bronze;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Weapon | core::Tag::Aquatic | core::Tag::Friend);
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 5_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_0] = 1;
+    t.attributes[0][core::ItemKey::Damage] = 10;
+    t.attributes[1][core::ItemKey::Damage] = 20;
+    t.attributes[2][core::ItemKey::Damage] = 40;
+    t.attributes[3][core::ItemKey::Damage] = 80;
+    t.attributes[4][core::ItemKey::Damage] = 80;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Haste] = 1_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 1;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Damage;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = Always;
+        a.value_key = core::ItemKey::Damage;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::AddAttribute;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = SameAsCaster;
+        a.value_key = core::ItemKey::Custom_0;
+        a.attribute_key = core::ItemKey::InFlight;
+        a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::AddAttribute;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = AdjacentToCaster;
+        a.value_key = core::ItemKey::Custom_0;
+        a.attribute_key = core::ItemKey::InFlight;
+        a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Haste;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::UseItem;
+        a.trigger_entries[0].condition = formula::And<SameSide, InFlight>;
+        a.target_condition = SameAsCaster;
+        a.value_key = core::ItemKey::Haste;
+        a.target_count_key = core::ItemKey::HasteTargetCount;
+    }
+    t.aura_count = 0;
     return t;
 }(),
     },

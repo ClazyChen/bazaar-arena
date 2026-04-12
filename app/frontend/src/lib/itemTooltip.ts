@@ -43,6 +43,7 @@ const DESC_FIELD_ALIASES: Record<string, string> = {
     SlowSeconds: "Slow",
     FreezeSeconds: "Freeze",
     HasteSeconds: "Haste",
+    ModifyTargetCount: "ModifyAttributeTargetCount",
 };
 
 function escapeHtml(s: string): string {

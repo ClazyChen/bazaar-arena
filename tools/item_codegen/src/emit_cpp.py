@@ -94,6 +94,8 @@ _YAML_STRUCT_SPECIAL_KEYS = frozenset(
 _YAML_FIELD_ALIASES: dict[str, str] = {
     "cooldown": "Cooldown",
     "cooldownSeconds": "Cooldown",
+    # 文案友好名；引擎 ItemKey 为 ModifyAttributeTargetCount
+    "ModifyTargetCount": "ModifyAttributeTargetCount",
 }
 
 
