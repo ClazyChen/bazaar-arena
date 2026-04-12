@@ -13,7 +13,11 @@ void SideState::ApplyDamage(int damage, bool is_burn, bool is_poison) {
     // 处理护盾
     if (is_burn) {
         int burn_shield_consume = std::min(attrs[SideKey::Shield], damage / 2);
+        // 格挡量：pay*2+1（pay>0 时），奇数灼烧可与 floor(灼烧/2) 点护盾对齐而不漏 1 血
         int burn_shield_damage = burn_shield_consume * 2;
+        if (burn_shield_consume > 0) {
+            burn_shield_damage += 1;
+        }
         attrs[SideKey::Shield] -= burn_shield_consume;
         damage = std::max(0, damage - burn_shield_damage);
     } else if (!is_poison) {

@@ -124,7 +124,7 @@ function tagLabelZh(tag: string): string {
 /**
  * Desc 占位符 `{...}` 内解析。
  * 以 `:` 结尾（如 `{Custom_1:}`）表示引擎值为毫秒级、但文案中自行写了「秒」等单位：
- * 展示时数值 /1000，固定 1 位小数（与默认按秒显示的 Cooldown 等字段区分）。
+ * 展示时数值 /1000，格式与 Cooldown 等一致（`formatSecondsFromMs` / `formatNumber`，整数不强行带小数）。
  */
 function normalizePlaceholderInner(inner: string): {
     key: string;
@@ -173,13 +173,9 @@ function valuesAllEqual(arr: number[], eps = 1e-6): boolean {
     return arr.every((x) => Math.abs(x - f) < eps);
 }
 
-/** `scaleThousandth`：占位符 `KEY:` 时，引擎值为毫秒，按「秒」类文案展示 */
+/** `scaleThousandth`：`KEY:` 时引擎值为毫秒，与 Cooldown 等相同走 `formatSecondsFromMs` */
 function formatOneValue(key: string, v: number, scaleThousandth: boolean): string {
-    if (scaleThousandth) {
-        if (!Number.isFinite(v)) return "";
-        return (v / 1000).toFixed(1);
-    }
-    if (MS_DISPLAY_KEYS.has(key)) return formatSecondsFromMs(v);
+    if (scaleThousandth || MS_DISPLAY_KEYS.has(key)) return formatSecondsFromMs(v);
     return formatNumber(v);
 }
 

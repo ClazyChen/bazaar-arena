@@ -15,7 +15,7 @@ import DeckEditor from "@/components/DeckEditor.vue";
 import DeckListPanel from "@/components/DeckListPanel.vue";
 import { useBuilderSession } from "@/stores/builder";
 import { useCatalogStore } from "@/stores/catalog";
-import type { DeckRow } from "@/types";
+import type { DeckRow, DeckSlotEntry } from "@/types";
 
 const props = defineProps<{
     id: string;
@@ -48,9 +48,15 @@ async function loadDecks(): Promise<void> {
 
 async function loadDeckIntoSession(deckId: number): Promise<void> {
     const data = await fetchDeckSlots(deckId);
-    const entries = data.slots
+    const entries: DeckSlotEntry[] = data.slots
         .sort((a, b) => a.position - b.position)
-        .map((s) => ({ item_name: s.item_name, tier: s.tier }));
+        .map((s) => ({
+            item_name: s.item_name,
+            tier: s.tier,
+            ...(s.attrs_override && Object.keys(s.attrs_override).length > 0
+                ? { attrs_override: { ...s.attrs_override } }
+                : {}),
+        }));
     session.resetFromServer(data.player_level, entries);
 }
 

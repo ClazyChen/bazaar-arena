@@ -191,11 +191,10 @@ function onStripDragOver(ev: DragEvent): void {
 }
 
 /**
- * 卡组条带使用 flex gap 时，drop 目标常在 `.strip` / 间隙上；按指针 X 解析 insertBefore。
- * 落在第 i 张卡片的 anchor 内时：左半表示插在「该卡之前」(i)，右半表示插在「该卡之后」(i+1)；
- * 最后一张的右半为 n，才能接到真正队尾（原先整格只返回 i=n-1，只会变成倒数第二）。
+ * 解析松手位置对应的**目标槽位下标**（0-based）：落在第 i 张实体卡上表示「移动到第 i 张卡的位置」
+ *（其余牌相对顺序不变）；返回 `length` 表示队尾 / 虚线空槽。与点在卡左/右无关。
  */
-function insertIndexFromStripEvent(strip: HTMLElement, ev: DragEvent): number {
+function insertSlotIndexFromStripEvent(strip: HTMLElement, ev: DragEvent): number {
     const n = session.slots.length;
     const x = ev.clientX;
     const y = ev.clientY;
@@ -213,13 +212,13 @@ function insertIndexFromStripEvent(strip: HTMLElement, ev: DragEvent): number {
 
     if (nonTail.length === 0) return 0;
 
-    if (tailRect && x >= tailRect.left && x <= tailRect.right) return n;
+    if (tailRect && x >= tailRect.left && x <= tailRect.right && y >= tailRect.top && y <= tailRect.bottom)
+        return n;
 
     for (let i = 0; i < nonTail.length; i++) {
         const r = nonTail[i].getBoundingClientRect();
-        if (x >= r.left && x <= r.right) {
-            const mid = (r.left + r.right) / 2;
-            return x < mid ? i : Math.min(i + 1, n);
+        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+            return i;
         }
     }
 
@@ -241,12 +240,16 @@ function insertIndexFromStripEvent(strip: HTMLElement, ev: DragEvent): number {
     let bestD = Infinity;
     for (let i = 0; i < nonTail.length; i++) {
         const r = nonTail[i].getBoundingClientRect();
-        const mid = (r.left + r.right) / 2;
-        const pick = x < mid ? i : Math.min(i + 1, n);
-        const d = Math.abs(x - mid);
-        if (d < bestD) {
-            bestD = d;
-            best = pick;
+        const candidates: [number, number][] = [
+            [r.left, i],
+            [r.right, Math.min(i + 1, n)],
+        ];
+        for (const [bx, insertIdx] of candidates) {
+            const d = Math.abs(x - bx);
+            if (d < bestD) {
+                bestD = d;
+                best = insertIdx;
+            }
         }
     }
     return best;
@@ -257,8 +260,8 @@ function onStripWrapDrop(ev: DragEvent): void {
     if (!wrap) return;
     const strip = wrap.querySelector(".strip");
     if (!strip) return;
-    const insertBefore = insertIndexFromStripEvent(strip as HTMLElement, ev);
-    handleStripDrop(insertBefore, ev);
+    const slotIndex = insertSlotIndexFromStripEvent(strip as HTMLElement, ev);
+    handleStripDrop(slotIndex, ev);
 }
 
 /** 将 `from` 移到「当前位于 insertBefore 的物品之前」的位置（insertBefore 为 length 表示末尾）。 */
@@ -275,11 +278,13 @@ function moveDeckEntry(from: number, insertBefore: number): void {
     session.setSlots(next);
 }
 
-function handleStripDrop(insertBefore: number, ev: DragEvent): void {
+function handleStripDrop(slotIndex: number, ev: DragEvent): void {
     ev.preventDefault();
     ev.stopPropagation();
     const p = parseDrop(ev);
     if (!p) return;
+
+    const n = session.slots.length;
 
     if (p.kind === "pool") {
         const it = catalog.byName.get(p.itemName);
@@ -290,7 +295,7 @@ function handleStripDrop(insertBefore: number, ev: DragEvent): void {
         }
         const next = session.slots.slice();
         const entry: DeckSlotEntry = { item_name: p.itemName, tier: it.min_tier };
-        next.splice(insertBefore, 0, entry);
+        next.splice(slotIndex, 0, entry);
         session.setSlots(next);
         return;
     }
@@ -298,7 +303,13 @@ function handleStripDrop(insertBefore: number, ev: DragEvent): void {
     if (p.kind === "deck") {
         deckDropOnStripHandled.value = true;
         const from = p.index;
-        if (from === insertBefore || from === insertBefore - 1) return;
+        if (slotIndex === n) {
+            moveDeckEntry(from, n);
+            return;
+        }
+        const t = slotIndex;
+        if (from === t) return;
+        const insertBefore = from < t ? t + 1 : t;
         moveDeckEntry(from, insertBefore);
     }
 }

@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "jobId": "http-12-vs-11",
+  "mode": "simulate",
+  "payload": {
+    "allowTie": true,
+    "debug": {
+      "enabled": true,
+      "level": "detailed",
+      "maxEvents": 50000
+    },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 2,
+        "items": [
+          {
+            "key": "打火机",
+            "tier": "bronze"
+          },
+          {
+            "key": "绵鳚",
+            "tier": "bronze"
+          },
+          {
+            "key": "海底热泉",
+            "tier": "bronze"
+          },
+          {
+            "key": "燃烧响炮",
+            "tier": "bronze"
+          },
+          {
+            "key": "珊瑚",
+            "tier": "bronze",
+            "attrsOverride": {
+              "custom_1": 2
+            }
+          }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 2,
+        "items": [
+          {
+            "key": "水草",
+            "tier": "bronze"
+          },
+          {
+            "key": "毒须鲶",
+            "tier": "bronze"
+          },
+          {
+            "key": "雪怪蟹",
+            "tier": "bronze"
+          },
+          {
+            "key": "水母",
+            "tier": "bronze"
+          },
+          {
+            "key": "珍珠",
+            "tier": "bronze"
+          },
+          {
+            "key": "海螺壳",
+            "tier": "bronze"
+          }
+        ]
+      }
+    ],
+    "seed": 869565779
+  },
+  "cliReproMeta": {
+    "exportedAt": "2026-04-12T19:27:16+00:00",
+    "deck0_as_side0": {
+      "deckId": 12,
+      "name": "标准灼烧",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "打火机",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "绵鳚",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "海底热泉",
+          "tier": 0
+        },
+        {
+          "position": 3,
+          "item_name": "燃烧响炮",
+          "tier": 0
+        },
+        {
+          "position": 4,
+          "item_name": "珊瑚",
+          "tier": 0,
+          "attrs_override": {
+            "custom_1": 2
+          }
+        }
+      ]
+    },
+    "deck1_as_side1": {
+      "deckId": 11,
+      "name": "标准剧毒",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "水草",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "毒须鲶",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "雪怪蟹",
+          "tier": 0
+        },
+        {
+          "position": 3,
+          "item_name": "水母",
+          "tier": 0
+        },
+        {
+          "position": 4,
+          "item_name": "珍珠",
+          "tier": 0
+        },
+        {
+          "position": 5,
+          "item_name": "海螺壳",
+          "tier": 0
+        }
+      ]
+    },
+    "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。"
+  }
+}
