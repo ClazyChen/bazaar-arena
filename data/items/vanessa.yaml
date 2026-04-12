@@ -588,6 +588,8 @@ items:
     Abilities:
       - type: Damage
       - type: ReduceAttribute
+        trigger: UseItem
+        ex_condition: SameAsCaster
         key: AmmoRemaining
         value: AmmoCap
         target_condition: SameAsCaster
@@ -773,3 +775,145 @@ items:
                 - type: Item
                   params: [SlowRemaining]
         value: Custom_0
+  - Name: "双管霰弹枪"
+    Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；多重释放：{Multicast}"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 4s
+    Damage: [20, 40, 80, 160]
+    AmmoCap: 2
+    Multicast: 2
+    Abilities:
+      - type: Damage
+  - Name: "渔网"
+    Desc: "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；【局外】每天开始时，获得 1 件来自任意英雄的小型水系或战利品物品"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Aquatic, Tool]
+    Cooldown: 6s
+    Slow: 2s
+    SlowTargetCount: [1, 2, 3, 4]
+    Abilities:
+      - type: Slow
+  - Name: "钓鱼竿"
+    Desc: "▶ 加速此物品右侧的水系物品 {Haste} 秒；【局外】每天开始时，获得 1 件小型水系物品"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Aquatic, Tool]
+    Cooldown: 5s
+    Haste: 2s
+    HasteTargetCount: 1
+    Abilities:
+      - type: Haste
+        target_condition:
+          type: And
+          params:
+            - type: RightOfCaster
+            - type: HasTag
+              params: [Aquatic]
+        priority: High
+  - Name: "武士刀"
+    Desc: "▶ 造成 {Damage} 伤害"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 2s
+    Damage: [8, 16, 32, 64]
+    Abilities:
+      - type: Damage
+  - Name: "狼筅"
+    Desc: "▶ 造成 {Damage} 伤害；【局外】使用此物品赢得战斗时，此物品的伤害提高 {Custom_0}；【默认】已赢得战斗次数: {Custom_1}"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Weapon, Relic]
+    Cooldown: 10s
+    Damage: 40
+    Custom_0: [40, 60, 80, 100]
+    Custom_1: [3, 6, 9, 12]
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: Damage
+        value:
+          type: Mul
+          params:
+            - type: Caster
+              params: [Custom_0]
+            - type: Caster
+              params: [Custom_1]
+  - Name: "救生圈"
+    Desc: "▶ 获得 {Shield} 护盾；每场战斗即将首次落败时，治疗 {Heal} 生命值"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Aquatic]
+    Cooldown: 7s
+    Shield: [10, 20, 40, 80]
+    Heal: [200, 400, 800, 1600]
+    Custom_0: 0
+    Custom_1: 1
+    Abilities:
+      - type: Shield
+      # AboutToLose：先 Custom_0 += Custom_1（首次 0→1，再次落败会继续累加离开 1）；再治疗（仅 Custom_0==1）
+      - type: AddAttribute
+        trigger: AboutToLose
+        condition:
+          type: Le
+          params:
+            - type: Side
+              params: [Hp]
+            - 0
+        key: Custom_0
+        value: Custom_1
+        target_condition: SameAsCaster
+        priority: Immediate
+      - type: Heal
+        trigger: AboutToLose
+        condition:
+          type: And
+          params:
+            - type: Le
+              params:
+                - type: Side
+                  params: [Hp]
+                - 0
+            - type: Eq
+              params:
+                - type: Caster
+                  params: [Custom_0]
+                - 1
+        priority: Immediate
+  - Name: "填弹杆"
+    Desc: "▶ 为此物品相邻的物品装填 {Reload} 弹药；触发装填时，令目标物品的暴击率提高 {Custom_0%}（限本场战斗）"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Tool]
+    Cooldown: 3s
+    Reload: [1, 2, 3, 4]
+    ReloadTargetCount: 2
+    Custom_0: [10, 20, 30, 40]
+    Abilities:
+      - type: Reload
+        target_condition: AdjacentToCaster
+        priority: Low
+      - type: AddAttribute
+        trigger: Reload
+        target_condition: SameAsTarget
+        key: CritRate
+        value: Custom_0
+  - Name: "步枪"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 此物品的伤害提高 {Custom_0}（限本场战斗）；弹药：{AmmoCap}"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 3s
+    Damage: [20, 40, 60, 80]
+    Custom_0: [20, 40, 60, 80]
+    AmmoCap: 1
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        key: Damage
+        value: Custom_0
+        target_condition: SameAsCaster
+        priority: Low

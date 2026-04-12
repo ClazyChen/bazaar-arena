@@ -5,11 +5,8 @@ from __future__ import annotations
 
 
 def _item_key_cpp(name: str) -> str:
-    return f"core::ItemKey::{name}"
-
-
-def _side_key_cpp(name: str) -> str:
-    return f"core::SideKey::{name}"
+    # 使用完全限定名，避免 MSVC 将 core::ItemKey 误解析为 core::Item + Key
+    return f"bazaararena::core::ItemKey::{name}"
 
 
 def _tag_cpp(name: str) -> str:
@@ -96,6 +93,21 @@ _SIDE_KEYS = frozenset(
     }
 )
 
+# 与 engine/include/bazaararena/core/SideKey.hpp 一致；formula::Side/Opp 模板用整型字面量，避免 MSVC 嵌套模板解析错误
+_SIDE_KEY_TEMPLATE_INT = {
+    "Id": 0,
+    "MaxHp": 1,
+    "Hp": 2,
+    "Shield": 3,
+    "Burn": 4,
+    "Poison": 5,
+    "Regen": 6,
+    "Gold": 7,
+    "Income": 8,
+    "Resistance": 9,
+    "ItemCount": 10,
+}
+
 
 def emit_formula_ast(node: object, *, where: str = "") -> str:
     """
@@ -120,7 +132,7 @@ def emit_formula_ast(node: object, *, where: str = "") -> str:
         except ValueError:
             # 光环/公式中的裸 ItemKey 名（如 Custom_0）→ Caster 取值
             if s in ITEM_KEY_NAMES:
-                return f"formula::Caster<{_item_key_cpp(s)}>"
+                return f"formula::Caster<({_item_key_cpp(s)})>"
             raise ValueError(f"{where}: 未知的公式/条件叶子：{s}") from None
 
     if not isinstance(node, dict):
@@ -148,6 +160,7 @@ def _emit_named_leaf(name: str, *, where: str) -> str:
         "Never": "Never",
         "SameAsCaster": "SameAsCaster",
         "SameAsSource": "SameAsSource",
+        "SameAsTarget": "SameAsTarget",
         "TargetSameAsCaster": "TargetSameAsCaster",
         "DifferentFromCaster": "DifferentFromCaster",
         "SameSide": "SameSide",
@@ -218,25 +231,31 @@ def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
         if len(params) != 1:
             raise ValueError(f"{where}: Item 需要 1 个 ItemKey 名")
         k = _key_name(params[0], "ItemKey", where)
-        return f"formula::Item<{_item_key_cpp(k)}>"
+        return f"formula::Item<({_item_key_cpp(k)})>"
 
     if typ == "Caster":
         if len(params) != 1:
             raise ValueError(f"{where}: Caster 需要 1 个 ItemKey 名")
         k = _key_name(params[0], "ItemKey", where)
-        return f"formula::Caster<{_item_key_cpp(k)}>"
+        return f"formula::Caster<({_item_key_cpp(k)})>"
 
     if typ == "Side":
         if len(params) != 1:
             raise ValueError(f"{where}: Side 需要 1 个 SideKey 名")
         k = _key_name(params[0], "SideKey", where)
-        return f"formula::Side<{_side_key_cpp(k)}>"
+        n = _SIDE_KEY_TEMPLATE_INT.get(k)
+        if n is None:
+            raise ValueError(f"{where}: SideKey 缺少整型映射：{k}")
+        return f"formula::Side<{n}>"
 
     if typ == "Opp":
         if len(params) != 1:
             raise ValueError(f"{where}: Opp 需要 1 个 SideKey 名")
         k = _key_name(params[0], "SideKey", where)
-        return f"formula::Opp<{_side_key_cpp(k)}>"
+        n = _SIDE_KEY_TEMPLATE_INT.get(k)
+        if n is None:
+            raise ValueError(f"{where}: SideKey 缺少整型映射：{k}")
+        return f"formula::Opp<{n}>"
 
     if typ == "HasTag":
         if len(params) != 1:

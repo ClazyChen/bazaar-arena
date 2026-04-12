@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "jobId": "http-3-vs-5",
+  "mode": "simulate",
+  "payload": {
+    "allowTie": true,
+    "debug": {
+      "enabled": true,
+      "level": "detailed",
+      "maxEvents": 50000
+    },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 2,
+        "items": [
+          {
+            "key": "武士刀",
+            "tier": "bronze"
+          },
+          {
+            "key": "弹簧刀",
+            "tier": "bronze"
+          },
+          {
+            "key": "左轮手枪",
+            "tier": "bronze"
+          },
+          {
+            "key": "救生圈",
+            "tier": "bronze"
+          }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 2,
+        "items": [
+          {
+            "key": "双管霰弹枪",
+            "tier": "bronze"
+          },
+          {
+            "key": "填弹杆",
+            "tier": "bronze"
+          },
+          {
+            "key": "步枪",
+            "tier": "bronze"
+          }
+        ]
+      }
+    ],
+    "seed": 418514128
+  },
+  "cliReproMeta": {
+    "exportedAt": "2026-04-12T18:16:39+00:00",
+    "deck0_as_side0": {
+      "deckId": 3,
+      "name": "测试卡组3",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "武士刀",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "弹簧刀",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "左轮手枪",
+          "tier": 0
+        },
+        {
+          "position": 3,
+          "item_name": "救生圈",
+          "tier": 0
+        }
+      ]
+    },
+    "deck1_as_side1": {
+      "deckId": 5,
+      "name": "测试卡组5",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "双管霰弹枪",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "填弹杆",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "步枪",
+          "tier": 0
+        }
+      ]
+    },
+    "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。"
+  }
+}

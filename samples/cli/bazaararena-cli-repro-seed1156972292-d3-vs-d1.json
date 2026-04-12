@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "jobId": "http-3-vs-1",
+  "mode": "simulate",
+  "payload": {
+    "allowTie": true,
+    "debug": {
+      "enabled": true,
+      "level": "detailed",
+      "maxEvents": 50000
+    },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 2,
+        "items": [
+          {
+            "key": "武士刀",
+            "tier": "bronze"
+          },
+          {
+            "key": "弹簧刀",
+            "tier": "bronze"
+          },
+          {
+            "key": "左轮手枪",
+            "tier": "bronze"
+          },
+          {
+            "key": "救生圈",
+            "tier": "bronze"
+          }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 2,
+        "items": [
+          {
+            "key": "珍珠",
+            "tier": "bronze"
+          },
+          {
+            "key": "木桶",
+            "tier": "bronze"
+          },
+          {
+            "key": "淬锋钢",
+            "tier": "bronze"
+          },
+          {
+            "key": "飞鱼",
+            "tier": "bronze"
+          },
+          {
+            "key": "鱼饵",
+            "tier": "bronze"
+          }
+        ]
+      }
+    ],
+    "seed": 1156972292
+  },
+  "cliReproMeta": {
+    "exportedAt": "2026-04-12T18:39:19+00:00",
+    "deck0_as_side0": {
+      "deckId": 3,
+      "name": "测试卡组3",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "武士刀",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "弹簧刀",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "左轮手枪",
+          "tier": 0
+        },
+        {
+          "position": 3,
+          "item_name": "救生圈",
+          "tier": 0
+        }
+      ]
+    },
+    "deck1_as_side1": {
+      "deckId": 1,
+      "name": "新卡组",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "珍珠",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "木桶",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "淬锋钢",
+          "tier": 0
+        },
+        {
+          "position": 3,
+          "item_name": "飞鱼",
+          "tier": 0
+        },
+        {
+          "position": 4,
+          "item_name": "鱼饵",
+          "tier": 0
+        }
+      ]
+    },
+    "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。"
+  }
+}

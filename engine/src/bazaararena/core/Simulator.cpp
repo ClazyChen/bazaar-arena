@@ -30,8 +30,9 @@ void Simulator::InvokeTrigger(int trigger, const ItemState* source, const ItemSt
                 if (ability.trigger_entries[j].trigger != trigger) continue;
                 if (ability.trigger_entries[j].condition(ctx) == 0) continue;
                 if (ability.priority == AbilityPriority::Immediate) {
+                    const short packed = static_cast<short>((index << 3) | i);
                     for (int k = 0; k < count; k++) {
-                        ApplyAbility({ 0, 1, 0, ctx.caster, ctx.source, ctx.target });
+                        ApplyAbility({ packed, 1, 0, ctx.caster, ctx.source, ctx.target });
                     }
                 } else {
                     ability_queue.Enqueue((index << 3) | i, ability.priority, ctx, count);
@@ -48,6 +49,7 @@ void Simulator::CheckCharge(ItemState& item, bool ignore_charge_remaining) {
     if (item.attrs[ItemKey::FreezeRemaining] > 0) return; // 被冻结的物品无法施放
     int cooldown = GetItemInt(&item, ItemKey::Cooldown);
     if (ignore_charge_remaining || item.attrs[ItemKey::ChargedTime] >= cooldown) { // 充能完成
+        int multicast = GetItemInt(&item, ItemKey::Multicast);
         if (item.attrs[ItemKey::DerivedTags] & DerivedTag::Ammo) {
             // 弹药物品充能完成
             if (item.attrs[ItemKey::AmmoRemaining] == 0) {
@@ -64,7 +66,6 @@ void Simulator::CheckCharge(ItemState& item, bool ignore_charge_remaining) {
             // 正常充能完成，消耗所有充能，并触发施放
             item.attrs[ItemKey::ChargedTime] = 0;
         }
-        int multicast = GetItemInt(&item, ItemKey::Multicast);
         // 触发「施放」触发器（主动效果）
         InvokeTrigger(Trigger::Cast, &item, &item, multicast);
         // 触发「使用物品」触发器（被动效果）
