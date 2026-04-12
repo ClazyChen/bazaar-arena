@@ -121,14 +121,26 @@ function tagLabelZh(tag: string): string {
     return TAG_NAME_ZH[tag] ?? tag;
 }
 
-function normalizePlaceholderInner(inner: string): { key: string; leadingPlus: boolean; trailingPercent: boolean } {
+/**
+ * Desc 占位符 `{...}` 内解析。
+ * 以 `:` 结尾（如 `{Custom_1:}`）表示引擎值为毫秒级、但文案中自行写了「秒」等单位：
+ * 展示时数值 /1000，固定 1 位小数（与默认按秒显示的 Cooldown 等字段区分）。
+ */
+function normalizePlaceholderInner(inner: string): {
+    key: string;
+    leadingPlus: boolean;
+    trailingPercent: boolean;
+    scaleThousandth: boolean;
+} {
     let s = inner.trim();
     const leadingPlus = s.startsWith("+");
-    if (leadingPlus) s = s.slice(1);
+    if (leadingPlus) s = s.slice(1).trim();
+    const scaleThousandth = s.endsWith(":");
+    if (scaleThousandth) s = s.slice(0, -1).trim();
     const trailingPercent = s.endsWith("%");
     if (trailingPercent) s = s.slice(0, -1);
     const key = DESC_FIELD_ALIASES[s] ?? s;
-    return { key, leadingPlus, trailingPercent };
+    return { key, leadingPlus, trailingPercent, scaleThousandth };
 }
 
 function getTierArray(attrs: Record<string, number[]> | null | undefined, key: string): number[] | null {
@@ -161,7 +173,12 @@ function valuesAllEqual(arr: number[], eps = 1e-6): boolean {
     return arr.every((x) => Math.abs(x - f) < eps);
 }
 
-function formatOneValue(key: string, v: number): string {
+/** `scaleThousandth`：占位符 `KEY:` 时，引擎值为毫秒，按「秒」类文案展示 */
+function formatOneValue(key: string, v: number, scaleThousandth: boolean): string {
+    if (scaleThousandth) {
+        if (!Number.isFinite(v)) return "";
+        return (v / 1000).toFixed(1);
+    }
     if (MS_DISPLAY_KEYS.has(key)) return formatSecondsFromMs(v);
     return formatNumber(v);
 }
@@ -169,14 +186,14 @@ function formatOneValue(key: string, v: number): string {
 /** 与 tooltip 正文一致，不随 tier 染色 */
 const TOOLTIP_VALUE_DEFAULT = "#e8eaef";
 
-function formatNumericDefaultHtml(key: string, v: number): string {
-    const text = formatOneValue(key, v);
+function formatNumericDefaultHtml(key: string, v: number, scaleThousandth: boolean): string {
+    const text = formatOneValue(key, v, scaleThousandth);
     return `<span style="color:${TOOLTIP_VALUE_DEFAULT};font-weight:600">${escapeHtml(text)}</span>`;
 }
 
 /** 数值按对应 tier 上色（与卡组边框色一致）；仅当属性随等级变化时使用 */
-function formatNumericTierHtml(key: string, v: number, tierIndex: number): string {
-    const text = formatOneValue(key, v);
+function formatNumericTierHtml(key: string, v: number, tierIndex: number, scaleThousandth: boolean): string {
+    const text = formatOneValue(key, v, scaleThousandth);
     const color = tierBorderColor(tierIndex);
     return `<span style="color:${color};font-weight:600">${escapeHtml(text)}</span>`;
 }
@@ -191,11 +208,12 @@ function formatLadderColoredHtml(
     startTierIndex: number,
     leadingPlus: boolean,
     trailingPercent: boolean,
+    scaleThousandth: boolean,
 ): string {
     return sliced
         .map((v, i) => {
             const ti = startTierIndex + i;
-            const core = formatNumericTierHtml(key, v, ti);
+            const core = formatNumericTierHtml(key, v, ti, scaleThousandth);
             return wrapAffixes(core, leadingPlus, trailingPercent);
         })
         .join('<span style="opacity:0.55"> » </span>');
@@ -212,6 +230,7 @@ function formatPlaceholderValueHtml(
     minTier: number,
     leadingPlus: boolean,
     trailingPercent: boolean,
+    scaleThousandth: boolean,
     attrsOverride?: DeckSlotAttrsOverride | null,
 ): string {
     const ov = mode === "deck" ? getDeckAttrOverride(key, attrsOverride) : undefined;
@@ -221,7 +240,7 @@ function formatPlaceholderValueHtml(
     const t = Math.min(Math.max(tier, 0), 4);
     if (mode === "deck") {
         const v = ov !== undefined ? ov : arr![t] ?? arr![0];
-        const core = formatNumericDefaultHtml(key, v);
+        const core = formatNumericDefaultHtml(key, v, scaleThousandth);
         const wrapped = wrapAffixes(core, leadingPlus, trailingPercent);
         return ov !== undefined ? wrapped + OVERRIDDEN_SUFFIX_HTML : wrapped;
     }
@@ -231,10 +250,10 @@ function formatPlaceholderValueHtml(
     if (sliced.length === 0) return escapeHtml("?");
     const startTier = Math.min(Math.max(minTier, 0), 4);
     if (sliced.length === 1 || valuesAllEqual(sliced)) {
-        const core = formatNumericDefaultHtml(key, sliced[0]);
+        const core = formatNumericDefaultHtml(key, sliced[0], scaleThousandth);
         return wrapAffixes(core, leadingPlus, trailingPercent);
     }
-    return formatLadderColoredHtml(key, sliced, startTier, leadingPlus, trailingPercent);
+    return formatLadderColoredHtml(key, sliced, startTier, leadingPlus, trailingPercent, scaleThousandth);
 }
 
 /** 备选区阶梯：只含物品可能出现的 tier，即 min_tier..钻石(3)；传奇(min_tier=4)仅一档 */
@@ -268,7 +287,7 @@ function formatDescHtml(
         const lit = desc.slice(last, m.index);
         out += colorizePlainText(lit);
         const inner = m[1] ?? "";
-        const { key, leadingPlus, trailingPercent } = normalizePlaceholderInner(inner);
+        const { key, leadingPlus, trailingPercent, scaleThousandth } = normalizePlaceholderInner(inner);
         const arr = getTierArray(attrs, key);
         const hasDeckOverride =
             mode === "deck" && getDeckAttrOverride(key, attrsOverride) !== undefined;
@@ -282,6 +301,7 @@ function formatDescHtml(
                       minTier,
                       leadingPlus,
                       trailingPercent,
+                      scaleThousandth,
                       attrsOverride,
                   )
                 : escapeHtml("—");
@@ -323,15 +343,15 @@ export function buildItemTooltipHtml(
         let cdInnerHtml: string;
         if (opts.mode === "deck") {
             const v = cdArr[tDeck] ?? cdArr[0];
-            cdInnerHtml = formatNumericDefaultHtml("Cooldown", v);
+            cdInnerHtml = formatNumericDefaultHtml("Cooldown", v, false);
         } else {
             const sliced = sliceTierValuesForPoolDisplay(cdArr, minTier);
             const startTier = Math.min(Math.max(minTier, 0), 4);
             if (sliced.length === 0) cdInnerHtml = escapeHtml("?");
             else if (sliced.length === 1 || valuesAllEqual(sliced)) {
-                cdInnerHtml = formatNumericDefaultHtml("Cooldown", sliced[0]);
+                cdInnerHtml = formatNumericDefaultHtml("Cooldown", sliced[0], false);
             } else {
-                cdInnerHtml = formatLadderColoredHtml("Cooldown", sliced, startTier, false, false);
+                cdInnerHtml = formatLadderColoredHtml("Cooldown", sliced, startTier, false, false, false);
             }
         }
         cooldownBlock = `<div class="it-cd">冷却时间：${cdInnerHtml} 秒</div>`;

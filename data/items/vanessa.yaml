@@ -77,7 +77,7 @@ items:
       - type: Damage
       - type: Slow
   - Name: "三花"
-    Desc: "▶ 造成 {Damage} 伤害；使用其他武器时，此物品暴击率提高 {Custom_0%}（限本场战斗）"
+    Desc: "▶ 造成 {Damage} 伤害；使用其他武器时，此物品的暴击率提高 {Custom_0%}（限本场战斗）"
     Size: Small
     Tier: Bronze
     Tags: [Weapon]
@@ -98,7 +98,7 @@ items:
               params: [Weapon]
             - DifferentFromCaster
   - Name: "毒须鲶"
-    Desc: "▶ 造成 {Poison} 剧毒；此物品被加速时，其剧毒提高 {Custom_0}（限本场战斗）"
+    Desc: "▶ 造成 {Poison} 剧毒；此物品被加速时，此物品的剧毒提高 {Custom_0}（限本场战斗）"
     Size: Small
     Tier: Bronze
     Tags: [Aquatic, Friend]
@@ -578,7 +578,7 @@ items:
             - 1
         value: Custom_0
   - Name: "手里剑"
-    Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；此物品的多重释放次数等于剩余弹药数量；使用此物品时，消耗全部弹药"
+    Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；此物品 +多重释放，等量于剩余弹药数量；使用此物品时，消耗全部弹药"
     Size: Small
     Tier: Bronze
     Tags: [Weapon]
@@ -917,3 +917,123 @@ items:
         value: Custom_0
         target_condition: SameAsCaster
         priority: Low
+  - Name: "鲨齿爪"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 武器伤害提高 {Custom_0}（限本场战斗）"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 6s
+    Damage: [10, 20, 30, 40]
+    Custom_0: [10, 20, 30, 40]
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        key: Damage
+        value: Custom_0
+        ex_target_condition:
+          type: HasTag
+          params: [Weapon]
+        priority: High
+  - Name: "铲子"
+    Desc: "▶ 造成 {Damage} 伤害；【局外】每天开始时，获得 1 件来自任意英雄的小型物品"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Weapon, Tool]
+    Cooldown: 5s
+    Damage: [25, 50, 100, 200]
+    Abilities:
+      - type: Damage
+  - Name: "星图"
+    Desc: "相邻物品 {+Custom_0%} 暴击率；相邻物品缩短 {Custom_1%} 冷却时间"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Tool, Relic]
+    Custom_0: [10, 15, 20, 25]
+    Custom_1: [5, 10, 15, 20]
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: And
+          params:
+            - AdjacentToCaster
+            - CanCrit
+        value: Custom_0
+      - attribute: CooldownReductionPercent
+        condition:
+          type: And
+          params:
+            - AdjacentToCaster
+            - HasCooldown
+        value: Custom_1
+  - Name: "海底热泉"
+    Desc: "▶ 造成 {Burn} 伤害；多重释放：{Multicast}"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Aquatic]
+    Cooldown: 7s
+    Burn: [3, 6, 9, 12]
+    Multicast: 3
+    Abilities:
+      - type: Burn
+  - Name: "湿件战服"
+    Desc: "▶ 获得 {Shield} 护盾；使用武器时，此物品的护盾提高 {Custom_0}（限本场战斗）；如果有一件其他的科技物品，此物品的冷却时间缩短 {Custom_1:} 秒"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Aquatic, Apparel, Tech]
+    Cooldown: 8s
+    Shield: 10
+    Custom_0: [15, 25, 35, 45]
+    Custom_1: 2s
+    Abilities:
+      - type: Shield
+      - type: AddAttribute
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Weapon]
+            - DifferentFromCaster
+        target_condition: SameAsCaster
+        key: Shield
+        value: Custom_0
+    Auras:
+      - attribute: CooldownReduction
+        condition:
+          type: Count
+          params:
+            - type: And
+              params:
+                - SameSide
+                - type: HasTag
+                  params: [Tech]
+                - DifferentFromCaster
+        value: Custom_1
+  - Name: "温馨海湾"
+    Desc: "▶ 获得护盾，等量于此物品价值的 {Custom_0} 倍；【局外】出售物品时，此物品的价值提高 {Custom_1}；【默认】已出售物品数量: {Custom_2}"
+    Size: Large
+    Tier: Bronze
+    Tags: [Aquatic, Property]
+    Cooldown: 4s
+    Custom_0: [1, 2, 3, 4]
+    Custom_1: [1, 1, 1, 2]
+    Custom_2: [4, 8, 16, 24]
+    Abilities:
+      - type: Shield
+    Auras:
+      - attribute: Shield
+        value:
+          type: Mul
+          params:
+            - type: Caster
+              params: [Value]
+            - type: Caster
+              params: [Custom_0]
+      - attribute: Value
+        value:
+          type: Mul
+          params:
+            - type: Caster
+              params: [Custom_1]
+            - type: Caster
+              params: [Custom_2]
