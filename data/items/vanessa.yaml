@@ -479,3 +479,101 @@ items:
                   params: [Food]
             - DifferentFromCaster
         target_condition: SameAsCaster
+  - Name: "燃烧响炮"
+    Desc: "▶ 造成 {Burn} 灼烧；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Bronze
+    Tags: [Toy]
+    Cooldown: 3s
+    Burn: [4, 8, 12, 16]
+    AmmoCap: 4
+    Abilities:
+      - type: Burn
+  - Name: "火药角"
+    Desc: "▶ 为此物品右侧的物品装填 {Reload} 弹药"
+    Size: Small
+    Tier: Bronze
+    Tags: [Tool]
+    Cooldown: 4s
+    Reload: [1, 2, 3, 4]
+    Abilities:
+      - type: Reload
+        target_condition: RightOfCaster
+        priority: Lowest
+  - Name: "左轮手枪"
+    Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 3s
+    Damage: [8, 16, 32, 64]
+    AmmoCap: 6
+    Abilities:
+      - type: Damage
+  - Name: "海螺壳"
+    Desc: "▶ 每有一件水系物品，获得 {Custom_0} 护盾"
+    Size: Small
+    Tier: Bronze
+    Tags: [Aquatic]
+    Cooldown: 6s
+    Custom_0: [10, 15, 20, 25]
+    Abilities:
+      - type: Shield
+    Auras:
+      - attribute: Shield
+        value:
+          type: Mul
+          params:
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - type: HasTag
+                      params: [Aquatic]
+            - type: Caster
+              params: [Custom_0]
+  - Name: "水草"
+    Desc: "▶ 治疗 {Heal} 生命值；使用水系物品时，此物品的治疗提高 {Custom_0}（限本场战斗）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Aquatic]
+    Cooldown: 7s
+    Heal: 20
+    Custom_0: [5, 10, 15, 20]
+    Abilities:
+      - type: Heal
+      - type: AddAttribute
+        trigger: UseItem
+        ex_condition:
+          type: HasTag
+          params: [Aquatic]
+        target_condition: SameAsCaster
+        key: Heal
+        value: Custom_0
+  - Name: "靴里剑"
+    Desc: "▶ 造成 {Damage} 伤害；首次使用此物品时，暴击率 {+Custom_0%}"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Apparel]
+    Cooldown: 6s
+    Damage: [25, 50, 100, 200]
+    Custom_0: 100
+    Custom_1: 0
+    Custom_2: 1
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        key: Custom_1
+        value: Custom_2
+        target_condition: SameAsCaster
+        priority: Lowest
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: Lt
+          params:
+            - type: Caster
+              params: [Custom_1]
+            - 1
+        value: Custom_0

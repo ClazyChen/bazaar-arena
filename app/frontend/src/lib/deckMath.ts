@@ -48,6 +48,11 @@ export function flightStripRgba(alpha: number): string {
     return `rgba(244, 207, 32, ${alpha})`;
 }
 
+/** 血条上护盾区域半透明遮罩（与 SHIELD_KEYWORD_RGB 同色） */
+export function shieldOverlayRgba(alpha: number): string {
+    return `rgba(244, 207, 32, ${alpha})`;
+}
+
 /** 与后端 legacy Deck.MaxSlotsForLevel 一致 */
 export function maxSlotsForLevel(level: number): number {
     if (level <= 1) return 4;

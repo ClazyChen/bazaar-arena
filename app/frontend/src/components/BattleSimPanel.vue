@@ -15,6 +15,7 @@ import {
     dcardOuterWidthPx,
     flightStripRgba,
     freezeOverlayRgba,
+    shieldOverlayRgba,
     itemArtAspectStyle,
     tierBorderColor,
     unchargedOverlayRgba,
@@ -199,7 +200,7 @@ watch(maxPlayhead, (m) => {
 
 function hudFloatLabel(ev: HudFloatEvent): string {
     const n = Math.round(ev.amount);
-    if (ev.kind === "heal" || ev.kind === "regen") {
+    if (ev.kind === "heal" || ev.kind === "regen" || ev.kind === "shield") {
         return ev.isCrit ? `+${n}!` : `+${n}`;
     }
     if (ev.kind === "burn") {
@@ -221,6 +222,8 @@ function hudFloatColor(ev: HudFloatEvent): string {
             return POISON_KEYWORD_RGB;
         case "heal":
             return HEAL_KEYWORD_RGB;
+        case "shield":
+            return SHIELD_KEYWORD_RGB;
         case "regen":
             return REGEN_KEYWORD_RGB;
         default:
@@ -1051,14 +1054,21 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                             >{{ hudFloatLabel(item.ev) }}</span>
                         </div>
                         <div class="bars">
-                            <div v-if="side0.shield > 0" class="bar shield-bar">
-                                <div class="fill" :style="{ width: `${shieldFrac(side0) * 100}%` }" />
-                                <span class="bar-label shield-label">{{ Math.round(side0.shield) }}</span>
-                            </div>
                             <div class="bar hp-bar">
                                 <div class="fill hp-fill" :style="{ width: `${hpFrac(side0) * 100}%` }" />
+                                <div
+                                    v-if="side0.shield > 0"
+                                    class="hp-shield-overlay"
+                                    :style="{
+                                        width: `${shieldFrac(side0) * 100}%`,
+                                        background: shieldOverlayRgba(0.42),
+                                    }"
+                                />
                                 <div class="hp-on-bar hp-bar-stats">
                                     <span class="hp-bar-num hp-bar-num--hp">{{ Math.round(side0.hp) }}</span>
+                                    <span v-if="side0.shield > 0" class="hp-bar-num hp-bar-num--shield">{{
+                                        Math.round(side0.shield)
+                                    }}</span>
                                     <span v-if="side0.burn > 0" class="hp-bar-num hp-bar-num--burn"
                                         ><span class="hp-debuff-glyph" aria-hidden="true">火</span
                                         >{{ Math.round(side0.burn) }}</span
@@ -1415,14 +1425,21 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                             >{{ hudFloatLabel(item.ev) }}</span>
                         </div>
                         <div class="bars">
-                            <div v-if="side1.shield > 0" class="bar shield-bar">
-                                <div class="fill" :style="{ width: `${shieldFrac(side1) * 100}%` }" />
-                                <span class="bar-label shield-label">{{ Math.round(side1.shield) }}</span>
-                            </div>
                             <div class="bar hp-bar">
                                 <div class="fill hp-fill" :style="{ width: `${hpFrac(side1) * 100}%` }" />
+                                <div
+                                    v-if="side1.shield > 0"
+                                    class="hp-shield-overlay"
+                                    :style="{
+                                        width: `${shieldFrac(side1) * 100}%`,
+                                        background: shieldOverlayRgba(0.42),
+                                    }"
+                                />
                                 <div class="hp-on-bar hp-bar-stats">
                                     <span class="hp-bar-num hp-bar-num--hp">{{ Math.round(side1.hp) }}</span>
+                                    <span v-if="side1.shield > 0" class="hp-bar-num hp-bar-num--shield">{{
+                                        Math.round(side1.shield)
+                                    }}</span>
                                     <span v-if="side1.burn > 0" class="hp-bar-num hp-bar-num--burn"
                                         ><span class="hp-debuff-glyph" aria-hidden="true">火</span
                                         >{{ Math.round(side1.burn) }}</span
@@ -1798,6 +1815,9 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
 .hp-bar-num--hp {
     color: #ffffff;
 }
+.hp-bar-num--shield {
+    color: rgb(244, 207, 32);
+}
 .hp-debuff-glyph {
     display: inline-block;
     margin-right: 1px;
@@ -1828,29 +1848,24 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     background: #2a2f38;
     overflow: hidden;
 }
-.shield-bar .fill {
-    height: 100%;
-    background: linear-gradient(90deg, #c9a820, #f4cf20);
-    border-radius: 4px;
-}
 .hp-bar .hp-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 0;
     height: 100%;
     background: linear-gradient(90deg, #8b2b2b, #f55a4a);
     border-radius: 4px;
 }
-.bar-label {
+.hp-shield-overlay {
     position: absolute;
-    left: 6px;
+    left: 0;
     top: 0;
     bottom: 0;
-    display: flex;
-    align-items: center;
-    font-size: 0.7rem;
+    z-index: 1;
+    border-radius: 4px;
     pointer-events: none;
-}
-.shield-label {
-    color: #1a1d24;
-    font-weight: 600;
 }
 .divider {
     height: 1px;
