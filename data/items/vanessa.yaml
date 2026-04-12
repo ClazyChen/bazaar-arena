@@ -577,3 +577,101 @@ items:
               params: [Custom_1]
             - 1
         value: Custom_0
+  - Name: "手里剑"
+    Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；此物品的多重释放次数等于剩余弹药数量；使用此物品时，消耗全部弹药"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 8s
+    Damage: [5, 10, 20, 40]
+    AmmoCap: [3, 4, 5, 6]
+    Abilities:
+      - type: Damage
+      - type: ReduceAttribute
+        key: AmmoRemaining
+        value: AmmoCap
+        target_condition: SameAsCaster
+        priority: Immediate
+    Auras:
+      - attribute: Multicast
+        value:
+          type: Sub
+          params:
+            - type: Caster
+              params: [AmmoRemaining]
+            - 1
+  - Name: "弹簧刀"
+    Desc: "▶ 造成 {Damage} 伤害；使用相邻武器时，使其伤害提高 {Custom_0}（限本场战斗）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 4s
+    Damage: [4, 8, 12, 16]
+    Custom_0: [4, 8, 12, 16]
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Weapon]
+            - AdjacentToCaster
+        target_condition: SameAsSource
+        key: Damage
+        value: Custom_0
+  - Name: "迷你弯刀"
+    Desc: "▶ 造成 {Damage} 伤害；多重释放：{Multicast}；此物品能造成双倍暴击伤害"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 6s
+    Damage: [6, 12, 24, 48]
+    Multicast: 2
+    Custom_0: 100
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: CritDamage
+        value: Custom_0
+        percent: true
+  - Name: "雪怪蟹"
+    Desc: "▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；触发冻结时，相邻剧毒物品的剧毒提高 {Custom_0}（限本场战斗）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Aquatic, Friend]
+    Cooldown: 7s
+    Freeze: 1s
+    FreezeTargetCount: 1
+    Custom_0: [2, 4, 6, 8]
+    Abilities:
+      - type: Freeze
+      - type: AddAttribute
+        trigger: Freeze
+        target_condition:
+          type: And
+          params:
+            - type: AdjacentToCaster
+            - type: HasDerivedTag
+              params: [Poison]
+        key: Poison
+        value: Custom_0
+  - Name: "绵鳚"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 加速相邻物品 {Haste} 秒；触发灼烧时，为此物品充能 {Charge} 秒"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Aquatic, Friend]
+    Cooldown: [8s, 7s, 6s, 5s]
+    Damage: 20
+    Haste: 2s
+    HasteTargetCount: 2
+    Charge: 1s
+    Abilities:
+      - type: Damage
+      - type: Haste
+        target_condition: AdjacentToCaster
+      - type: Charge
+        trigger: Burn
+        target_condition: SameAsCaster
+        priority: Low

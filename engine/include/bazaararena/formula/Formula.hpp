@@ -42,6 +42,16 @@ constexpr Formula Caster = [](const BattleContext& ctx) -> int {
     }
 };
 
+// 引起当前触发链的物品的属性
+template<int key>
+constexpr Formula Source = [](const BattleContext& ctx) -> int { 
+    if constexpr (IsAuraEffect<key>) {
+        return ctx.GetItemInt(ctx.source, key);
+    } else {
+        return ctx.GetItemIntRaw(ctx.source, key);
+    }
+};
+
 // 目标的属性
 template<int key>
 constexpr Formula Target = [](const BattleContext& ctx) -> int { 

@@ -108,11 +108,12 @@ const FLOAT_KIND_ORDER: Record<HudFloatKind, number> = {
     burn: 1,
     poison: 2,
     heal: 3,
-    regen: 4,
+    shield: 4,
+    regen: 5,
 };
 
 /**
- * 解析 detailed 中飘字相关事件：`damage` / `burn` / `poison` / `heal` / `regen`（与引擎 Sink 字段一致）。
+ * 解析 detailed 中飘字相关事件：`damage` / `burn` / `poison` / `heal` / `shield` / `regen`（与引擎 Sink 字段一致）。
  */
 export function extractHudFloatEvents(events: BattleDebugEvent[] | undefined): HudFloatEvent[] {
     if (!events?.length) return [];
@@ -149,6 +150,11 @@ export function extractHudFloatEvents(events: BattleDebugEvent[] | undefined): H
             const ts = parseSide01(o.sourceSide);
             if (typeof heal !== "number" || !Number.isFinite(heal) || heal <= 0 || ts === null) continue;
             out.push({ t, targetSide: ts, kind: "heal", amount: heal, isCrit: o.isCrit === true });
+        } else if (kind === "shield") {
+            const shield = o.shield;
+            const ts = parseSide01(o.sourceSide);
+            if (typeof shield !== "number" || !Number.isFinite(shield) || shield <= 0 || ts === null) continue;
+            out.push({ t, targetSide: ts, kind: "shield", amount: shield, isCrit: o.isCrit === true });
         } else if (kind === "regen") {
             const regen = o.regen;
             const ts = parseSide01(o.targetSide);

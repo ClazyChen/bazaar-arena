@@ -90,11 +90,11 @@ export interface SimulateDebugBlock {
 export type BattleDebugEvent = FrameEndEvent | Record<string, unknown>;
 
 /** detailed 飘字：与引擎 `debug.events` 中各 kind 对应 */
-export type HudFloatKind = "damage" | "burn" | "poison" | "heal" | "regen";
+export type HudFloatKind = "damage" | "burn" | "poison" | "heal" | "shield" | "regen";
 
 export interface HudFloatEvent {
     t: number;
-    /** 在该侧 HUD 上显示（承伤 / 承受 DoT / 获得治疗与再生等） */
+    /** 在该侧 HUD 上显示（承伤 / 承受 DoT / 获得治疗、护盾与再生等） */
     targetSide: 0 | 1;
     kind: HudFloatKind;
     amount: number;

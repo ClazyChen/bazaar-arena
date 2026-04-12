@@ -147,6 +147,7 @@ def _emit_named_leaf(name: str, *, where: str) -> str:
         "Always": "Always",
         "Never": "Never",
         "SameAsCaster": "SameAsCaster",
+        "SameAsSource": "SameAsSource",
         "TargetSameAsCaster": "TargetSameAsCaster",
         "DifferentFromCaster": "DifferentFromCaster",
         "SameSide": "SameSide",
