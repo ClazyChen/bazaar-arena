@@ -91,4 +91,9 @@ constexpr Formula Leftmost = [](const BattleContext& ctx) -> int {
     return ctx.IsLeftmostWith(condition);
 };
 
+template<Formula condition>
+constexpr Formula Rightmost = [](const BattleContext& ctx) -> int {
+    return ctx.IsRightmostWith(condition);
+};
+
 }

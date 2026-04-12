@@ -95,4 +95,23 @@ int BattleContext::IsLeftmostWith(Formula condition) const {
     return this->item == first ? 1 : 0;
 }
 
+// 满足某个条件的最右侧的物品（扫描顺序与 IsLeftmostWith 相同，取最后一次命中）
+int BattleContext::IsRightmostWith(Formula condition) const {
+    BattleContext ctx = *this;
+    const ItemState* last = nullptr;
+    for (int sj = 0; sj < Simulator::SideCount; sj++) {
+        const int n = simulator->sides[sj].attrs[SideKey::ItemCount];
+        for (int ii = 0; ii < n; ii++) {
+            auto& it = simulator->sides[sj].items[ii];
+            if (it.attrs[ItemKey::Destroyed] == 1) continue;
+            ctx.item = &it;
+            if (condition(ctx) != 0) {
+                last = &it;
+            }
+        }
+    }
+    if (last == nullptr) return 0;
+    return this->item == last ? 1 : 0;
+}
+
 } // namespace bazaararena::core

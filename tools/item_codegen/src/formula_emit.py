@@ -114,7 +114,14 @@ def emit_formula_ast(node: object, *, where: str = "") -> str:
         return f"formula::Constant<{node}>"
 
     if isinstance(node, str):
-        return _emit_named_leaf(node.strip(), where=where)
+        s = node.strip()
+        try:
+            return _emit_named_leaf(s, where=where)
+        except ValueError:
+            # 光环/公式中的裸 ItemKey 名（如 Custom_0）→ Caster 取值
+            if s in ITEM_KEY_NAMES:
+                return f"formula::Caster<{_item_key_cpp(s)}>"
+            raise ValueError(f"{where}: 未知的公式/条件叶子：{s}") from None
 
     if not isinstance(node, dict):
         raise TypeError(f"{where}: 公式节点必须是 object、string 或 int，实际 {type(node)}")
@@ -259,6 +266,12 @@ def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
             raise ValueError(f"{where}: Leftmost 需要 1 个条件子式")
         inner = emit_formula_ast(params[0], where=f"{where}.0")
         return f"Leftmost<{inner}>"
+
+    if typ == "Rightmost":
+        if len(params) != 1:
+            raise ValueError(f"{where}: Rightmost 需要 1 个条件子式")
+        inner = emit_formula_ast(params[0], where=f"{where}.0")
+        return f"Rightmost<{inner}>"
 
     raise ValueError(f"{where}: 未知的公式类型：{typ}")
 

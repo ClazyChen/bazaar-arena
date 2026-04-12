@@ -47,6 +47,9 @@ public:
     // 满足某个条件的最左侧的物品
     int IsLeftmostWith(Formula condition) const;
 
+    // 满足某个条件的最右侧的物品
+    int IsRightmostWith(Formula condition) const;
+
 };
 
 }

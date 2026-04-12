@@ -469,6 +469,12 @@ def _emit_item_lambda(item: dict) -> str:
             raise ValueError(f"{where_au}: 缺少 value")
         if "condition" in au:
             cond_e = emit_formula_ast(au["condition"], where=f"{where_au}.condition")
+        elif "ex_condition" in au:
+            cond_e = merge_with_basic(
+                basic="SameAsCaster",
+                extra=au.get("ex_condition"),
+                where=f"{where_au}.ex_condition",
+            )
         else:
             cond_e = "SameAsCaster"
         val_e = emit_formula_ast(au["value"], where=f"{where_au}.value")

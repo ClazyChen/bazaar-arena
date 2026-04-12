@@ -237,3 +237,54 @@ items:
     CritRate: 25
     Abilities:
       - type: Damage
+  - Name: "手斧"
+    Desc: "▶ 造成 {Damage} 伤害；武器 {+Custom_0} 伤害"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 6s
+    Damage: [20, 40, 80, 160]
+    Custom_0: [5, 10, 15, 20]
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: Damage
+        condition:
+          type: And
+          params:
+            - SameSide
+            - type: HasTag
+              params: [Weapon]
+        value: Custom_0
+  - Name: "淬锋钢"
+    Desc: "▶ 最左侧的武器伤害提高 {Custom_0}（限本场战斗）；▶ 最右侧的武器伤害提高 {Custom_0}（限本场战斗）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Tool]
+    Cooldown: 3s
+    Custom_0: [5, 10, 15, 20]
+    Abilities:
+      - type: AddAttribute
+        key: Damage
+        value: Custom_0
+        priority: High
+        target_condition:
+          type: Leftmost
+          params:
+            - type: And
+              params:
+                - SameSide
+                - type: HasTag
+                  params: [Weapon]
+      - type: AddAttribute
+        key: Damage
+        value: Custom_0
+        priority: High
+        target_condition:
+          type: Rightmost
+          params:
+            - type: And
+              params:
+                - SameSide
+                - type: HasTag
+                  params: [Weapon]
