@@ -61,10 +61,13 @@ export interface SimulateCliEnvelope {
     ok: boolean;
     error: string;
     jobId?: string;
-    result?: SimulateResultBody;
+    result?: SimulateResultBody | SimulateBatchResultBody;
     /** 后端写入 job 的 RNG 种子，便于 Summary 复现与 GET repro-job */
     usedSeed?: number;
     requestedDebugLevel?: string;
+    /** POST /api/simulate/batch 时后端回传的请求参数 */
+    requestedBatchCount?: number;
+    requestedThreads?: number;
     /** 后端解析到的 bazaararena_cli 绝对路径（用于确认是否为新编引擎） */
     bazaararenaCli?: string | null;
     /** `bazaararena_cli --version` 首行 */
@@ -77,6 +80,18 @@ export interface SimulateResultBody {
     endTimeMs: number;
     final?: unknown;
     debug?: SimulateDebugBlock;
+}
+
+/** `mode: simulate_batch` 时 CLI 返回的统计（无单局 timeline） */
+export interface SimulateBatchResultBody {
+    mode: "batch";
+    totalRuns: number;
+    threadsUsed: number;
+    baseSeed: number;
+    allowTie: boolean;
+    winsSide0: number;
+    winsSide1: number;
+    draws: number;
 }
 
 export interface SimulateDebugBlock {

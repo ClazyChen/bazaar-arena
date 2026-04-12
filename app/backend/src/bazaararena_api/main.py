@@ -11,7 +11,9 @@ from bazaararena_api.db import default_db_path, get_connection, repo_root
 from bazaararena_api.slot_attrs import api_slot_dict_from_row, parse_attrs_override_from_put_entry
 from bazaararena_api.deck_rules import max_slots_for_level
 from bazaararena_api.simulate_run import (
+    batch_simulate_timeout_sec,
     build_cli_repro_document,
+    build_simulate_batch_job,
     build_simulate_job,
     cached_cli_version_line,
     default_cli_path,
@@ -606,6 +608,69 @@ def create_app() -> Flask:
             cli = default_cli_path()
             out["usedSeed"] = seed_i
             out["requestedDebugLevel"] = str(debug_level).strip().lower()
+            out["bazaararenaCli"] = str(cli.resolve()) if cli else None
+            out["bazaararenaCliVersion"] = cached_cli_version_line(cli)
+        return jsonify(out)
+
+    @app.post("/api/simulate/batch")
+    def simulate_batch():
+        body = request.get_json(force=True, silent=True) or {}
+        d0 = body.get("deck_id_0")
+        d1 = body.get("deck_id_1")
+        seed = body.get("seed")
+        batch_count = body.get("batch_count", 1000)
+        threads = body.get("threads", 8)
+        try:
+            deck_id_0 = int(d0)
+            deck_id_1 = int(d1)
+        except (TypeError, ValueError):
+            return jsonify({"error": "deck_id_0 and deck_id_1 must be integers"}), 400
+        try:
+            bc = int(batch_count) if batch_count is not None else 1000
+        except (TypeError, ValueError):
+            return jsonify({"error": "batch_count must be integer"}), 400
+        try:
+            th = int(threads) if threads is not None else 8
+        except (TypeError, ValueError):
+            return jsonify({"error": "threads must be integer"}), 400
+        if seed is None or seed == "":
+            seed_i: int | None = None
+        else:
+            try:
+                seed_i = int(seed)
+            except (TypeError, ValueError):
+                return jsonify({"error": "seed must be integer or omitted"}), 400
+        try:
+            job = build_simulate_batch_job(
+                deck_id_0,
+                deck_id_1,
+                bc,
+                seed=seed_i,
+                threads=th,
+            )
+            timeout_sec = batch_simulate_timeout_sec(bc)
+            out = run_simulate_json(job, timeout_sec=timeout_sec)
+        except FileNotFoundError as e:
+            return jsonify({"error": str(e)}), 503
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        except RuntimeError as e:
+            return jsonify({"error": str(e)}), 500
+        except OSError as e:
+            return jsonify({"error": str(e)}), 500
+        if isinstance(out, dict):
+            cli = default_cli_path()
+            pl = job.get("payload")
+            used = None
+            if isinstance(pl, dict) and "seed" in pl:
+                try:
+                    used = int(pl["seed"])  # type: ignore[arg-type]
+                except (TypeError, ValueError):
+                    used = None
+            if used is not None:
+                out["usedSeed"] = used
+            out["requestedBatchCount"] = bc
+            out["requestedThreads"] = th
             out["bazaararenaCli"] = str(cli.resolve()) if cli else None
             out["bazaararenaCliVersion"] = cached_cli_version_line(cli)
         return jsonify(out)

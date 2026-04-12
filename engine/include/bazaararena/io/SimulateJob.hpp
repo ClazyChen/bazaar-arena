@@ -52,6 +52,11 @@ struct SimulateJob final {
     DebugSpec debug;
 
     std::vector<SideSpec> sides;  // must be 2
+
+    // mode == "simulate_batch"
+    bool isSimulateBatch = false;
+    int batchCount = 0;
+    int batchThreads = 8;
 };
 
 struct ParseJobResult final {

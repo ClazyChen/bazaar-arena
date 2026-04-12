@@ -147,14 +147,7 @@ def build_cli_repro_document(
 _ALLOWED_DEBUG = frozenset({"none", "summary", "detailed"})
 
 
-def build_simulate_job(
-    deck_id_0: int,
-    deck_id_1: int,
-    seed: int,
-    *,
-    debug_level: str = "detailed",
-    max_events: int = 50000,
-) -> dict[str, object]:
+def _sides_payload_for_deck_pair(deck_id_0: int, deck_id_1: int) -> list[dict[str, object]]:
     conn = get_connection()
     try:
         sides_payload: list[dict[str, object]] = []
@@ -187,8 +180,20 @@ def build_simulate_job(
                     "items": items,
                 }
             )
+        return sides_payload
     finally:
         conn.close()
+
+
+def build_simulate_job(
+    deck_id_0: int,
+    deck_id_1: int,
+    seed: int,
+    *,
+    debug_level: str = "detailed",
+    max_events: int = 50000,
+) -> dict[str, object]:
+    sides_payload = _sides_payload_for_deck_pair(deck_id_0, deck_id_1)
 
     if debug_level not in _ALLOWED_DEBUG:
         raise ValueError(f"debug_level must be one of {sorted(_ALLOWED_DEBUG)}")
@@ -208,6 +213,41 @@ def build_simulate_job(
         "mode": "simulate",
         "payload": payload,
     }
+
+
+def build_simulate_batch_job(
+    deck_id_0: int,
+    deck_id_1: int,
+    batch_count: int,
+    *,
+    seed: int | None = None,
+    threads: int = 8,
+) -> dict[str, object]:
+    if batch_count < 1:
+        raise ValueError("batch_count must be >= 1")
+    if threads < 1:
+        raise ValueError("threads must be >= 1")
+    sides_payload = _sides_payload_for_deck_pair(deck_id_0, deck_id_1)
+    seed_i = int(seed) if seed is not None else random_sim_seed()
+    payload: dict[str, object] = {
+        "allowTie": True,
+        "sides": sides_payload,
+        "seed": seed_i,
+        "count": int(batch_count),
+        "threads": int(threads),
+    }
+    return {
+        "schemaVersion": 1,
+        "jobId": f"http-batch-{deck_id_0}-vs-{deck_id_1}",
+        "mode": "simulate_batch",
+        "payload": payload,
+    }
+
+
+def batch_simulate_timeout_sec(batch_count: int) -> float:
+    """随批量局数放宽 CLI 超时，避免千局级模拟被 120s 截断。"""
+    n = int(batch_count)
+    return float(max(120.0, min(3600.0, 60.0 + n * 0.05)))
 
 
 def run_simulate_json(job: dict[str, object], timeout_sec: float = 120.0) -> dict[str, object]:

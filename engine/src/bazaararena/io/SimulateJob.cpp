@@ -158,7 +158,13 @@ ParseJobResult ParseSimulateJobJson(std::string_view jsonText) {
         auto s = GetString(*m);
         if (!s) return {.job = std::nullopt, .error = "mode must be string"};
         job.mode.assign(s->data(), s->size());
-        if (job.mode != "simulate") return {.job = std::nullopt, .error = "mode must be 'simulate'"};
+        if (job.mode == "simulate") {
+            job.isSimulateBatch = false;
+        } else if (job.mode == "simulate_batch") {
+            job.isSimulateBatch = true;
+        } else {
+            return {.job = std::nullopt, .error = "mode must be 'simulate' or 'simulate_batch'"};
+        }
     }
 
     const auto* payload = GetObjectField(root, "payload");
@@ -176,24 +182,44 @@ ParseJobResult ParseSimulateJobJson(std::string_view jsonText) {
         if (!bv) return {.job = std::nullopt, .error = "payload.allowTie must be boolean"};
         job.allowTie = *bv;
     }
-    // debug
+    // debug (ignored for simulate_batch; batch path forces no debug output)
     if (const auto* dbg = GetObjectField(*payload, "debug")) {
         if (!dbg->IsObject()) return {.job = std::nullopt, .error = "payload.debug must be object"};
-        if (const auto* en = GetObjectField(*dbg, "enabled")) {
-            auto bv = GetBool(*en);
-            if (!bv) return {.job = std::nullopt, .error = "payload.debug.enabled must be boolean"};
-            job.debug.enabled = *bv;
+        if (!job.isSimulateBatch) {
+            if (const auto* en = GetObjectField(*dbg, "enabled")) {
+                auto bv = GetBool(*en);
+                if (!bv) return {.job = std::nullopt, .error = "payload.debug.enabled must be boolean"};
+                job.debug.enabled = *bv;
+            }
+            if (const auto* lv = GetObjectField(*dbg, "level")) {
+                auto sv = GetString(*lv);
+                if (!sv) return {.job = std::nullopt, .error = "payload.debug.level must be string"};
+                if (!IsAllowedDebugLevel(*sv)) return {.job = std::nullopt, .error = "payload.debug.level invalid"};
+                job.debug.level.assign(sv->data(), sv->size());
+            }
+            if (const auto* me = GetObjectField(*dbg, "maxEvents")) {
+                auto iv = GetInt(*me);
+                if (!iv) return {.job = std::nullopt, .error = "payload.debug.maxEvents must be integer"};
+                job.debug.maxEvents = *iv;
+            }
         }
-        if (const auto* lv = GetObjectField(*dbg, "level")) {
-            auto sv = GetString(*lv);
-            if (!sv) return {.job = std::nullopt, .error = "payload.debug.level must be string"};
-            if (!IsAllowedDebugLevel(*sv)) return {.job = std::nullopt, .error = "payload.debug.level invalid"};
-            job.debug.level.assign(sv->data(), sv->size());
-        }
-        if (const auto* me = GetObjectField(*dbg, "maxEvents")) {
-            auto iv = GetInt(*me);
-            if (!iv) return {.job = std::nullopt, .error = "payload.debug.maxEvents must be integer"};
-            job.debug.maxEvents = *iv;
+    }
+
+    if (job.isSimulateBatch) {
+        job.debug.enabled = false;
+        job.debug.level = "none";
+        const auto* cnt = GetObjectField(*payload, "count");
+        if (!cnt) return {.job = std::nullopt, .error = "payload.count is required for simulate_batch"};
+        auto cvi = GetInt(*cnt);
+        if (!cvi) return {.job = std::nullopt, .error = "payload.count must be integer"};
+        if (*cvi < 1) return {.job = std::nullopt, .error = "payload.count must be >= 1"};
+        job.batchCount = *cvi;
+        job.batchThreads = 8;
+        if (const auto* th = GetObjectField(*payload, "threads")) {
+            auto tvi = GetInt(*th);
+            if (!tvi) return {.job = std::nullopt, .error = "payload.threads must be integer"};
+            if (*tvi < 1) return {.job = std::nullopt, .error = "payload.threads must be >= 1"};
+            job.batchThreads = *tvi;
         }
     }
 

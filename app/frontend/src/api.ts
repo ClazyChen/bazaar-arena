@@ -145,6 +145,29 @@ export async function postSimulate(body: {
     );
 }
 
+export async function postSimulateBatch(body: {
+    deck_id_0: number;
+    deck_id_1: number;
+    batch_count?: number;
+    seed?: number | null;
+    threads?: number;
+}): Promise<SimulateCliEnvelope> {
+    const payload: Record<string, unknown> = {
+        deck_id_0: body.deck_id_0,
+        deck_id_1: body.deck_id_1,
+    };
+    if (body.batch_count != null) payload.batch_count = body.batch_count;
+    if (body.seed != null) payload.seed = body.seed;
+    if (body.threads != null) payload.threads = body.threads;
+    return j(
+        await fetch("/api/simulate/batch", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        }),
+    );
+}
+
 /** 获取与后端 POST /api/simulate 相同结构的 job，用于本地 `bazaararena_cli --input job.json` */
 export async function fetchReproJobJson(params: {
     deck_id_0: number;

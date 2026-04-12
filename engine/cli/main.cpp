@@ -1,9 +1,13 @@
+#include <algorithm>
+#include <array>
+#include <atomic>
 #include <fstream>
 #include <iostream>
 #include <random>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 #include <bazaararena/core/Simulator.hpp>
@@ -196,6 +200,37 @@ io::JsonObject MakeErrorOut(int schemaVersion, const std::string& jobId, const s
     return root;
 }
 
+static void RunBatchSlice(
+    const io::SimulateJob& job,
+    const std::array<core::SideState, 2>& templateSides,
+    int baseSeed,
+    int begin,
+    int end,
+    std::atomic<uint64_t>& wins0,
+    std::atomic<uint64_t>& wins1,
+    std::atomic<uint64_t>& draws) {
+    core::Simulator sim;
+    sim.sink.sink_type = io::Sink::TypeNone;
+    sim.sink.max_events = job.debug.maxEvents;
+    for (int i = begin; i < end; ++i) {
+        sim.sides[0] = templateSides[0];
+        sim.sides[1] = templateSides[1];
+        sim.sandstorm = {};
+        sim.sink.Clear();
+        const int64_t combined = static_cast<int64_t>(baseSeed) + static_cast<int64_t>(i);
+        sim.rng.Seed(static_cast<int>(combined));
+        core::InitializeSimulator(sim);
+        const int w = sim.Run(job.allowTie);
+        if (w < 0) {
+            draws.fetch_add(1, std::memory_order_relaxed);
+        } else if (w == 0) {
+            wins0.fetch_add(1, std::memory_order_relaxed);
+        } else {
+            wins1.fetch_add(1, std::memory_order_relaxed);
+        }
+    }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -238,8 +273,7 @@ int main(int argc, char** argv) {
     }
     const auto& job = *parsed.job;
 
-    core::Simulator sim;
-    // sides
+    std::array<core::SideState, 2> builtSides{};
     for (int si = 0; si < 2; si++) {
         auto built = io::BuildSideState(job.sides[si]);
         if (!built.side) {
@@ -251,8 +285,57 @@ int main(int argc, char** argv) {
             }
             return 1;
         }
-        sim.sides[si] = *built.side;
+        builtSides[si] = *built.side;
     }
+
+    if (job.isSimulateBatch) {
+        const int n = job.batchCount;
+        const int tCount = (std::min)(job.batchThreads, n);
+        const int baseSeed = job.seed.value_or(static_cast<int>(std::random_device()()));
+        std::atomic<uint64_t> wins0{0};
+        std::atomic<uint64_t> wins1{0};
+        std::atomic<uint64_t> draws{0};
+        std::vector<std::thread> workers;
+        workers.reserve(static_cast<size_t>(tCount));
+        for (int t = 0; t < tCount; ++t) {
+            const int begin = t * n / tCount;
+            const int end = (t + 1) * n / tCount;
+            workers.emplace_back([&, begin, end]() {
+                RunBatchSlice(job, builtSides, baseSeed, begin, end, wins0, wins1, draws);
+            });
+        }
+        for (auto& w : workers) {
+            w.join();
+        }
+
+        io::JsonObject result;
+        result["mode"] = std::string("batch");
+        result["totalRuns"] = static_cast<double>(n);
+        result["threadsUsed"] = static_cast<double>(tCount);
+        result["baseSeed"] = static_cast<double>(baseSeed);
+        result["allowTie"] = job.allowTie;
+        result["winsSide0"] = static_cast<double>(wins0.load());
+        result["winsSide1"] = static_cast<double>(wins1.load());
+        result["draws"] = static_cast<double>(draws.load());
+
+        io::JsonObject outRoot;
+        outRoot["schemaVersion"] = static_cast<double>(job.schemaVersion);
+        if (!job.jobId.empty()) outRoot["jobId"] = job.jobId;
+        outRoot["ok"] = true;
+        outRoot["error"] = "";
+        outRoot["result"] = std::move(result);
+
+        const std::string outText = io::StringifyJson(outRoot);
+        if (!WriteAllText(args.outputPath, outText, ioErr)) {
+            std::cerr << ioErr << "\n";
+            return 2;
+        }
+        return 0;
+    }
+
+    core::Simulator sim;
+    sim.sides[0] = builtSides[0];
+    sim.sides[1] = builtSides[1];
 
     // RNG seed
     int seed = job.seed.value_or(static_cast<int>(std::random_device()()));

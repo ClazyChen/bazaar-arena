@@ -571,11 +571,14 @@ items:
     Auras:
       - attribute: CritRate
         condition:
-          type: Lt
+          type: And
           params:
-            - type: Caster
-              params: [Custom_1]
-            - 1
+            - type: Lt
+              params:
+                - type: Caster
+                  params: [Custom_1]
+                - 1
+            - SameAsCaster
         value: Custom_0
   - Name: "手里剑"
     Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；此物品 +多重释放，等量于剩余弹药数量；使用此物品时，消耗全部弹药"

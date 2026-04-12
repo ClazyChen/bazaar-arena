@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from "vue";
-import { fetchDeckSlots, postSaveCliRepro, postSimulate } from "@/api";
+import { fetchDeckSlots, postSaveCliRepro, postSimulate, postSimulateBatch } from "@/api";
 import {
     AMMO_KEYWORD_RGB,
     BURN_KEYWORD_RGB,
@@ -38,8 +38,16 @@ import type {
     FrameEndItemSnapshot,
     FrameEndSideSnapshot,
     HudFloatEvent,
+    SimulateBatchResultBody,
     SimulateCliEnvelope,
+    SimulateResultBody,
 } from "@/types";
+
+function isBatchResultBody(
+    r: SimulateResultBody | SimulateBatchResultBody,
+): r is SimulateBatchResultBody {
+    return "mode" in r && r.mode === "batch";
+}
 
 const props = defineProps<{
     deckIdP1: number | null;
@@ -59,6 +67,12 @@ const simEnvelope = ref<SimulateCliEnvelope | null>(null);
 const simErr = ref<string | null>(null);
 const battleLoading = ref(false);
 
+const showBatchModal = ref(false);
+const batchCountInput = ref(1000);
+const batchLoading = ref(false);
+const batchErr = ref<string | null>(null);
+const batchLastStats = ref<SimulateBatchResultBody | null>(null);
+
 /** 最近一次成功 detailed 模拟的种子，用于 Summary 与保存 CLI 复现 JSON */
 const lastUsedSeed = ref<number | null>(null);
 const summaryLines = ref<string[]>([]);
@@ -71,7 +85,9 @@ const saveReproPath = ref<string | null>(null);
 const timeline = computed((): PlaybackStep[] => {
     const env = simEnvelope.value;
     if (!env?.ok || !env.result) return [];
-    return buildPlaybackTimeline(env.result.debug?.events, env.result);
+    const res = env.result;
+    if (isBatchResultBody(res)) return [];
+    return buildPlaybackTimeline(res.debug?.events, res);
 });
 
 const playheadIndex = ref(0);
@@ -129,9 +145,11 @@ const hasBattleResult = computed(
     () => Boolean(simEnvelope.value?.ok && timeline.value.length > 0),
 );
 
-const hudFloatEventsAll = computed(() =>
-    extractHudFloatEvents(simEnvelope.value?.result?.debug?.events),
-);
+const hudFloatEventsAll = computed(() => {
+    const r = simEnvelope.value?.result;
+    if (!r || isBatchResultBody(r)) return [];
+    return extractHudFloatEvents(r.debug?.events);
+});
 
 /** 飘字独立队列：随步进追加，动画结束移除，避免播放时每帧被清空 */
 interface HpFloatItem {
@@ -252,6 +270,7 @@ function hudFloatStyle(ev: HudFloatEvent): Record<string, string> {
 function outcomeForSide(sideIndex: 0 | 1): { text: string; cls: string } | null {
     const r = simEnvelope.value?.result;
     if (!r || !simEnvelope.value?.ok) return null;
+    if (isBatchResultBody(r)) return null;
     if (r.isDraw) return { text: "平局", cls: "tag-draw" };
     if (r.winner === sideIndex) return { text: "胜利", cls: "tag-win" };
     return { text: "失败", cls: "tag-lose" };
@@ -715,6 +734,9 @@ watch(
         summaryErr.value = null;
         saveReproPath.value = null;
         saveReproErr.value = null;
+        batchLastStats.value = null;
+        batchErr.value = null;
+        showBatchModal.value = false;
         slotsP1.value = [];
         slotsP2.value = [];
         playheadIndex.value = 0;
@@ -734,6 +756,57 @@ watch(
     },
     { immediate: true },
 );
+
+const batchPieStyle = computed((): Record<string, string> => {
+    const s = batchLastStats.value;
+    if (!s || s.totalRuns <= 0) return {};
+    const t = s.totalRuns;
+    const p0 = (s.winsSide0 / t) * 100;
+    const p1 = (s.winsSide1 / t) * 100;
+    const c0 = "#4a9eff";
+    const c1 = "#e07060";
+    const c2 = "#7a8494";
+    return {
+        background: `conic-gradient(${c0} 0% ${p0}%, ${c1} ${p0}% ${p0 + p1}%, ${c2} ${p0 + p1}% 100%)`,
+    };
+});
+
+function batchPct(n: number, total: number): string {
+    if (total <= 0) return "0";
+    return ((n / total) * 100).toFixed(1);
+}
+
+async function runBatchBattle(): Promise<void> {
+    const id1 = props.deckIdP1;
+    const id2 = props.deckIdP2;
+    if (id1 === null || id2 === null) return;
+    const raw = Number(batchCountInput.value);
+    const n = Number.isFinite(raw) ? Math.max(1, Math.floor(raw)) : 1000;
+    batchCountInput.value = n;
+    batchLoading.value = true;
+    batchErr.value = null;
+    try {
+        const env = await postSimulateBatch({
+            deck_id_0: id1,
+            deck_id_1: id2,
+            batch_count: n,
+        });
+        if (!env.ok) {
+            batchErr.value = env.error || "批量模拟失败";
+            return;
+        }
+        const res = env.result;
+        if (res && "mode" in res && res.mode === "batch") {
+            batchLastStats.value = res;
+        } else {
+            batchErr.value = "返回格式异常";
+        }
+    } catch (e) {
+        batchErr.value = e instanceof Error ? e.message : String(e);
+    } finally {
+        batchLoading.value = false;
+    }
+}
 
 async function runBattle(): Promise<void> {
     const id1 = props.deckIdP1;
@@ -787,7 +860,8 @@ async function fetchSummaryLog(): Promise<void> {
             summaryLines.value = [];
             return;
         }
-        const lines = env.result?.debug?.lines;
+        const res = env.result;
+        const lines = res && !isBatchResultBody(res) ? res.debug?.lines : undefined;
         summaryLines.value = Array.isArray(lines) ? lines : [];
     } catch (e) {
         summaryErr.value = e instanceof Error ? e.message : String(e);
@@ -890,10 +964,18 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                 <button
                     type="button"
                     class="battle-btn"
-                    :disabled="slotsLoading || battleLoading"
+                    :disabled="slotsLoading || battleLoading || batchLoading"
                     @click="runBattle"
                 >
                     {{ hasBattleResult ? "再次对战" : "开始对战" }}
+                </button>
+                <button
+                    type="button"
+                    class="battle-btn battle-btn-secondary"
+                    :disabled="slotsLoading || battleLoading || batchLoading"
+                    @click="showBatchModal = true"
+                >
+                    批量对战
                 </button>
                 <button
                     v-if="canShowSimDebug"
@@ -906,6 +988,7 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                 </button>
                 <span v-if="slotsLoading" class="hint">加载卡组…</span>
                 <span v-else-if="battleLoading" class="hint">模拟中…</span>
+                <span v-else-if="batchLoading" class="hint">批量模拟中…</span>
             </div>
             <p v-if="slotsErr" class="err">{{ slotsErr }}</p>
             <p v-else-if="simErr" class="err">{{ simErr }}</p>
@@ -1457,6 +1540,74 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                     </div>
                 </div>
             </section>
+
+            <div
+                v-if="showBatchModal"
+                class="batch-modal-backdrop"
+                role="presentation"
+                @click.self="showBatchModal = false"
+            >
+                <div
+                    class="batch-modal"
+                    role="dialog"
+                    aria-labelledby="batch-modal-title"
+                    @click.stop
+                >
+                    <h3 id="batch-modal-title" class="batch-modal-title">批量对战</h3>
+                    <p class="batch-modal-hint">在当前双方卡组上重复独立对局，统计胜负与平局。</p>
+                    <label class="batch-modal-field">
+                        <span>模拟次数</span>
+                        <input
+                            v-model.number="batchCountInput"
+                            type="number"
+                            min="1"
+                            max="2000000"
+                            class="batch-modal-input"
+                        />
+                    </label>
+                    <div class="batch-modal-actions">
+                        <button type="button" class="btn-sm" @click="showBatchModal = false">关闭</button>
+                        <button
+                            type="button"
+                            class="btn-sm primary"
+                            :disabled="batchLoading"
+                            @click="runBatchBattle"
+                        >
+                            {{ batchLoading ? "运行中…" : "开始批量" }}
+                        </button>
+                    </div>
+                    <p v-if="batchErr" class="err">{{ batchErr }}</p>
+                    <div v-if="batchLastStats" class="batch-result">
+                        <p class="batch-meta">
+                            基准种子 {{ batchLastStats.baseSeed }} · {{ batchLastStats.totalRuns }} 局 ·
+                            {{ batchLastStats.threadsUsed }} 线程
+                        </p>
+                        <div class="batch-pie-row">
+                            <div class="batch-pie" :style="batchPieStyle" />
+                            <ul class="batch-legend">
+                                <li>
+                                    <span class="batch-dot batch-dot--p1" />
+                                    {{ p1DeckName || "玩家1" }} 胜 {{ batchLastStats.winsSide0 }}（{{
+                                        batchPct(batchLastStats.winsSide0, batchLastStats.totalRuns)
+                                    }}%）
+                                </li>
+                                <li>
+                                    <span class="batch-dot batch-dot--p2" />
+                                    {{ p2DeckName || "玩家2" }} 胜 {{ batchLastStats.winsSide1 }}（{{
+                                        batchPct(batchLastStats.winsSide1, batchLastStats.totalRuns)
+                                    }}%）
+                                </li>
+                                <li>
+                                    <span class="batch-dot batch-dot--draw" />
+                                    平局 {{ batchLastStats.draws }}（{{
+                                        batchPct(batchLastStats.draws, batchLastStats.totalRuns)
+                                    }}%）
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </template>
     </div>
 </template>
@@ -1492,6 +1643,121 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
 .battle-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
+}
+.battle-btn-secondary {
+    border-color: #5a6578;
+    background: linear-gradient(180deg, #4a5568, #353d4d);
+}
+.batch-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(10, 12, 18, 0.72);
+    backdrop-filter: blur(4px);
+}
+.batch-modal {
+    width: min(100%, 26rem);
+    max-height: min(90vh, 36rem);
+    overflow: auto;
+    padding: 1.1rem 1.25rem;
+    border-radius: 12px;
+    border: 1px solid #3a4558;
+    background: #1c212b;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+.batch-modal-title {
+    margin: 0 0 0.35rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #e8ecf2;
+}
+.batch-modal-hint {
+    margin: 0 0 0.85rem;
+    font-size: 0.82rem;
+    color: #8b95a5;
+    line-height: 1.45;
+}
+.batch-modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.85rem;
+    font-size: 0.88rem;
+    color: #b4bcc8;
+}
+.batch-modal-input {
+    padding: 0.4rem 0.55rem;
+    border-radius: 6px;
+    border: 1px solid #3d4656;
+    background: #141820;
+    color: #e8ecf2;
+    font-size: 0.95rem;
+    max-width: 12rem;
+}
+.batch-modal-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+.batch-result {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #2c3442;
+}
+.batch-meta {
+    margin: 0 0 0.65rem;
+    font-size: 0.78rem;
+    color: #7a8494;
+    line-height: 1.4;
+}
+.batch-pie-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.batch-pie {
+    width: 8.5rem;
+    height: 8.5rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06);
+}
+.batch-legend {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.82rem;
+    color: #c5cdd8;
+    line-height: 1.55;
+    flex: 1 1 10rem;
+}
+.batch-legend li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+.batch-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 0.35rem;
+}
+.batch-dot--p1 {
+    background: #4a9eff;
+}
+.batch-dot--p2 {
+    background: #e07060;
+}
+.batch-dot--draw {
+    background: #7a8494;
 }
 .hint {
     font-size: 0.85rem;

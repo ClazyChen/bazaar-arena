@@ -2040,7 +2040,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         .templ = []() {
     core::ItemTemplate t;
     t.name = "湿件战服";
-    t.desc = "▶ 获得 {Shield} 护盾；使用武器时，此物品的护盾提高 {Custom_0}（限本场战斗）；如果有一件其他的科技物品，此物品的冷却时间缩短 {Custom_1} 秒";
+    t.desc = "▶ 获得 {Shield} 护盾；使用武器时，此物品的护盾提高 {Custom_0}（限本场战斗）；如果有一件其他的科技物品，此物品的冷却时间缩短 {Custom_1:} 秒";
     for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Medium;
     for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Bronze;
     for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
@@ -3402,7 +3402,7 @@ static const std::array<GeneratedItem, 69> kItems = {
     {
         auto& g = t.auras[t.aura_count++];
         g.attribute = bazaararena::core::ItemKey::CritRate;
-        g.condition = formula::Lt<formula::Caster<(bazaararena::core::ItemKey::Custom_1)>, formula::Constant<1>>;
+        g.condition = formula::And<formula::Lt<formula::Caster<(bazaararena::core::ItemKey::Custom_1)>, formula::Constant<1>>, SameAsCaster>;
         g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
         g.percent = false;
     }

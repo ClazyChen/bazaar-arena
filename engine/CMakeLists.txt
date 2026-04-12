@@ -4,6 +4,8 @@ project(bazaararena_engine LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(Threads REQUIRED)
+
 add_library(bazaararena_engine STATIC
   src/engine/engine.cpp
   src/bazaararena/data/ItemDatabase.cpp
@@ -27,7 +29,7 @@ target_include_directories(bazaararena_engine PUBLIC
 add_executable(bazaararena_cli
   cli/main.cpp
 )
-target_link_libraries(bazaararena_cli PRIVATE bazaararena_engine)
+target_link_libraries(bazaararena_cli PRIVATE bazaararena_engine Threads::Threads)
 
 # 统一 CLI 输出到仓库根目录 bin/（与后端 simulate_run.default_cli_path 约定一致）
 set(BAZAARARENA_CLI_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../bin")

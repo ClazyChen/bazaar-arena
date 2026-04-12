@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "jobId": "http-15-vs-6",
+  "mode": "simulate",
+  "payload": {
+    "allowTie": true,
+    "debug": {
+      "enabled": true,
+      "level": "detailed",
+      "maxEvents": 50000
+    },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 2,
+        "items": [
+          {
+            "key": "打火机",
+            "tier": "bronze"
+          },
+          {
+            "key": "绵鳚",
+            "tier": "bronze"
+          },
+          {
+            "key": "鹦鹉皮特",
+            "tier": "bronze"
+          },
+          {
+            "key": "迷幻蝠鲼",
+            "tier": "bronze"
+          },
+          {
+            "key": "皮皮虾",
+            "tier": "bronze"
+          },
+          {
+            "key": "燃烧响炮",
+            "tier": "bronze"
+          }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 2,
+        "items": [
+          {
+            "key": "鲨齿爪",
+            "tier": "bronze"
+          },
+          {
+            "key": "手斧",
+            "tier": "bronze"
+          },
+          {
+            "key": "迷你弯刀",
+            "tier": "bronze"
+          },
+          {
+            "key": "靴里剑",
+            "tier": "bronze"
+          },
+          {
+            "key": "流星索",
+            "tier": "bronze"
+          }
+        ]
+      }
+    ],
+    "seed": 1921438699
+  },
+  "cliReproMeta": {
+    "exportedAt": "2026-04-12T20:09:02+00:00",
+    "deck0_as_side0": {
+      "deckId": 15,
+      "name": "皮皮虾减速火",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "打火机",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "绵鳚",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "鹦鹉皮特",
+          "tier": 0
+        },
+        {
+          "position": 3,
+          "item_name": "迷幻蝠鲼",
+          "tier": 0
+        },
+        {
+          "position": 4,
+          "item_name": "皮皮虾",
+          "tier": 0
+        },
+        {
+          "position": 5,
+          "item_name": "燃烧响炮",
+          "tier": 0
+        }
+      ]
+    },
+    "deck1_as_side1": {
+      "deckId": 6,
+      "name": "斩杀鲨齿爪",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "鲨齿爪",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "手斧",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "迷你弯刀",
+          "tier": 0
+        },
+        {
+          "position": 3,
+          "item_name": "靴里剑",
+          "tier": 0
+        },
+        {
+          "position": 4,
+          "item_name": "流星索",
+          "tier": 0
+        }
+      ]
+    },
+    "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。"
+  }
+}
