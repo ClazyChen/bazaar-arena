@@ -52,9 +52,11 @@ items:
     Damage: [10, 20, 40, 80]
     LifeSteal: 100
     Abilities:
+      # 使用显式 condition，勿用 ex_condition：UseItem 默认会与 SameSide 合并，
+      # 而「敌方使用最左侧物品」要求 ctx.item 在敌方，与 SameSide 互斥。
       - type: Damage
         trigger: UseItem
-        ex_condition:
+        condition:
           type: Leftmost
           params:
             - type: And
@@ -106,8 +108,44 @@ items:
     Abilities:
       - type: Poison
       - type: AddAttribute
-        trigger: Haste
         condition: TargetSameAsCaster
+        trigger: Haste
         key: Poison
         value: Custom_0
+        ex_target_condition: SameAsCaster
         priority: Low
+  - Name: "鱼饵"
+    Desc: "▶ 水系物品的暴击率提高 {Custom_0%}（限本场战斗）；【局外】购买此物品时，获得 1 件食人鱼"
+    Size: Small
+    Tier: Bronze
+    Tags: [Aquatic, Food]
+    Cooldown: 4s
+    Custom_0: [3, 6, 9, 12]
+    Abilities:
+      - type: AddAttribute
+        key: CritRate
+        value: Custom_0
+        priority: High
+        ex_target_condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Aquatic]
+            - CanCrit
+  - Name: "藏刃匕首"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 加速 {HasteTargetCount} 件物品 {Haste} 秒；战斗开始时，获得 {Custom_0} 金币"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 4s
+    Damage: [10, 20, 40, 80]
+    Haste: [1s, 2s, 3s, 4s]
+    Custom_0: 1
+    HasteTargetCount: 1
+    Abilities:
+      - type: Damage
+      - type: Haste
+        priority: High
+      - type: GainGold
+        trigger: BattleStart
+        value: Custom_0

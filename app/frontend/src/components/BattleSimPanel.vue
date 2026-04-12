@@ -201,6 +201,12 @@ function hudFloatLabel(ev: HudFloatEvent): string {
     if (ev.kind === "heal" || ev.kind === "regen") {
         return ev.isCrit ? `+${n}!` : `+${n}`;
     }
+    if (ev.kind === "burn") {
+        return ev.isCrit ? `火${n}!` : `火${n}`;
+    }
+    if (ev.kind === "poison") {
+        return ev.isCrit ? `毒${n}!` : `毒${n}`;
+    }
     return ev.isCrit ? `−${n}!` : `−${n}`;
 }
 
@@ -219,6 +225,24 @@ function hudFloatColor(ev: HudFloatEvent): string {
         default:
             return DAMAGE_KEYWORD_RGB;
     }
+}
+
+/** 飘字：10 及以下为标准字号；大于 10 时按 ⌈log₂(n/10)⌉ 每档 +2px，累计上限 +30 */
+function hudFloatExtraFontPx(amount: number): number {
+    const n = Math.round(Math.max(0, amount));
+    if (n <= 10) return 0;
+    const steps = Math.ceil(Math.log2(n / 10));
+    return Math.min(30, steps * 2);
+}
+
+function hudFloatStyle(ev: HudFloatEvent): Record<string, string> {
+    const extra = hudFloatExtraFontPx(ev.amount);
+    const style: Record<string, string> = { color: hudFloatColor(ev) };
+    if (extra > 0) {
+        const base = ev.isCrit ? "1.58rem" : "1.25rem";
+        style.fontSize = `calc(${base} + ${extra}px)`;
+    }
+    return style;
 }
 
 function outcomeForSide(sideIndex: 0 | 1): { text: string; cls: string } | null {
@@ -963,7 +987,7 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                 :key="item.id"
                                 class="hp-float"
                                 :class="{ 'hp-float--crit': item.ev.isCrit }"
-                                :style="{ color: hudFloatColor(item.ev) }"
+                                :style="hudFloatStyle(item.ev)"
                                 @animationend="removeHpFloatP1(item.id)"
                             >{{ hudFloatLabel(item.ev) }}</span>
                         </div>
@@ -976,12 +1000,14 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                 <div class="fill hp-fill" :style="{ width: `${hpFrac(side0) * 100}%` }" />
                                 <div class="hp-on-bar hp-bar-stats">
                                     <span class="hp-bar-num hp-bar-num--hp">{{ Math.round(side0.hp) }}</span>
-                                    <span v-if="side0.burn > 0" class="hp-bar-num hp-bar-num--burn">{{
-                                        Math.round(side0.burn)
-                                    }}</span>
-                                    <span v-if="side0.poison > 0" class="hp-bar-num hp-bar-num--poison">{{
-                                        Math.round(side0.poison)
-                                    }}</span>
+                                    <span v-if="side0.burn > 0" class="hp-bar-num hp-bar-num--burn"
+                                        ><span class="hp-debuff-glyph" aria-hidden="true">火</span
+                                        >{{ Math.round(side0.burn) }}</span
+                                    >
+                                    <span v-if="side0.poison > 0" class="hp-bar-num hp-bar-num--poison"
+                                        ><span class="hp-debuff-glyph" aria-hidden="true">毒</span
+                                        >{{ Math.round(side0.poison) }}</span
+                                    >
                                     <span v-if="side0.regen > 0" class="hp-bar-num hp-bar-num--regen">{{
                                         Math.round(side0.regen)
                                     }}</span>
@@ -1285,7 +1311,7 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                 :key="item.id"
                                 class="hp-float"
                                 :class="{ 'hp-float--crit': item.ev.isCrit }"
-                                :style="{ color: hudFloatColor(item.ev) }"
+                                :style="hudFloatStyle(item.ev)"
                                 @animationend="removeHpFloatP2(item.id)"
                             >{{ hudFloatLabel(item.ev) }}</span>
                         </div>
@@ -1298,12 +1324,14 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                 <div class="fill hp-fill" :style="{ width: `${hpFrac(side1) * 100}%` }" />
                                 <div class="hp-on-bar hp-bar-stats">
                                     <span class="hp-bar-num hp-bar-num--hp">{{ Math.round(side1.hp) }}</span>
-                                    <span v-if="side1.burn > 0" class="hp-bar-num hp-bar-num--burn">{{
-                                        Math.round(side1.burn)
-                                    }}</span>
-                                    <span v-if="side1.poison > 0" class="hp-bar-num hp-bar-num--poison">{{
-                                        Math.round(side1.poison)
-                                    }}</span>
+                                    <span v-if="side1.burn > 0" class="hp-bar-num hp-bar-num--burn"
+                                        ><span class="hp-debuff-glyph" aria-hidden="true">火</span
+                                        >{{ Math.round(side1.burn) }}</span
+                                    >
+                                    <span v-if="side1.poison > 0" class="hp-bar-num hp-bar-num--poison"
+                                        ><span class="hp-debuff-glyph" aria-hidden="true">毒</span
+                                        >{{ Math.round(side1.poison) }}</span
+                                    >
                                     <span v-if="side1.regen > 0" class="hp-bar-num hp-bar-num--regen">{{
                                         Math.round(side1.regen)
                                     }}</span>
@@ -1670,6 +1698,14 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
 }
 .hp-bar-num--hp {
     color: #ffffff;
+}
+.hp-debuff-glyph {
+    display: inline-block;
+    margin-right: 1px;
+    font-weight: 800;
+    font-size: 0.82em;
+    line-height: 1;
+    vertical-align: 0.05em;
 }
 .hp-bar-num--burn {
     color: rgb(255, 159, 69);

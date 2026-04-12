@@ -4,14 +4,38 @@
 #include <vector>
 
 #include "bazaararena/data/GeneratedItems.hpp"
+#include "bazaararena/core/AbilityType.hpp"
 #include "bazaararena/core/DerivedTag.hpp"
 #include "bazaararena/core/ItemKey.hpp"
 #include "bazaararena/core/ItemTemplate.hpp"
+#include "bazaararena/core/Trigger.hpp"
 
 namespace bazaararena::data {
 namespace core = bazaararena::core;
 
 namespace {
+
+bool AbilityTypeContributesCritEligible(int ability_type) {
+    switch (ability_type) {
+        case core::AbilityType::Damage:
+        case core::AbilityType::Shield:
+        case core::AbilityType::Heal:
+        case core::AbilityType::Burn:
+        case core::AbilityType::Poison:
+        case core::AbilityType::Regen:
+        case core::AbilityType::PoisonSelf:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool AbilityHasCastTrigger(const core::AbilityDefinition& ab) {
+    for (int j = 0; j < ab.trigger_entry_count; j++) {
+        if (ab.trigger_entries[j].trigger == core::Trigger::Cast) return true;
+    }
+    return false;
+}
 
 int ComputeDerivedTags(const core::ItemTemplate& templ) {
     int tags = 0;
@@ -22,7 +46,8 @@ int ComputeDerivedTags(const core::ItemTemplate& templ) {
     if (attrs[core::ItemKey::AmmoCap] > 0) tags |= core::DerivedTag::Ammo;
 
     for (int i = 0; i < templ.ability_count; i++) {
-        switch (templ.abilities[i].type) {
+        const auto& ab = templ.abilities[i];
+        switch (ab.type) {
             case core::AbilityType::Damage:
                 tags |= core::DerivedTag::Damage;
                 break;
@@ -34,6 +59,9 @@ int ComputeDerivedTags(const core::ItemTemplate& templ) {
                 break;
             default:
                 break;
+        }
+        if (AbilityHasCastTrigger(ab) && AbilityTypeContributesCritEligible(ab.type)) {
+            tags |= core::DerivedTag::Crit;
         }
     }
     return tags;

@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "jobId": "http-1-vs-2",
+  "mode": "simulate",
+  "payload": {
+    "allowTie": true,
+    "debug": {
+      "enabled": true,
+      "level": "detailed",
+      "maxEvents": 50000
+    },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 2,
+        "items": [
+          {
+            "key": "龙涎香",
+            "tier": "bronze"
+          },
+          {
+            "key": "三花",
+            "tier": "bronze"
+          },
+          {
+            "key": "刺刀",
+            "tier": "bronze"
+          },
+          {
+            "key": "流星索",
+            "tier": "bronze"
+          },
+          {
+            "key": "毒须鲶",
+            "tier": "bronze"
+          },
+          {
+            "key": "舱底蠕虫",
+            "tier": "bronze"
+          }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 2,
+        "items": [
+          {
+            "key": "哈库维发射器",
+            "tier": "bronze"
+          },
+          {
+            "key": "冰锥",
+            "tier": "bronze"
+          },
+          {
+            "key": "古董剑",
+            "tier": "bronze"
+          },
+          {
+            "key": "蓝蕉",
+            "tier": "bronze"
+          }
+        ]
+      }
+    ],
+    "seed": 199445620
+  },
+  "cliReproMeta": {
+    "exportedAt": "2026-04-12T14:09:11+00:00",
+    "deck0_as_side0": {
+      "deckId": 1,
+      "name": "新卡组",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "龙涎香",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "三花",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "刺刀",
+          "tier": 0
+        },
+        {
+          "position": 3,
+          "item_name": "流星索",
+          "tier": 0
+        },
+        {
+          "position": 4,
+          "item_name": "毒须鲶",
+          "tier": 0
+        },
+        {
+          "position": 5,
+          "item_name": "舱底蠕虫",
+          "tier": 0
+        }
+      ]
+    },
+    "deck1_as_side1": {
+      "deckId": 2,
+      "name": "测试卡组2",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "哈库维发射器",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "冰锥",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "古董剑",
+          "tier": 0
+        },
+        {
+          "position": 3,
+          "item_name": "蓝蕉",
+          "tier": 0
+        }
+      ]
+    },
+    "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。"
+  }
+}

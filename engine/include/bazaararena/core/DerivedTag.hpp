@@ -12,7 +12,7 @@ public:
     static constexpr int Poison = 1 << 4; // 剧毒
     static constexpr int Heal = 1 << 5; // 治疗
     static constexpr int Regen = 1 << 6; // 生命再生
-    static constexpr int Crit = 1 << 7; // **是否可以**暴击
+    static constexpr int Crit = 1 << 7; // 可以暴击：模板在 Cast 下至少有一条可暴击类能力（见 ItemDatabase::ComputeDerivedTags）
     static constexpr int Cooldown = 1 << 8; // **是否具有**冷却时间
     static constexpr int Charge = 1 << 9; // 充能
     static constexpr int Freeze = 1 << 10; // 冻结

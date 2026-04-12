@@ -10,11 +10,21 @@
 
 namespace bazaararena::core {
 
+namespace {
+
+// CritDamage 为百分比（见 ItemKey::CritDamage）。暴击时结算为 base × CritDamage%。
+int CritScaledAmount(int base_amount, const BattleContext& ctx) {
+    int pct = ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
+    return formula::PercentFloor(base_amount, pct);
+}
+
+} // namespace
+
 // 辅助函数：进行暴击检查
 bool CheckCrit(const AbilityDefinition& ability, const BattleContext& ctx) {
     auto caster = ctx.caster;
     if (ability.trigger_entries[0].trigger != Trigger::Cast) return false; // 只有施放触发器可以暴击
-    if (caster->attrs[ItemKey::DerivedTags] & DerivedTag::Crit) return false; // 不能暴击的物品不进行检查
+    if ((caster->attrs[ItemKey::DerivedTags] & DerivedTag::Crit) == 0) return false; // 无「可暴击」派生则跳过（与 ItemDatabase 一致）
     int item_mask = 1 << ((caster->attrs[ItemKey::SideIndex] << 4) | caster->attrs[ItemKey::ItemIndex]);
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     if (simulator->crit_bitmap & item_mask) return true; // 已经暴击过
@@ -34,7 +44,7 @@ void Damage(const AbilityDefinition& ability, const BattleContext& ctx) {
     int damage = ctx.GetItemInt(ctx.caster, ability.value_key);
     bool is_crit = CheckCrit(ability, ctx);
     if (is_crit) {
-        damage *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
+        damage = CritScaledAmount(damage, ctx);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& opp = simulator->sides[1 - ctx.caster->attrs[ItemKey::SideIndex]];
@@ -56,7 +66,7 @@ void Burn(const AbilityDefinition& ability, const BattleContext& ctx) {
     int damage = ctx.GetItemInt(ctx.caster, ability.value_key);
     bool is_crit = CheckCrit(ability, ctx);
     if (is_crit) {
-        damage *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
+        damage = CritScaledAmount(damage, ctx);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& opp = simulator->sides[1 - ctx.caster->attrs[ItemKey::SideIndex]];
@@ -72,7 +82,7 @@ void Poison(const AbilityDefinition& ability, const BattleContext& ctx) {
     int damage = ctx.GetItemInt(ctx.caster, ability.value_key);
     bool is_crit = CheckCrit(ability, ctx);
     if (is_crit) {
-        damage *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
+        damage = CritScaledAmount(damage, ctx);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& opp = simulator->sides[1 - ctx.caster->attrs[ItemKey::SideIndex]];
@@ -88,7 +98,7 @@ void Heal(const AbilityDefinition& ability, const BattleContext& ctx) {
     int heal = ctx.GetItemInt(ctx.caster, ability.value_key);
     bool is_crit = CheckCrit(ability, ctx);
     if (is_crit) {
-        heal *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
+        heal = CritScaledAmount(heal, ctx);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& side = simulator->sides[ctx.caster->attrs[ItemKey::SideIndex]];
@@ -108,7 +118,7 @@ void Regen(const AbilityDefinition& ability, const BattleContext& ctx) {
     int regen = ctx.GetItemInt(ctx.caster, ability.value_key);
     bool is_crit = CheckCrit(ability, ctx);
     if (is_crit) {
-        regen *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
+        regen = CritScaledAmount(regen, ctx);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& side = simulator->sides[ctx.caster->attrs[ItemKey::SideIndex]];
@@ -136,7 +146,7 @@ void PoisonSelf(const AbilityDefinition& ability, const BattleContext& ctx) {
     int damage = ctx.GetItemInt(ctx.caster, ability.value_key);
     bool is_crit = CheckCrit(ability, ctx);
     if (is_crit) {
-        damage *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
+        damage = CritScaledAmount(damage, ctx);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& side = simulator->sides[ctx.caster->attrs[ItemKey::SideIndex]];
@@ -152,7 +162,7 @@ void Shield(const AbilityDefinition& ability, const BattleContext& ctx) {
     int shield = ctx.GetItemInt(ctx.caster, ability.value_key);
     bool is_crit = CheckCrit(ability, ctx);
     if (is_crit) {
-        shield *= ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
+        shield = CritScaledAmount(shield, ctx);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& side = simulator->sides[ctx.caster->attrs[ItemKey::SideIndex]];
