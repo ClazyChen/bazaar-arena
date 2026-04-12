@@ -122,6 +122,10 @@ export interface FrameEndItemSnapshot {
     Regen?: number;
     /** 剩余冻结时间（毫秒），与引擎 `FreezeRemaining` 一致 */
     FreezeRemaining?: number;
+    /** 剩余加速时间（毫秒），与引擎 `HasteRemaining` 一致 */
+    HasteRemaining?: number;
+    /** 剩余减速时间（毫秒），与引擎 `SlowRemaining` 一致 */
+    SlowRemaining?: number;
     /** 弹药上限 / 剩余弹药，与引擎 `AmmoCap` / `AmmoRemaining` 一致 */
     AmmoCap?: number;
     AmmoRemaining?: number;

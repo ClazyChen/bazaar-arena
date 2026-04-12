@@ -7,6 +7,7 @@ import {
     CHARGE_KEYWORD_RGB,
     DAMAGE_KEYWORD_RGB,
     FREEZE_KEYWORD_RGB,
+    SLOW_KEYWORD_RGB,
     HEAL_KEYWORD_RGB,
     POISON_KEYWORD_RGB,
     REGEN_KEYWORD_RGB,
@@ -320,6 +321,72 @@ const p2ChargeFrontierLineStyles = computed((): (Record<string, string> | undefi
     return out;
 });
 
+/** 仅单独加速 / 单独减速时在充能边界线旁显示箭头（与冻结或另一状态并存时不显示） */
+type ChargeArrowDecor = { variant: "haste" | "slow"; style: Record<string, string> };
+
+function itemChargeArrowDecor(
+    side: FrameEndSideSnapshot | null,
+    slotIndex: number,
+    slot: DeckSlotPayload | undefined,
+): ChargeArrowDecor | null {
+    const row = slot ? catalog.byName.get(slot.item_name) : undefined;
+    if (itemCooldownMsForDeckTier(row, slot?.tier ?? 0) === null) return null;
+    const it = itemSnapshotForSlot(side, slotIndex);
+    if (!it) return null;
+    const cd = it.Cooldown;
+    if (!Number.isFinite(cd) || cd <= 0) return null;
+    const fill = unchargedOverlayFill(it.ChargedTime, cd);
+    if (fill <= 0) return null;
+
+    const fr = it.FreezeRemaining ?? 0;
+    const haste = it.HasteRemaining ?? 0;
+    const slow = it.SlowRemaining ?? 0;
+    const frozen = Number.isFinite(fr) && fr > 0;
+    const hasHaste = Number.isFinite(haste) && haste > 0;
+    const hasSlow = Number.isFinite(slow) && slow > 0;
+    if (frozen) return null;
+    if (hasHaste && !hasSlow) {
+        return {
+            variant: "haste",
+            style: {
+                top: `calc(${fill * 100}% - 1px)`,
+                transform: "translateY(-100%)",
+                "--charge-arrow-color": CHARGE_KEYWORD_RGB,
+            },
+        };
+    }
+    if (hasSlow && !hasHaste) {
+        return {
+            variant: "slow",
+            style: {
+                top: `calc(${fill * 100}% + 2px)`,
+                "--charge-arrow-color": CHARGE_KEYWORD_RGB,
+            },
+        };
+    }
+    return null;
+}
+
+const p1ChargeArrowDecors = computed((): (ChargeArrowDecor | null)[] => {
+    const side = side0.value;
+    const n = slotsP1.value.length;
+    const out: (ChargeArrowDecor | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemChargeArrowDecor(side, i, slotsP1.value[i]));
+    }
+    return out;
+});
+
+const p2ChargeArrowDecors = computed((): (ChargeArrowDecor | null)[] => {
+    const side = side1.value;
+    const n = slotsP2.value.length;
+    const out: (ChargeArrowDecor | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemChargeArrowDecor(side, i, slotsP2.value[i]));
+    }
+    return out;
+});
+
 /** 单枚徽章最大宽度 = 小物品（size=1）外宽的 40%；高为宽的一半（2:1） */
 const DAMAGE_BADGE_WIDTH_PX = dcardOuterWidthPx(1) * 0.4;
 const STAT_BADGE_GAP_PX = 2;
@@ -429,6 +496,76 @@ const p2FreezeBadges = computed(() => {
     const out: ({ widthPx: number; heightPx: number; fontPx: number; text: string } | null)[] = [];
     for (let i = 0; i < n; i++) {
         out.push(itemFreezeBadge(side, i));
+    }
+    return out;
+});
+
+type ItemTimeBadge = { widthPx: number; heightPx: number; fontPx: number; text: string };
+
+function itemHasteBadge(side: FrameEndSideSnapshot | null, slotIndex: number): ItemTimeBadge | null {
+    const it = itemSnapshotForSlot(side, slotIndex);
+    const ms = it?.HasteRemaining ?? 0;
+    if (!Number.isFinite(ms) || ms <= 0) return null;
+    const widthPx = DAMAGE_BADGE_WIDTH_PX;
+    const heightPx = widthPx / 2;
+    return {
+        widthPx,
+        heightPx,
+        fontPx: Math.max(8, Math.min(11, widthPx * 0.36)),
+        text: (ms / 1000).toFixed(1),
+    };
+}
+
+function itemSlowBadge(side: FrameEndSideSnapshot | null, slotIndex: number): ItemTimeBadge | null {
+    const it = itemSnapshotForSlot(side, slotIndex);
+    const ms = it?.SlowRemaining ?? 0;
+    if (!Number.isFinite(ms) || ms <= 0) return null;
+    const widthPx = DAMAGE_BADGE_WIDTH_PX;
+    const heightPx = widthPx / 2;
+    return {
+        widthPx,
+        heightPx,
+        fontPx: Math.max(8, Math.min(11, widthPx * 0.36)),
+        text: (ms / 1000).toFixed(1),
+    };
+}
+
+const p1HasteBadges = computed((): (ItemTimeBadge | null)[] => {
+    const side = side0.value;
+    const n = slotsP1.value.length;
+    const out: (ItemTimeBadge | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemHasteBadge(side, i));
+    }
+    return out;
+});
+
+const p2HasteBadges = computed((): (ItemTimeBadge | null)[] => {
+    const side = side1.value;
+    const n = slotsP2.value.length;
+    const out: (ItemTimeBadge | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemHasteBadge(side, i));
+    }
+    return out;
+});
+
+const p1SlowBadges = computed((): (ItemTimeBadge | null)[] => {
+    const side = side0.value;
+    const n = slotsP1.value.length;
+    const out: (ItemTimeBadge | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemSlowBadge(side, i));
+    }
+    return out;
+});
+
+const p2SlowBadges = computed((): (ItemTimeBadge | null)[] => {
+    const side = side1.value;
+    const n = slotsP2.value.length;
+    const out: (ItemTimeBadge | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemSlowBadge(side, i));
     }
     return out;
 });
@@ -897,6 +1034,22 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             :style="p1ChargeFrontierLineStyles[i]"
                                         />
                                         <div
+                                            v-if="p1ChargeArrowDecors[i]"
+                                            class="charge-arrow-row"
+                                            :style="p1ChargeArrowDecors[i]!.style"
+                                        >
+                                            <span
+                                                v-for="j in 3"
+                                                :key="j"
+                                                class="charge-arrow"
+                                                :class="
+                                                    p1ChargeArrowDecors[i]!.variant === 'haste'
+                                                        ? 'charge-arrow--up'
+                                                        : 'charge-arrow--down'
+                                                "
+                                            />
+                                        </div>
+                                        <div
                                             v-if="p1FreezeBadges[i]"
                                             class="freeze-full-overlay"
                                             :style="{ background: freezeOverlayRgba(0.38) }"
@@ -927,6 +1080,30 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             }"
                                         >
                                             {{ p1FreezeBadges[i]!.text }}
+                                        </div>
+                                        <div
+                                            v-if="p1HasteBadges[i]"
+                                            class="haste-time-badge"
+                                            :style="{
+                                                width: `${p1HasteBadges[i]!.widthPx}px`,
+                                                height: `${p1HasteBadges[i]!.heightPx}px`,
+                                                fontSize: `${p1HasteBadges[i]!.fontPx}px`,
+                                                background: CHARGE_KEYWORD_RGB,
+                                            }"
+                                        >
+                                            {{ p1HasteBadges[i]!.text }}
+                                        </div>
+                                        <div
+                                            v-if="p1SlowBadges[i]"
+                                            class="slow-time-badge"
+                                            :style="{
+                                                width: `${p1SlowBadges[i]!.widthPx}px`,
+                                                height: `${p1SlowBadges[i]!.heightPx}px`,
+                                                fontSize: `${p1SlowBadges[i]!.fontPx}px`,
+                                                background: SLOW_KEYWORD_RGB,
+                                            }"
+                                        >
+                                            {{ p1SlowBadges[i]!.text }}
                                         </div>
                                         <div
                                             v-if="p1AmmoPips[i]"
@@ -1005,6 +1182,22 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             :style="p2ChargeFrontierLineStyles[i]"
                                         />
                                         <div
+                                            v-if="p2ChargeArrowDecors[i]"
+                                            class="charge-arrow-row"
+                                            :style="p2ChargeArrowDecors[i]!.style"
+                                        >
+                                            <span
+                                                v-for="j in 3"
+                                                :key="j"
+                                                class="charge-arrow"
+                                                :class="
+                                                    p2ChargeArrowDecors[i]!.variant === 'haste'
+                                                        ? 'charge-arrow--up'
+                                                        : 'charge-arrow--down'
+                                                "
+                                            />
+                                        </div>
+                                        <div
                                             v-if="p2FreezeBadges[i]"
                                             class="freeze-full-overlay"
                                             :style="{ background: freezeOverlayRgba(0.38) }"
@@ -1035,6 +1228,30 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             }"
                                         >
                                             {{ p2FreezeBadges[i]!.text }}
+                                        </div>
+                                        <div
+                                            v-if="p2HasteBadges[i]"
+                                            class="haste-time-badge"
+                                            :style="{
+                                                width: `${p2HasteBadges[i]!.widthPx}px`,
+                                                height: `${p2HasteBadges[i]!.heightPx}px`,
+                                                fontSize: `${p2HasteBadges[i]!.fontPx}px`,
+                                                background: CHARGE_KEYWORD_RGB,
+                                            }"
+                                        >
+                                            {{ p2HasteBadges[i]!.text }}
+                                        </div>
+                                        <div
+                                            v-if="p2SlowBadges[i]"
+                                            class="slow-time-badge"
+                                            :style="{
+                                                width: `${p2SlowBadges[i]!.widthPx}px`,
+                                                height: `${p2SlowBadges[i]!.heightPx}px`,
+                                                fontSize: `${p2SlowBadges[i]!.fontPx}px`,
+                                                background: SLOW_KEYWORD_RGB,
+                                            }"
+                                        >
+                                            {{ p2SlowBadges[i]!.text }}
                                         </div>
                                         <div
                                             v-if="p2AmmoPips[i]"
@@ -1598,6 +1815,35 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     pointer-events: none;
     box-sizing: border-box;
 }
+.charge-arrow-row {
+    position: absolute;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    z-index: 2;
+    pointer-events: none;
+    line-height: 0;
+}
+.charge-arrow {
+    flex-shrink: 0;
+}
+.charge-arrow--up {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 6px solid var(--charge-arrow-color, rgb(0, 236, 195));
+}
+.charge-arrow--down {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid var(--charge-arrow-color, rgb(0, 236, 195));
+}
 .freeze-full-overlay {
     position: absolute;
     inset: 0;
@@ -1622,6 +1868,8 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     height: 7px;
     border-radius: 50%;
     border: 1.5px solid var(--ammo-dot, rgb(255, 142, 0));
+    /* 与背景图同色时仍可辨认 */
+    box-shadow: 0 0 0 1px #000000;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1637,11 +1885,13 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     height: 4px;
     border-radius: 50%;
     background: var(--ammo-dot, rgb(255, 142, 0));
+    box-shadow: 0 0 0 0.5px #000000;
 }
-.freeze-time-badge {
+.freeze-time-badge,
+.haste-time-badge,
+.slow-time-badge {
     position: absolute;
     left: 50%;
-    top: 50%;
     transform: translate(-50%, -50%);
     z-index: 5;
     box-sizing: border-box;
@@ -1654,6 +1904,15 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     line-height: 1;
     pointer-events: none;
     border-radius: 2px;
+}
+.freeze-time-badge {
+    top: 50%;
+}
+.haste-time-badge {
+    top: 40%;
+}
+.slow-time-badge {
+    top: 60%;
 }
 .cap {
     font-size: 0.65rem;

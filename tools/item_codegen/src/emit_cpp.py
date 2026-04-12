@@ -238,6 +238,9 @@ def _resolve_attribute_key_cpp(ab: dict, ability_type: str, *, where: str) -> st
     if "attribute_key" in ab:
         return item_key_cpp_from_name(str(ab["attribute_key"]), where=f"{where}.attribute_key")
     if ability_type in ("AddAttribute", "ReduceAttribute"):
+        # YAML 常用 `key:`（与举重手套等一致）；未写时默认 Damage
+        if "key" in ab:
+            return item_key_cpp_from_name(str(ab["key"]), where=f"{where}.key")
         return "core::ItemKey::Damage"
     return None
 

@@ -42,6 +42,16 @@ constexpr Formula Caster = [](const BattleContext& ctx) -> int {
     }
 };
 
+// 目标的属性
+template<int key>
+constexpr Formula Target = [](const BattleContext& ctx) -> int { 
+    if constexpr (IsAuraEffect<key>) {
+        return ctx.GetItemInt(ctx.target, key);
+    } else {
+        return ctx.GetItemIntRaw(ctx.target, key);
+    }
+};
+
 // 能力/光环释放者所在阵营的属性
 template<int key>
 constexpr Formula Side = [](const BattleContext& ctx) -> int { 

@@ -1,6 +1,9 @@
 /** 与 itemTooltip KEYWORD_COLORS「充能」「加速」一致 */
 export const CHARGE_KEYWORD_RGB = "rgb(0, 236, 195)";
 
+/** 与 itemTooltip「减速」关键词一致 */
+export const SLOW_KEYWORD_RGB = "rgb(203, 159, 110)";
+
 /** 与 itemTooltip「伤害」关键词一致 */
 export const DAMAGE_KEYWORD_RGB = "rgb(245, 80, 61)";
 

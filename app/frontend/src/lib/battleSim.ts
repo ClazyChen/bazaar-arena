@@ -55,6 +55,8 @@ function parseItemSnapshots(raw: unknown): FrameEndItemSnapshot[] | undefined {
             Poison: Number(o.Poison ?? 0),
             Regen: Number(o.Regen ?? 0),
             FreezeRemaining: Number(o.FreezeRemaining ?? 0),
+            HasteRemaining: Number(o.HasteRemaining ?? 0),
+            SlowRemaining: Number(o.SlowRemaining ?? 0),
             AmmoCap: Number(o.AmmoCap ?? 0),
             AmmoRemaining: Number(o.AmmoRemaining ?? 0),
             name: typeof o.name === "string" ? o.name : undefined,

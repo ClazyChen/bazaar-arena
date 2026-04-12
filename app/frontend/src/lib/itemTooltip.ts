@@ -9,6 +9,7 @@ import {
     POISON_KEYWORD_RGB,
     REGEN_KEYWORD_RGB,
     SHIELD_KEYWORD_RGB,
+    SLOW_KEYWORD_RGB,
     tierBorderColor,
 } from "@/lib/deckMath";
 
@@ -30,7 +31,7 @@ const KEYWORD_COLORS: { needle: string; color: string }[] = [
     { needle: "摧毁", color: "rgb(255, 50, 120)" },
     { needle: "剧毒", color: POISON_KEYWORD_RGB },
     { needle: "修复", color: "rgb(143, 252, 188)" },
-    { needle: "减速", color: "rgb(203, 159, 110)" },
+    { needle: "减速", color: SLOW_KEYWORD_RGB },
     { needle: "灼烧", color: BURN_KEYWORD_RGB },
 ];
 

@@ -68,14 +68,14 @@ items:
     Tags: [Weapon]
     Cooldown: 4s
     Damage: [20, 40, 80, 160]
-    Slow: [1s, 2s, 3s, 4s]
+    Slow: [2s, 3s, 4s, 5s]
     SlowTargetCount: 1
     AmmoCap: 2
     Abilities:
       - type: Damage
       - type: Slow
   - Name: "三花"
-    Desc: "▶ 造成 {Damage} 伤害；使用其他武器时，此物品暴击率提高 {+Custom_0%}（限本场战斗）"
+    Desc: "▶ 造成 {Damage} 伤害；使用其他武器时，此物品暴击率提高 {Custom_0%}（限本场战斗）"
     Size: Small
     Tier: Bronze
     Tags: [Weapon]
@@ -88,9 +88,26 @@ items:
         trigger: UseItem
         key: CritRate
         value: Custom_0
+        target_condition: SameAsCaster
         ex_condition:
           type: And
           params:
             - type: HasTag
               params: [Weapon]
             - DifferentFromCaster
+  - Name: "毒须鲶"
+    Desc: "▶ 造成 {Poison} 剧毒；此物品被加速时，其剧毒提高 {Custom_0}（限本场战斗）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Aquatic, Friend]
+    Cooldown: 5s
+    Poison: 3
+    Custom_0: [2, 4, 6, 8]
+    Abilities:
+      - type: Poison
+      - type: AddAttribute
+        trigger: Haste
+        condition: TargetSameAsCaster
+        key: Poison
+        value: Custom_0
+        priority: Low

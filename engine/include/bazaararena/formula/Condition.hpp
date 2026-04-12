@@ -21,6 +21,11 @@ constexpr Formula SameAsCaster = And<
 
 constexpr Formula DifferentFromCaster = Not<SameAsCaster>;
 
+constexpr Formula TargetSameAsCaster = And<
+    Eq<Item<ItemKey::SideIndex>, Target<ItemKey::SideIndex>>,
+    Eq<Item<ItemKey::ItemIndex>, Target<ItemKey::ItemIndex>>
+>;
+
 constexpr Formula SameSide = Eq<Item<ItemKey::SideIndex>, Caster<ItemKey::SideIndex>>;
 constexpr Formula DifferentSide = Not<SameSide>;
 
