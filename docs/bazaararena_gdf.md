@@ -31,8 +31,8 @@ cmake --build . --config Release --target bazaararena_gdf
 | `--top-k <k>` | 每档最终保留的候选数量（beam 输出大小，默认 10） |
 | `--top-multiplier <M>` | 瑞士阶段晋级人数 = `k * M`（默认 3） |
 | `--bo <n>` | 循环赛 / 锚点增广中**每对**系列赛的局数，须为**正奇数**（非法或偶数时回退为 5） |
-| `--workers <n>` | 对战评估并行线程数；`0` 表示不额外开线程（默认 0） |
-| `--seed <int>` | 全局随机种子（可选）；指定后批内对战使用确定性子种子流 |
+| `--workers <n>` | 对战评估并行线程数。**省略**该参数时默认 `std::thread::hardware_concurrency()`（极致性能）；`0` 表示对战全程单线程（便于对照或调试） |
+| `--seed <int>` | **仅影响 Greedy 搜索**（扩展/瑞士等同分桶内随机等）的 `mt19937` 种子（可选）。**单局对战 RNG 不由此参数决定**，GDF 侧为性能使用廉价熵与 `thread_local` 复用模拟器，**不保证对战可复现**；对局正确性由引擎 `Simulator` 保证。 |
 | `--pool-hero <name>` | 物品池过滤：`Vanessa` \| `Mak` \| `Common` \| `All`（大小写不敏感，默认 `Vanessa`） |
 | `--exclude-item <a,b>` | 排除物品；可多次传入或逗号分隔 |
 | `--lambda-anchor <x>` | 锚点边际权重 λ；**`0`（默认）** 时不计算成对对照增广系列赛（与纯 RR 排序退化一致） |
@@ -94,6 +94,10 @@ bin/bazaararena_gdf.exe --data-dir data/items --enumerate-anchors --level 4 --to
 - **数据入口**：C++ 版从 `data/items/*.yaml` 解析 `hero` 与 `Name`；legacy 使用 .NET 物品库。请保持 YAML 与生成物品一致。
 - **模板扁平 / Overridable 插值**：legacy 的 `GreedyPreflattenedResolver` 对模板做了档位合并与 overridable 缩放；当前 C++ 版直接使用 **`CombatTier` 对应档位** 的 `ItemTemplate` 属性。若需与 legacy **逐局数值完全一致**，需要后续单独对齐扁平化规则。
 - **后端集成**：当前 GDF **仅命令行**；未接入 `bazaararena_cli` 的 JSON `mode`。Web 若需调用应单独包装进程或后续扩展协议。
+
+## 性能与瓶颈分析
+
+若墙钟显著慢于预期或慢于 legacy，请先阅读 **[`docs/gdf_performance_analysis.md`](gdf_performance_analysis.md)**。文档会随实现更新：当前 C++ 侧已采用 **`thread_local` 复用 `Simulator`**、批内廉价熵派生子种子、**`deck_cache_` 读写锁**，并默认 **硬件并发** 作为 `--workers`，以优先极致性能；仍可能存在的瓶颈（如每批新建 `std::thread`）见该文。
 
 ## 相关文件
 

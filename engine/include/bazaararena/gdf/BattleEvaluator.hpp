@@ -4,8 +4,9 @@
 #include <bazaararena/gdf/DeckRep.hpp>
 
 #include <cstdint>
+#include <mutex>
 #include <random>
-#include <optional>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -18,9 +19,10 @@ struct MatchPoints {
     double b = 0;
 };
 
+/// 对战评估器：追求 GDF 极致性能，**不保证**批内/批间 RNG 可复现。
 class BattleEvaluator {
 public:
-    BattleEvaluator(int best_of, int workers, int player_level, std::optional<int> deterministic_battle_seed);
+    BattleEvaluator(int best_of, int workers, int player_level);
 
     int PlayBoN(const DeckRep& a, const DeckRep& b);
 
@@ -35,24 +37,21 @@ private:
     int workers_;
     int player_level_;
     int combat_tier_;
-    std::optional<int> deterministic_battle_seed_;
-    long long parallel_batch_seq_ = 0;
 
+    mutable std::shared_mutex deck_cache_mu_;
     std::unordered_map<std::string, bazaararena::core::SideState> deck_cache_;
 
     const bazaararena::core::SideState& ToSide(const DeckRep& rep);
 
-    /// 0=A 胜, 1=B 胜；-1 表示系列赛可计半分平局。
-    int PlaySingleGameForSeries(const DeckRep& a, const DeckRep& b, std::optional<unsigned> dedicated_seed);
-    int PlaySingleGameForBoN(const DeckRep& a, const DeckRep& b, std::optional<unsigned> dedicated_seed);
+    /// game_word：驱动 swap 与 sim.rng 的低位熵（不要求密码学随机）。
+    int PlaySingleGameForSeries(const DeckRep& a, const DeckRep& b, unsigned game_word);
+    int PlaySingleGameForBoN(const DeckRep& a, const DeckRep& b, unsigned game_word);
 
-    MatchPoints PlaySeriesPointsCore(const DeckRep& a, const DeckRep& b, int game_count, std::optional<unsigned> dedicated_seed);
+    MatchPoints PlaySeriesPointsForPair(const DeckRep& a, const DeckRep& b, int game_count, unsigned pair_seed);
 
-    /// stream_seed：整局 BO 的随机流种子；nullopt 则每局独立随机。
-    int RunBoNStream(const DeckRep& a, const DeckRep& b, std::optional<unsigned> stream_seed);
+    int RunBoNStream(const DeckRep& a, const DeckRep& b, unsigned stream_seed);
 
     static std::vector<size_t> CreateShuffledOrder(size_t count, std::mt19937& rng);
-    static int MixSeed(int base, long long batch_id, int pair_index, int salt);
 };
 
 }  // namespace bazaararena::gdf

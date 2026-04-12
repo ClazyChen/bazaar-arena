@@ -5,6 +5,7 @@
 #include <bazaararena/gdf/GdfLevelRules.hpp>
 #include <bazaararena/gdf/SwissTournament.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <unordered_map>

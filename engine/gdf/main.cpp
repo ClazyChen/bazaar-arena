@@ -6,6 +6,7 @@
 #include <bazaararena/gdf/ItemPool.hpp>
 
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -15,9 +16,15 @@
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <thread>
 #include <vector>
 
 namespace {
+
+static int DefaultWorkerThreads() {
+    const unsigned hc = std::thread::hardware_concurrency();
+    return hc > 0 ? static_cast<int>(hc) : 4;
+}
 
 struct Args {
     std::string data_items_dir = "data/items";
@@ -27,7 +34,8 @@ struct Args {
     int top_k = 10;
     int top_multiplier = 3;
     int best_of = 5;
-    int workers = 0;
+    /// -1：未指定 `--workers` 时使用硬件并发（极致性能）；>=0 为显式值（0=强制单线程对战）。
+    int workers = -1;
     std::optional<int> seed;
     int level = 2;
     std::string pool_hero = "Vanessa";
@@ -47,8 +55,8 @@ static void PrintUsage(std::ostream& os) {
           "  --top-k <k>                beam output size (default 10)\n"
           "  --top-multiplier <M>       Swiss stage = k*M (default 3)\n"
           "  --bo <n>                   odd series length per pair (default 5)\n"
-          "  --workers <n>              parallel battle threads (0=main thread only)\n"
-          "  --seed <int>               RNG seed (optional)\n"
+          "  --workers <n>              battle threads (omit=CPU cores; 0=serial battles)\n"
+          "  --seed <int>               search RNG seed (optional; battles are not reproducible)\n"
           "  --pool-hero Vanessa|Mak|Common|All\n"
           "  --exclude-item a,b         repeatable / comma-separated\n"
           "  --lambda-anchor <x>        weight for paired anchor margin (0 skips augment)\n"
@@ -146,7 +154,7 @@ static bool ParseArgs(int argc, char** argv, Args& out, std::string& err) {
     if (out.top_k <= 0) out.top_k = 10;
     if (out.top_multiplier <= 0) out.top_multiplier = 3;
     if (out.best_of <= 0 || out.best_of % 2 == 0) out.best_of = 5;
-    if (out.workers < 0) out.workers = 0;
+    if (out.workers < 0) out.workers = DefaultWorkerThreads();
 
     for (const auto& s : out.seed_items) {
         if (out.excluded.count(s)) {
@@ -179,10 +187,14 @@ static void RunOneSearch(bazaararena::gdf::ItemPool& pool, const Args& args, con
     gcfg.diversity_exclude_seeds = args.diversity_exclude_seeds;
 
     std::mt19937 rng;
-    if (args.seed.has_value()) rng.seed(static_cast<unsigned>(*args.seed));
-    else rng.seed(std::random_device{}());
+    if (args.seed.has_value()) {
+        rng.seed(static_cast<unsigned>(*args.seed));
+    } else {
+        const auto t = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+        rng.seed(static_cast<unsigned>(t) ^ static_cast<unsigned>(t >> 32));
+    }
 
-    bazaararena::gdf::BattleEvaluator evaluator(args.best_of, args.workers, args.level, args.seed);
+    bazaararena::gdf::BattleEvaluator evaluator(args.best_of, args.workers, args.level);
     bazaararena::gdf::GreedySearcher searcher(pool, evaluator, rng, gcfg, seed_set);
 
     out << "[GDF] seeds:";
