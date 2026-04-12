@@ -488,6 +488,37 @@ const p2StatBadgeRows = computed((): (ItemStatBadge[] | null)[] => {
     return out;
 });
 
+/** 多重释放 > 1 时显示 xN */
+function itemMulticastCount(side: FrameEndSideSnapshot | null, slotIndex: number): number | null {
+    const it = itemSnapshotForSlot(side, slotIndex);
+    if (!it) return null;
+    const raw = it.Multicast ?? 0;
+    if (!Number.isFinite(raw)) return null;
+    const n = Math.round(raw);
+    if (n <= 1) return null;
+    return n;
+}
+
+const p1MulticastBadges = computed((): (number | null)[] => {
+    const side = side0.value;
+    const n = slotsP1.value.length;
+    const out: (number | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemMulticastCount(side, i));
+    }
+    return out;
+});
+
+const p2MulticastBadges = computed((): (number | null)[] => {
+    const side = side1.value;
+    const n = slotsP2.value.length;
+    const out: (number | null)[] = [];
+    for (let i = 0; i < n; i++) {
+        out.push(itemMulticastCount(side, i));
+    }
+    return out;
+});
+
 function itemFreezeBadge(
     side: FrameEndSideSnapshot | null,
     slotIndex: number,
@@ -1113,19 +1144,21 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             class="freeze-full-overlay"
                                             :style="{ background: freezeOverlayRgba(0.38) }"
                                         />
-                                        <div v-if="p1StatBadgeRows[i]?.length" class="stat-badges-row">
-                                            <div
-                                                v-for="(bd, bi) in p1StatBadgeRows[i]!"
-                                                :key="bi"
-                                                class="stat-badge"
-                                                :style="{
-                                                    width: `${bd.widthPx}px`,
-                                                    height: `${bd.heightPx}px`,
-                                                    fontSize: `${bd.fontPx}px`,
-                                                    background: bd.background,
-                                                }"
-                                            >
-                                                {{ bd.text }}
+                                        <div v-if="p1StatBadgeRows[i]?.length" class="item-stat-stack">
+                                            <div class="stat-badges-row">
+                                                <div
+                                                    v-for="(bd, bi) in p1StatBadgeRows[i]!"
+                                                    :key="bi"
+                                                    class="stat-badge"
+                                                    :style="{
+                                                        width: `${bd.widthPx}px`,
+                                                        height: `${bd.heightPx}px`,
+                                                        fontSize: `${bd.fontPx}px`,
+                                                        background: bd.background,
+                                                    }"
+                                                >
+                                                    {{ bd.text }}
+                                                </div>
                                             </div>
                                         </div>
                                         <div
@@ -1165,21 +1198,34 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             {{ p1SlowBadges[i]!.text }}
                                         </div>
                                         <div
-                                            v-if="p1AmmoPips[i]"
-                                            class="ammo-pips"
-                                            :style="{ '--ammo-dot': AMMO_KEYWORD_RGB }"
+                                            v-if="p1MulticastBadges[i] || p1AmmoPips[i]"
+                                            class="dcard-bottom-stack"
                                         >
-                                            <span
-                                                v-for="pipIdx in p1AmmoPips[i]!.cap"
-                                                :key="pipIdx"
-                                                class="ammo-pip"
-                                                :class="{ 'ammo-pip--empty': pipIdx > p1AmmoPips[i]!.remaining }"
+                                            <div v-if="p1MulticastBadges[i]" class="multicast-badge">
+                                                ×{{ p1MulticastBadges[i] }}
+                                            </div>
+                                            <div
+                                                v-if="p1AmmoPips[i]"
+                                                class="ammo-pips"
+                                                :style="{ '--ammo-dot': AMMO_KEYWORD_RGB }"
                                             >
                                                 <span
-                                                    v-if="pipIdx <= p1AmmoPips[i]!.remaining"
-                                                    class="ammo-pip-dot"
-                                                />
-                                            </span>
+                                                    v-for="pipIdx in p1AmmoPips[i]!.cap"
+                                                    :key="pipIdx"
+                                                    class="ammo-pip"
+                                                    :class="{ 'ammo-pip--empty': pipIdx > p1AmmoPips[i]!.remaining }"
+                                                >
+                                                    <span
+                                                        v-if="pipIdx <= p1AmmoPips[i]!.remaining"
+                                                        class="ammo-pip-dot"
+                                                    />
+                                                </span>
+                                            </div>
+                                            <div
+                                                v-else-if="p1MulticastBadges[i]"
+                                                class="ammo-row-spacer"
+                                                aria-hidden="true"
+                                            />
                                         </div>
                                     </div>
                                     <span class="cap">{{ s.item_name }}</span>
@@ -1266,19 +1312,21 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             class="freeze-full-overlay"
                                             :style="{ background: freezeOverlayRgba(0.38) }"
                                         />
-                                        <div v-if="p2StatBadgeRows[i]?.length" class="stat-badges-row">
-                                            <div
-                                                v-for="(bd, bi) in p2StatBadgeRows[i]!"
-                                                :key="bi"
-                                                class="stat-badge"
-                                                :style="{
-                                                    width: `${bd.widthPx}px`,
-                                                    height: `${bd.heightPx}px`,
-                                                    fontSize: `${bd.fontPx}px`,
-                                                    background: bd.background,
-                                                }"
-                                            >
-                                                {{ bd.text }}
+                                        <div v-if="p2StatBadgeRows[i]?.length" class="item-stat-stack">
+                                            <div class="stat-badges-row">
+                                                <div
+                                                    v-for="(bd, bi) in p2StatBadgeRows[i]!"
+                                                    :key="bi"
+                                                    class="stat-badge"
+                                                    :style="{
+                                                        width: `${bd.widthPx}px`,
+                                                        height: `${bd.heightPx}px`,
+                                                        fontSize: `${bd.fontPx}px`,
+                                                        background: bd.background,
+                                                    }"
+                                                >
+                                                    {{ bd.text }}
+                                                </div>
                                             </div>
                                         </div>
                                         <div
@@ -1318,21 +1366,34 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             {{ p2SlowBadges[i]!.text }}
                                         </div>
                                         <div
-                                            v-if="p2AmmoPips[i]"
-                                            class="ammo-pips"
-                                            :style="{ '--ammo-dot': AMMO_KEYWORD_RGB }"
+                                            v-if="p2MulticastBadges[i] || p2AmmoPips[i]"
+                                            class="dcard-bottom-stack"
                                         >
-                                            <span
-                                                v-for="pipIdx in p2AmmoPips[i]!.cap"
-                                                :key="pipIdx"
-                                                class="ammo-pip"
-                                                :class="{ 'ammo-pip--empty': pipIdx > p2AmmoPips[i]!.remaining }"
+                                            <div v-if="p2MulticastBadges[i]" class="multicast-badge">
+                                                ×{{ p2MulticastBadges[i] }}
+                                            </div>
+                                            <div
+                                                v-if="p2AmmoPips[i]"
+                                                class="ammo-pips"
+                                                :style="{ '--ammo-dot': AMMO_KEYWORD_RGB }"
                                             >
                                                 <span
-                                                    v-if="pipIdx <= p2AmmoPips[i]!.remaining"
-                                                    class="ammo-pip-dot"
-                                                />
-                                            </span>
+                                                    v-for="pipIdx in p2AmmoPips[i]!.cap"
+                                                    :key="pipIdx"
+                                                    class="ammo-pip"
+                                                    :class="{ 'ammo-pip--empty': pipIdx > p2AmmoPips[i]!.remaining }"
+                                                >
+                                                    <span
+                                                        v-if="pipIdx <= p2AmmoPips[i]!.remaining"
+                                                        class="ammo-pip-dot"
+                                                    />
+                                                </span>
+                                            </div>
+                                            <div
+                                                v-else-if="p2MulticastBadges[i]"
+                                                class="ammo-row-spacer"
+                                                aria-hidden="true"
+                                            />
                                         </div>
                                     </div>
                                     <span class="cap">{{ s.item_name }}</span>
@@ -1828,22 +1889,56 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     background: #1a1d24;
     cursor: default;
 }
-.stat-badges-row {
+.item-stat-stack {
     position: absolute;
     left: 50%;
     top: 3px;
     transform: translateX(-50%);
     z-index: 4;
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    max-width: calc(100% - 4px);
+    pointer-events: none;
+    padding: 0 2px;
+    box-sizing: border-box;
+}
+.stat-badges-row {
+    display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: flex-start;
     justify-content: center;
     gap: 2px;
-    max-width: calc(100% - 4px);
-    pointer-events: none;
-    padding: 0 2px;
+    width: 100%;
     box-sizing: border-box;
+}
+.dcard-bottom-stack {
+    position: absolute;
+    left: 50%;
+    bottom: 4px;
+    transform: translateX(-50%);
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    pointer-events: none;
+    max-width: calc(100% - 4px);
+    box-sizing: border-box;
+}
+.multicast-badge {
+    box-sizing: border-box;
+    padding: 1px 5px;
+    border-radius: 2px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 10px;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
 }
 .stat-badge {
     box-sizing: border-box;
@@ -1985,16 +2080,19 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     pointer-events: none;
 }
 .ammo-pips {
-    position: absolute;
-    left: 50%;
-    bottom: 4px;
-    transform: translateX(-50%);
-    z-index: 6;
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 3px;
     pointer-events: none;
+}
+/* 与弹药圆点行同高，仅有多重释放时垫在下方，使 ×N 与「弹药+×N」纵向对齐 */
+.ammo-row-spacer {
+    flex-shrink: 0;
+    width: 100%;
+    min-height: 7px;
+    max-height: 7px;
+    box-sizing: border-box;
 }
 .ammo-pip {
     box-sizing: border-box;

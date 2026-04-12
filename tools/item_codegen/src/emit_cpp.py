@@ -210,6 +210,9 @@ def _basic_trigger_condition(trigger_yaml: str) -> str:
 def _resolve_value_key_cpp(ab: dict, ability_type: str, *, where: str) -> str:
     if "value_key" in ab:
         return item_key_cpp_from_name(str(ab["value_key"]), where=f"{where}.value_key")
+    # YAML 常用 `value: Custom_1` 与 `key: Burn` 配对；勿与默认 Custom_0 混淆
+    if ability_type in ("AddAttribute", "ReduceAttribute") and "value" in ab:
+        return item_key_cpp_from_name(str(ab["value"]), where=f"{where}.value")
     defaults: dict[str, str] = {
         "Damage": "Damage",
         "Burn": "Burn",

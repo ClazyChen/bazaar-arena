@@ -131,6 +131,8 @@ export interface FrameEndItemSnapshot {
     AmmoRemaining?: number;
     /** 是否在飞行中，与引擎 `InFlight` 一致（非 0 视为是） */
     InFlight?: number;
+    /** 多重释放次数，与引擎 `Multicast` 一致 */
+    Multicast?: number;
     name?: string;
 }
 

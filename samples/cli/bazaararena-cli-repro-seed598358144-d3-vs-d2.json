@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "jobId": "http-3-vs-2",
+  "mode": "simulate",
+  "payload": {
+    "allowTie": true,
+    "debug": {
+      "enabled": true,
+      "level": "detailed",
+      "maxEvents": 50000
+    },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 2,
+        "items": [
+          {
+            "key": "皮皮虾",
+            "tier": "bronze"
+          },
+          {
+            "key": "迷幻蝠鲼",
+            "tier": "bronze"
+          },
+          {
+            "key": "毒须鲶",
+            "tier": "bronze"
+          },
+          {
+            "key": "抓钩",
+            "tier": "bronze"
+          },
+          {
+            "key": "流星索",
+            "tier": "bronze"
+          },
+          {
+            "key": "鱼饵",
+            "tier": "bronze"
+          }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 2,
+        "items": [
+          {
+            "key": "舱底蠕虫",
+            "tier": "bronze"
+          },
+          {
+            "key": "藏刃匕首",
+            "tier": "bronze"
+          },
+          {
+            "key": "毒须鲶",
+            "tier": "bronze"
+          },
+          {
+            "key": "水母",
+            "tier": "bronze"
+          },
+          {
+            "key": "鱼饵",
+            "tier": "bronze"
+          }
+        ]
+      }
+    ],
+    "seed": 598358144
+  },
+  "cliReproMeta": {
+    "exportedAt": "2026-04-12T16:00:09+00:00",
+    "deck0_as_side0": {
+      "deckId": 3,
+      "name": "测试卡组3",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "皮皮虾",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "迷幻蝠鲼",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "毒须鲶",
+          "tier": 0
+        },
+        {
+          "position": 3,
+          "item_name": "抓钩",
+          "tier": 0
+        },
+        {
+          "position": 4,
+          "item_name": "流星索",
+          "tier": 0
+        },
+        {
+          "position": 5,
+          "item_name": "鱼饵",
+          "tier": 0
+        }
+      ]
+    },
+    "deck1_as_side1": {
+      "deckId": 2,
+      "name": "测试卡组2",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "舱底蠕虫",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "藏刃匕首",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "毒须鲶",
+          "tier": 0
+        },
+        {
+          "position": 3,
+          "item_name": "水母",
+          "tier": 0
+        },
+        {
+          "position": 4,
+          "item_name": "鱼饵",
+          "tier": 0
+        }
+      ]
+    },
+    "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。"
+  }
+}

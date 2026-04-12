@@ -288,3 +288,81 @@ items:
                 - SameSide
                 - type: HasTag
                   params: [Weapon]
+  - Name: "迷幻蝠鲼"
+    Desc: "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；每有一件相邻的伙伴或射线，此物品 {+Custom_0} 多重释放"
+    Size: Small
+    Tier: Bronze
+    Tags: [Aquatic, Friend, Ray]
+    Cooldown: 6s
+    Slow: [1s, 2s, 3s, 4s]
+    SlowTargetCount: 1
+    Custom_0: 1
+    Abilities:
+      - type: Slow
+    Auras:
+      - attribute: Multicast
+        value:
+          type: Count
+          params:
+            - type: And
+              params:
+                - AdjacentToCaster
+                - type: Or
+                  params:
+                    - type: HasTag
+                      params: [Friend]
+                    - type: HasTag
+                      params: [Ray]
+  - Name: "水母"
+    Desc: "▶ 造成 {Poison} 剧毒；使用相邻的水系物品时，加速此物品 {Haste} 秒"
+    Size: Small
+    Tier: Bronze
+    Tags: [Aquatic, Friend]
+    Cooldown: 7s
+    Poison: [3, 6, 9, 12]
+    Haste: [1s, 2s, 3s, 4s]
+    HasteTargetCount: 1
+    Abilities:
+      - type: Poison
+      - type: Haste
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Aquatic]
+            - AdjacentToCaster
+        target_condition: SameAsCaster
+  - Name: "打火机"
+    Desc: "▶ 造成 {Burn} 灼烧"
+    Size: Small
+    Tier: Bronze
+    Tags: [Tool]
+    Cooldown: 3s
+    Burn: [3, 5, 7, 9]
+    Abilities:
+      - type: Burn
+  - Name: "皮皮虾"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 造成 {Burn} 灼烧；弹药：{AmmoCap}；触发减速时，此物品的伤害提高 {Custom_0}（限本场战斗）；触发减速时，此物品的灼烧提高 {Custom_1}（限本场战斗）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Aquatic, Friend]
+    Cooldown: 9s
+    Damage: 20
+    Burn: 2
+    AmmoCap: 2
+    Custom_0: [10, 15, 20, 25]
+    Custom_1: [2, 3, 4, 5]
+    Abilities:
+      - type: Damage
+      - type: Burn
+      - type: AddAttribute
+        trigger: Slow
+        target_condition: SameAsCaster
+        key: Damage
+        value: Custom_0
+      - type: AddAttribute
+        trigger: Slow
+        target_condition: SameAsCaster
+        key: Burn
+        value: Custom_1

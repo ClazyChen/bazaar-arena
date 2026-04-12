@@ -273,6 +273,12 @@ def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
         inner = emit_formula_ast(params[0], where=f"{where}.0")
         return f"Rightmost<{inner}>"
 
+    if typ == "Count":
+        if len(params) != 1:
+            raise ValueError(f"{where}: Count 需要 1 个条件子式")
+        inner = emit_formula_ast(params[0], where=f"{where}.0")
+        return f"Count<{inner}>"
+
     raise ValueError(f"{where}: 未知的公式类型：{typ}")
 
 
