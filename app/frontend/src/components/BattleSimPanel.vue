@@ -305,6 +305,11 @@ function itemSnapshotForSlot(
     return side.items[slotIndex] ?? null;
 }
 
+function slotIsDestroyed(side: FrameEndSideSnapshot | null, slotIndex: number): boolean {
+    const it = itemSnapshotForSlot(side, slotIndex);
+    return (it?.Destroyed ?? 0) !== 0;
+}
+
 function itemChargeOverlayStyle(
     side: FrameEndSideSnapshot | null,
     slotIndex: number,
@@ -1407,6 +1412,12 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                     }"
                                 >
                                     <div
+                                        v-if="slotIsDestroyed(side0, i)"
+                                        class="dcard-art dcard-art--destroyed"
+                                        :style="itemArtAspectStyle(catalog.byName.get(s.item_name)?.size ?? 1)"
+                                    />
+                                    <div
+                                        v-else
                                         class="dcard-art"
                                         :style="itemArtAspectStyle(catalog.byName.get(s.item_name)?.size ?? 1)"
                                     >
@@ -1576,6 +1587,12 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                     }"
                                 >
                                     <div
+                                        v-if="slotIsDestroyed(side1, i)"
+                                        class="dcard-art dcard-art--destroyed"
+                                        :style="itemArtAspectStyle(catalog.byName.get(s.item_name)?.size ?? 1)"
+                                    />
+                                    <div
+                                        v-else
                                         class="dcard-art"
                                         :style="itemArtAspectStyle(catalog.byName.get(s.item_name)?.size ?? 1)"
                                     >
@@ -2458,6 +2475,9 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     width: 100%;
     flex-shrink: 0;
     background: #14171c;
+}
+.dcard-art--destroyed {
+    background: #0f1115;
 }
 .dcard-art .thumb {
     position: absolute;

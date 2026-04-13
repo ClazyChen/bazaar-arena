@@ -177,7 +177,9 @@ def _emit_named_leaf(name: str, *, where: str) -> str:
         "NotFrozen": "NotFrozen",
         "AdjacentToCaster": "AdjacentToCaster",
         "LeftOfCaster": "LeftOfCaster",
+        "StrictlyLeftOfCaster": "StrictlyLeftOfCaster",
         "RightOfCaster": "RightOfCaster",
+        "StrictlyRightOfCaster": "StrictlyRightOfCaster",
         "InFlight": "InFlight",
         "NotInFlight": "NotInFlight",
     }
@@ -242,6 +244,18 @@ def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
             raise ValueError(f"{where}: Caster 需要 1 个 ItemKey 名")
         k = _key_name(params[0], "ItemKey", where)
         return f"formula::Caster<({_item_key_cpp(k)})>"
+
+    if typ == "Source":
+        if len(params) != 1:
+            raise ValueError(f"{where}: Source 需要 1 个 ItemKey 名")
+        k = _key_name(params[0], "ItemKey", where)
+        return f"formula::Source<({_item_key_cpp(k)})>"
+
+    if typ == "Target":
+        if len(params) != 1:
+            raise ValueError(f"{where}: Target 需要 1 个 ItemKey 名")
+        k = _key_name(params[0], "ItemKey", where)
+        return f"formula::Target<({_item_key_cpp(k)})>"
 
     if typ == "Side":
         if len(params) != 1:

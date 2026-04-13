@@ -61,6 +61,7 @@ function parseItemSnapshots(raw: unknown): FrameEndItemSnapshot[] | undefined {
             AmmoRemaining: Number(o.AmmoRemaining ?? 0),
             InFlight: Number(o.InFlight ?? 0),
             Multicast: Number(o.Multicast ?? 0),
+            Destroyed: Number(o.Destroyed ?? 0),
             name: typeof o.name === "string" ? o.name : undefined,
         });
     }

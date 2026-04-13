@@ -231,7 +231,9 @@ void Freeze(const AbilityDefinition& ability, const BattleContext& ctx) {
     simulator->sink.OnFreeze(*simulator, *ctx.caster, target_count, freeze);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
-        target.attrs[ItemKey::FreezeRemaining] += freeze;
+        int pct = ctx.GetItemInt(&target, ItemKey::PercentFreezeReduction);
+        const int applied = std::max(0, freeze - formula::PercentFloor(freeze, pct));
+        target.attrs[ItemKey::FreezeRemaining] += applied;
         // 触发「冻结」触发器
         simulator->InvokeTrigger(Trigger::Freeze, ctx.caster, &target);
     }
@@ -250,7 +252,9 @@ void Slow(const AbilityDefinition& ability, const BattleContext& ctx) {
     simulator->sink.OnSlow(*simulator, *ctx.caster, target_count, slow);
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
-        target.attrs[ItemKey::SlowRemaining] += slow;
+        int pct = ctx.GetItemInt(&target, ItemKey::PercentSlowReduction);
+        const int applied = std::max(0, slow - formula::PercentFloor(slow, pct));
+        target.attrs[ItemKey::SlowRemaining] += applied;
         // 触发「减速」触发器
         simulator->InvokeTrigger(Trigger::Slow, ctx.caster, &target);
     }

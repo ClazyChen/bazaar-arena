@@ -226,7 +226,8 @@ def _resolve_value_key_cpp(ab: dict, ability_type: str, *, where: str) -> str:
         "Freeze": "Freeze",
         "Reload": "Reload",
         "Repair": "Repair",
-        "Destroy": "Destroy",
+        # Destroy 的数值语义来自 DestroyTargetCount，而非某个 ItemKey::Destroy
+        "Destroy": "DestroyTargetCount",
         "AddAttribute": "Custom_0",
         "ReduceAttribute": "Custom_0",
         "GainGold": "Custom_0",

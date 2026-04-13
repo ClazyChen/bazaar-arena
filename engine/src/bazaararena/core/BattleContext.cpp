@@ -18,6 +18,14 @@ int BattleContext::GetItemInt(const ItemState* item, int key) const {
     int base_value = item->attrs[key];
     auto aura_bitmap = simulator->aura_bitmap[key];
     BattleContext ctx = *this;
+    // 按 BattleContext.hpp 的约定：读取某件物品属性时，item/source/target 都应指向该“被读属性主体”。
+    // 否则在某个物品 A 的上下文中读取物品 B 的属性时（例如光环 value 里读 Caster<Value>），
+    // B 的光环条件里若使用 SameAsCaster / SameAsSource 等，会错误地拿 A 当作 Item 进行判断，导致光环失效。
+    ctx.item = item;
+    ctx.source = item;
+    ctx.target = item;
+    int percent_sum = 0;
+    int additive_sum = 0;
     while (aura_bitmap != 0) {
         int index = static_cast<int>(std::countr_zero(aura_bitmap));
         aura_bitmap &= ~(1 << index);
@@ -34,12 +42,22 @@ int BattleContext::GetItemInt(const ItemState* item, int key) const {
             if (aura.condition(ctx) == 0) continue;
             auto aura_value = aura.value(ctx);
             if (aura.percent) {
-                base_value += formula::PercentFloor(base_value, aura_value);
+                percent_sum += aura_value;
             } else {
-                base_value += aura_value;
+                additive_sum += aura_value;
             }
         }
     }
+    // 飞行的物品：冻结/减速减免百分比 +50（例如 1s → 0.5s）。
+    // 注意这两个 ItemKey 本身就是“百分比值”，应按加法累加，而不是按 base_value 的百分比叠加；
+    // 否则当基础值为 0 时（常见）会被 PercentFloor 吃掉，导致减免不生效。
+    if (item->attrs[ItemKey::InFlight] == 1 &&
+        (key == ItemKey::PercentFreezeReduction || key == ItemKey::PercentSlowReduction)) {
+        additive_sum += 50;
+    }
+    base_value += additive_sum;
+    base_value += formula::PercentFloor(base_value, percent_sum);
+    base_value = std::max(base_value, 0);
     // 冷却时间是特判的，需要考虑冷却时间减少和冷却时间减少百分比，以及冷却时间最小为 1 秒
     if (key == ItemKey::Cooldown) {
         int cooldown_reduction = GetItemInt(item, ItemKey::CooldownReduction);

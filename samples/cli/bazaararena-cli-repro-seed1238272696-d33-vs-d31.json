@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "jobId": "http-33-vs-31",
+  "mode": "simulate",
+  "payload": {
+    "allowTie": true,
+    "debug": {
+      "enabled": true,
+      "level": "detailed",
+      "maxEvents": 50000
+    },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 5,
+        "items": [
+          {
+            "key": "元素深水炸弹",
+            "tier": "silver"
+          },
+          {
+            "key": "鱼叉",
+            "tier": "silver"
+          },
+          {
+            "key": "拍立蚌",
+            "tier": "silver"
+          },
+          {
+            "key": "带刃悬浮板",
+            "tier": "silver"
+          },
+          {
+            "key": "潜水配重",
+            "tier": "silver"
+          },
+          {
+            "key": "船首像",
+            "tier": "silver"
+          }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 5,
+        "items": [
+          {
+            "key": "集成式HUD",
+            "tier": "silver"
+          },
+          {
+            "key": "吸血章鱼",
+            "tier": "silver"
+          },
+          {
+            "key": "消音器",
+            "tier": "silver"
+          },
+          {
+            "key": "赛博铁尺",
+            "tier": "silver"
+          },
+          {
+            "key": "带刃悬浮板",
+            "tier": "silver"
+          },
+          {
+            "key": "套娃",
+            "tier": "silver"
+          },
+          {
+            "key": "蔻森娜纹章",
+            "tier": "silver"
+          },
+          {
+            "key": "枪套",
+            "tier": "silver"
+          }
+        ]
+      }
+    ],
+    "seed": 1238272696
+  },
+  "cliReproMeta": {
+    "exportedAt": "2026-04-13T20:11:11+00:00",
+    "deck0_as_side0": {
+      "deckId": 33,
+      "name": "测试卡组3",
+      "playerLevel": 5,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "元素深水炸弹",
+          "tier": 1
+        },
+        {
+          "position": 1,
+          "item_name": "鱼叉",
+          "tier": 1
+        },
+        {
+          "position": 2,
+          "item_name": "拍立蚌",
+          "tier": 1
+        },
+        {
+          "position": 3,
+          "item_name": "带刃悬浮板",
+          "tier": 1
+        },
+        {
+          "position": 4,
+          "item_name": "潜水配重",
+          "tier": 1
+        },
+        {
+          "position": 5,
+          "item_name": "船首像",
+          "tier": 1
+        }
+      ]
+    },
+    "deck1_as_side1": {
+      "deckId": 31,
+      "name": "测试卡组1",
+      "playerLevel": 5,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "集成式HUD",
+          "tier": 1
+        },
+        {
+          "position": 1,
+          "item_name": "吸血章鱼",
+          "tier": 1
+        },
+        {
+          "position": 2,
+          "item_name": "消音器",
+          "tier": 1
+        },
+        {
+          "position": 3,
+          "item_name": "赛博铁尺",
+          "tier": 1
+        },
+        {
+          "position": 4,
+          "item_name": "带刃悬浮板",
+          "tier": 1
+        },
+        {
+          "position": 5,
+          "item_name": "套娃",
+          "tier": 1
+        },
+        {
+          "position": 6,
+          "item_name": "蔻森娜纹章",
+          "tier": 1
+        },
+        {
+          "position": 7,
+          "item_name": "枪套",
+          "tier": 1
+        }
+      ]
+    },
+    "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。"
+  }
+}

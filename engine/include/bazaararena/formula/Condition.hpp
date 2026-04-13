@@ -81,9 +81,19 @@ constexpr Formula LeftOfCaster = And<
     Eq<Sub<Caster<ItemKey::ItemIndex>, Item<ItemKey::ItemIndex>>, Constant<1>>
 >;
 
+constexpr Formula StrictlyLeftOfCaster = And<
+    Eq<Item<ItemKey::SideIndex>, Caster<ItemKey::SideIndex>>,
+    Lt<Item<ItemKey::ItemIndex>, Caster<ItemKey::ItemIndex>>
+>;
+
 constexpr Formula RightOfCaster = And<
     Eq<Item<ItemKey::SideIndex>, Caster<ItemKey::SideIndex>>,
     Eq<Sub<Item<ItemKey::ItemIndex>, Caster<ItemKey::ItemIndex>>, Constant<1>>
+>;
+
+constexpr Formula StrictlyRightOfCaster = And<
+    Eq<Item<ItemKey::SideIndex>, Caster<ItemKey::SideIndex>>,
+    Gt<Item<ItemKey::ItemIndex>, Caster<ItemKey::ItemIndex>>
 >;
 
 constexpr Formula InFlight = Eq<Item<ItemKey::InFlight>, Constant<1>>;

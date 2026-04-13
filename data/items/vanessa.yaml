@@ -1550,16 +1550,19 @@ items:
     Auras:
       - attribute: CooldownReductionPercent
         condition:
-          type: Count
+          type: And
           params:
-            - type: And
+            - SameAsCaster
+            - type: Count
               params:
-                - SameSide
-                - type: Or
+                - type: And
                   params:
-                    - type: HasTag
-                      params: [Vehicle]
-                    - IsLarge
+                    - SameSide
+                    - type: Or
+                      params:
+                        - type: HasTag
+                          params: [Vehicle]
+                        - IsLarge
         value: Custom_0
   - Name: "牌桌"
     Desc: "▶ {ModifyTargetCount} 件伙伴物品的多重释放提高 {Custom_0}（限本场战斗）；▶ 每有一件非伙伴物品，此物品的冷却时间延长 {Custom_1:} 秒（限本场战斗）"
@@ -1661,3 +1664,197 @@ items:
         key: Damage
         value: Custom_0
         priority: Low
+  - Name: "幽渊鮟鱇"
+    Desc: "▶ 造成 {Burn} 灼烧；触发减速时，为此物品充能 {Charge} 秒"
+    Size: Medium
+    Tier: Silver
+    Tags: [Aquatic, Friend]
+    Cooldown: [8s, 7s, 6s]
+    Burn: [10, 20, 30]
+    Charge: 2s
+    Abilities:
+      - type: Burn
+        priority: Low
+      - type: Charge
+        trigger: Slow
+        target_condition: SameAsCaster
+        priority: Low
+  - Name: "伪装"
+    Desc: "使用其他英雄的物品时，为己方英雄的 {ChargeTargetCount} 件物品充能 {Charge} 秒；【局外】购买此物品时，获得一件其他英雄的小型或中型物品"
+    Size: Medium
+    Tier: Silver
+    Tags: [Apparel]
+    Charge: 1s
+    ChargeTargetCount: [1, 2, 3]
+    Abilities:
+      - type: Charge
+        trigger: UseItem
+        ex_condition:
+          type: Ne
+          params:
+            - type: Source
+              params: [Hero]
+            - type: Caster
+              params: [Hero]
+        ex_target_condition:
+          type: Eq
+          params:
+            - type: Item
+              params: [Hero]
+            - type: Caster
+              params: [Hero]
+  - Name: "码头缆索"
+    Desc: "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒"
+    Size: Medium
+    Tier: Silver
+    Tags: [Aquatic, Tool]
+    Cooldown: 4s
+    Slow: 3s
+    SlowTargetCount: [2, 3, 4]
+    Abilities:
+      - type: Slow
+  - Name: "元素深水炸弹"
+    Desc: "▶ 造成 {Burn} 灼烧；▶ 造成 {Poison} 剧毒；▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；弹药：{AmmoCap}；每有一件其他水系物品，此物品 {+Custom_0} 多重释放"
+    Size: Medium
+    Tier: Silver
+    Tags: [Aquatic, Tech, Trap]
+    Cooldown: [11s, 10s, 9s]
+    Burn: 4
+    Poison: 4
+    Freeze: 1s
+    FreezeTargetCount: 1
+    AmmoCap: 1
+    Custom_0: 1
+    Abilities:
+      - type: Burn
+      - type: Poison
+      - type: Freeze
+    Auras:
+      - attribute: Multicast
+        value:
+          type: Mul
+          params:
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - type: HasTag
+                      params: [Aquatic]
+                    - DifferentFromCaster
+                    - SameSide
+            - type: Caster
+              params: [Custom_0]
+  - Name: "船首像"
+    Desc: "此物品左侧的所有水系物品缩短 {Custom_0%} 冷却时间；此物品右侧的所有武器 {+Custom_1} 伤害"
+    Size: Medium
+    Tier: Silver
+    Tags: [Aquatic, Tool]
+    Custom_0: [10, 15, 20]
+    Custom_1: [25, 50, 100]
+    Auras:
+      - attribute: CooldownReductionPercent
+        condition:
+          type: And
+          params:
+            - StrictlyLeftOfCaster
+            - type: HasTag
+              params: [Aquatic]
+        value: Custom_0
+      - attribute: Damage
+        condition:
+          type: And
+          params:
+            - StrictlyRightOfCaster
+            - type: HasTag
+              params: [Weapon]
+        value: Custom_1
+  - Name: "鱼叉"
+    Desc: "▶ 摧毁 {DestroyTargetCount} 件小型物品；弹药：{AmmoCap}"
+    Size: Medium
+    Tier: Silver
+    Tags: [Aquatic]
+    Cooldown: [6s, 5s, 4s]
+    DestroyTargetCount: 1
+    AmmoCap: 2
+    Abilities:
+      - type: Destroy
+        target_condition: IsSmall
+  - Name: "标枪"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 加速其他物品 {Haste} 秒；弹药：{AmmoCap}"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon]
+    Cooldown: 5s
+    Damage: [50, 100, 250]
+    Haste: [1s, 2s, 3s]
+    AmmoCap: 2
+    Abilities:
+      - type: Damage
+      - type: Haste
+        ex_target_condition: DifferentFromCaster
+        priority: High
+  - Name: "锁匣"
+    Desc: "武器 +伤害，等量于此物品的价值；【局外】赢得战斗时，此物品的价值提高 {Custom_0}；【默认】已赢得战斗数量: {Custom_1}"
+    Size: Medium
+    Tier: Silver
+    Tags: [Relic]
+    Custom_0: [3, 6, 9]
+    Custom_1: [3, 6, 9]
+    overridable: [Custom_1]
+    Auras:
+      - attribute: Damage
+        condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Weapon]
+            - SameSide
+        value: Value
+      - attribute: Value
+        value:
+          type: Mul
+          params:
+            - type: Caster
+              params: [Custom_0]
+            - type: Caster
+              params: [Custom_1]
+  - Name: "火枪"
+    Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；相邻物品触发灼烧时，装填此物品；相邻物品触发灼烧时，此物品的伤害提高 {Custom_0}（限本场战斗）"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon]
+    Cooldown: 6s
+    Damage: [100, 150, 300]
+    AmmoCap: 1
+    Custom_0: [25, 50, 75]
+    Abilities:
+      - type: Damage
+      - type: Reload
+        trigger: Burn
+        condition: AdjacentToCaster
+        target_condition: SameAsCaster
+        priority: Lowest
+      - type: AddAttribute
+        trigger: Burn
+        condition: AdjacentToCaster
+        target_condition: SameAsCaster
+        key: Damage
+        value: Custom_0
+        priority: Lowest
+  - Name: "恶鬼面具"
+    Desc: "▶ 造成 {Burn} 灼烧；造成暴击时，灼烧物品的灼烧提高 {Custom_0}（限本场战斗）"
+    Size: Medium
+    Tier: Silver
+    Tags: [Apparel, Tech]
+    Cooldown: 6s
+    Burn: [6, 9, 12]
+    Custom_0: [4, 6, 8]
+    Abilities:
+      - type: Burn
+      - type: AddAttribute
+        trigger: Crit
+        ex_target_condition:
+          type: HasDerivedTag
+          params: [Burn]
+        key: Burn
+        value: Custom_0

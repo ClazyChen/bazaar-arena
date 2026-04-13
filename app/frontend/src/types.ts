@@ -148,6 +148,8 @@ export interface FrameEndItemSnapshot {
     InFlight?: number;
     /** 多重释放次数，与引擎 `Multicast` 一致 */
     Multicast?: number;
+    /** 是否已摧毁，与引擎 `Destroyed` 一致（非 0 视为是） */
+    Destroyed?: number;
     name?: string;
 }
 

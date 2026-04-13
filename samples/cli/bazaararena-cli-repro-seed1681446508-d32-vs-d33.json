@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "jobId": "http-32-vs-33",
+  "mode": "simulate",
+  "payload": {
+    "allowTie": true,
+    "debug": {
+      "enabled": true,
+      "level": "detailed",
+      "maxEvents": 50000
+    },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 5,
+        "items": [
+          {
+            "key": "锁匣",
+            "tier": "silver"
+          },
+          {
+            "key": "船首像",
+            "tier": "silver"
+          },
+          {
+            "key": "潜水配重",
+            "tier": "silver"
+          },
+          {
+            "key": "带刃悬浮板",
+            "tier": "silver"
+          },
+          {
+            "key": "套娃",
+            "tier": "silver"
+          },
+          {
+            "key": "枪套",
+            "tier": "silver"
+          },
+          {
+            "key": "小冰镐",
+            "tier": "silver"
+          }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 5,
+        "items": [
+          {
+            "key": "蔻森娜纹章",
+            "tier": "silver"
+          },
+          {
+            "key": "集成式HUD",
+            "tier": "silver"
+          },
+          {
+            "key": "幽渊鮟鱇",
+            "tier": "silver"
+          },
+          {
+            "key": "恶鬼面具",
+            "tier": "silver"
+          },
+          {
+            "key": "火枪",
+            "tier": "silver"
+          },
+          {
+            "key": "篝火",
+            "tier": "silver"
+          }
+        ]
+      }
+    ],
+    "seed": 1681446508
+  },
+  "cliReproMeta": {
+    "exportedAt": "2026-04-13T20:33:04+00:00",
+    "deck0_as_side0": {
+      "deckId": 32,
+      "name": "测试卡组2",
+      "playerLevel": 5,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "锁匣",
+          "tier": 1
+        },
+        {
+          "position": 1,
+          "item_name": "船首像",
+          "tier": 1
+        },
+        {
+          "position": 2,
+          "item_name": "潜水配重",
+          "tier": 1
+        },
+        {
+          "position": 3,
+          "item_name": "带刃悬浮板",
+          "tier": 1
+        },
+        {
+          "position": 4,
+          "item_name": "套娃",
+          "tier": 1
+        },
+        {
+          "position": 5,
+          "item_name": "枪套",
+          "tier": 1
+        },
+        {
+          "position": 6,
+          "item_name": "小冰镐",
+          "tier": 1
+        }
+      ]
+    },
+    "deck1_as_side1": {
+      "deckId": 33,
+      "name": "测试卡组3",
+      "playerLevel": 5,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "蔻森娜纹章",
+          "tier": 1
+        },
+        {
+          "position": 1,
+          "item_name": "集成式HUD",
+          "tier": 1
+        },
+        {
+          "position": 2,
+          "item_name": "幽渊鮟鱇",
+          "tier": 1
+        },
+        {
+          "position": 3,
+          "item_name": "恶鬼面具",
+          "tier": 1
+        },
+        {
+          "position": 4,
+          "item_name": "火枪",
+          "tier": 1
+        },
+        {
+          "position": 5,
+          "item_name": "篝火",
+          "tier": 1
+        }
+      ]
+    },
+    "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。"
+  }
+}
