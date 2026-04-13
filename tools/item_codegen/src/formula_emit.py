@@ -281,6 +281,12 @@ def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
         tname = _key_name(params[0], "Tag", where)
         return f"HasTag<{_tag_cpp(tname)}>"
 
+    if typ == "TargetHasTag":
+        if len(params) != 1:
+            raise ValueError(f"{where}: TargetHasTag 需要 1 个 Tag 名")
+        tname = _key_name(params[0], "Tag", where)
+        return f"TargetHasTag<{_tag_cpp(tname)}>"
+
     if typ == "HasDerivedTag":
         if len(params) != 1:
             raise ValueError(f"{where}: HasDerivedTag 需要 1 个 DerivedTag 名")

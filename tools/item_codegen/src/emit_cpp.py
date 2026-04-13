@@ -234,7 +234,7 @@ def _resolve_value_key_cpp(ab: dict, ability_type: str, *, where: str) -> str:
         "Regen": "Regen",
         "Resistance": "Custom_0",
         "PoisonSelf": "Poison",
-        "Cast": "Custom_0",
+        "Cast": "Custom_2",
     }
     if ability_type in defaults:
         return f"core::ItemKey::{defaults[ability_type]}"
@@ -263,6 +263,8 @@ def _default_target_count_key_cpp(ability_type: str) -> str | None:
         "Repair": "RepairTargetCount",
         "AddAttribute": "ModifyAttributeTargetCount",
         "ReduceAttribute": "ModifyAttributeTargetCount",
+        # Cast：立刻施放目标个数；与拍立蚌一致默认用 Custom_2（YAML 写 Custom_2 常数，避免误用 0 与 ItemKey::Id 混淆）。
+        "Cast": "Custom_2",
     }
     k = m.get(ability_type)
     return f"core::ItemKey::{k}" if k else None

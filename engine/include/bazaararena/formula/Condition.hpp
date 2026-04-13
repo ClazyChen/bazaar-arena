@@ -49,6 +49,13 @@ constexpr Formula HasTag = [](const BattleContext& ctx) -> int {
     return (bits & tag) != 0 ? 1 : 0;
 };
 
+// 触发链中的目标（如被加速/被冻结的物品）是否含某 Tag；读 Target<Tags>。
+template<int tag>
+constexpr Formula TargetHasTag = [](const BattleContext& ctx) -> int {
+    const int bits = Target<ItemKey::Tags>(ctx);
+    return (bits & tag) != 0 ? 1 : 0;
+};
+
 template<int tag>
 constexpr Formula HasDerivedTag = [](const BattleContext& ctx) -> int {
     const int bits = Item<ItemKey::DerivedTags>(ctx);

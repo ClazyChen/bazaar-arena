@@ -1858,3 +1858,377 @@ items:
           params: [Burn]
         key: Burn
         value: Custom_0
+  - Name: "橘利安"
+    Desc: "▶ 武器伤害提高，等量于本次冒险中总计获得金币的 {Custom_0%}（限本场战斗）；【默认】已获得金币数量: {Custom_1}"
+    Size: Medium
+    Tier: Silver
+    Tags: [Friend]
+    Custom_0: 50
+    Custom_1: [50, 100, 200]
+    Custom_2: 0
+    overridable: [Custom_1]
+    Abilities:
+      - type: AddAttribute
+        ex_target_condition:
+          type: HasTag
+          params: [Weapon]
+        key: Damage
+        value: Custom_2
+    Auras:
+      - attribute: Custom_2
+        value:
+          type: PercentFloor
+          params:
+            - type: Caster
+              params: [Custom_1]
+            - type: Caster
+              params: [Custom_0]
+  - Name: "河豚"
+    Desc: "▶ 造成 {Poison} 剧毒；触发加速时，为此物品充能 {Charge} 秒"
+    Size: Medium
+    Tier: Silver
+    Tags: [Aquatic, Friend]
+    Cooldown: [8s, 7s, 6s]
+    Poison: [10, 20, 30]
+    Charge: 2s
+    Abilities:
+      - type: Poison
+      - type: Charge
+        trigger: Haste
+        target_condition: SameAsCaster
+        priority: Low
+  - Name: "连发步枪"
+    Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；使用其他弹药物品时，使用此物品"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon]
+    Cooldown: 5s
+    Damage: 30
+    AmmoCap: [2, 3, 4]
+    Custom_2: 1
+    Abilities:
+      - type: Damage
+      - type: Cast
+        trigger: UseItem
+        # 与拍立蚌 Cast 一致：施放次数常数存 Custom_2，避免 target_count_key 缺省为 0
+        value_key: Custom_2
+        target_count_key: Custom_2
+        ex_condition:
+          type: And
+          params:
+            - DifferentFromCaster
+            - type: HasDerivedTag
+              params: [Ammo]
+        target_condition: SameAsCaster
+  - Name: "深海弯刀"
+    Desc: "▶ 造成 {Damage} 伤害；此物品造成暴击时，造成剧毒，等量于此物品的伤害的 {Custom_0%}；此物品被加速时，剧毒物品的剧毒提高 {Custom_1}（限本场战斗）"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon, Aquatic, Relic]
+    Cooldown: 5s
+    Damage: 20
+    Custom_0: 50
+    Custom_1: [2, 4, 6]
+    Abilities:
+      - type: Damage
+      - type: Poison
+        trigger: Crit
+        ex_condition: SameAsCaster
+      - type: AddAttribute
+        trigger: Haste
+        ex_condition: TargetSameAsCaster
+        ex_target_condition:
+          type: HasDerivedTag
+          params: [Poison]
+        key: Poison
+        value: Custom_1
+  - Name: "海影宝驹"
+    Desc: "▶ 其他物品的冷却时间缩短 {Custom_0%}（限本场战斗）；▶ 此物品的冷却时间延长 {Custom_1:} 秒（限本场战斗）"
+    Size: Medium
+    Tier: Silver
+    Tags: [Friend, Vehicle]
+    Cooldown: 2s
+    Custom_0: 8
+    Custom_1: [4s, 3s, 2s]
+    Abilities:
+      - type: AddAttribute
+        ex_target_condition:
+          type: And
+          params:
+            - DifferentFromCaster
+            - HasCooldown
+        key: CooldownReductionPercent
+        value: Custom_0
+      - type: AddAttribute
+        target_condition: SameAsCaster
+        key: Cooldown
+        value: Custom_1
+        priority: Low
+  - Name: "六分仪"
+    Desc: "造成暴击时，加速 {HasteTargetCount} 件物品 {Haste} 秒；触发加速时，{ModifyTargetCount} 件物品的暴击率提高 {Custom_0%}（限本场战斗）"
+    Size: Medium
+    Tier: Silver
+    Tags: [Aquatic, Tool]
+    HasteTargetCount: 1
+    Haste: [1s, 2s, 3s]
+    Custom_0: 10
+    ModifyTargetCount: 1
+    Abilities:
+      - type: Haste
+        trigger: Crit
+        priority: Low
+      - type: AddAttribute
+        trigger: Haste
+        ex_target_condition:
+          type: HasDerivedTag
+          params: [Crit]
+        key: CritRate
+        value: Custom_0
+        priority: Low
+  - Name: "鳐鲨"
+    Desc: "▶ 造成 {Damage} 伤害；己方伙伴被加速时，己方伙伴武器的伤害提高 {Custom_0}（限本场战斗）；己方伙伴被加速时，己方伙伴的剧毒提高 {Custom_1}（限本场战斗）"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon,Aquatic, Friend, Ray]
+    Cooldown: 6s
+    Damage: 20
+    Custom_0: [5, 10, 15]
+    Custom_1: [1, 2, 3]
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        trigger: Haste
+        condition:
+          type: TargetHasTag
+          params: [Friend]
+        ex_target_condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Weapon]
+            - type: HasTag
+              params: [Friend]
+        key: Damage
+        value: Custom_0
+        priority: Low
+      - type: AddAttribute
+        trigger: Haste
+        condition:
+          type: TargetHasTag
+          params: [Friend]
+        ex_target_condition:
+          type: And
+          params:
+            - type: HasDerivedTag
+              params: [Poison]
+            - type: HasTag
+              params: [Friend]
+        key: Poison
+        value: Custom_1
+        priority: Low
+  - Name: "深潜器"
+    Desc: "▶ 己方最左侧的水系武器伤害提高 {Custom_0}（限本场战斗）；▶ 己方最右侧的水系武器伤害提高 {Custom_0}（限本场战斗）；▶ 己方最左侧的水系护盾物品护盾提高 {Custom_0}（限本场战斗）；▶ 己方最右侧的水系护盾物品护盾提高 {Custom_0}（限本场战斗）；如果有一件其他载具或大型物品，此物品缩短 {Custom_1:} 秒冷却时间"
+    Size: Medium
+    Tier: Silver
+    Tags: [Aquatic, Tool, Tech, Vehicle]
+    Cooldown: 5s
+    Custom_0: [10, 20, 30]
+    Custom_1: 2s
+    Abilities:
+      - type: AddAttribute
+        target_condition:
+          type: Leftmost
+          params:
+            - type: And
+              params:
+                - SameSide
+                - type: HasTag
+                  params: [Weapon]
+                - type: HasTag
+                  params: [Aquatic]
+        key: Damage
+        value: Custom_0
+        priority: High
+      - type: AddAttribute
+        target_condition:
+          type: Rightmost
+          params:
+            - type: And
+              params:
+                - SameSide
+                - type: HasTag
+                  params: [Weapon]
+                - type: HasTag
+                  params: [Aquatic]
+        key: Damage
+        value: Custom_0
+        priority: High
+      - type: AddAttribute
+        target_condition:
+          type: Leftmost
+          params:
+            - type: And
+              params:
+                - SameSide
+                - type: HasDerivedTag
+                  params: [Shield]
+                - type: HasTag
+                  params: [Aquatic]
+        key: Shield
+        value: Custom_0
+        priority: High
+      - type: AddAttribute
+        target_condition:
+          type: Rightmost
+          params:
+            - type: And
+              params:
+                - SameSide
+                - type: HasDerivedTag
+                  params: [Shield]
+                - type: HasTag
+                  params: [Aquatic]
+        key: Shield
+        value: Custom_0
+        priority: High
+    Auras:
+      - attribute: CooldownReduction
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - type: Or
+                      params:
+                        - type: HasTag
+                          params: [Vehicle]
+                        - IsLarge
+        value: Custom_1
+  - Name: "鱼雷"
+    Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；使用其他水系或弹药物品时，此物品伤害提高 {Custom_0}（限本场战斗）；如果该物品是大型，此物品伤害额外提高 {Custom_0}（限本场战斗）"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon, Aquatic, Tech]
+    Cooldown: 8s
+    Damage: 100
+    AmmoCap: 1
+    Custom_0: [40, 80, 120]
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - DifferentFromCaster
+            - type: Or
+              params:
+                - type: HasTag
+                  params: [Aquatic]
+                - type: HasDerivedTag
+                  params: [Ammo]
+        target_condition: SameAsCaster
+        key: Damage
+        value: Custom_0
+      - type: AddAttribute
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - DifferentFromCaster
+            - type: IsLarge
+            - type: Or
+              params:
+                - type: HasTag
+                  params: [Aquatic]
+                - type: HasDerivedTag
+                  params: [Ammo]
+        target_condition: SameAsCaster
+        key: Damage
+        value: Custom_0
+  - Name: "通缉海报"
+    Desc: "己方物品 {+Custom_0%} 暴击率；【局外】击败英雄时，获得 1 经验；【局外】如果击败英雄时此物品上场，额外获得 1 经验"
+    Size: Medium
+    Tier: Silver
+    Tags: [Tech]
+    Custom_0: [10, 20, 30]
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: And
+          params:
+            - SameSide
+            - type: CanCrit
+        value: Custom_0
+  - Name: "风暴瓶"
+    Desc: "▶ 造成 {Burn} 灼烧；▶ 造成 {Poison} 剧毒；如果有一件其他的灼烧/剧毒/减速/冻结物品，对每个词条，此物品 {+Custom_0} 多重释放"
+    Size: Medium
+    Tier: Silver
+    Tags: [Tool]
+    Cooldown: [7s, 6s, 5s]
+    Burn: 4
+    Poison: 4
+    Custom_0: 1
+    Abilities:
+      - type: Burn
+      - type: Poison
+    Auras:
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: HasDerivedTag
+                      params: [Burn]
+        value: Custom_0
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: HasDerivedTag
+                      params: [Poison]
+        value: Custom_0
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: HasDerivedTag
+                      params: [Slow]
+        value: Custom_0
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - DifferentFromCaster
+                    - type: HasDerivedTag
+                      params: [Freeze]
+        value: Custom_0

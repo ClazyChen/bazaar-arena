@@ -1,6 +1,7 @@
 #include "bazaararena/core/DerivedTag.hpp"
 #include "bazaararena/formula/Formula.hpp"
 #include <bazaararena/core/AbilityApply.hpp>
+#include <bazaararena/core/AbilityDefinition.hpp>
 #include <bazaararena/core/BattleContext.hpp>
 #include <bazaararena/core/Simulator.hpp>
 #include <bazaararena/formula/Percent.hpp>
@@ -395,7 +396,12 @@ void GainGold(const AbilityDefinition& ability, const BattleContext& ctx) {
 void Cast(const AbilityDefinition& ability, const BattleContext& ctx) {
     BattleContext ctx_copy = ctx; // 复制一份上下文用于选择目标
     auto simulator = const_cast<Simulator*>(ctx.simulator);
-    int target_count = GetTargets(ability, ctx_copy, formula::And<
+    // target_count_key 未写入生成数据时默认为 0，与 ItemKey::Id 相同；战斗中 Id 常为 0 → GetTargets 返回 0（例如连发步枪被动 Cast）。
+    AbilityDefinition ab = ability;
+    if (ab.target_count_key == 0) {
+        ab.target_count_key = ItemKey::Custom_2;
+    }
+    int target_count = GetTargets(ab, ctx_copy, formula::And<
         condition::NotDestroyed,
         condition::NotFrozen
     >);
