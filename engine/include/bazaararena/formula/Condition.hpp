@@ -110,4 +110,10 @@ constexpr Formula Rightmost = [](const BattleContext& ctx) -> int {
     return ctx.IsRightmostWith(condition);
 };
 
+// 触发扫描时 ctx.item 为 source（如施放 Slow/Haste 的物品），能力所属物为 ctx.caster。
+template<int quest_index>
+constexpr Formula QuestComplete = [](const BattleContext& ctx) -> int {
+    return (Caster<ItemKey::Quest>(ctx) & (1 << (quest_index - 1))) != 0 ? 1 : 0;
+};
+
 }

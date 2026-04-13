@@ -18,6 +18,7 @@ import {
 } from "@/lib/deckSlotAttrs";
 import { patchDeck, saveDeckSlots } from "@/api";
 import ItemTooltipAnchor from "@/components/ItemTooltipAnchor.vue";
+import { deckSlotDisplayItemName } from "@/lib/itemTooltip";
 import type { DeckSlotEntry } from "@/types";
 
 const props = defineProps<{
@@ -68,7 +69,14 @@ const emptyGhostIndices = computed(() =>
 const editSlotTitle = computed(() => {
     const i = editIndex.value;
     if (i === null) return "";
-    return session.slots[i]?.item_name ?? "";
+    const s = session.slots[i];
+    if (!s) return "";
+    return deckSlotDisplayItemName(
+        s.item_name,
+        catalog.byName.get(s.item_name),
+        s.tier,
+        s.attrs_override,
+    );
 });
 
 const heroes = computed(() => {
@@ -439,7 +447,14 @@ function onSlotEditConfirm(): void {
                                         @error="($event.target as HTMLImageElement).style.opacity = '0.2'"
                                     />
                                 </div>
-                                <span class="cap">{{ s.item_name }}</span>
+                                <span class="cap">{{
+                                    deckSlotDisplayItemName(
+                                        s.item_name,
+                                        catalog.byName.get(s.item_name),
+                                        s.tier,
+                                        s.attrs_override,
+                                    )
+                                }}</span>
                             </div>
                         </ItemTooltipAnchor>
                     </div>

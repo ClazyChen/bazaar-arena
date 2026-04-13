@@ -39,7 +39,7 @@ import {
 } from "@/lib/battleSim";
 import { useCatalogStore } from "@/stores/catalog";
 import ItemTooltipAnchor from "@/components/ItemTooltipAnchor.vue";
-import { itemCooldownMsForDeckTier } from "@/lib/itemTooltip";
+import { deckSlotDisplayItemName, itemCooldownMsForDeckTier } from "@/lib/itemTooltip";
 import type {
     DeckSlotPayload,
     FrameEndItemSnapshot,
@@ -64,6 +64,15 @@ const props = defineProps<{
 }>();
 
 const catalog = useCatalogStore();
+
+function simSlotDisplayName(s: DeckSlotPayload): string {
+    return deckSlotDisplayItemName(
+        s.item_name,
+        catalog.byName.get(s.item_name),
+        s.tier,
+        s.attrs_override,
+    );
+}
 
 const slotsP1 = ref<DeckSlotPayload[]>([]);
 const slotsP2 = ref<DeckSlotPayload[]>([]);
@@ -1530,7 +1539,7 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             />
                                         </div>
                                     </div>
-                                    <span class="cap">{{ s.item_name }}</span>
+                                    <span class="cap">{{ simSlotDisplayName(s) }}</span>
                                 </div>
                             </ItemTooltipAnchor>
                         </div>
@@ -1699,7 +1708,7 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             />
                                         </div>
                                     </div>
-                                    <span class="cap">{{ s.item_name }}</span>
+                                    <span class="cap">{{ simSlotDisplayName(s) }}</span>
                                 </div>
                             </ItemTooltipAnchor>
                         </div>

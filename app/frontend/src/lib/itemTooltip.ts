@@ -1,4 +1,5 @@
 import type { DeckSlotAttrsOverride, ItemRow } from "@/types";
+import { tooltipTierValue } from "@/lib/deckSlotAttrs";
 import {
     AMMO_KEYWORD_RGB,
     BURN_KEYWORD_RGB,
@@ -267,6 +268,66 @@ export function preprocessDescForTooltip(desc: string): string {
     return desc.replace(/;/g, "\n").replace(/；/g, "\n");
 }
 
+const BRANDING_IRON_ITEM_NAME = "烙刀";
+
+function brandingIronEffectiveQuest(
+    item: ItemRow,
+    tier: number,
+    attrsOverride?: DeckSlotAttrsOverride | null,
+): number {
+    const tDeck = Math.min(Math.max(tier, 0), 4);
+    return attrsOverride?.quest !== undefined && attrsOverride?.quest !== null
+        ? attrsOverride.quest
+        : tooltipTierValue(item.tooltip_attrs, "Quest", tDeck);
+}
+
+/**
+ * 卡组槽位卡片标题 / tooltip 名：Quest 1→「减速烙刀」，Quest 2→「加速烙刀」，其余为原名。
+ * 仅当 `itemName` 为「烙刀」且目录行存在时生效；候选区请仍传原名、勿用本函数。
+ */
+export function deckSlotDisplayItemName(
+    itemName: string,
+    item: ItemRow | undefined,
+    tier: number,
+    attrsOverride?: DeckSlotAttrsOverride | null,
+): string {
+    if (itemName !== BRANDING_IRON_ITEM_NAME || !item) return itemName;
+    const q = brandingIronEffectiveQuest(item, tier, attrsOverride);
+    if (q === 1) return "减速烙刀";
+    if (q === 2) return "加速烙刀";
+    return itemName;
+}
+
+/**
+ * 卡组槽位 tooltip：Quest 已选边时只保留对应分支文案（候选区 pool 模式不调此函数）。
+ * 依赖 Desc 中以 `；`/`;` 分段且含【Q1】/【Q2】/「只能生效」的现行结构。
+ */
+function filterBrandingIronDeckDesc(desc: string, effectiveQuest: 1 | 2): string {
+    const parts = desc
+        .split(/[；;]/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    const q1 = parts.findIndex((p) => p.startsWith("【Q1】"));
+    const q2 = parts.findIndex((p) => p.startsWith("【Q2】"));
+    const mux = parts.findIndex((p) => /只能生效/.test(p));
+    if (q1 < 0 || q2 < 0) return desc;
+
+    const out: string[] = [];
+    for (let i = 0; i < parts.length; i++) {
+        if (mux >= 0 && i === mux) continue;
+        if (effectiveQuest === 1) {
+            if (i === q2) continue;
+            if (i === q1) out.push(parts[i].replace(/^【Q1】/, ""));
+            else out.push(parts[i]);
+        } else {
+            if (i === q1) continue;
+            if (i === q2) out.push(parts[i].replace(/^【Q2】/, ""));
+            else out.push(parts[i]);
+        }
+    }
+    return out.join("；");
+}
+
 function formatDescHtml(
     desc: string,
     attrs: Record<string, number[]> | null | undefined,
@@ -329,7 +390,11 @@ export function buildItemTooltipHtml(
     const attrs = item.tooltip_attrs ?? null;
     const tier = opts.tier ?? 0;
     const minTier = item.min_tier ?? 0;
-    const name = escapeHtml(item.name);
+    const displayNameRaw =
+        opts.mode === "deck"
+            ? deckSlotDisplayItemName(item.name, item, tier, opts.attrs_override)
+            : item.name;
+    const name = escapeHtml(displayNameRaw);
     const sizeLine = `<span class="it-meta"><em>${escapeHtml(sizeLabel(item.size))}</em>${item.tags?.length ? " " : ""}${(item.tags ?? []).map((t) => `<em>${escapeHtml(tagLabelZh(t))}</em>`).join(" ")}</span>`;
 
     let cooldownBlock = "";
@@ -353,7 +418,15 @@ export function buildItemTooltipHtml(
         cooldownBlock = `<div class="it-cd">冷却时间：${cdInnerHtml} 秒</div>`;
     }
 
-    const descProcessed = preprocessDescForTooltip(item.desc);
+    let descForDeck = item.desc;
+    if (opts.mode === "deck" && item.name === BRANDING_IRON_ITEM_NAME) {
+        const eq = brandingIronEffectiveQuest(item, tier, opts.attrs_override);
+        if (eq === 1 || eq === 2) {
+            descForDeck = filterBrandingIronDeckDesc(item.desc, eq);
+        }
+    }
+
+    const descProcessed = preprocessDescForTooltip(descForDeck);
     const descHtml = formatDescHtml(
         descProcessed,
         attrs,

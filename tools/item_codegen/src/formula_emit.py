@@ -316,6 +316,14 @@ def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
         inner = emit_formula_ast(params[0], where=f"{where}.0")
         return f"Only<{inner}>"
 
+    if typ == "QuestComplete":
+        if len(params) != 1:
+            raise ValueError(f"{where}: QuestComplete 需要 1 个 int 任务下标参数")
+        qi = params[0]
+        if not isinstance(qi, int) or isinstance(qi, bool):
+            raise TypeError(f"{where}: QuestComplete 参数必须是 int")
+        return f"QuestComplete<{qi}>"
+
     raise ValueError(f"{where}: 未知的公式类型：{typ}")
 
 

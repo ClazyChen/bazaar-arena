@@ -983,7 +983,7 @@ items:
     Abilities:
       - type: Burn
   - Name: "湿件战服"
-    Desc: "▶ 获得 {Shield} 护盾；使用武器时，此物品的护盾提高 {Custom_0}（限本场战斗）；如果有一件其他的科技物品，此物品的冷却时间缩短 {Custom_1:} 秒"
+    Desc: "▶ 获得 {Shield} 护盾；使用武器时，此物品的护盾提高 {Custom_0}（限本场战斗）；如果有一件其他的科技物品，此物品缩短 {Custom_1:} 秒冷却时间"
     Size: Medium
     Tier: Bronze
     Tags: [Aquatic, Apparel, Tech]
@@ -1169,7 +1169,7 @@ items:
                   params: [Poison]
                 - AdjacentToCaster
   - Name: "潜水配重"
-    Desc: "▶ 加速 {HasteTargetCount} 件物品 {Haste} 秒；弹药：{AmmoCap}；每有一件相邻的水系物品，此物品的冷却时间缩短 {Custom_0:} 秒；此物品 +多重释放，等量于此物品的剩余弹药数量"
+    Desc: "▶ 加速 {HasteTargetCount} 件物品 {Haste} 秒；弹药：{AmmoCap}；每有一件相邻的水系物品，此物品缩短 {Custom_0:} 秒冷却时间；此物品 +多重释放，等量于此物品的剩余弹药数量"
     Size: Small
     Tier: Silver
     Tags: [Aquatic, Apparel, Tool]
@@ -1412,3 +1412,252 @@ items:
         key: Damage
         value: Custom_0
         priority: High
+  - Name: "烈酒杯"
+    Desc: "▶ 加速 {HasteTargetCount} 件物品 {Haste} 秒；▶ 减速己方 {SlowTargetCount} 件物品 {Slow} 秒；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Silver
+    Cooldown: 3s
+    Haste: 1s
+    HasteTargetCount: 4
+    Slow: 1s
+    SlowTargetCount: 4
+    AmmoCap: [1, 2, 3]
+    Abilities:
+      - type: Haste
+      - type: Slow
+        priority: High
+        target_condition: SameSide
+  - Name: "消音器"
+    Desc: "此物品左侧的武器伤害提高 {Custom_0}；如果只有一件武器，则其缩短 {Custom_1%} 冷却时间"
+    Size: Small
+    Tier: Silver
+    Tags: [Tech]
+    Custom_0: [25, 50, 75]
+    Custom_1: [5, 10, 15]
+    Auras:
+      - attribute: Damage
+        condition:
+          type: And
+          params:
+            - LeftOfCaster
+            - type: HasTag
+              params: [Weapon]
+        value: Custom_0
+      - attribute: CooldownReductionPercent
+        condition:
+          type: And
+          params:
+            - type: Only
+              params:
+                - type: And
+                  params:
+                    - type: HasTag
+                      params: [Weapon]
+                    - SameSide
+            - HasCooldown
+        value: Custom_1
+  - Name: "吸血章鱼"
+    Desc: "▶ 造成 {Damage} 伤害；此物品 +伤害，等量于此物品的暴击率；吸血"
+    Size: Small
+    Tier: Silver
+    Tags: [Weapon, Aquatic, Friend]
+    Cooldown: 5s
+    Damage: [15, 30, 60]
+    LifeSteal: 100
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: Damage
+        value: CritRate
+  - Name: "大钢弩"
+    Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；触发加速时，此物品的伤害提高 {Custom_0}（限本场战斗）"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon]
+    Cooldown: 9s
+    Damage: 100
+    AmmoCap: 1
+    Custom_0: [50, 75, 100]
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        trigger: Haste
+        target_condition: SameAsCaster
+        key: Damage
+        value: Custom_0
+        priority: Low
+  - Name: "星盘"
+    Desc: "▶ 加速 {HasteTargetCount} 件物品 {Haste} 秒；使用其他非武器物品时，为此物品充能 {Charge} 秒"
+    Size: Medium
+    Tier: Silver
+    Tags: [Tool]
+    Cooldown: 6s
+    Haste: 1s
+    HasteTargetCount: [2, 3, 4]
+    Charge: 1s
+    Abilities:
+      - type: Haste
+        priority: Low
+      - type: Charge
+        trigger: UseItem
+        ex_condition:
+          type: NotHasTag
+          params: [Weapon]
+        target_condition: SameAsCaster
+  - Name: "带刃悬浮板"
+    Desc: "使用相邻物品时，造成 {Damage} 伤害；使用相邻物品时，该物品开始飞行"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon, Aquatic, Tech, Vehicle]
+    Damage: [20, 40, 60]
+    Custom_0: 1
+    Abilities:
+      - type: Damage
+        trigger: UseItem
+        condition: AdjacentToCaster
+      - type: AddAttribute
+        trigger: UseItem
+        condition: AdjacentToCaster
+        key: InFlight
+        value: Custom_0
+        target_condition: SameAsSource
+  - Name: "篝火"
+    Desc: "▶ 造成 {Burn} 灼烧；触发灼烧时，加速 {HasteTargetCount} 件相邻物品 {Haste} 秒"
+    Size: Medium
+    Tier: Silver
+    Cooldown: 5s
+    Burn: [5, 10, 15]
+    Haste: [1s, 2s, 3s]
+    HasteTargetCount: 1
+    Abilities:
+      - type: Burn
+      - type: Haste
+        trigger: Burn
+        target_condition: AdjacentToCaster
+        priority: High
+  - Name: "船舵"
+    Desc: "▶ 加速相邻物品 {Haste} 秒；如果有载具或大型物品，此物品缩短 {Custom_0%} 冷却时间"
+    Size: Medium
+    Tier: Silver
+    Tags: [Aquatic, Tool]
+    Cooldown: 5s
+    Haste: [1s, 2s, 3s]
+    Custom_0: 50
+    Abilities:
+      - type: Haste
+        target_condition: AdjacentToCaster
+        priority: High
+    Auras:
+      - attribute: CooldownReductionPercent
+        condition:
+          type: Count
+          params:
+            - type: And
+              params:
+                - SameSide
+                - type: Or
+                  params:
+                    - type: HasTag
+                      params: [Vehicle]
+                    - IsLarge
+        value: Custom_0
+  - Name: "牌桌"
+    Desc: "▶ {ModifyTargetCount} 件伙伴物品的多重释放提高 {Custom_0}（限本场战斗）；▶ 每有一件非伙伴物品，此物品的冷却时间延长 {Custom_1:} 秒（限本场战斗）"
+    Size: Medium
+    Tier: Silver
+    Cooldown: [6s, 5s, 4s]
+    ModifyTargetCount: 1
+    Custom_0: 1
+    Custom_1: 1s
+    Custom_2: 0
+    Abilities:
+      - type: AddAttribute
+        ex_target_condition:
+          type: HasTag
+          params: [Friend]
+        key: Multicast
+        value: Custom_0
+        priority: Low
+      - type: AddAttribute
+        target_condition: SameAsCaster
+        key: Cooldown
+        value: Custom_2
+        priority: Low
+    Auras:
+      - attribute: Custom_2
+        value:
+          type: Mul
+          params:
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - type: NotHasTag
+                      params: [Friend]
+                    - SameSide
+            - type: Caster
+              params: [Custom_1]
+  - Name: "烙刀"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 造成 {Burn} 灼烧；【Q1】触发减速时，此物品伤害提高 {Custom_0}，灼烧提高 {Custom_1}（限本场战斗）；【Q2】触发加速时，此物品伤害提高 {Custom_0}，灼烧提高 {Custom_1}（限本场战斗）；【Q1】和【Q2】只能生效一个"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon, Tech]
+    Cooldown: 5s
+    Damage: 20
+    Burn: 2
+    Custom_0: [10, 20, 30]
+    Custom_1: [2, 4, 6]
+    Quest: 0
+    Abilities:
+      - type: Damage
+      - type: Burn
+      - type: AddAttribute
+        trigger: Slow
+        ex_condition:
+          type: QuestComplete
+          params: [1]
+        target_condition: SameAsCaster
+        key: Damage
+        value: Custom_0
+      - type: AddAttribute
+        trigger: Slow
+        ex_condition:
+          type: QuestComplete
+          params: [1]
+        target_condition: SameAsCaster
+        key: Burn
+        value: Custom_1
+      - type: AddAttribute
+        trigger: Haste
+        ex_condition:
+          type: QuestComplete
+          params: [2]
+        target_condition: SameAsCaster
+        key: Damage
+        value: Custom_0
+      - type: AddAttribute
+        trigger: Haste
+        ex_condition:
+          type: QuestComplete
+          params: [2]
+        target_condition: SameAsCaster
+        key: Burn
+        value: Custom_1
+  - Name: "赛博铁尺"
+    Desc: "▶ 造成 {Damage} 伤害；造成暴击时，武器伤害提高 {Custom_0}（限本场战斗）"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon, Tech]
+    Cooldown: 3s
+    Damage: [10, 20, 40]
+    Custom_0: [10, 20, 30]
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        trigger: Crit
+        ex_target_condition:
+          type: HasTag
+          params: [Weapon]
+        key: Damage
+        value: Custom_0
+        priority: Low
