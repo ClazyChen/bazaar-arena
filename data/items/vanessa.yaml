@@ -1228,3 +1228,187 @@ items:
         key: Custom_0
         value: Custom_1
         priority: Immediate
+  - Name: "小冰镐"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；触发冻结时，此物品的伤害提高 {Custom_0}（限本场战斗）"
+    Size: Small
+    Tier: Silver
+    Tags: [Weapon, Tool]
+    Cooldown: 4s
+    Damage: 25
+    Freeze: 1s
+    FreezeTargetCount: 1
+    Custom_0: [15, 30, 45]
+    Abilities:
+      - type: Damage
+      - type: Freeze
+      - type: AddAttribute
+        trigger: Freeze
+        target_condition: SameAsCaster
+        key: Damage
+        value: Custom_0
+        priority: Low
+  - Name: "燃烧子弹"
+    Desc: "使用相邻物品时，造成 {Burn} 灼烧"
+    Size: Small
+    Tier: Silver
+    Burn: [1, 2, 3]
+    Abilities:
+      - type: Burn
+        trigger: UseItem
+        ex_condition: AdjacentToCaster
+  - Name: "集成式HUD"
+    Desc: "此物品右侧的物品 {+Custom_0%} 暴击率；使用此物品右侧的物品造成暴击时，减速 {SlowTargetCount} 件物品 {Slow} 秒"
+    Size: Small
+    Tier: Silver
+    Tags: [Apparel, Tech]
+    Custom_0: [20, 30, 40]
+    Slow: 1s
+    SlowTargetCount: 1
+    Abilities:
+      - type: Slow
+        trigger: Crit
+        condition: RightOfCaster
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: And
+          params:
+            - RightOfCaster
+            - CanCrit
+        value: Custom_0
+  - Name: "十手"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；触发减速时，此物品的伤害提高 {Custom_0}（限本场战斗）"
+    Size: Small
+    Tier: Silver
+    Tags: [Weapon]
+    Cooldown: 5s
+    Damage: 20
+    Slow: [1s, 2s, 3s]
+    SlowTargetCount: 1
+    Custom_0: [10, 20, 30]
+    Abilities:
+      - type: Damage
+      - type: Slow
+      - type: AddAttribute
+        trigger: Slow
+        target_condition: SameAsCaster
+        key: Damage
+        value: Custom_0
+        priority: Low
+  - Name: "蔻森娜纹章"
+    Desc: "己方物品 {+Custom_0%} 暴击率"
+    Size: Small
+    Tier: Silver
+    Tags: [Apparel, Relic]
+    Custom_0: [15, 25, 35]
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: And
+          params:
+            - SameSide
+            - CanCrit
+        value: Custom_0
+  - Name: "锁镰"
+    Desc: "▶ 造成 {Damage} 伤害；触发减速时，此物品和相邻武器的伤害提高 {Custom_0}（限本场战斗）；造成暴击时，此物品和相邻武器的伤害提高 {Custom_0}（限本场战斗）"
+    Size: Small
+    Tier: Silver
+    Tags: [Weapon, Tech]
+    Cooldown: 5s
+    Damage: 4
+    Custom_0: [4, 8, 12]
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        trigger: Slow
+        target_condition: 
+          type: Or
+          params:
+            - SameAsCaster
+            - type: And
+              params:
+                - type: HasTag
+                  params: [Weapon]
+                - AdjacentToCaster
+        key: Damage
+        value: Custom_0
+      - type: AddAttribute
+        trigger: Crit
+        target_condition: 
+          type: Or
+          params:
+            - SameAsCaster
+            - type: And
+              params:
+                - type: HasTag
+                  params: [Weapon]
+                - AdjacentToCaster
+        key: Damage
+        value: Custom_0
+  - Name: "理查森先生"
+    Desc: "▶ 获得 {Shield} 护盾；触发加速时，此物品的护盾提高 {Custom_0}（限本场战斗）；触发减速时，此物品的护盾提高 {Custom_0}（限本场战斗）"
+    Size: Small
+    Tier: Silver
+    Tags: [Aquatic, Friend]
+    Cooldown: 6s
+    Shield: 30
+    Custom_0: [5, 10, 15]
+    Abilities:
+      - type: Shield
+      - type: AddAttribute
+        trigger: Haste
+        target_condition: SameAsCaster
+        key: Shield
+        value: Custom_0
+        priority: High
+      - type: AddAttribute
+        trigger: Slow
+        target_condition: SameAsCaster
+        key: Shield
+        value: Custom_0
+        priority: High
+  - Name: "套娃"
+    Desc: "▶ 获得护盾，等量于此物品的剩余弹药数量；弹药：{AmmoCap}；【局外】每天开始时，此物品的最大弹药量提高 {Custom_0}；【默认】已成长天数: {Custom_1}"
+    Size: Small
+    Tier: Silver
+    Tags: [Toy]
+    Cooldown: 2s
+    Shield: 0
+    AmmoCap: 8
+    Custom_0: [1, 2, 3]
+    Custom_1: [2, 4, 6]
+    Abilities:
+      - type: Shield
+    Auras:
+      - attribute: Shield
+        value: AmmoRemaining
+      - attribute: AmmoCap
+        value:
+          type: Mul
+          params:
+            - type: Caster
+              params: [Custom_0]
+            - type: Caster
+              params: [Custom_1]
+  - Name: "盐钳海盗"
+    Desc: "▶ 造成 {Damage} 伤害；触发加速时，此物品的伤害提高 {Custom_0}（限本场战斗）；触发减速时，此物品的伤害提高 {Custom_0}（限本场战斗）"
+    Size: Small
+    Tier: Silver
+    Tags: [Weapon, Aquatic, Friend]
+    Cooldown: 6s
+    Damage: 30
+    Custom_0: [5, 10, 15]
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        trigger: Haste
+        target_condition: SameAsCaster
+        key: Damage
+        value: Custom_0
+        priority: High
+      - type: AddAttribute
+        trigger: Slow
+        target_condition: SameAsCaster
+        key: Damage
+        value: Custom_0
+        priority: High

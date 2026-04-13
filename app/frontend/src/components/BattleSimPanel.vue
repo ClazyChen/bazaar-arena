@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from "vue";
+import {
+    computed,
+    onBeforeUnmount,
+    onUnmounted,
+    ref,
+    watch,
+    type ComponentPublicInstance,
+} from "vue";
 import { fetchDeckSlots, postSaveCliRepro, postSimulate, postSimulateBatch } from "@/api";
 import {
     AMMO_KEYWORD_RGB,
@@ -711,6 +718,207 @@ const p2AmmoPips = computed((): ({ cap: number; remaining: number } | null)[] =>
     return out;
 });
 
+type AmmoPipStyle = {
+    gapPx: number;
+    pipSizePx: number;
+    pipBorderPx: number;
+    dotSizePx: number;
+};
+
+const AMMO_PIP_DEFAULT_SIZE_PX = 7;
+/** 极端弹药数时允许压到 1px，保证总宽度不超出物品区域 */
+const AMMO_PIP_HARD_MIN_SIZE_PX = 1;
+const AMMO_PIP_DEFAULT_GAP_PX = 3;
+const AMMO_PIP_DEFAULT_BORDER_PX = 1.5;
+const AMMO_PIP_DEFAULT_DOT_PX = 4;
+
+const p1AmmoStyles = ref<Record<number, AmmoPipStyle>>({});
+const p2AmmoStyles = ref<Record<number, AmmoPipStyle>>({});
+
+const p1AmmoEls = new Map<number, HTMLElement>();
+const p2AmmoEls = new Map<number, HTMLElement>();
+
+let ammoResizeObs: ResizeObserver | null = null;
+let ammoRecomputeQueued = false;
+
+function shallowEqualAmmoStyle(a: AmmoPipStyle | undefined, b: AmmoPipStyle | undefined): boolean {
+    if (!a || !b) return a === b;
+    return (
+        a.gapPx === b.gapPx &&
+        a.pipSizePx === b.pipSizePx &&
+        a.pipBorderPx === b.pipBorderPx &&
+        a.dotSizePx === b.dotSizePx
+    );
+}
+
+function scheduleAmmoRecompute(): void {
+    if (ammoRecomputeQueued) return;
+    ammoRecomputeQueued = true;
+    requestAnimationFrame(() => {
+        ammoRecomputeQueued = false;
+        void recomputeAmmoStyles();
+    });
+}
+
+function ammoStyleForCapAndWidth(cap: number, availPx: number): AmmoPipStyle {
+    const n = Math.max(0, Math.floor(cap));
+    const avail = Math.max(0, Math.floor(availPx));
+
+    const defaultStyle = (): AmmoPipStyle => ({
+        gapPx: AMMO_PIP_DEFAULT_GAP_PX,
+        pipSizePx: AMMO_PIP_DEFAULT_SIZE_PX,
+        pipBorderPx: AMMO_PIP_DEFAULT_BORDER_PX,
+        dotSizePx: AMMO_PIP_DEFAULT_DOT_PX,
+    });
+
+    if (n <= 1) {
+        return defaultStyle();
+    }
+
+    const needed = (s: number, g: number) => n * s + (n - 1) * g;
+
+    let size = AMMO_PIP_DEFAULT_SIZE_PX;
+    let gap = AMMO_PIP_DEFAULT_GAP_PX;
+
+    for (let s = AMMO_PIP_DEFAULT_SIZE_PX; s >= AMMO_PIP_HARD_MIN_SIZE_PX; s--) {
+        const maxGap = Math.floor((avail - n * s) / (n - 1));
+        const g = Math.max(0, Math.min(AMMO_PIP_DEFAULT_GAP_PX, maxGap));
+        if (needed(s, g) <= avail) {
+            size = s;
+            gap = g;
+            break;
+        }
+    }
+    if (needed(size, gap) > avail) {
+        size = Math.max(AMMO_PIP_HARD_MIN_SIZE_PX, Math.floor(avail / n));
+        gap = 0;
+    }
+
+    const scale = size / AMMO_PIP_DEFAULT_SIZE_PX;
+    const border = Math.max(0.5, Math.round(AMMO_PIP_DEFAULT_BORDER_PX * scale * 10) / 10);
+    const dot = Math.max(1, Math.round(AMMO_PIP_DEFAULT_DOT_PX * scale));
+    return {
+        gapPx: gap,
+        pipSizePx: size,
+        pipBorderPx: border,
+        dotSizePx: Math.min(dot, Math.max(1, size - 2)),
+    };
+}
+
+function resolveAmmoPipsHost(
+    el: Element | ComponentPublicInstance | null,
+): HTMLElement | null {
+    if (el === null) return null;
+    if (el instanceof HTMLElement) return el;
+    const raw = (el as ComponentPublicInstance).$el;
+    return raw instanceof HTMLElement ? raw : null;
+}
+
+function setAmmoPipsEl(
+    side: 0 | 1,
+    index: number,
+    el: Element | ComponentPublicInstance | null,
+): void {
+    const map = side === 0 ? p1AmmoEls : p2AmmoEls;
+    const prev = map.get(index);
+    if (prev && ammoResizeObs) {
+        ammoResizeObs.unobserve(prev);
+    }
+    const node = resolveAmmoPipsHost(el);
+    if (!node) {
+        map.delete(index);
+        void recomputeAmmoStyles();
+        return;
+    }
+    map.set(index, node);
+    if (!ammoResizeObs && typeof ResizeObserver !== "undefined") {
+        ammoResizeObs = new ResizeObserver(() => {
+            scheduleAmmoRecompute();
+        });
+    }
+    if (ammoResizeObs) ammoResizeObs.observe(node);
+    scheduleAmmoRecompute();
+}
+
+function ammoCssVars(side: 0 | 1, index: number): Record<string, string> {
+    const st = side === 0 ? p1AmmoStyles.value[index] : p2AmmoStyles.value[index];
+    if (!st) return { "--ammo-dot": AMMO_KEYWORD_RGB };
+    return {
+        "--ammo-dot": AMMO_KEYWORD_RGB,
+        "--ammo-gap": `${st.gapPx}px`,
+        "--ammo-pip-size": `${st.pipSizePx}px`,
+        "--ammo-pip-border": `${st.pipBorderPx}px`,
+        "--ammo-dot-size": `${st.dotSizePx}px`,
+    };
+}
+
+async function recomputeAmmoStyles(): Promise<void> {
+    // 合并到 rAF 后执行时，DOM 通常已稳定；这里不再强制 nextTick，避免渲染闭环
+    const nextP1: Record<number, AmmoPipStyle> = {};
+    for (const [i, el] of p1AmmoEls) {
+        const p = p1AmmoPips.value[i];
+        if (!p) continue;
+        nextP1[i] = ammoStyleForCapAndWidth(p.cap, el.clientWidth);
+    }
+    let p1Changed = false;
+    const prevP1 = p1AmmoStyles.value;
+    const prevP1Keys = Object.keys(prevP1);
+    const nextP1Keys = Object.keys(nextP1);
+    if (prevP1Keys.length !== nextP1Keys.length) {
+        p1Changed = true;
+    } else {
+        for (const k of nextP1Keys) {
+            const idx = Number(k);
+            if (!shallowEqualAmmoStyle(prevP1[idx], nextP1[idx])) {
+                p1Changed = true;
+                break;
+            }
+        }
+    }
+    if (p1Changed) p1AmmoStyles.value = nextP1;
+
+    const nextP2: Record<number, AmmoPipStyle> = {};
+    for (const [i, el] of p2AmmoEls) {
+        const p = p2AmmoPips.value[i];
+        if (!p) continue;
+        nextP2[i] = ammoStyleForCapAndWidth(p.cap, el.clientWidth);
+    }
+    let p2Changed = false;
+    const prevP2 = p2AmmoStyles.value;
+    const prevP2Keys = Object.keys(prevP2);
+    const nextP2Keys = Object.keys(nextP2);
+    if (prevP2Keys.length !== nextP2Keys.length) {
+        p2Changed = true;
+    } else {
+        for (const k of nextP2Keys) {
+            const idx = Number(k);
+            if (!shallowEqualAmmoStyle(prevP2[idx], nextP2[idx])) {
+                p2Changed = true;
+                break;
+            }
+        }
+    }
+    if (p2Changed) p2AmmoStyles.value = nextP2;
+}
+
+onBeforeUnmount(() => {
+    if (ammoResizeObs) {
+        ammoResizeObs.disconnect();
+        ammoResizeObs = null;
+    }
+});
+
+watch(
+    () =>
+        [
+            p1AmmoPips.value.map((x) => (x ? `${x.cap}:${x.remaining}` : "")).join("|"),
+            p2AmmoPips.value.map((x) => (x ? `${x.cap}:${x.remaining}` : "")).join("|"),
+        ] as const,
+    () => {
+        scheduleAmmoRecompute();
+    },
+);
+
 /** 模拟器版本/路径与调试区默认折叠，由「调试信息」按钮展开 */
 const showSimDebugPanel = ref(false);
 
@@ -1300,7 +1508,8 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             <div
                                                 v-if="p1AmmoPips[i]"
                                                 class="ammo-pips"
-                                                :style="{ '--ammo-dot': AMMO_KEYWORD_RGB }"
+                                                :ref="(el) => setAmmoPipsEl(0, i, el)"
+                                                :style="ammoCssVars(0, i)"
                                             >
                                                 <span
                                                     v-for="pipIdx in p1AmmoPips[i]!.cap"
@@ -1468,7 +1677,8 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                             <div
                                                 v-if="p2AmmoPips[i]"
                                                 class="ammo-pips"
-                                                :style="{ '--ammo-dot': AMMO_KEYWORD_RGB }"
+                                                :ref="(el) => setAmmoPipsEl(1, i, el)"
+                                                :style="ammoCssVars(1, i)"
                                             >
                                                 <span
                                                     v-for="pipIdx in p2AmmoPips[i]!.cap"
@@ -2364,7 +2574,11 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 3px;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    gap: var(--ammo-gap, 3px);
     pointer-events: none;
 }
 /* 与弹药圆点行同高，仅有多重释放时垫在下方，使 ×N 与「弹药+×N」纵向对齐 */
@@ -2377,10 +2591,10 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
 }
 .ammo-pip {
     box-sizing: border-box;
-    width: 7px;
-    height: 7px;
+    width: var(--ammo-pip-size, 7px);
+    height: var(--ammo-pip-size, 7px);
     border-radius: 50%;
-    border: 1.5px solid var(--ammo-dot, rgb(255, 142, 0));
+    border: var(--ammo-pip-border, 1.5px) solid var(--ammo-dot, rgb(255, 142, 0));
     /* 与背景图同色时仍可辨认 */
     box-shadow: 0 0 0 1px #000000;
     display: flex;
@@ -2394,8 +2608,8 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     background: #ffffff;
 }
 .ammo-pip-dot {
-    width: 4px;
-    height: 4px;
+    width: var(--ammo-dot-size, 4px);
+    height: var(--ammo-dot-size, 4px);
     border-radius: 50%;
     background: var(--ammo-dot, rgb(255, 142, 0));
     box-shadow: 0 0 0 0.5px #000000;
