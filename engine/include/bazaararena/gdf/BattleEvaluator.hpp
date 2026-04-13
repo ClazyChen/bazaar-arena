@@ -2,12 +2,17 @@
 
 #include <bazaararena/core/SideState.hpp>
 #include <bazaararena/gdf/DeckRep.hpp>
+#include <bazaararena/gdf/GdfRunTiming.hpp>
 
+#include <condition_variable>
 #include <cstdint>
+#include <functional>
 #include <mutex>
+#include <queue>
 #include <random>
 #include <shared_mutex>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -22,7 +27,12 @@ struct MatchPoints {
 /// 对战评估器：追求 GDF 极致性能，**不保证**批内/批间 RNG 可复现。
 class BattleEvaluator {
 public:
-    BattleEvaluator(int best_of, int workers, int player_level);
+    /// `timing` 可选；启用时统计 `ToSide`、批对战与并行批主线程等待（见 `GdfRunTiming`）。
+    BattleEvaluator(int best_of, int workers, int player_level, GdfRunTiming* timing = nullptr);
+    ~BattleEvaluator();
+
+    BattleEvaluator(const BattleEvaluator&) = delete;
+    BattleEvaluator& operator=(const BattleEvaluator&) = delete;
 
     int PlayBoN(const DeckRep& a, const DeckRep& b);
 
@@ -37,6 +47,7 @@ private:
     int workers_;
     int player_level_;
     int combat_tier_;
+    GdfRunTiming* timing_ = nullptr;
 
     mutable std::shared_mutex deck_cache_mu_;
     std::unordered_map<std::string, bazaararena::core::SideState> deck_cache_;
@@ -53,6 +64,19 @@ private:
     int RunBoNStream(const DeckRep& a, const DeckRep& b, unsigned stream_seed);
 
     static std::vector<size_t> CreateShuffledOrder(size_t count, std::mt19937& rng);
+
+    /// `workers_ > 1` 时懒启动；每条线程内 `thread_local Simulator` 跑对战，主线程只投递 chunk 任务。
+    void ensure_sim_worker_pool();
+    void pool_worker_loop();
+    void run_parallel_chunks(std::vector<std::function<void()>> chunks);
+
+    std::mutex pool_queue_mu_;
+    std::condition_variable pool_queue_cv_;
+    std::queue<std::function<void()>> pool_queue_;
+    bool pool_shutdown_ = false;
+    bool pool_workers_started_ = false;
+    std::mutex pool_start_mu_;
+    std::vector<std::thread> pool_threads_;
 };
 
 }  // namespace bazaararena::gdf

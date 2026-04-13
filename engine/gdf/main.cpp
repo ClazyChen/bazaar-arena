@@ -3,6 +3,7 @@
 #include <bazaararena/gdf/GdfLevelRules.hpp>
 #include <bazaararena/gdf/GdfLoadYamlPool.hpp>
 #include <bazaararena/gdf/GreedySearcher.hpp>
+#include <bazaararena/gdf/GdfRunTiming.hpp>
 #include <bazaararena/gdf/ItemPool.hpp>
 
 #include <algorithm>
@@ -44,6 +45,7 @@ struct Args {
     double lambda_anchor = 0;
     double mu_diversity = 0;
     bool diversity_exclude_seeds = false;
+    bool timing = false;
 };
 
 static void PrintUsage(std::ostream& os) {
@@ -63,6 +65,7 @@ static void PrintUsage(std::ostream& os) {
           "  --mu-diversity <x>         MMR diversity penalty on Jaccard similarity\n"
           "  --diversity-exclude-seeds  Jaccard ignores seed item names\n"
           "  --output <path>            write text summary\n"
+          "  --timing                   print GDF phase timings after each search\n"
           "  --help\n";
 }
 
@@ -124,6 +127,8 @@ static bool ParseArgs(int argc, char** argv, Args& out, std::string& err) {
             out.mu_diversity = std::atof(argv[++i]);
         } else if (tok == "--diversity-exclude-seeds") {
             out.diversity_exclude_seeds = true;
+        } else if (tok == "--timing") {
+            out.timing = true;
         } else if (tok == "--output" && need("--output")) {
             out.output_path = argv[++i];
         } else {
@@ -175,6 +180,9 @@ static void CollectAllPoolKeys(const bazaararena::gdf::ItemPool& pool, std::vect
 
 static void RunOneSearch(bazaararena::gdf::ItemPool& pool, const Args& args, const std::vector<std::string>& seeds,
     const std::unordered_set<std::string>& seed_set, std::ostream& out) {
+    bazaararena::gdf::GdfRunTiming run_timing;
+    if (args.timing) run_timing.reset();
+
     bazaararena::gdf::GreedyConfig gcfg;
     gcfg.player_level = args.level;
     gcfg.top_k = args.top_k;
@@ -185,6 +193,7 @@ static void RunOneSearch(bazaararena::gdf::ItemPool& pool, const Args& args, con
     gcfg.lambda_anchor = args.lambda_anchor;
     gcfg.mu_diversity = args.mu_diversity;
     gcfg.diversity_exclude_seeds = args.diversity_exclude_seeds;
+    if (args.timing) gcfg.run_timing = &run_timing;
 
     std::mt19937 rng;
     if (args.seed.has_value()) {
@@ -194,13 +203,14 @@ static void RunOneSearch(bazaararena::gdf::ItemPool& pool, const Args& args, con
         rng.seed(static_cast<unsigned>(t) ^ static_cast<unsigned>(t >> 32));
     }
 
-    bazaararena::gdf::BattleEvaluator evaluator(args.best_of, args.workers, args.level);
+    bazaararena::gdf::BattleEvaluator evaluator(args.best_of, args.workers, args.level, args.timing ? &run_timing : nullptr);
     bazaararena::gdf::GreedySearcher searcher(pool, evaluator, rng, gcfg, seed_set);
 
     out << "[GDF] seeds:";
     for (const auto& s : seeds) out << " " << s;
     out << "\n";
 
+    const auto wall_beg = std::chrono::steady_clock::now();
     searcher.Run(seeds, [&](int size, const std::vector<bazaararena::gdf::CandidateState>& top) {
         out << "[GDF] size=" << size << " top " << top.size() << "\n";
         for (size_t i = 0; i < top.size(); i++) {
@@ -208,6 +218,11 @@ static void RunOneSearch(bazaararena::gdf::ItemPool& pool, const Args& args, con
                 << " | " << top[i].representative.Signature() << "\n";
         }
     });
+    const auto wall_end = std::chrono::steady_clock::now();
+
+    if (args.timing) {
+        run_timing.dump(out, std::chrono::duration_cast<std::chrono::nanoseconds>(wall_end - wall_beg));
+    }
 }
 
 }  // namespace

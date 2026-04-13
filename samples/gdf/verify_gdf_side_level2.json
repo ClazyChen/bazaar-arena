@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "jobId": "gdf-verify-side-order-level2",
+  "mode": "simulate",
+  "payload": {
+    "seed": 12345,
+    "allowTie": true,
+    "debug": { "enabled": true, "level": "summary", "maxEvents": 2000 },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 2,
+        "items": [
+          { "key": "独角鲸", "tier": "bronze" },
+          { "key": "刺刀", "tier": "bronze" }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 2,
+        "items": [{ "key": "獠牙", "tier": "bronze" }]
+      }
+    ]
+  }
+}

@@ -2,7 +2,7 @@
 
 本文基于 **C++ 实现与 legacy C# `BattleEvaluator` 的对照阅读** 归纳主要瓶颈，便于后续 profiling（Sampling CPU、VTune、`/Bt+` 等）时对照验证。**未改核心 `Simulator.cpp` 帧序**；优化集中在 GDF 评估层与并行策略。
 
-**当前实现状态（与下文「历史瓶颈」对照）**：为优先极致性能，GDF **不保证对战 RNG 可复现**（由 `Simulator` 保证对局语义正确即可）。已落地：`thread_local` 每线程复用一个 `Simulator` + 每局 `InitializeSimulator`（避免每局默认构造整颗模拟器树）、批盐 + 子种子混合、串行/并行路径均**不再**在热路径调用 `std::random_device`；`deck_cache_` 使用 `shared_mutex` 保护并行 `ToSide`；CLI **省略 `--workers` 时默认 `hardware_concurrency()`**。仍待观察/可选：**P1** 每批 `std::thread` 创建（见第 4 节）。
+**当前实现状态（与下文「历史瓶颈」对照）**：为优先极致性能，GDF **不保证对战 RNG 可复现**（由 `Simulator` 保证对局语义正确即可）。已落地：`thread_local` 每线程复用一个 `Simulator` + 每局 `InitializeSimulator`（避免每局默认构造整颗模拟器树）、批盐 + 子种子混合、串行/并行路径均**不再**在热路径调用 `std::random_device`；`deck_cache_` 使用 `shared_mutex` 保护并行 `ToSide`；CLI **省略 `--workers` 时默认 `hardware_concurrency()`**。**系列赛 / BoN 流**：对固定 `(a,b)` 在每轮前**不再**重复 `ToSide`（仅首轮各一次 `shared_lock` + 模板拷贝；局内只做 `SideState` 模板拷贝与 `SideIndex` 补丁），显著降低锁竞争与 `unordered_map` 查找。**仍待观察/可选**：**P1** 每批 `std::thread` 创建（见第 4 节）。
 
 ---
 
@@ -11,9 +11,9 @@
 | 优先级 | 瓶颈 | 说明 |
 |--------|------|------|
 | **P0**（已缓解） | **每局新建 `Simulator` + 全量 `InitializeSimulator`** | 历史：C++ 在热路径**栈上** `core::Simulator sim` 每局默认构造整颗对象。当前：`thread_local` 复用单实例，每局仅拷贝 `sides`、重置 `sandstorm`/sink 后 `InitializeSimulator` + `Run`（见第 2 节新引用）。 |
-| **P1** | **每批对战 `join` 一批全新 `std::thread`** | `PlayBoNBatch` / `PlaySeriesBatch` 每次调用创建 `std::vector<std::thread>`，按 chunk 跑完即 `join` 销毁。C# `Parallel.For` 使用**线程池**。瑞士轮多轮、扩展多档会放大该成本；若 profiling 仍显示线程 API 占比高，可考虑持久线程池。 |
+| **P1**（已缓解） | **每批临时 `std::thread` + `join`** | 历史：`PlayBoNBatch` / `PlaySeriesBatch` 每批新建线程。当前：`BattleEvaluator` 在首次并行批时懒启动 **`workers_` 条持久工作线程** + 任务队列；主线程投递与原先相同的 chunk 任务并等待原子计数归零；析构时 `shutdown` 后 `join`。每条工作线程内仍用 `thread_local` 复用 `Simulator`。 |
 | **P2**（已缓解） | **热路径 `std::random_device`** | 历史：串行系列赛在缺省种子时每 pair `random_device`。当前：批级盐与 `FastEntropyU64` 等混合派生 `game_word` / `pair_seed`，无 `random_device` 热路径。 |
-| **P3** | **`SideState` 整结构拷贝** | 每局 `sim.sides[0] = side_a` 仍为完整拷贝；与「每局独立 RNG 与位图」一致，属必要成本。 |
+| **P3** | **`SideState` 整结构拷贝** | 每局 `sim.sides[0] = side_a` 仍为完整拷贝；与「每局独立 RNG 与位图」一致，属必要成本。已从「每局 2×`ToSide`（含锁）」降为「每局 2×模板拷贝（无锁）」；`ToSide` 仍只在系列赛首局 / BoN 流开始时各调用一次。 |
 | **—**（已变） | **默认并行度** | 当前 CLI **省略 `--workers` 时默认硬件并发**；显式 `--workers 0` 才整段对战单线程。与 legacy 默认可能不一致，跨语言对比时请对齐线程数。 |
 
 ---
@@ -22,31 +22,14 @@
 
 [`BattleEvaluator.cpp`](../engine/src/bazaararena/gdf/BattleEvaluator.cpp)：`thread_local` 懒创建 + 每局 `RunSingleBattleReturn` 内拷贝两侧、播种、`InitializeSimulator`、`Run`：
 
-```42:63:engine/src/bazaararena/gdf/BattleEvaluator.cpp
+```44:47:engine/src/bazaararena/gdf/BattleEvaluator.cpp
 core::Simulator& TlsBattleSimulator() {
     thread_local core::Simulator sim;
     return sim;
 }
-
-static int RunSingleBattleReturn(core::Simulator& sim, const core::SideState& side_a, const core::SideState& side_b, int swap, int rng_seed) {
-    sim.sink.sink_type = io::Sink::TypeNone;
-    sim.sink.max_events = 0;
-    sim.sink.truncated = false;
-    sim.sink.Clear();
-
-    if (swap == 0) {
-        sim.sides[0] = side_a;
-        sim.sides[1] = side_b;
-    } else {
-        sim.sides[0] = side_b;
-        sim.sides[1] = side_a;
-    }
-    sim.sandstorm = core::Simulator::SandStorm{};
-    sim.rng.Seed(rng_seed);
-    core::InitializeSimulator(sim);
-    return sim.Run(true);
-}
 ```
+
+`RunSingleBattleReturn` 与 `RunOneGameWinnerForA`（系列赛 / BoN 共用）见同文件；系列赛在 `PlaySeriesPointsForPair` 内对 `ToSide(a)` / `ToSide(b)` **各调用一次**，再以 `RunOneGameWinnerForA` 循环多局，避免原先「每小局 2×`ToSide`」对 `deck_cache_mu_` 的放大。
 
 [`Simulator.hpp`](../engine/include/bazaararena/core/Simulator.hpp) + [`AbilityQueue.hpp`](../engine/include/bazaararena/core/AbilityQueue.hpp)：`AbilityQueue::MaxQueueSize = 4096` 等仍使**单实例**体积较大；复用后避免**每局**默认构造整颗对象，但每局仍需 `InitializeSimulator` 重建位图（与引擎设计一致）。
 

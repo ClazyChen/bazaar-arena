@@ -3,6 +3,7 @@
 #include <bazaararena/gdf/BattleEvaluator.hpp>
 #include <bazaararena/gdf/CandidateState.hpp>
 #include <bazaararena/gdf/DeckRep.hpp>
+#include <bazaararena/gdf/GdfRunTiming.hpp>
 #include <bazaararena/gdf/ItemPool.hpp>
 
 #include <functional>
@@ -25,6 +26,8 @@ struct GreedyConfig {
     double lambda_anchor = 0;
     double mu_diversity = 0;
     bool diversity_exclude_seeds = false;
+    /// 非空时累加各阶段耗时（`--timing`）。
+    GdfRunTiming* run_timing = nullptr;
 };
 
 class GreedySearcher {

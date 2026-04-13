@@ -14,8 +14,11 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <memory>
 #include <random>
 #include <thread>
+
+using Clock = std::chrono::steady_clock;
 
 namespace bazaararena::gdf {
 namespace core = bazaararena::core;
@@ -24,6 +27,16 @@ namespace io = bazaararena::io;
 namespace {
 
 static constexpr int kParallelPairsMin = 2;
+
+struct TsideWallTimer {
+    GdfRunTiming* const timing;
+    const Clock::time_point t0;
+    explicit TsideWallTimer(GdfRunTiming* t) : timing(t), t0(Clock::now()) {}
+    ~TsideWallTimer() {
+        if (!timing) return;
+        GdfRunTiming::add_ns(timing->toside_total_ns, std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - t0));
+    }
+};
 
 static int HpShieldTotal(const core::SideState& s) {
     return s.attrs[core::SideKey::Hp] + s.attrs[core::SideKey::Shield];
@@ -77,17 +90,130 @@ static int RunSingleBattleReturn(core::Simulator& sim, const core::SideState& si
     return sim.Run(true);
 }
 
+/// 单局：从「缓存态」两侧模板拷贝后按 swap 打补丁再 Run。`base_*` 为 `ToSide` 产物（SideIndex 全 0），每局拷贝成本远小于反复 `ToSide` 的 map 查找与锁。
+static int RunOneGameWinnerForA(core::Simulator& sim, const core::SideState& base_a, const core::SideState& base_b, unsigned game_word,
+    bool random_pick_on_hp_tie) {
+    core::SideState side_a = base_a;
+    core::SideState side_b = base_b;
+    const int swap = static_cast<int>(game_word & 1u);
+    const int rng_seed = static_cast<int>(game_word ^ (game_word >> 16));
+
+    if (swap == 0) {
+        PatchPhysicalSideSlot(side_a, 0);
+        PatchPhysicalSideSlot(side_b, 1);
+    } else {
+        PatchPhysicalSideSlot(side_b, 0);
+        PatchPhysicalSideSlot(side_a, 1);
+    }
+
+    const int w_run = RunSingleBattleReturn(sim, side_a, side_b, swap, rng_seed);
+
+    auto map_winner_to_a = [&](int win_sim) -> int {
+        if (swap == 0) return win_sim;
+        return 1 - win_sim;
+    };
+
+    if (w_run >= 0) return map_winner_to_a(w_run);
+
+    const int h0 = HpShieldTotal(sim.sides[0]);
+    const int h1 = HpShieldTotal(sim.sides[1]);
+    int win_side = -1;
+    if (h0 > h1) win_side = 0;
+    else if (h1 > h0) win_side = 1;
+    else {
+        if (random_pick_on_hp_tie) return static_cast<int>((game_word >> 1) & 1u);
+        return -1;
+    }
+    return map_winner_to_a(win_side);
+}
+
 }  // namespace
 
-BattleEvaluator::BattleEvaluator(int best_of, int workers, int player_level)
-    : best_of_(best_of), workers_(std::max(0, workers)), player_level_(player_level), combat_tier_(GdfLevelRules::CombatTier(player_level)) {}
+BattleEvaluator::BattleEvaluator(int best_of, int workers, int player_level, GdfRunTiming* timing)
+    : best_of_(best_of), workers_(std::max(0, workers)), player_level_(player_level), combat_tier_(GdfLevelRules::CombatTier(player_level)),
+      timing_(timing) {}
+
+BattleEvaluator::~BattleEvaluator() {
+    {
+        std::lock_guard<std::mutex> lk(pool_queue_mu_);
+        pool_shutdown_ = true;
+    }
+    pool_queue_cv_.notify_all();
+    for (auto& th : pool_threads_) {
+        if (th.joinable()) th.join();
+    }
+}
+
+void BattleEvaluator::ensure_sim_worker_pool() {
+    if (workers_ <= 1) return;
+    std::lock_guard<std::mutex> start_lk(pool_start_mu_);
+    if (pool_workers_started_) return;
+    pool_shutdown_ = false;
+    pool_threads_.reserve(static_cast<size_t>(workers_));
+    for (int i = 0; i < workers_; ++i) {
+        pool_threads_.emplace_back([this] { pool_worker_loop(); });
+    }
+    pool_workers_started_ = true;
+}
+
+void BattleEvaluator::pool_worker_loop() {
+    for (;;) {
+        std::function<void()> job;
+        {
+            std::unique_lock<std::mutex> lk(pool_queue_mu_);
+            pool_queue_cv_.wait(lk, [this] { return pool_shutdown_ || !pool_queue_.empty(); });
+            if (pool_shutdown_ && pool_queue_.empty()) return;
+            if (!pool_queue_.empty()) {
+                job = std::move(pool_queue_.front());
+                pool_queue_.pop();
+            }
+        }
+        pool_queue_cv_.notify_one();
+        if (job) job();
+    }
+}
+
+void BattleEvaluator::run_parallel_chunks(std::vector<std::function<void()>> chunks) {
+    if (chunks.empty()) return;
+    ensure_sim_worker_pool();
+
+    auto rem = std::make_shared<std::atomic<int>>(static_cast<int>(chunks.size()));
+    std::mutex done_mu;
+    std::condition_variable done_cv;
+
+    {
+        std::lock_guard<std::mutex> lk(pool_queue_mu_);
+        for (size_t ci = 0; ci < chunks.size(); ++ci) {
+            pool_queue_.emplace([this, rem, ch = std::move(chunks[ci]), &done_mu, &done_cv]() mutable {
+                ch();
+                if (rem->fetch_sub(1, std::memory_order_acq_rel) == 1) {
+                    std::lock_guard<std::mutex> g(done_mu);
+                    done_cv.notify_one();
+                }
+            });
+        }
+    }
+    pool_queue_cv_.notify_all();
+
+    const Clock::time_point tw0 = Clock::now();
+    std::unique_lock<std::mutex> lk(done_mu);
+    done_cv.wait(lk, [&rem] { return rem->load(std::memory_order_acquire) == 0; });
+    if (timing_) {
+        GdfRunTiming::add_ns(timing_->parallel_batch_wait_ns, std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - tw0));
+        timing_->parallel_batch_calls.fetch_add(1, std::memory_order_relaxed);
+    }
+}
 
 core::SideState BattleEvaluator::ToSide(const DeckRep& rep) {
+    const TsideWallTimer wall_timer(timing_);
     const std::string sig = rep.Signature();
     {
         std::shared_lock<std::shared_mutex> lk(deck_cache_mu_);
         const auto it = deck_cache_.find(sig);
-        if (it != deck_cache_.end()) return it->second;
+        if (it != deck_cache_.end()) {
+            if (timing_) timing_->toside_hits.fetch_add(1, std::memory_order_relaxed);
+            return it->second;
+        }
     }
     io::SideSpec spec;
     std::string err;
@@ -100,7 +226,11 @@ core::SideState BattleEvaluator::ToSide(const DeckRep& rep) {
     }
     std::unique_lock<std::shared_mutex> lk(deck_cache_mu_);
     const auto it2 = deck_cache_.find(sig);
-    if (it2 != deck_cache_.end()) return it2->second;
+    if (it2 != deck_cache_.end()) {
+        if (timing_) timing_->toside_hits.fetch_add(1, std::memory_order_relaxed);
+        return it2->second;
+    }
+    if (timing_) timing_->toside_misses.fetch_add(1, std::memory_order_relaxed);
     auto ins = deck_cache_.emplace(sig, std::move(*built.side));
     return ins.first->second;
 }
@@ -117,79 +247,26 @@ std::vector<size_t> BattleEvaluator::CreateShuffledOrder(size_t count, std::mt19
 }
 
 int BattleEvaluator::PlaySingleGameForSeries(const DeckRep& a, const DeckRep& b, unsigned game_word) {
-    core::SideState side_a = ToSide(a);
-    core::SideState side_b = ToSide(b);
-    const int swap = static_cast<int>(game_word & 1u);
-    const int rng_seed = static_cast<int>(game_word ^ (game_word >> 16));
-
-    if (swap == 0) {
-        PatchPhysicalSideSlot(side_a, 0);
-        PatchPhysicalSideSlot(side_b, 1);
-    } else {
-        PatchPhysicalSideSlot(side_b, 0);
-        PatchPhysicalSideSlot(side_a, 1);
-    }
-
     core::Simulator& sim = TlsBattleSimulator();
-    const int w_run = RunSingleBattleReturn(sim, side_a, side_b, swap, rng_seed);
-
-    auto map_winner_to_a = [&](int win_sim) -> int {
-        if (swap == 0) return win_sim;
-        return 1 - win_sim;
-    };
-
-    if (w_run >= 0) return map_winner_to_a(w_run);
-
-    const int h0 = HpShieldTotal(sim.sides[0]);
-    const int h1 = HpShieldTotal(sim.sides[1]);
-    int win_side = -1;
-    if (h0 > h1) win_side = 0;
-    else if (h1 > h0) win_side = 1;
-    else {
-        return -1;
-    }
-    return map_winner_to_a(win_side);
+    return RunOneGameWinnerForA(sim, ToSide(a), ToSide(b), game_word, false);
 }
 
 int BattleEvaluator::PlaySingleGameForBoN(const DeckRep& a, const DeckRep& b, unsigned game_word) {
-    core::SideState side_a = ToSide(a);
-    core::SideState side_b = ToSide(b);
-    const int swap = static_cast<int>(game_word & 1u);
-    const int rng_seed = static_cast<int>(game_word ^ (game_word >> 16));
-
-    if (swap == 0) {
-        PatchPhysicalSideSlot(side_a, 0);
-        PatchPhysicalSideSlot(side_b, 1);
-    } else {
-        PatchPhysicalSideSlot(side_b, 0);
-        PatchPhysicalSideSlot(side_a, 1);
-    }
-
     core::Simulator& sim = TlsBattleSimulator();
-    const int w = RunSingleBattleReturn(sim, side_a, side_b, swap, rng_seed);
-
-    auto map_winner_to_a = [&](int win_sim) -> int {
-        if (swap == 0) return win_sim;
-        return 1 - win_sim;
-    };
-
-    if (w >= 0) return map_winner_to_a(w);
-
-    const int h0 = HpShieldTotal(sim.sides[0]);
-    const int h1 = HpShieldTotal(sim.sides[1]);
-    if (h0 > h1) return map_winner_to_a(0);
-    if (h1 > h0) return map_winner_to_a(1);
-    return static_cast<int>((game_word >> 1) & 1u);
+    return RunOneGameWinnerForA(sim, ToSide(a), ToSide(b), game_word, true);
 }
 
 int BattleEvaluator::RunBoNStream(const DeckRep& a, const DeckRep& b, unsigned stream_seed) {
+    const core::SideState base_a = ToSide(a);
+    const core::SideState base_b = ToSide(b);
+    core::Simulator& sim = TlsBattleSimulator();
     std::mt19937 st(stream_seed ^ 0xA11CEu);
     const int need = (best_of_ / 2) + 1;
     int wins_a = 0;
     int wins_b = 0;
     while (wins_a < need && wins_b < need) {
         const unsigned gw = st();
-        const int g = PlaySingleGameForBoN(a, b, gw);
+        const int g = RunOneGameWinnerForA(sim, base_a, base_b, gw, true);
         if (g == 0) wins_a++;
         else wins_b++;
     }
@@ -201,6 +278,7 @@ int BattleEvaluator::PlayBoN(const DeckRep& a, const DeckRep& b) {
 }
 
 std::vector<int> BattleEvaluator::PlayBoNBatch(const std::vector<std::pair<DeckRep, DeckRep>>& pairs) {
+    const Clock::time_point batch_t0 = Clock::now();
     std::vector<int> winners(pairs.size());
     if (pairs.empty()) return winners;
 
@@ -212,18 +290,23 @@ std::vector<int> BattleEvaluator::PlayBoNBatch(const std::vector<std::pair<DeckR
             const unsigned ss = static_cast<unsigned>(batch_salt ^ (i * UINT64_C(0xD6E8FEB866E1C9A5)));
             winners[i] = RunBoNStream(pairs[i].first, pairs[i].second, ss);
         }
+        if (timing_) {
+            GdfRunTiming::add_ns(timing_->play_bon_batch_ns, std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - batch_t0));
+            timing_->play_bon_batch_calls.fetch_add(1, std::memory_order_relaxed);
+        }
         return winners;
     }
 
     const auto order = CreateShuffledOrder(pairs.size(), order_rng);
-    std::vector<std::thread> threads;
     const int wcount = std::min(workers_, static_cast<int>(pairs.size()));
     const size_t chunk = (pairs.size() + static_cast<size_t>(wcount) - 1) / static_cast<size_t>(wcount);
+    std::vector<std::function<void()>> chunks;
+    chunks.reserve(static_cast<size_t>(wcount));
     for (int t = 0; t < wcount; t++) {
         const size_t beg = static_cast<size_t>(t) * chunk;
         if (beg >= pairs.size()) break;
         const size_t end = std::min(pairs.size(), beg + chunk);
-        threads.emplace_back([&, beg, end, batch_salt]() {
+        chunks.emplace_back([this, &pairs, &order, &winners, beg, end, batch_salt]() {
             for (size_t k = beg; k < end; k++) {
                 const size_t j = order[k];
                 const unsigned ss = static_cast<unsigned>(batch_salt ^ (j * UINT64_C(0xD6E8FEB866E1C9A5)));
@@ -231,18 +314,25 @@ std::vector<int> BattleEvaluator::PlayBoNBatch(const std::vector<std::pair<DeckR
             }
         });
     }
-    for (auto& th : threads) th.join();
+    run_parallel_chunks(std::move(chunks));
+    if (timing_) {
+        GdfRunTiming::add_ns(timing_->play_bon_batch_ns, std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - batch_t0));
+        timing_->play_bon_batch_calls.fetch_add(1, std::memory_order_relaxed);
+    }
     return winners;
 }
 
 MatchPoints BattleEvaluator::PlaySeriesPointsForPair(const DeckRep& a, const DeckRep& b, int game_count, unsigned pair_seed) {
     const int rounds = std::max(1, game_count);
+    const core::SideState base_a = ToSide(a);
+    const core::SideState base_b = ToSide(b);
+    core::Simulator& sim = TlsBattleSimulator();
     double points_a = 0;
     double points_b = 0;
     std::mt19937 local(pair_seed);
     for (int i = 0; i < rounds; i++) {
         const unsigned gw = local();
-        const int r = PlaySingleGameForSeries(a, b, gw);
+        const int r = RunOneGameWinnerForA(sim, base_a, base_b, gw, false);
         if (r == 0) points_a += 1;
         else if (r == 1) points_b += 1;
         else {
@@ -258,6 +348,7 @@ MatchPoints BattleEvaluator::PlaySeriesPoints(const DeckRep& a, const DeckRep& b
 }
 
 std::vector<MatchPoints> BattleEvaluator::PlaySeriesBatch(const std::vector<std::pair<DeckRep, DeckRep>>& pairs, int game_count) {
+    const Clock::time_point batch_t0 = Clock::now();
     std::vector<MatchPoints> results(pairs.size());
     if (pairs.empty()) return results;
 
@@ -269,18 +360,23 @@ std::vector<MatchPoints> BattleEvaluator::PlaySeriesBatch(const std::vector<std:
             const unsigned ps = static_cast<unsigned>(batch_salt ^ (i * UINT64_C(0xC4CEB4B2570A8625)));
             results[i] = PlaySeriesPointsForPair(pairs[i].first, pairs[i].second, game_count, ps);
         }
+        if (timing_) {
+            GdfRunTiming::add_ns(timing_->play_series_batch_ns, std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - batch_t0));
+            timing_->play_series_batch_calls.fetch_add(1, std::memory_order_relaxed);
+        }
         return results;
     }
 
     const auto order = CreateShuffledOrder(pairs.size(), order_rng);
-    std::vector<std::thread> threads;
     const int wcount = std::min(workers_, static_cast<int>(pairs.size()));
     const size_t chunk = (pairs.size() + static_cast<size_t>(wcount) - 1) / static_cast<size_t>(wcount);
+    std::vector<std::function<void()>> chunks;
+    chunks.reserve(static_cast<size_t>(wcount));
     for (int t = 0; t < wcount; t++) {
         const size_t beg = static_cast<size_t>(t) * chunk;
         if (beg >= pairs.size()) break;
         const size_t end = std::min(pairs.size(), beg + chunk);
-        threads.emplace_back([&, beg, end, batch_salt, game_count]() {
+        chunks.emplace_back([this, &pairs, &order, &results, beg, end, batch_salt, game_count]() {
             for (size_t k = beg; k < end; k++) {
                 const size_t j = order[k];
                 const unsigned ps = static_cast<unsigned>(batch_salt ^ (j * UINT64_C(0xC4CEB4B2570A8625)));
@@ -288,7 +384,11 @@ std::vector<MatchPoints> BattleEvaluator::PlaySeriesBatch(const std::vector<std:
             }
         });
     }
-    for (auto& th : threads) th.join();
+    run_parallel_chunks(std::move(chunks));
+    if (timing_) {
+        GdfRunTiming::add_ns(timing_->play_series_batch_ns, std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - batch_t0));
+        timing_->play_series_batch_calls.fetch_add(1, std::memory_order_relaxed);
+    }
     return results;
 }
 
