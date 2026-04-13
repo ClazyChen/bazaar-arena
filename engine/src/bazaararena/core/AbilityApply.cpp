@@ -58,7 +58,7 @@ void Damage(const AbilityDefinition& ability, const BattleContext& ctx) {
     // 打印日志
     simulator->sink.OnDamage(*simulator, *ctx.caster, damage, is_crit, life_steal > 0);
     // 触发「伤害」触发器
-    simulator->InvokeTrigger(Trigger::Damage, ctx.caster, &opp.items[0], 1);
+    simulator->InvokeTrigger(Trigger::Damage, ctx.caster, &opp.items[0]);
 }
 
 // 造成灼烧
@@ -74,7 +74,7 @@ void Burn(const AbilityDefinition& ability, const BattleContext& ctx) {
     // 打印日志
     simulator->sink.OnBurn(*simulator, *ctx.caster, damage, is_crit);
     // 触发「灼烧」触发器
-    simulator->InvokeTrigger(Trigger::Burn, ctx.caster, &opp.items[0], 1);
+    simulator->InvokeTrigger(Trigger::Burn, ctx.caster, &opp.items[0]);
 }
 
 // 造成剧毒
@@ -90,7 +90,7 @@ void Poison(const AbilityDefinition& ability, const BattleContext& ctx) {
     // 打印日志
     simulator->sink.OnPoison(*simulator, *ctx.caster, damage, is_crit, false);
     // 触发「中毒」触发器
-    simulator->InvokeTrigger(Trigger::Poison, ctx.caster, &opp.items[0], 1);
+    simulator->InvokeTrigger(Trigger::Poison, ctx.caster, &opp.items[0]);
 }
 
 // 治疗
@@ -110,7 +110,7 @@ void Heal(const AbilityDefinition& ability, const BattleContext& ctx) {
     // 打印日志
     simulator->sink.OnHeal(*simulator, *ctx.caster, heal, is_crit);
     // 触发「治疗」触发器
-    simulator->InvokeTrigger(Trigger::Heal, ctx.caster, &side.items[0], 1);
+    simulator->InvokeTrigger(Trigger::Heal, ctx.caster, &side.items[0]);
 }
 
 // 生命再生
@@ -126,7 +126,7 @@ void Regen(const AbilityDefinition& ability, const BattleContext& ctx) {
     // 打印日志
     simulator->sink.OnRegen(*simulator, *ctx.caster, regen, is_crit);
     // 触发「生命再生」触发器
-    simulator->InvokeTrigger(Trigger::Regen, ctx.caster, &side.items[0], 1);
+    simulator->InvokeTrigger(Trigger::Regen, ctx.caster, &side.items[0]);
 }
 
 // 抗性
@@ -154,7 +154,7 @@ void PoisonSelf(const AbilityDefinition& ability, const BattleContext& ctx) {
     // 打印日志
     simulator->sink.OnPoison(*simulator, *ctx.caster, damage, is_crit, true);
     // 触发「剧毒」触发器
-    simulator->InvokeTrigger(Trigger::Poison, ctx.caster, &side.items[0], 1);
+    simulator->InvokeTrigger(Trigger::Poison, ctx.caster, &side.items[0]);
 }
 
 // 获得护盾
@@ -170,7 +170,7 @@ void Shield(const AbilityDefinition& ability, const BattleContext& ctx) {
     // 打印日志
     simulator->sink.OnShield(*simulator, *ctx.caster, shield, is_crit);
     // 触发「护盾」触发器
-    simulator->InvokeTrigger(Trigger::Shield, ctx.caster, &side.items[0], 1);
+    simulator->InvokeTrigger(Trigger::Shield, ctx.caster, &side.items[0]);
 }
 
 // 辅助函数：获取满足条件的目标，返回被选中的目标数量
@@ -212,7 +212,7 @@ void Charge(const AbilityDefinition& ability, const BattleContext& ctx) {
         target.attrs[ItemKey::ChargedTime] += charge;
         simulator->CheckCharge(target);
         // 触发「充能」触发器
-        simulator->InvokeTrigger(Trigger::Charge, ctx.caster, &target, 1);
+        simulator->InvokeTrigger(Trigger::Charge, ctx.caster, &target);
     }
 }
 
@@ -231,7 +231,7 @@ void Freeze(const AbilityDefinition& ability, const BattleContext& ctx) {
         auto& target = *simulator->targets[i];
         target.attrs[ItemKey::FreezeRemaining] += freeze;
         // 触发「冻结」触发器
-        simulator->InvokeTrigger(Trigger::Freeze, ctx.caster, &target, 1);
+        simulator->InvokeTrigger(Trigger::Freeze, ctx.caster, &target);
     }
 }
 
@@ -250,7 +250,7 @@ void Slow(const AbilityDefinition& ability, const BattleContext& ctx) {
         auto& target = *simulator->targets[i];
         target.attrs[ItemKey::SlowRemaining] += slow;
         // 触发「减速」触发器
-        simulator->InvokeTrigger(Trigger::Slow, ctx.caster, &target, 1);
+        simulator->InvokeTrigger(Trigger::Slow, ctx.caster, &target);
     }
 }
 
@@ -269,7 +269,7 @@ void Haste(const AbilityDefinition& ability, const BattleContext& ctx) {
         auto& target = *simulator->targets[i];
         target.attrs[ItemKey::HasteRemaining] += haste;
         // 触发「加速」触发器
-        simulator->InvokeTrigger(Trigger::Haste, ctx.caster, &target, 1);
+        simulator->InvokeTrigger(Trigger::Haste, ctx.caster, &target);
     }
 }
 
@@ -291,7 +291,7 @@ void Reload(const AbilityDefinition& ability, const BattleContext& ctx) {
         auto& target = *simulator->targets[i];
         target.attrs[ItemKey::AmmoRemaining] = std::min(target.attrs[ItemKey::AmmoRemaining] + reload, ctx.GetItemInt(&target, ItemKey::AmmoCap));
         // 触发「装填」触发器
-        simulator->InvokeTrigger(Trigger::Reload, ctx.caster, &target, 1);
+        simulator->InvokeTrigger(Trigger::Reload, ctx.caster, &target);
         simulator->CheckCharge(target);
     }
 }
@@ -307,7 +307,7 @@ void Repair(const AbilityDefinition& ability, const BattleContext& ctx) {
         auto& target = *simulator->targets[i];
         target.attrs[ItemKey::Destroyed] = 0;
         // 触发「修复」触发器
-        simulator->InvokeTrigger(Trigger::Repair, ctx.caster, &target, 1);
+        simulator->InvokeTrigger(Trigger::Repair, ctx.caster, &target);
         simulator->CheckCharge(target);
     }
 }
@@ -322,7 +322,7 @@ void Destroy(const AbilityDefinition& ability, const BattleContext& ctx) {
     for (int i = 0; i < target_count; i++) {
         auto& target = *simulator->targets[i];
         // 触发「摧毁」触发器
-        simulator->InvokeTrigger(Trigger::Destroy, ctx.caster, &target, 1);
+        simulator->InvokeTrigger(Trigger::Destroy, ctx.caster, &target);
         // 摧毁物品
         target.attrs[ItemKey::Destroyed] = 1;
     }
@@ -347,10 +347,10 @@ void AddAttribute(const AbilityDefinition& ability, const BattleContext& ctx) {
         target.attrs[ability.attribute_key] += attribute;
         if (ability.attribute_key == ItemKey::CritRate) {
             // 触发「暴击率提高」触发器
-            simulator->InvokeTrigger(Trigger::CritRateIncreased, ctx.caster, &target, 1);
+            simulator->InvokeTrigger(Trigger::CritRateIncreased, ctx.caster, &target);
         }
         if (ability.attribute_key == ItemKey::InFlight) {
-            simulator->InvokeTrigger(Trigger::StartFlying, ctx.caster, &target, 1);
+            simulator->InvokeTrigger(Trigger::StartFlying, ctx.caster, &target);
         }
     }
 }
@@ -373,7 +373,7 @@ void ReduceAttribute(const AbilityDefinition& ability, const BattleContext& ctx)
         auto& target = *simulator->targets[i];
         target.attrs[ability.attribute_key] = std::max(0, target.attrs[ability.attribute_key] - attribute);
         if (ability.attribute_key == ItemKey::InFlight) {
-            simulator->InvokeTrigger(Trigger::StopFlying, ctx.caster, &target, 1);
+            simulator->InvokeTrigger(Trigger::StopFlying, ctx.caster, &target);
         }
     }
 }

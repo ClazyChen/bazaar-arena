@@ -82,7 +82,7 @@ public:
     void CheckCharge(ItemState& item, bool ignore_charge_remaining = false);
 
     // 调用触发器并执行相关效果
-    void InvokeTrigger(int trigger, const ItemState* source, const ItemState* target, int count = 1);
+    void InvokeTrigger(int trigger, const ItemState* source, const ItemState* target);
 
     // 应用某个能力的效果
     void ApplyAbility(const AbilityQueue::Entry& entry);

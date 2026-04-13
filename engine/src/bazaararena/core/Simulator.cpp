@@ -9,7 +9,7 @@
 namespace bazaararena::core {
 
 // 调用触发器并执行相关效果
-void Simulator::InvokeTrigger(int trigger, const ItemState* source, const ItemState* target, int count) { 
+void Simulator::InvokeTrigger(int trigger, const ItemState* source, const ItemState* target) { 
     auto trigger_bitmap = ability_bitmap[trigger];
     BattleContext ctx = { this, source, source, source, target };
     while (trigger_bitmap != 0) {
@@ -31,11 +31,9 @@ void Simulator::InvokeTrigger(int trigger, const ItemState* source, const ItemSt
                 if (ability.trigger_entries[j].condition(ctx) == 0) continue;
                 if (ability.priority == AbilityPriority::Immediate) {
                     const short packed = static_cast<short>((index << 3) | i);
-                    for (int k = 0; k < count; k++) {
-                        ApplyAbility({ packed, 1, 0, ctx.caster, ctx.source, ctx.target });
-                    }
+                    ApplyAbility({ packed, 0, ctx.caster, ctx.source, ctx.target });
                 } else {
-                    ability_queue.Enqueue((index << 3) | i, ability.priority, ctx, count);
+                    ability_queue.Enqueue((index << 3) | i, ability.priority, ctx);
                 }
                 break;
             }
@@ -59,7 +57,7 @@ void Simulator::CheckCharge(ItemState& item, bool ignore_charge_remaining) {
                 // 充能完成且有弹药，立刻消耗 1 枚弹药
                 item.attrs[ItemKey::AmmoRemaining]--;
                 // 触发「弹药」触发器
-                InvokeTrigger(Trigger::Ammo, &item, &item, 1);
+                InvokeTrigger(Trigger::Ammo, &item, &item);
             }
         }
         if (!ignore_charge_remaining) { // 如果忽略充能剩余时间，则不消耗充能
@@ -67,9 +65,13 @@ void Simulator::CheckCharge(ItemState& item, bool ignore_charge_remaining) {
             item.attrs[ItemKey::ChargedTime] = 0;
         }
         // 触发「施放」触发器（主动效果）
-        InvokeTrigger(Trigger::Cast, &item, &item, multicast);
+        for (int i = 0; i < multicast; i++) {
+            InvokeTrigger(Trigger::Cast, &item, &item);
+        }
         // 触发「使用物品」触发器（被动效果）
-        InvokeTrigger(Trigger::UseItem, &item, &item, multicast);
+        for (int i = 0; i < multicast; i++) {
+            InvokeTrigger(Trigger::UseItem, &item, &item);
+        }
     }
 }
 
@@ -80,9 +82,9 @@ int Simulator::Run(bool allow_tie) {
 
         // 1. 触发「战斗开始」和「每帧触发」
         if (time == 0) {
-            InvokeTrigger(Trigger::BattleStart, nullptr, nullptr, 1);
+            InvokeTrigger(Trigger::BattleStart, nullptr, nullptr);
         }
-        InvokeTrigger(Trigger::EveryFrame, nullptr, nullptr, 1);
+        InvokeTrigger(Trigger::EveryFrame, nullptr, nullptr);
 
         // 2. 处理冷却时间，充能完成则加入施放队列
         for (int i = 0; i < SideCount; i++) {
@@ -172,7 +174,7 @@ int Simulator::Run(bool allow_tie) {
         bool dead0 = sides[0].attrs[SideKey::Hp] <= 0;
         bool dead1 = sides[1].attrs[SideKey::Hp] <= 0;
         if (dead0 || dead1) { // 即将落败，会触发救生圈等保命道具效果
-            InvokeTrigger(Trigger::AboutToLose, nullptr, nullptr, 1);
+            InvokeTrigger(Trigger::AboutToLose, nullptr, nullptr);
         }
 
         // 触发效果后再次检查胜负

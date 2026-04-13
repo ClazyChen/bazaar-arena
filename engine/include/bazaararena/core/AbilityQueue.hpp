@@ -22,7 +22,6 @@ public:
     // 这里一个条目占用的内存大小应该是 32 字节
     struct Entry {
         short int ability_index = 0; // 能力索引
-        short int count = 0; // 剩余触发次数
         int priority = 0; // 优先级（next_trigger_time << 3 | ability_priority）
         const ItemState* caster = nullptr; // 能力释放者
         const ItemState* source = nullptr; // 引起能力触发的那件物品
@@ -46,7 +45,7 @@ public:
     std::array<int, MaxAbilityCount> next_legal_trigger_time;
 
     // 将一个能力加入到队列
-    void Enqueue(int ability_index, int ability_priority, const BattleContext& ctx, int count);
+    void Enqueue(int ability_index, int ability_priority, const BattleContext& ctx);
 
     // 扫描当前帧的队列并执行全部可以触发的能力
     void Scan(Simulator* simulator, int time);
