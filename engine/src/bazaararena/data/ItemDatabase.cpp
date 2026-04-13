@@ -40,10 +40,12 @@ bool AbilityHasCastTrigger(const core::AbilityDefinition& ab) {
 int ComputeDerivedTags(const core::ItemTemplate& templ) {
     int tags = 0;
 
-    // 用 Bronze tier 做静态推导（此阶段派生标签不考虑随 tier 变化）
-    const auto& attrs = templ.attributes[core::ItemTier::Bronze];
-    if (attrs[core::ItemKey::Cooldown] > 0) tags |= core::DerivedTag::Cooldown;
-    if (attrs[core::ItemKey::AmmoCap] > 0) tags |= core::DerivedTag::Ammo;
+    // 静态推导：DerivedTags 不考虑随 tier 变化，但需要覆盖 MinTier!=Bronze 的物品，
+    // 因此对所有 tier 做一次 OR（例如：Silver 起步的物品在 Bronze tier 可能没有 Cooldown）。
+    for (const auto& attrs : templ.attributes) {
+        if (attrs[core::ItemKey::Cooldown] > 0) tags |= core::DerivedTag::Cooldown;
+        if (attrs[core::ItemKey::AmmoCap] > 0) tags |= core::DerivedTag::Ammo;
+    }
 
     for (int i = 0; i < templ.ability_count; i++) {
         const auto& ab = templ.abilities[i];

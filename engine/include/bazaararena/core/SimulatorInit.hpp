@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bazaararena/core/Simulator.hpp>
+#include <bazaararena/core/DerivedTag.hpp>
 
 namespace bazaararena::core {
 
@@ -42,6 +43,19 @@ inline void InitializeSimulator(Simulator& sim) {
                     sim.aura_bitmap[key] |= bit;
                 }
             }
+        }
+    }
+
+    // Initialize ammo remaining AFTER aura bitmap is ready, so that
+    // AmmoRemaining starts at the *effective* AmmoCap (including auras).
+    for (int side = 0; side < Simulator::SideCount; side++) {
+        const int itemCount = sim.sides[side].attrs[SideKey::ItemCount];
+        for (int itemIndex = 0; itemIndex < itemCount; itemIndex++) {
+            auto& item = sim.sides[side].items[itemIndex];
+            if (!item.templ) continue;
+            if ((item.attrs[ItemKey::DerivedTags] & DerivedTag::Ammo) == 0) continue;
+            const int cap = sim.GetItemInt(&item, ItemKey::AmmoCap);
+            item.attrs[ItemKey::AmmoRemaining] = std::max(0, cap);
         }
     }
 }
