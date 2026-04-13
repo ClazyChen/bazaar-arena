@@ -1748,7 +1748,7 @@ items:
     Desc: "此物品左侧的所有水系物品缩短 {Custom_0%} 冷却时间；此物品右侧的所有武器 {+Custom_1} 伤害"
     Size: Medium
     Tier: Silver
-    Tags: [Aquatic, Tool]
+    Tags: [Aquatic, Relic]
     Custom_0: [10, 15, 20]
     Custom_1: [25, 50, 100]
     Auras:
@@ -2232,3 +2232,249 @@ items:
                     - type: HasDerivedTag
                       params: [Freeze]
         value: Custom_0
+  - Name: "船长舱"
+    Desc: "▶ 加速工具和载具 {Haste} 秒；▶ 为弹药物品装填 {Reload} 弹药（限本场战斗）；▶ 武器伤害提高 {Custom_0}（限本场战斗）"
+    Size: Large
+    Tier: Silver
+    Tags: [Aquatic, Property]
+    Cooldown: 4s
+    Haste: [1s, 2s, 3s]
+    Reload: [1, 2, 3]
+    Custom_0: [20, 30, 40]
+    Abilities:
+      - type: Haste
+        ex_target_condition:
+          type: Or
+          params:
+            - type: HasTag
+              params: [Tool]
+            - type: HasTag
+              params: [Vehicle]
+      - type: Reload
+        ex_target_condition:
+          type: HasDerivedTag
+          params: [Ammo]
+        priority: Low
+      - type: AddAttribute
+        ex_target_condition:
+          type: HasTag
+          params: [Weapon]
+        key: Damage
+        value: Custom_0
+        priority: Low
+  - Name: "鸦巢"
+    Desc: "武器 {+Custom_0%} 暴击率；如果只有一件武器，其获得吸血且受到减速的持续时间减半"
+    Size: Large
+    Tier: Silver
+    Tags: [Aquatic, Property]
+    Custom_0: [40, 60, 80]
+    Custom_1: 100
+    Custom_2: 50
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: And
+          params:
+            - SameSide
+            - type: HasTag
+              params: [Weapon]
+            - type: CanCrit
+        value: Custom_0
+      - attribute: LifeSteal
+        condition:
+          type: Only
+          params:
+            - type: And
+              params:
+                - SameSide
+                - type: HasTag
+                  params: [Weapon]
+        value: Custom_1
+      - attribute: PercentSlowReduction
+        condition:
+          type: Only
+          params:
+            - type: And
+              params:
+                - SameSide
+                - type: HasTag
+                  params: [Weapon]
+        value: Custom_2
+  - Name: "旗舰"
+    Desc: "▶ 造成 {Damage} 伤害；如果有一件其他的工具/地产/伙伴/弹药/遗物物品，对每个词条，此物品 {+Custom_0} 多重释放"
+    Size: Large
+    Tier: Silver
+    Tags: [Weapon, Aquatic, Vehicle]
+    Cooldown: [7s, 6s, 5s]
+    Damage: 50
+    Custom_0: 1
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: HasTag
+                      params: [Tool]
+        value: Custom_0
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: HasTag
+                      params: [Property]
+        value: Custom_0
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: HasTag
+                      params: [Friend]
+        value: Custom_0
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: HasDerivedTag
+                      params: [Ammo]
+        value: Custom_0
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: HasTag
+                      params: [Relic]
+        value: Custom_0
+  - Name: "马龙鱼"
+    Desc: "▶ 造成 {Damage} 伤害；▶ {ModifyTargetCount} 件物品开始飞行；使用飞行物品时，此物品的暴击率提高 {Custom_0%}（限本场战斗）"
+    Size: Medium
+    Tier: Bronze
+    Tags: [Weapon, Aquatic, Friend]
+    Cooldown: 3s
+    Damage: 15
+    ModifyTargetCount: 1
+    Custom_0: [20, 30, 40, 50]
+    Custom_1: 1
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        key: InFlight
+        value: Custom_1
+        priority: Low
+      - type: AddAttribute
+        trigger: UseItem
+        ex_condition:
+          type: Source
+          params: [InFlight]
+        target_condition: SameAsCaster
+        key: CritRate
+        value: Custom_0
+  - Name: "喷射摩托"
+    Desc: "▶ 造成 {Damage} 伤害；使用相邻物品时，此物品和该物品开始飞行；使用其他飞行物品时，为此物品充能 {Charge} 秒"
+    Size: Large
+    Tier: Silver
+    Tags: [Weapon, Vehicle]
+    Cooldown: [7s, 6s, 5s]
+    Damage: [200, 400, 800]
+    Charge: 1s
+    Custom_0: 1
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        trigger: UseItem
+        condition: AdjacentToCaster
+        key: InFlight
+        value: Custom_0
+        target_condition:
+          type: Or
+          params:
+            - SameAsCaster
+            - SameAsSource
+      - type: Charge
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - DifferentFromCaster
+            - type: Source
+              params: [InFlight]
+        target_condition: SameAsCaster
+        priority: Low
+  - Name: "港口"
+    Desc: "▶ 为弹药物品装填 {Reload} 弹药；▶ 为弹药物品充能 {Charge} 秒；【局外】每天开始时，获得一件任意英雄的小型弹药物品"
+    Size: Large
+    Tier: Silver
+    Tags: [Aquatic, Property]
+    Cooldown: 6s
+    Reload: [2, 3, 4]
+    Charge: [1s, 2s, 3s]
+    Abilities:
+      - type: Reload
+        ex_target_condition:
+          type: HasDerivedTag
+          params: [Ammo]
+        priority: Low
+      - type: Charge
+        ex_target_condition:
+          type: HasDerivedTag
+          params: [Ammo]
+  - Name: "海狗沙龙"
+    Desc: "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；▶ 加速 {HasteTargetCount} 件物品 {Haste} 秒；每有一件伙伴物品，此物品 {+Custom_0} 多重释放"
+    Size: Large
+    Tier: Silver
+    Tags: [Aquatic, Property]
+    Cooldown: [6s, 5s, 4s]
+    SlowTargetCount: 1
+    Slow: 2s
+    HasteTargetCount: 1
+    Haste: 2s
+    Custom_0: 1
+    Abilities:
+      - type: Slow
+      - type: Haste
+    Auras:
+      - attribute: Multicast
+        value:
+          type: Count
+          params:
+            - type: And
+              params:
+                - SameSide
+                - type: HasTag
+                  params: [Friend]
