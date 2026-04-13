@@ -1105,3 +1105,126 @@ items:
         value: Custom_2
         target_condition: SameAsCaster
         priority: Immediate
+  - Name: "定制准镜"
+    Desc: "此物品右侧的武器 {+Custom_0%} 暴击率；如果只有一件武器，则其造成暴击时，为 {ChargeTargetCount} 件非武器物品充能 {Charge} 秒"
+    Size: Small
+    Tier: Silver
+    Tags: [Tech]
+    Custom_0: [20, 30, 40]
+    Charge: 1s
+    ChargeTargetCount: 1
+    Abilities:
+      - type: Charge
+        trigger: Crit
+        condition:
+          type: Only
+          params:
+            - type: And
+              params:
+                - SameSide
+                - type: HasTag
+                  params: [Weapon]
+        ex_target_condition:
+          type: NotHasTag
+          params: [Weapon]
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: And
+          params:
+            - RightOfCaster
+            - type: HasTag
+              params: [Weapon]
+            - CanCrit
+        value: Custom_0
+  - Name: "飞镖发射器"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 如果此物品与减速物品相邻，减速 {SlowTargetCount} 件物品 {Slow} 秒；▶ 如果此物品与剧毒物品相邻，造成 {Poison} 剧毒；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Silver
+    Tags: [Weapon, Tech]
+    Cooldown: 4s
+    Damage: [5, 10, 15]
+    Slow: 1s
+    SlowTargetCount: [1, 2, 3]
+    Poison: [3, 6, 9]
+    AmmoCap: 4
+    Abilities:
+      - type: Damage
+      - type: Slow
+        ex_condition:
+          type: Count
+          params:
+            - type: And
+              params:
+                - type: HasDerivedTag
+                  params: [Slow]
+                - AdjacentToCaster
+      - type: Poison
+        ex_condition:
+          type: Count
+          params:
+            - type: And
+              params:
+                - type: HasDerivedTag
+                  params: [Poison]
+                - AdjacentToCaster
+  - Name: "潜水配重"
+    Desc: "▶ 加速 {HasteTargetCount} 件物品 {Haste} 秒；弹药：{AmmoCap}；每有一件相邻的水系物品，此物品的冷却时间缩短 {Custom_0:} 秒；此物品 +多重释放，等量于此物品的剩余弹药数量"
+    Size: Small
+    Tier: Silver
+    Tags: [Aquatic, Apparel, Tool]
+    Cooldown: 8s
+    Haste: [1s, 2s, 3s]
+    HasteTargetCount: 1
+    AmmoCap: 4
+    Custom_0: 1s
+    Abilities:
+      - type: Haste
+    Auras:
+      - attribute: CooldownReduction
+        value:
+          type: Mul
+          params:
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - type: HasTag
+                      params: [Aquatic]
+                    - AdjacentToCaster
+            - type: Caster
+              params: [Custom_0]
+      - attribute: Multicast
+        value: AmmoRemaining
+  - Name: "枪套"
+    Desc: "每场战斗首次使用物品时，加速小型物品 {Haste} 秒"
+    Size: Small
+    Tier: Silver
+    Tags: [Apparel]
+    Haste: [1s, 2s, 3s]
+    Custom_0: 0
+    Custom_1: 1
+    Abilities:
+      - type: Haste
+        trigger: UseItem
+        ex_condition:
+          type: Lt
+          params:
+            - type: Caster
+              params: [Custom_0]
+            - 1
+        ex_target_condition: IsSmall
+        priority: High
+      - type: AddAttribute
+        trigger: UseItem
+        # 与上面的 Haste 同步：只在本场战斗首次 UseItem 时给自己打标记
+        ex_condition:
+          type: Lt
+          params:
+            - type: Caster
+              params: [Custom_0]
+            - 1
+        target_condition: SameAsCaster
+        key: Custom_0
+        value: Custom_1
+        priority: Immediate

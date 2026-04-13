@@ -35,6 +35,8 @@ bool CheckCrit(const AbilityDefinition& ability, const BattleContext& ctx) {
     bool crit = simulator->rng.Next100() < crit_rate;
     if (crit) {
         simulator->crit_bitmap |= item_mask;
+        // 触发「暴击」触发器
+        simulator->InvokeTrigger(Trigger::Crit, ctx.caster, ctx.caster);
     }
     return crit;
 }

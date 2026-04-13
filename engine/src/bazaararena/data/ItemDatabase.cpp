@@ -53,6 +53,27 @@ int ComputeDerivedTags(const core::ItemTemplate& templ) {
             case core::AbilityType::Damage:
                 tags |= core::DerivedTag::Damage;
                 break;
+            case core::AbilityType::Charge:
+                tags |= core::DerivedTag::Charge;
+                break;
+            case core::AbilityType::Freeze:
+                tags |= core::DerivedTag::Freeze;
+                break;
+            case core::AbilityType::Slow:
+                tags |= core::DerivedTag::Slow;
+                break;
+            case core::AbilityType::Haste:
+                tags |= core::DerivedTag::Haste;
+                break;
+            case core::AbilityType::Reload:
+                tags |= core::DerivedTag::Reload;
+                break;
+            case core::AbilityType::Repair:
+                tags |= core::DerivedTag::Repair;
+                break;
+            case core::AbilityType::Destroy:
+                tags |= core::DerivedTag::Destroy;
+                break;
             case core::AbilityType::Burn:
                 tags |= core::DerivedTag::Burn;
                 break;

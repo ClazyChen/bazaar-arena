@@ -158,6 +158,10 @@ def _emit_named_leaf(name: str, *, where: str) -> str:
         "False": "formula::False",
         "Always": "Always",
         "Never": "Never",
+        # Item size predicates (defined in engine/include/bazaararena/formula/Condition.hpp)
+        "IsSmall": "IsSmall",
+        "IsMedium": "IsMedium",
+        "IsLarge": "IsLarge",
         "SameAsCaster": "SameAsCaster",
         "SameAsSource": "SameAsSource",
         "SameAsTarget": "SameAsTarget",

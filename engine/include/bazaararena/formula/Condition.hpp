@@ -55,6 +55,10 @@ constexpr Formula HasDerivedTag = [](const BattleContext& ctx) -> int {
     return (bits & tag) != 0 ? 1 : 0;
 };
 
+constexpr Formula IsSmall = Eq<Item<ItemKey::Size>, Constant<1>>;
+constexpr Formula IsMedium = Eq<Item<ItemKey::Size>, Constant<2>>;
+constexpr Formula IsLarge = Eq<Item<ItemKey::Size>, Constant<3>>;
+
 template<int tag>
 constexpr Formula NotHasTag = Not<HasTag<tag>>;
 
