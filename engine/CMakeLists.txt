@@ -38,6 +38,7 @@ add_executable(bazaararena_gdf
   src/bazaararena/gdf/ItemPool.cpp
   src/bazaararena/gdf/DeckRep.cpp
   src/bazaararena/gdf/GdfSideBuilder.cpp
+  src/bazaararena/gdf/GdfItemPrototypeCache.cpp
   src/bazaararena/gdf/BattleEvaluator.cpp
   src/bazaararena/gdf/SwissTournament.cpp
   src/bazaararena/gdf/GreedySearcher.cpp

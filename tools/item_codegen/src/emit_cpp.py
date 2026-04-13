@@ -86,6 +86,7 @@ _YAML_STRUCT_SPECIAL_KEYS = frozenset(
         "abilities",
         "Auras",
         "auras",
+        "overridable",
         "_source_yaml",
         "_hero",
     }
@@ -493,6 +494,21 @@ def _emit_item_lambda(item: dict) -> str:
     # 生成 key 便于调试（不进引擎结构，只由 ItemDatabase 用）
     if not item_name:
         raise ValueError(f"{src}: item.Name 不能为空")
+
+    ov = item.get("overridable")
+    if ov is None:
+        lines.append("    t.overridable_key_count = 0;")
+    else:
+        if not isinstance(ov, list):
+            raise TypeError(f"{src} 物品「{item_name}」: overridable 必须是 list")
+        if len(ov) > 8:
+            raise ValueError(f"{src} 物品「{item_name}」: overridable 最多 8 项")
+        lines.append(f"    t.overridable_key_count = {len(ov)};")
+        for i, key_name in enumerate(ov):
+            if not isinstance(key_name, str):
+                raise TypeError(f"{src} 物品「{item_name}」: overridable[{i}] 必须是 string")
+            ik = item_key_cpp_from_name(key_name, where=f"{src} {item_name} overridable[{i}]")
+            lines.append(f"    t.overridable_keys[{i}] = {ik};")
 
     lines.append("    return t;")
     lines.append("}()")

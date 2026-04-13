@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -27,6 +28,9 @@ struct GdfRunTiming {
     std::atomic<uint64_t> parallel_batch_wait_ns{0};
     std::atomic<uint32_t> parallel_batch_calls{0};
 
+    /// 每次 `Simulator::Run` 完成一局（`RunSingleBattleReturn`）计一次；多线程并行时各线程累加。
+    std::atomic<uint64_t> simulator_games_completed{0};
+
     static void add_ns(std::atomic<uint64_t>& dest, std::chrono::nanoseconds d) {
         if (d.count() <= 0) return;
         dest.fetch_add(static_cast<uint64_t>(d.count()), std::memory_order_relaxed);
@@ -47,6 +51,7 @@ struct GdfRunTiming {
         play_bon_batch_calls.store(0, std::memory_order_relaxed);
         parallel_batch_wait_ns.store(0, std::memory_order_relaxed);
         parallel_batch_calls.store(0, std::memory_order_relaxed);
+        simulator_games_completed.store(0, std::memory_order_relaxed);
     }
 
     static double sec(uint64_t ns) { return static_cast<double>(ns) * 1e-9; }
@@ -61,6 +66,7 @@ struct GdfRunTiming {
         const uint64_t psb = play_series_batch_ns.load(std::memory_order_relaxed);
         const uint64_t pbb = play_bon_batch_ns.load(std::memory_order_relaxed);
         const uint64_t pbw = parallel_batch_wait_ns.load(std::memory_order_relaxed);
+        const uint64_t games = simulator_games_completed.load(std::memory_order_relaxed);
 
         const int64_t wns = wall.count();
         const double wall_s = static_cast<double>(std::max<int64_t>(0, wns)) * 1e-9;
@@ -88,6 +94,17 @@ struct GdfRunTiming {
            << "% wall)\n";
         os << "    parallel_batch_wait calls=" << parallel_batch_calls.load(std::memory_order_relaxed) << " sum_ns=" << sec(pbw) << " s ("
            << pct(pbw) << "% wall)\n";
+
+        const double batch_wall_s = sec(psb) + sec(pbb);
+        os << "  Simulator throughput (each completed sim.Run counts as one game; sum over all worker threads):\n";
+        os << "    games_completed=" << games << "\n";
+        os << "    games_per_wall_clock_s=" << (static_cast<double>(games) / w) << "  (full GreedySearcher::Run wall; includes expand/Swiss glue)\n";
+        if (batch_wall_s > 1e-18) {
+            os << "    games_per_batched_battle_wall_s=" << (static_cast<double>(games) / batch_wall_s)
+               << "  (games / (PlaySeriesBatch_wall_s + PlayBoNBatch_wall_s); batch wall already reflects intra-batch parallelism)\n";
+        } else {
+            os << "    games_per_batched_battle_wall_s=n/a (no timed Play*Batch wall)\n";
+        }
 
         const uint64_t sum_g = ex + rb + sw + p2 + fp;
         os << "  Note: GreedySearcher phases exclude BattleEvaluator internals; ToSide/Series/BoN overlap Swiss/RR work.\n";

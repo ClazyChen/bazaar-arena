@@ -34,6 +34,10 @@ public:
     std::array<AuraDefinition, MaxAuras> auras;
     int aura_count = 0;
 
+    /// YAML `overridable: [Custom_0, ...]`；GDF 按玩家等级对列出的 key 做 legacy 缩放（见 `GdfLevelRules::ComputeOverridableValue`）。
+    static constexpr int MaxOverridableKeys = 8;
+    int overridable_key_count = 0;
+    std::array<int, MaxOverridableKeys> overridable_keys{};
 };
 
 }

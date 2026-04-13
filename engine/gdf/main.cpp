@@ -3,6 +3,7 @@
 #include <bazaararena/gdf/GdfLevelRules.hpp>
 #include <bazaararena/gdf/GdfLoadYamlPool.hpp>
 #include <bazaararena/gdf/GreedySearcher.hpp>
+#include <bazaararena/gdf/GdfItemPrototypeCache.hpp>
 #include <bazaararena/gdf/GdfRunTiming.hpp>
 #include <bazaararena/gdf/ItemPool.hpp>
 
@@ -65,7 +66,7 @@ static void PrintUsage(std::ostream& os) {
           "  --mu-diversity <x>         MMR diversity penalty on Jaccard similarity\n"
           "  --diversity-exclude-seeds  Jaccard ignores seed item names\n"
           "  --output <path>            write text summary\n"
-          "  --timing                   print GDF phase timings after each search\n"
+          "  --timing                   print GDF phase timings + simulator games/s after each search\n"
           "  --help\n";
 }
 
@@ -203,7 +204,8 @@ static void RunOneSearch(bazaararena::gdf::ItemPool& pool, const Args& args, con
         rng.seed(static_cast<unsigned>(t) ^ static_cast<unsigned>(t >> 32));
     }
 
-    bazaararena::gdf::BattleEvaluator evaluator(args.best_of, args.workers, args.level, args.timing ? &run_timing : nullptr);
+    bazaararena::gdf::GdfItemPrototypeCache gdf_prototypes(pool, args.level);
+    bazaararena::gdf::BattleEvaluator evaluator(args.best_of, args.workers, args.level, args.timing ? &run_timing : nullptr, &gdf_prototypes);
     bazaararena::gdf::GreedySearcher searcher(pool, evaluator, rng, gcfg, seed_set);
 
     out << "[GDF] seeds:";

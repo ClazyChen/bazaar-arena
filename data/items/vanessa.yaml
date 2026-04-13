@@ -10,6 +10,7 @@ items:
     Custom_0: [1, 2, 3, 4]
     Custom_1: [1, 2, 3, 4]
     Custom_2: [4, 8, 12, 16]
+    overridable: [Custom_2]
     Abilities:
       - type: Heal
     Auras:
@@ -158,6 +159,7 @@ items:
     Heal: 20
     Custom_0: [5, 10, 15, 20]
     Custom_1: [4, 8, 12, 16]
+    overridable: [Custom_1]
     Abilities:
       - type: Heal
     Auras:
@@ -746,6 +748,7 @@ items:
     Shield: 50
     Custom_0: [10, 20, 30, 40]
     Custom_1: [4, 8, 12, 16]
+    overridable: [Custom_1]
     Abilities:
       - type: Shield
     Auras:
@@ -834,6 +837,7 @@ items:
     Damage: 40
     Custom_0: [40, 60, 80, 100]
     Custom_1: [3, 6, 9, 12]
+    overridable: [Custom_1]
     Abilities:
       - type: Damage
     Auras:
@@ -1021,6 +1025,7 @@ items:
     Custom_0: [1, 2, 3, 4]
     Custom_1: [1, 1, 1, 2]
     Custom_2: [4, 8, 16, 24]
+    overridable: [Custom_2]
     Abilities:
       - type: Shield
     Auras:

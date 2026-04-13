@@ -85,6 +85,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -133,6 +134,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -178,6 +180,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::FreezeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -230,6 +233,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Constant<100>;
         g.percent = true;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -274,6 +278,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -321,6 +326,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -366,6 +372,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -412,6 +419,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -476,6 +484,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -533,6 +542,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ChargeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -590,6 +600,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
         g.percent = false;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -633,6 +644,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Burn;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -679,6 +691,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -732,6 +745,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
         g.percent = false;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -793,6 +807,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -850,6 +865,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
         g.percent = false;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -919,6 +935,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Sub<formula::Caster<(bazaararena::core::ItemKey::AmmoRemaining)>, formula::Constant<1>>;
         g.percent = false;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -966,6 +983,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1011,6 +1029,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Burn;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1072,6 +1091,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::SlowTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1117,6 +1137,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1191,6 +1212,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Heal;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1245,6 +1267,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_1)>;
         g.percent = false;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1303,6 +1326,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1366,6 +1390,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1411,6 +1436,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1473,6 +1499,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::SlowTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1531,6 +1558,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1592,6 +1620,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::HasteTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1649,6 +1678,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1696,6 +1726,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::HasteTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1758,6 +1789,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::SlowTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1804,6 +1836,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Burn;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1856,6 +1889,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Mul<Count<formula::And<SameSide, HasTag<core::Tag::Aquatic>>>, formula::Caster<(bazaararena::core::ItemKey::Custom_0)>>;
         g.percent = false;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1916,6 +1950,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -1963,6 +1998,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::SlowTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2032,6 +2068,8 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Mul<formula::Caster<(bazaararena::core::ItemKey::Custom_1)>, formula::Caster<(bazaararena::core::ItemKey::Custom_2)>>;
         g.percent = false;
     }
+    t.overridable_key_count = 1;
+    t.overridable_keys[0] = bazaararena::core::ItemKey::Custom_2;
     return t;
 }(),
     },
@@ -2097,6 +2135,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_1)>;
         g.percent = false;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2162,6 +2201,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::PercentFloorExpr<formula::Caster<(bazaararena::core::ItemKey::Damage)>, formula::Caster<(bazaararena::core::ItemKey::Custom_0)>>;
         g.percent = false;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2209,6 +2249,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ReloadTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2255,6 +2296,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Burn;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2300,6 +2342,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2358,6 +2401,8 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Mul<formula::Caster<(bazaararena::core::ItemKey::Custom_0)>, formula::Caster<(bazaararena::core::ItemKey::Custom_1)>>;
         g.percent = false;
     }
+    t.overridable_key_count = 1;
+    t.overridable_keys[0] = bazaararena::core::ItemKey::Custom_1;
     return t;
 }(),
     },
@@ -2403,6 +2448,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2461,6 +2507,8 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Mul<formula::Caster<(bazaararena::core::ItemKey::Custom_0)>, formula::Caster<(bazaararena::core::ItemKey::Custom_1)>>;
         g.percent = false;
     }
+    t.overridable_key_count = 1;
+    t.overridable_keys[0] = bazaararena::core::ItemKey::Custom_1;
     return t;
 }(),
     },
@@ -2519,6 +2567,8 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Mul<formula::Caster<(bazaararena::core::ItemKey::Custom_0)>, formula::Caster<(bazaararena::core::ItemKey::Custom_1)>>;
         g.percent = false;
     }
+    t.overridable_key_count = 1;
+    t.overridable_keys[0] = bazaararena::core::ItemKey::Custom_1;
     return t;
 }(),
     },
@@ -2577,6 +2627,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ChargeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2661,6 +2712,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2706,6 +2758,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2775,6 +2828,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ChargeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2820,6 +2874,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Heal;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2865,6 +2920,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2923,6 +2979,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ReloadTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -2968,6 +3025,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Heal;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3040,6 +3098,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Custom_0;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3082,6 +3141,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
         g.percent = false;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3136,6 +3196,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
         g.percent = true;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3191,6 +3252,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Mul<Count<formula::And<AdjacentToCaster, formula::Or<HasTag<core::Tag::Friend>, HasTag<core::Tag::Ray>>>>, formula::Caster<(bazaararena::core::ItemKey::Custom_0)>>;
         g.percent = false;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3235,6 +3297,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::HasteTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3280,6 +3343,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Damage;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3339,6 +3403,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3406,6 +3471,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
         g.percent = false;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3486,6 +3552,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::HasteTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3542,6 +3609,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ChargeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3587,6 +3655,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.value_key = core::ItemKey::Poison;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3635,6 +3704,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3697,6 +3767,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3762,6 +3833,7 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Mul<Count<formula::And<AdjacentToCaster, formula::Or<HasTag<core::Tag::Friend>, HasTag<core::Tag::Property>>>>, formula::Caster<(bazaararena::core::ItemKey::Custom_1)>>;
         g.percent = false;
     }
+    t.overridable_key_count = 0;
     return t;
 }(),
     },
@@ -3831,6 +3903,8 @@ static const std::array<GeneratedItem, 69> kItems = {
         g.value = formula::Mul<formula::Caster<(bazaararena::core::ItemKey::Custom_1)>, formula::Caster<(bazaararena::core::ItemKey::Custom_2)>>;
         g.percent = false;
     }
+    t.overridable_key_count = 1;
+    t.overridable_keys[0] = bazaararena::core::ItemKey::Custom_2;
     return t;
 }(),
     },

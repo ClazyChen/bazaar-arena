@@ -5,6 +5,7 @@
 #include <bazaararena/core/SideState.hpp>
 #include <bazaararena/core/Simulator.hpp>
 #include <bazaararena/core/SimulatorInit.hpp>
+#include <bazaararena/gdf/GdfItemPrototypeCache.hpp>
 #include <bazaararena/gdf/GdfLevelRules.hpp>
 #include <bazaararena/gdf/GdfSideBuilder.hpp>
 #include <bazaararena/io/SideStateBuilder.hpp>
@@ -92,7 +93,7 @@ static int RunSingleBattleReturn(core::Simulator& sim, const core::SideState& si
 
 /// 单局：从「缓存态」两侧模板拷贝后按 swap 打补丁再 Run。`base_*` 为 `ToSide` 产物（SideIndex 全 0），每局拷贝成本远小于反复 `ToSide` 的 map 查找与锁。
 static int RunOneGameWinnerForA(core::Simulator& sim, const core::SideState& base_a, const core::SideState& base_b, unsigned game_word,
-    bool random_pick_on_hp_tie) {
+    bool random_pick_on_hp_tie, GdfRunTiming* timing) {
     core::SideState side_a = base_a;
     core::SideState side_b = base_b;
     const int swap = static_cast<int>(game_word & 1u);
@@ -107,6 +108,9 @@ static int RunOneGameWinnerForA(core::Simulator& sim, const core::SideState& bas
     }
 
     const int w_run = RunSingleBattleReturn(sim, side_a, side_b, swap, rng_seed);
+    if (timing) {
+        timing->simulator_games_completed.fetch_add(1, std::memory_order_relaxed);
+    }
 
     auto map_winner_to_a = [&](int win_sim) -> int {
         if (swap == 0) return win_sim;
@@ -129,9 +133,9 @@ static int RunOneGameWinnerForA(core::Simulator& sim, const core::SideState& bas
 
 }  // namespace
 
-BattleEvaluator::BattleEvaluator(int best_of, int workers, int player_level, GdfRunTiming* timing)
+BattleEvaluator::BattleEvaluator(int best_of, int workers, int player_level, GdfRunTiming* timing, const GdfItemPrototypeCache* item_prototypes)
     : best_of_(best_of), workers_(std::max(0, workers)), player_level_(player_level), combat_tier_(GdfLevelRules::CombatTier(player_level)),
-      timing_(timing) {}
+      timing_(timing), item_prototypes_(item_prototypes) {}
 
 BattleEvaluator::~BattleEvaluator() {
     {
@@ -215,14 +219,20 @@ core::SideState BattleEvaluator::ToSide(const DeckRep& rep) {
             return it->second;
         }
     }
-    io::SideSpec spec;
-    std::string err;
-    if (!BuildSideSpecFromDeck(rep, player_level_, combat_tier_, spec, err)) {
-        throw std::runtime_error("BuildSideSpecFromDeck: " + err);
-    }
-    auto built = io::BuildSideState(spec);
-    if (!built.side) {
-        throw std::runtime_error("BuildSideState: " + built.error);
+    core::SideState side;
+    if (item_prototypes_) {
+        side = item_prototypes_->BuildSide(rep, player_level_, 0);
+    } else {
+        io::SideSpec spec;
+        std::string err;
+        if (!BuildSideSpecFromDeck(rep, player_level_, combat_tier_, spec, err)) {
+            throw std::runtime_error("BuildSideSpecFromDeck: " + err);
+        }
+        auto built = io::BuildSideState(spec);
+        if (!built.side) {
+            throw std::runtime_error("BuildSideState: " + built.error);
+        }
+        side = std::move(*built.side);
     }
     std::unique_lock<std::shared_mutex> lk(deck_cache_mu_);
     const auto it2 = deck_cache_.find(sig);
@@ -231,7 +241,7 @@ core::SideState BattleEvaluator::ToSide(const DeckRep& rep) {
         return it2->second;
     }
     if (timing_) timing_->toside_misses.fetch_add(1, std::memory_order_relaxed);
-    auto ins = deck_cache_.emplace(sig, std::move(*built.side));
+    auto ins = deck_cache_.emplace(sig, std::move(side));
     return ins.first->second;
 }
 
@@ -248,12 +258,12 @@ std::vector<size_t> BattleEvaluator::CreateShuffledOrder(size_t count, std::mt19
 
 int BattleEvaluator::PlaySingleGameForSeries(const DeckRep& a, const DeckRep& b, unsigned game_word) {
     core::Simulator& sim = TlsBattleSimulator();
-    return RunOneGameWinnerForA(sim, ToSide(a), ToSide(b), game_word, false);
+    return RunOneGameWinnerForA(sim, ToSide(a), ToSide(b), game_word, false, timing_);
 }
 
 int BattleEvaluator::PlaySingleGameForBoN(const DeckRep& a, const DeckRep& b, unsigned game_word) {
     core::Simulator& sim = TlsBattleSimulator();
-    return RunOneGameWinnerForA(sim, ToSide(a), ToSide(b), game_word, true);
+    return RunOneGameWinnerForA(sim, ToSide(a), ToSide(b), game_word, true, timing_);
 }
 
 int BattleEvaluator::RunBoNStream(const DeckRep& a, const DeckRep& b, unsigned stream_seed) {
@@ -266,7 +276,7 @@ int BattleEvaluator::RunBoNStream(const DeckRep& a, const DeckRep& b, unsigned s
     int wins_b = 0;
     while (wins_a < need && wins_b < need) {
         const unsigned gw = st();
-        const int g = RunOneGameWinnerForA(sim, base_a, base_b, gw, true);
+        const int g = RunOneGameWinnerForA(sim, base_a, base_b, gw, true, timing_);
         if (g == 0) wins_a++;
         else wins_b++;
     }
@@ -332,7 +342,7 @@ MatchPoints BattleEvaluator::PlaySeriesPointsForPair(const DeckRep& a, const Dec
     std::mt19937 local(pair_seed);
     for (int i = 0; i < rounds; i++) {
         const unsigned gw = local();
-        const int r = RunOneGameWinnerForA(sim, base_a, base_b, gw, false);
+        const int r = RunOneGameWinnerForA(sim, base_a, base_b, gw, false, timing_);
         if (r == 0) points_a += 1;
         else if (r == 1) points_b += 1;
         else {

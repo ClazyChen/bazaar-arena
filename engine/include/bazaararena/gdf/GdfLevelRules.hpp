@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bazaararena/core/ItemTemplate.hpp>
 #include <bazaararena/core/ItemTier.hpp>
 
 namespace bazaararena::gdf {
@@ -16,6 +17,9 @@ struct GdfLevelRules {
 
     /// 等级 → 卡组总槽位上限（与 legacy Deck.MaxSlotsForLevel 一致）。
     static int MaxSlotsForLevel(int level);
+
+    /// 与 legacy `GreedyLevelRules.ComputeOverridableValue` 一致：对模板某 `ItemKey` 按玩家等级缩放。
+    static int ComputeOverridableValue(const bazaararena::core::ItemTemplate& source, int item_key, int player_level);
 };
 
 }  // namespace bazaararena::gdf
