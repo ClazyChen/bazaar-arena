@@ -120,7 +120,7 @@ int Simulator::Run(bool allow_tie) {
                     // 如果有剧毒，则造成削减生命
                     const int poison = sides[i].attrs[SideKey::Poison];
                     sink.OnPoisonTick(*this, i, poison);
-                    sides[i].ApplyDamage(poison, false, true);
+                    sides[i].ApplyDamage(poison, false, true, GetSideEffectiveResistance(i));
                 }
             }
         }
@@ -132,7 +132,7 @@ int Simulator::Run(bool allow_tie) {
                     // 如果有灼烧，则造成削减生命（会受到护盾影响）
                     const int burn = sides[i].attrs[SideKey::Burn];
                     sink.OnBurnTick(*this, i, burn);
-                    sides[i].ApplyDamage(burn, true, false);
+                    sides[i].ApplyDamage(burn, true, false, GetSideEffectiveResistance(i));
                     // 灼烧衰减 3%
                     int decay = formula::PercentFloor(burn, 3);
                     sides[i].attrs[SideKey::Burn] = std::max(0, sides[i].attrs[SideKey::Burn] - decay);
@@ -156,7 +156,7 @@ int Simulator::Run(bool allow_tie) {
         if (time >= sandstorm.next_tick) {
             for (int i = 0; i < SideCount; i++) {
                 sink.OnSandstormTick(*this, i, sandstorm.damage);
-                sides[i].ApplyDamage(sandstorm.damage, false, false);
+                sides[i].ApplyDamage(sandstorm.damage, false, false, GetSideEffectiveResistance(i));
             }
             // 沙尘暴的间隔递减或伤害递增
             if (sandstorm.interval > sandstorm.MinInterval) {
@@ -252,6 +252,12 @@ int Simulator::Run(bool allow_tie) {
 int Simulator::GetItemInt(const ItemState* item, int key) const {
     BattleContext ctx = { this, item, item, item, item };
     return ctx.GetItemInt(item, key);
+}
+
+int Simulator::GetSideEffectiveResistance(int side_index) const {
+    const auto& side = sides[side_index];
+    if (side.attrs[SideKey::ItemCount] <= 0) return 0;
+    return GetItemInt(&side.items[0], ItemKey::Resistance);
 }
 
 // 应用某个能力的效果

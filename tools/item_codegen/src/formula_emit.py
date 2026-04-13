@@ -72,6 +72,7 @@ ITEM_KEY_NAMES = frozenset(
         "Custom_1",
         "Custom_2",
         "Custom_3",
+        "Resistance",
     }
 )
 

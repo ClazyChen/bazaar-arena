@@ -29,7 +29,6 @@ static bool ApplySideOverride(core::SideState& out, const SideSpec& spec, std::s
     if (spec.burn) a[core::SideKey::Burn] = *spec.burn;
     if (spec.poison) a[core::SideKey::Poison] = *spec.poison;
     if (spec.regen) a[core::SideKey::Regen] = *spec.regen;
-    if (spec.resistance) a[core::SideKey::Resistance] = *spec.resistance;
     if (spec.gold) a[core::SideKey::Gold] = *spec.gold;
     if (spec.income) a[core::SideKey::Income] = *spec.income;
 
@@ -43,9 +42,13 @@ static bool ApplySideOverride(core::SideState& out, const SideSpec& spec, std::s
         err = "side attrs constraint violated: Income >= 7";
         return false;
     }
+    if (spec.resistance.has_value() && *spec.resistance < 0) {
+        err = "side attrs constraint violated: resistance >= 0";
+        return false;
+    }
     auto nonneg = [](int v) { return v >= 0; };
     if (!nonneg(a[core::SideKey::Shield]) || !nonneg(a[core::SideKey::Burn]) || !nonneg(a[core::SideKey::Poison]) ||
-        !nonneg(a[core::SideKey::Regen]) || !nonneg(a[core::SideKey::Resistance]) || !nonneg(a[core::SideKey::Gold])) {
+        !nonneg(a[core::SideKey::Regen]) || !nonneg(a[core::SideKey::Gold])) {
         err = "side attrs constraint violated: other attrs must be >= 0";
         return false;
     }
@@ -84,7 +87,6 @@ BuildSideStateResult BuildSideState(const SideSpec& spec) {
     out.attrs[core::SideKey::Regen] = 0;
     out.attrs[core::SideKey::Gold] = 0;
     out.attrs[core::SideKey::Income] = 7;
-    out.attrs[core::SideKey::Resistance] = 0;
     out.attrs[core::SideKey::ItemCount] = static_cast<int>(spec.items.size());
 
     std::string err;
@@ -118,6 +120,14 @@ BuildSideStateResult BuildSideState(const SideSpec& spec) {
         const int ammoCap = item.attrs[core::ItemKey::AmmoCap];
         if (ammoCap > 0) {
             item.attrs[core::ItemKey::AmmoRemaining] = ammoCap;
+        }
+    }
+
+    if (!spec.items.empty()) {
+        if (spec.resistance.has_value()) {
+            out.items[0].attrs[core::ItemKey::Resistance] = *spec.resistance;
+        } else {
+            out.items[0].attrs[core::ItemKey::Resistance] = 0;
         }
     }
 

@@ -74,7 +74,6 @@ core::SideState GdfItemPrototypeCache::BuildSide(const DeckRep& rep, int player_
     out.attrs[core::SideKey::Regen] = 0;
     out.attrs[core::SideKey::Gold] = 0;
     out.attrs[core::SideKey::Income] = 7;
-    out.attrs[core::SideKey::Resistance] = 0;
     out.attrs[core::SideKey::ItemCount] = static_cast<int>(rep.item_names.size());
 
     for (size_t i = 0; i < rep.item_names.size(); ++i) {
@@ -83,6 +82,9 @@ core::SideState GdfItemPrototypeCache::BuildSide(const DeckRep& rep, int player_
         out.items[i].attrs = proto.attrs;
         out.items[i].attrs[core::ItemKey::SideIndex] = side_id;
         out.items[i].attrs[core::ItemKey::ItemIndex] = static_cast<int>(i);
+    }
+    if (!rep.item_names.empty()) {
+        out.items[0].attrs[core::ItemKey::Resistance] = 0;
     }
     return out;
 }

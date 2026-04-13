@@ -13,7 +13,8 @@ public:
     static constexpr int Regen = 6; // 阵营生命再生
     static constexpr int Gold = 7; // 阵营金币
     static constexpr int Income = 8; // 阵营收入
-    static constexpr int Resistance = 9; // 阵营抗性
+    /// 与 formula::Side 的抗性键、GetSideInt 一致；数值存于槽位 0 的 ItemKey::Resistance，attrs 本槽位不再使用。
+    static constexpr int Resistance = 9;
     static constexpr int ItemCount = 10; // 阵营中的物品数量
 
     // 阵营状态属性数量

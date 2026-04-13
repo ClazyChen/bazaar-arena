@@ -2478,3 +2478,112 @@ items:
                 - SameSide
                 - type: HasTag
                   params: [Friend]
+  - Name: "潜行滑翔机"
+    Desc: "▶ {ModifyTargetCount} 件物品开始飞行；每有一件飞行物品，抗性 {+Custom_0%}"
+    Size: Large
+    Tier: Silver
+    Tags: [Vehicle, Tech]
+    Cooldown: [4s, 3s, 2s]
+    ModifyTargetCount: 1
+    Custom_0: 10
+    Custom_1: 1
+    Abilities:
+      - type: AddAttribute
+        key: InFlight
+        value: Custom_1
+    Auras:
+      - attribute: Resistance
+        condition: SameSide
+        value:
+          type: Mul
+          params:
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: Item
+                      params: [InFlight]
+            - type: Caster
+              params: [Custom_0]
+  - Name: "潜艇"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 获得护盾，等量于此物品的伤害；如果此物品是你唯一的武器，其受到冻结和减速的持续时间减半"
+    Size: Large
+    Tier: Silver
+    Tags: [Weapon, Aquatic, Vehicle, Tech]
+    Cooldown: [4s, 3s, 2s]
+    Damage: [60, 120, 240]
+    Custom_0: 50
+    Abilities:
+      - type: Damage
+      - type: Shield
+    Auras:
+      - attribute: Shield
+        value: Damage
+      - attribute: PercentFreezeReduction
+        condition:
+          type: And 
+          params:
+            - SameAsCaster
+            - type: Only
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - type: HasTag
+                      params: [Weapon]
+        value: Custom_0
+      - attribute: PercentSlowReduction
+        condition:
+          type: And 
+          params:
+            - SameAsCaster
+            - type: Only
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - type: HasTag
+                      params: [Weapon]
+        value: Custom_0
+  - Name: "抛石机"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 造成 {Burn} 灼烧；使用其他武器或触发加速时，为此物品充能 {Charge} 秒"
+    Size: Large
+    Tier: Silver
+    Tags: [Weapon]
+    Cooldown: 10s
+    Damage: [75, 150, 300]
+    Burn: [8, 16, 24]
+    Charge: 2s
+    Abilities:
+      - type: Damage
+      - type: Burn
+      - type: Charge
+        triggers:
+          - trigger: UseItem
+            ex_condition:
+              type: And
+              params:
+                - DifferentFromCaster
+                - type: HasTag
+                  params: [Weapon]
+          - trigger: Haste
+        target_condition: SameAsCaster
+        priority: Low
+  - Name: "水车"
+    Desc: "▶ 加速其他物品 {Haste} 秒；使用相邻物品时，为此物品充能 {Charge} 秒"
+    Size: Large
+    Tier: Silver
+    Tags: [Aquatic, Property]
+    Cooldown: [8s, 7s, 6s]
+    Haste: 2s
+    Charge: 2s
+    Abilities:
+      - type: Haste
+        ex_target_condition: DifferentFromCaster
+        priority: High
+      - type: Charge
+        trigger: UseItem
+        condition: AdjacentToCaster
+        target_condition: SameAsCaster

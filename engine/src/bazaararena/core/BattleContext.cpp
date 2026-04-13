@@ -1,4 +1,5 @@
 #include <bazaararena/core/BattleContext.hpp>
+#include <bazaararena/core/ItemKey.hpp>
 #include <bazaararena/core/SideKey.hpp>
 #include <bazaararena/core/Simulator.hpp>
 #include <bazaararena/formula/Percent.hpp>
@@ -70,12 +71,24 @@ int BattleContext::GetItemInt(const ItemState* item, int key) const {
 
 // 读取能力/光环释放者所在阵营的某个属性
 int BattleContext::GetSideInt(int key) const {
-    return simulator->sides[caster->attrs[ItemKey::SideIndex]].attrs[key];
+    const int si = caster->attrs[ItemKey::SideIndex];
+    if (key == SideKey::Resistance) {
+        const auto& side = simulator->sides[si];
+        if (side.attrs[SideKey::ItemCount] <= 0) return 0;
+        return GetItemInt(&side.items[0], ItemKey::Resistance);
+    }
+    return simulator->sides[si].attrs[key];
 }
 
 // 读取能力/光环释放者所在阵营的对手阵营的某个属性
 int BattleContext::GetOppInt(int key) const {
-    return simulator->sides[1 - caster->attrs[ItemKey::SideIndex]].attrs[key];
+    const int si = 1 - caster->attrs[ItemKey::SideIndex];
+    if (key == SideKey::Resistance) {
+        const auto& side = simulator->sides[si];
+        if (side.attrs[SideKey::ItemCount] <= 0) return 0;
+        return GetItemInt(&side.items[0], ItemKey::Resistance);
+    }
+    return simulator->sides[si].attrs[key];
 }
 
 // 计算满足某个条件的物品数量（双方所有物品；条件内可用 SameSide / DifferentSide 等）

@@ -10,6 +10,7 @@
 #include <thread>
 #include <vector>
 
+#include <bazaararena/core/ItemKey.hpp>
 #include <bazaararena/core/Simulator.hpp>
 #include <bazaararena/core/SimulatorInit.hpp>
 #include <bazaararena/core/SideKey.hpp>
@@ -378,7 +379,10 @@ int main(int argc, char** argv) {
         s["burn"] = static_cast<double>(a[core::SideKey::Burn]);
         s["poison"] = static_cast<double>(a[core::SideKey::Poison]);
         s["regen"] = static_cast<double>(a[core::SideKey::Regen]);
-        s["resistance"] = static_cast<double>(a[core::SideKey::Resistance]);
+        s["resistance"] = static_cast<double>(
+            a[core::SideKey::ItemCount] > 0
+                ? sim.GetItemInt(&sim.sides[si].items[0], core::ItemKey::Resistance)
+                : 0);
         s["gold"] = static_cast<double>(a[core::SideKey::Gold]);
         s["income"] = static_cast<double>(a[core::SideKey::Income]);
         if (job.debug.enabled && job.debug.level == "detailed") {

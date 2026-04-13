@@ -97,6 +97,9 @@ public:
 
     // 读取指定物品属性（考虑光环影响）
     int GetItemInt(const ItemState* item, int key) const;
+
+    /// 阵营伤害抗性有效百分比（槽位 0 物品的 ItemKey::Resistance，含光环）
+    int GetSideEffectiveResistance(int side_index) const;
 };
 
 }

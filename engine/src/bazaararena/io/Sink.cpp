@@ -119,6 +119,8 @@ static std::string_view ItemKeyZhForAttributeModify(int attribute) {
             return "自定义2";
         case IK::Custom_3:
             return "自定义3";
+        case IK::Resistance:
+            return "抗性";
         default:
             return {};
     }
@@ -255,7 +257,10 @@ void Sink::OnFrameEnd(const core::Simulator& simulator) {
         s["burn"] = static_cast<double>(a[core::SideKey::Burn]);
         s["poison"] = static_cast<double>(a[core::SideKey::Poison]);
         s["regen"] = static_cast<double>(a[core::SideKey::Regen]);
-        s["resistance"] = static_cast<double>(a[core::SideKey::Resistance]);
+        s["resistance"] = static_cast<double>(
+            a[core::SideKey::ItemCount] > 0
+                ? simulator.GetItemInt(&simulator.sides[si].items[0], core::ItemKey::Resistance)
+                : 0);
 
         s["items"] = BuildDetailedItemsArray(simulator, si);
         sides.emplace_back(std::move(s));

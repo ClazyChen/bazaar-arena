@@ -3,11 +3,10 @@
 
 namespace bazaararena::core {
 
-void SideState::ApplyDamage(int damage, bool is_burn, bool is_poison) {
-    
-    // 处理抗性百分比
-    if (attrs[SideKey::Resistance] > 0) {
-        damage = std::max(0, damage - formula::PercentFloor(damage, attrs[SideKey::Resistance]));
+void SideState::ApplyDamage(int damage, bool is_burn, bool is_poison, int effective_resistance_pct) {
+    // 处理抗性百分比（数值存于槽位 0 的 ItemKey::Resistance，此处用已解析的有效百分比）
+    if (effective_resistance_pct > 0) {
+        damage = std::max(0, damage - formula::PercentFloor(damage, effective_resistance_pct));
     }
 
     // 处理护盾

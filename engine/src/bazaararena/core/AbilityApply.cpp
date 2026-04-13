@@ -50,8 +50,9 @@ void Damage(const AbilityDefinition& ability, const BattleContext& ctx) {
         damage = CritScaledAmount(damage, ctx);
     }
     auto simulator = const_cast<Simulator*>(ctx.simulator);
-    auto& opp = simulator->sides[1 - ctx.caster->attrs[ItemKey::SideIndex]];
-    opp.ApplyDamage(damage, false, false);
+    const int opp_side = 1 - ctx.caster->attrs[ItemKey::SideIndex];
+    auto& opp = simulator->sides[opp_side];
+    opp.ApplyDamage(damage, false, false, simulator->GetSideEffectiveResistance(opp_side));
     // 结算吸血
     int life_steal = ctx.GetItemInt(ctx.caster, ItemKey::LifeSteal);
     if (life_steal > 0) {
@@ -137,8 +138,8 @@ void Resistance(const AbilityDefinition& ability, const BattleContext& ctx) {
     int resistance = ctx.GetItemInt(ctx.caster, ability.value_key);
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     auto& side = simulator->sides[ctx.caster->attrs[ItemKey::SideIndex]];
-    int old_resistance = side.attrs[SideKey::Resistance];
-    side.attrs[SideKey::Resistance] += resistance;
+    int old_resistance = ctx.GetItemIntRaw(&side.items[0], ItemKey::Resistance);
+    side.items[0].attrs[ItemKey::Resistance] += resistance;
     // 目前没有效果需要在抗性触发器中处理，不实现触发器
     // 打印日志
     simulator->sink.OnResistance(*simulator, *ctx.caster, old_resistance, resistance);
