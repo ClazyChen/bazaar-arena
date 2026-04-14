@@ -14,16 +14,17 @@
 namespace bazaararena::gdf_pa {
 namespace {
 
-/// multiset 对称差 s = sum|Δcount|；等槽数时必为偶数；置换次数 = s/2。非全同需 s>=2。
+/// multiset 对称差大小 s = sum|Δcount|（等价于“需要删除的元素数 + 需要新增的元素数”）。
+/// - 允许不同张数：例如 {A,B,C} vs {A,B,C,D} => s=1。
+/// - 等张数时 s 必为偶数，此时置换次数 = s/2。
+/// - 非全同需 s>=1。
 static bool MultisetSymmetricDiffAccept(const bazaararena::gdf::DeckRep& a, const bazaararena::gdf::DeckRep& b, int symmetric_diff_max) {
-    if (a.item_names.size() != b.item_names.size()) return false;
     std::unordered_map<std::string, int> ca;
     for (const auto& n : a.item_names) ca[n]++;
     for (const auto& n : b.item_names) ca[n]--;
     int s = 0;
     for (const auto& kv : ca) s += std::abs(kv.second);
-    if (s % 2 != 0) return false;
-    if (s < 2) return false;
+    if (s < 1) return false;
     return s <= symmetric_diff_max;
 }
 
@@ -33,8 +34,8 @@ bool RunDiffOneBattles(const std::vector<bazaararena::gdf::DeckRep>& nodes, baza
     int symmetric_diff_max, std::vector<DirectedEdge>& edges_out, std::string& err) {
     err.clear();
     edges_out.clear();
-    if (symmetric_diff_max < 2) {
-        err = "symmetric_diff_max must be >= 2";
+    if (symmetric_diff_max < 1) {
+        err = "symmetric_diff_max must be >= 1";
         return false;
     }
     const int n = static_cast<int>(nodes.size());

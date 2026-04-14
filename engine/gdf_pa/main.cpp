@@ -62,7 +62,7 @@ static void PrintUsage(std::ostream& os) {
           "  --bo <n>                             odd BoN length (default 5)\n"
           "  --top-k <K>                          H_K 与泛用度截断 (default 10)\n"
           "  --max-anchors <n>                    仅处理前 n 个锚点块（开发用；0=不限制）\n"
-          "  --graph-symmetric-diff-max <s>       建图：同槽 multiset 对称差 s=sum|Delta count| 上限（>=2 偶数语义；默认 2=原「差一换」；4≈原 max_replacements=2）\n"
+          "  --graph-symmetric-diff-max <s>       建图：multiset 对称差大小 s=sum|Delta count| 上限（>=1；同槽时必为偶数，置换次数=s/2；默认 2=原「差一换」）\n"
           "  --cluster-specialty-min <x>          簇收录仅看锚点 specialty>=x（不再筛 top1 的 (anchor_m/rr)^3）；达标收录 top3，未达整块不收（默认 0.5）\n"
           "  --quality-rr-games <n>               剥点来源排名：每对打 n 局系列赛；按 BO_N 总局分排名（默认 100）\n"
           "  --help\n"
