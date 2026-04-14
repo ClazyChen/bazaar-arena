@@ -64,3 +64,27 @@ set_target_properties(bazaararena_gdf PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${BAZAARARENA_CLI_OUTPUT_DIR}"
 )
 
+add_executable(bazaararena_gdf_pa
+  gdf_pa/main.cpp
+  gdf_pa/GdfPaFullTopk.cpp
+  gdf_pa/GdfPaBracket.cpp
+  gdf_pa/GdfPaMetrics.cpp
+  gdf_pa/GdfPaGraph.cpp
+  gdf_pa/GdfPaRoundRobin.cpp
+  src/bazaararena/gdf/GdfLevelRules.cpp
+  src/bazaararena/gdf/GdfLoadYamlPool.cpp
+  src/bazaararena/gdf/ItemPool.cpp
+  src/bazaararena/gdf/DeckRep.cpp
+  src/bazaararena/gdf/GdfSideBuilder.cpp
+  src/bazaararena/gdf/GdfItemPrototypeCache.cpp
+  src/bazaararena/gdf/BattleEvaluator.cpp
+)
+target_link_libraries(bazaararena_gdf_pa PRIVATE bazaararena_engine Threads::Threads)
+set_target_properties(bazaararena_gdf_pa PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${BAZAARARENA_CLI_OUTPUT_DIR}"
+  RUNTIME_OUTPUT_DIRECTORY_DEBUG "${BAZAARARENA_CLI_OUTPUT_DIR}"
+  RUNTIME_OUTPUT_DIRECTORY_RELEASE "${BAZAARARENA_CLI_OUTPUT_DIR}"
+  RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${BAZAARARENA_CLI_OUTPUT_DIR}"
+  RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${BAZAARARENA_CLI_OUTPUT_DIR}"
+)
+

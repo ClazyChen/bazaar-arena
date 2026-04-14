@@ -208,6 +208,59 @@ def _basic_trigger_condition(trigger_yaml: str) -> str:
     return "SameSide"
 
 
+def _trigger_entries_from_ability(ab: dict, *, where_ab: str) -> list[dict]:
+    """
+    - 多触发：`triggers:` 为 list，每项含 `trigger`，可选 `condition` 或 `ex_condition`（与单触发语义一致）。
+    - 单触发：顶层 `trigger` + 可选 `condition` / `ex_condition`。
+    """
+    if "triggers" in ab:
+        tl = ab["triggers"]
+        if not isinstance(tl, list):
+            raise TypeError(f"{where_ab}: triggers 必须是 list")
+        if not tl:
+            raise ValueError(f"{where_ab}: triggers 不能为空")
+        if _as_str(ab.get("trigger"), default="").strip():
+            raise ValueError(f"{where_ab}: 使用 triggers 时不要同时写顶层 trigger")
+        if len(tl) > 4:
+            raise ValueError(f"{where_ab}: triggers 最多 4 条（AbilityDefinition::MaxTriggerEntries）")
+        for i, te in enumerate(tl):
+            if not isinstance(te, dict):
+                raise TypeError(f"{where_ab}: triggers[{i}] 必须是 object")
+            if not _as_str(te.get("trigger"), default="").strip():
+                raise ValueError(f"{where_ab}: triggers[{i}] 缺少 trigger")
+        return tl
+    trig = _as_str(ab.get("trigger"), default="").strip()
+    one: dict = {"trigger": trig if trig else "Cast"}
+    if "condition" in ab:
+        one["condition"] = ab["condition"]
+    else:
+        one["ex_condition"] = ab.get("ex_condition")
+    return [one]
+
+
+def _emit_trigger_entries(lines: list[str], entries: list[dict], *, where_ab: str) -> None:
+    n = len(entries)
+    lines.append(f"        a.trigger_entry_count = {n};")
+    for i, te in enumerate(entries):
+        tname = _as_str(te.get("trigger"), default="").strip()
+        if not tname:
+            raise ValueError(f"{where_ab}: trigger 为空")
+        trig_cpp = _trigger_to_cpp(tname)
+        lines.append(f"        a.trigger_entries[{i}].trigger = {trig_cpp};")
+        sub = f"{where_ab}.triggers[{i}]" if len(entries) > 1 else where_ab
+        if "condition" in te:
+            ce = emit_formula_ast(te["condition"], where=f"{sub}.condition")
+            lines.append(f"        a.trigger_entries[{i}].condition = {ce};")
+        else:
+            basic_tr = _basic_trigger_condition(tname)
+            tr_merged = merge_with_basic(
+                basic=basic_tr,
+                extra=te.get("ex_condition"),
+                where=f"{sub}.ex_condition",
+            )
+            lines.append(f"        a.trigger_entries[{i}].condition = {tr_merged};")
+
+
 def _resolve_value_key_cpp(ab: dict, ability_type: str, *, where: str) -> str:
     if "value_key" in ab:
         return item_key_cpp_from_name(str(ab["value_key"]), where=f"{where}.value_key")
@@ -408,29 +461,15 @@ def _emit_item_lambda(item: dict) -> str:
         if not isinstance(ab, dict):
             raise TypeError("Abilities[] 每个元素必须是 object")
         typ = _as_str(ab.get("type"))
-        trig = _as_str(ab.get("trigger"), default="")
-        trig_cpp = _trigger_to_cpp(trig) if trig else "core::Trigger::Cast"
         where_ab = f"{src} {item_name} Abilities[{abi}]"
+        trigger_entries = _trigger_entries_from_ability(ab, where_ab=where_ab)
 
         lines.append("    {")
         lines.append("        auto& a = t.abilities[t.ability_count++];")
         lines.append(f"        a.type = {_ability_type_to_cpp(typ)};")
         if "priority" in ab:
             lines.append(f"        a.priority = {_priority_to_cpp(_as_str(ab['priority']))};")
-        lines.append("        a.trigger_entry_count = 1;")
-        lines.append(f"        a.trigger_entries[0].trigger = {trig_cpp};")
-
-        if "condition" in ab:
-            ce = emit_formula_ast(ab["condition"], where=f"{where_ab}.condition")
-            lines.append(f"        a.trigger_entries[0].condition = {ce};")
-        else:
-            basic_tr = _basic_trigger_condition(trig)
-            tr_merged = merge_with_basic(
-                basic=basic_tr,
-                extra=ab.get("ex_condition"),
-                where=f"{where_ab}.ex_condition",
-            )
-            lines.append(f"        a.trigger_entries[0].condition = {tr_merged};")
+        _emit_trigger_entries(lines, trigger_entries, where_ab=where_ab)
 
         if "target_condition" in ab:
             te = emit_formula_ast(ab["target_condition"], where=f"{where_ab}.target_condition")

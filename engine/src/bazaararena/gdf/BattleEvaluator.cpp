@@ -88,7 +88,7 @@ static int RunSingleBattleReturn(core::Simulator& sim, const core::SideState& si
     sim.sink.Clear();
     sim.rng.Seed(rng_seed);
     core::InitializeSimulator(sim);
-    return sim.Run(true);
+    return sim.Run(false);
 }
 
 /// 单局：从「缓存态」两侧模板拷贝后按 swap 打补丁再 Run。`base_*` 为 `ToSide` 产物（SideIndex 全 0），每局拷贝成本远小于反复 `ToSide` 的 map 查找与锁。
