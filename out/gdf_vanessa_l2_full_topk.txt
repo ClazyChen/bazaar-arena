@@ -1,0 +1,1265 @@
+# gdf_enumerate_anchor_top1: full Top-K per anchor (last size tier only)
+[GDF] seeds: 三花
+[GDF] size=6 top 20
+  1. RR=262 anchor_m=246 Swiss=9 | 靴里剑,三花,左轮手枪,手斧,鲨齿爪
+  2. RR=250 anchor_m=229 Swiss=9 | 靴里剑,三花,手斧,鲨齿爪,流星索
+  3. RR=243 anchor_m=241 Swiss=9 | 靴里剑,三花,手斧,独角鲸,鲨齿爪
+  4. RR=258 anchor_m=197 Swiss=9 | 靴里剑,三花,鲨齿爪,左轮手枪,葡萄弹
+  5. RR=228 anchor_m=226 Swiss=9 | 靴里剑,三花,迷你弯刀,手斧,鲨齿爪
+  6. RR=230 anchor_m=200 Swiss=10 | 舱底蠕虫,三花,鲨齿爪,手斧,靴里剑
+  7. RR=206 anchor_m=205 Swiss=8 | 靴里剑,三花,手斧,弹簧刀,鲨齿爪
+  8. RR=204 anchor_m=188 Swiss=8 | 靴里剑,三花,手斧,抓钩,鲨齿爪
+  9. RR=192 anchor_m=188 Swiss=8 | 靴里剑,三花,手斧,鲨齿爪,宠物石
+  10. RR=190 anchor_m=189 Swiss=9 | 靴里剑,三花,手斧,鲨齿爪,飞鱼
+  11. RR=190 anchor_m=189 Swiss=8 | 靴里剑,淬锋钢,三花,手斧,鲨齿爪
+  12. RR=191 anchor_m=171 Swiss=8 | 舱底蠕虫,三花,鲨齿爪,左轮手枪,葡萄弹
+  13. RR=194 anchor_m=140 Swiss=9 | 舱底蠕虫,流星索,三花,鲨齿爪,手斧
+  14. RR=187 anchor_m=140 Swiss=8 | 舱底蠕虫,三花,鲨齿爪,藏刃匕首,手斧
+  15. RR=169 anchor_m=162 Swiss=8 | 靴里剑,三花,鲨齿爪,淬锋钢,左轮手枪
+  16. RR=162 anchor_m=162 Swiss=8 | 靴里剑,淬锋钢,鲨齿爪,三花,迷你弯刀
+  17. RR=172 anchor_m=135 Swiss=8 | 舱底蠕虫,三花,淬锋钢,鲨齿爪,左轮手枪
+  18. RR=204 anchor_m=62 Swiss=8 | 手斧,淬锋钢,三花,弹簧刀,马龙鱼
+  19. RR=191 anchor_m=83 Swiss=9 | 三花,淬锋钢,飞鱼,弹簧刀,马龙鱼
+  20. RR=188 anchor_m=87 Swiss=8 | 舱底蠕虫,三花,淬锋钢,绵鳚,马龙鱼
+
+[GDF] seeds: 刺刀
+[GDF] size=6 top 20
+  1. RR=277 anchor_m=240 Swiss=9 | 舱底蠕虫,鲨齿爪,手斧,左轮手枪,刺刀
+  2. RR=276 anchor_m=270 Swiss=10 | 手斧,鲨齿爪,靴里剑,迷你弯刀,刺刀
+  3. RR=272 anchor_m=227 Swiss=9 | 靴里剑,葡萄弹,手斧,左轮手枪,刺刀,淬锋钢
+  4. RR=258 anchor_m=240 Swiss=9 | 舱底蠕虫,鲨齿爪,手斧,独角鲸,刺刀
+  5. RR=256 anchor_m=211 Swiss=9 | 手斧,葡萄弹,弹簧刀,左轮手枪,刺刀,淬锋钢
+  6. RR=246 anchor_m=227 Swiss=8 | 舱底蠕虫,鲨齿爪,手斧,迷你弯刀,刺刀
+  7. RR=236 anchor_m=233 Swiss=8 | 鲨齿爪,手斧,左轮手枪,刺刀,淬锋钢
+  8. RR=226 anchor_m=224 Swiss=9 | 手斧,鲨齿爪,迷你弯刀,左轮手枪,刺刀
+  9. RR=225 anchor_m=224 Swiss=9 | 靴里剑,手斧,武士刀,刺刀,淬锋钢
+  10. RR=236 anchor_m=196 Swiss=9 | 葡萄弹,流星索,手斧,左轮手枪,刺刀,淬锋钢
+  11. RR=222 anchor_m=213 Swiss=8 | 舱底蠕虫,鲨齿爪,左轮手枪,刺刀,葡萄弹
+  12. RR=235 anchor_m=186 Swiss=8 | 舱底蠕虫,鲨齿爪,淬锋钢,左轮手枪,刺刀
+  13. RR=200 anchor_m=193 Swiss=9 | 手斧,弹簧刀,武士刀,刺刀,流星索
+  14. RR=198 anchor_m=196 Swiss=8 | 手斧,鲨齿爪,三花,迷你弯刀,刺刀
+  15. RR=197 anchor_m=197 Swiss=8 | 手斧,淬锋钢,鲨齿爪,迷你弯刀,刺刀
+  16. RR=208 anchor_m=163 Swiss=8 | 葡萄弹,手雷,手斧,左轮手枪,刺刀,淬锋钢
+  17. RR=205 anchor_m=151 Swiss=8 | 舱底蠕虫,鲨齿爪,独角鲸,刺刀,淬锋钢
+  18. RR=183 anchor_m=181 Swiss=8 | 手斧,鲨齿爪,迷你弯刀,刺刀,独角鲸
+  19. RR=177 anchor_m=167 Swiss=8 | 手斧,左轮手枪,弹簧刀,武士刀,刺刀
+  20. RR=168 anchor_m=167 Swiss=8 | 靴里剑,舱底蠕虫,鲨齿爪,左轮手枪,刺刀
+
+[GDF] seeds: 双管霰弹枪
+[GDF] size=6 top 20
+  1. RR=275 anchor_m=270 Swiss=10 | 舱底蠕虫,手斧,淬锋钢,火药角,双管霰弹枪
+  2. RR=269 anchor_m=269 Swiss=9 | 火药角,双管霰弹枪,弹簧刀,葡萄弹,手斧
+  3. RR=264 anchor_m=264 Swiss=9 | 淬锋钢,火药角,双管霰弹枪,弹簧刀,葡萄弹
+  4. RR=259 anchor_m=259 Swiss=8 | 火药角,双管霰弹枪,手斧,淬锋钢,葡萄弹
+  5. RR=257 anchor_m=257 Swiss=9 | 火药角,双管霰弹枪,弹簧刀,淬锋钢,舱底蠕虫
+  6. RR=250 anchor_m=250 Swiss=9 | 火药角,双管霰弹枪,淬锋钢,葡萄弹,舱底蠕虫
+  7. RR=242 anchor_m=242 Swiss=8 | 淬锋钢,火药角,双管霰弹枪,救生圈
+  8. RR=240 anchor_m=240 Swiss=8 | 水草,淬锋钢,珊瑚,火药角,双管霰弹枪
+  9. RR=226 anchor_m=226 Swiss=8 | 火药角,双管霰弹枪,绵鳚,淬锋钢,舱底蠕虫
+  10. RR=226 anchor_m=226 Swiss=8 | 淬锋钢,珊瑚,火药角,双管霰弹枪,弹簧刀
+  11. RR=218 anchor_m=218 Swiss=8 | 淬锋钢,火药角,双管霰弹枪,弹簧刀,左轮手枪
+  12. RR=215 anchor_m=215 Swiss=8 | 淬锋钢,木桶,火药角,双管霰弹枪
+  13. RR=214 anchor_m=214 Swiss=8 | 淬锋钢,火药角,双管霰弹枪,珊瑚护甲
+  14. RR=237 anchor_m=156 Swiss=8 | 珊瑚,火药角,双管霰弹枪,淬锋钢,舱底蠕虫
+  15. RR=206 anchor_m=206 Swiss=9 | 火药角,双管霰弹枪,绵鳚,淬锋钢,葡萄弹
+  16. RR=206 anchor_m=206 Swiss=9 | 靴里剑,手斧,淬锋钢,火药角,双管霰弹枪
+  17. RR=204 anchor_m=204 Swiss=8 | 淬锋钢,火药角,双管霰弹枪,刺刀,珊瑚
+  18. RR=198 anchor_m=198 Swiss=8 | 淬锋钢,葡萄弹,珊瑚,火药角,双管霰弹枪
+  19. RR=198 anchor_m=198 Swiss=8 | 淬锋钢,火药角,双管霰弹枪,弹簧刀,独角鲸
+  20. RR=192 anchor_m=192 Swiss=8 | 淬锋钢,火药角,双管霰弹枪,弹簧刀,藏刃匕首
+
+[GDF] seeds: 填弹杆
+[GDF] size=6 top 20
+  1. RR=225 anchor_m=225 Swiss=9 | 葡萄弹,步枪,填弹杆,手雷
+  2. RR=217 anchor_m=217 Swiss=9 | 淬锋钢,步枪,填弹杆,手雷
+  3. RR=217 anchor_m=217 Swiss=8 | 绵鳚,步枪,填弹杆,手雷
+  4. RR=216 anchor_m=216 Swiss=9 | 淬锋钢,步枪,填弹杆,流星索
+  5. RR=216 anchor_m=216 Swiss=8 | 步枪,填弹杆,手雷,手斧
+  6. RR=213 anchor_m=213 Swiss=8 | 步枪,填弹杆,手雷,靴里剑
+  7. RR=212 anchor_m=212 Swiss=8 | 珊瑚,步枪,填弹杆,手雷
+  8. RR=208 anchor_m=208 Swiss=8 | 流星索,步枪,填弹杆,手雷
+  9. RR=201 anchor_m=201 Swiss=9 | 藏刃匕首,手雷,填弹杆,步枪
+  10. RR=199 anchor_m=199 Swiss=9 | 葡萄弹,绵鳚,步枪,填弹杆
+  11. RR=185 anchor_m=185 Swiss=8 | 舱底蠕虫,步枪,填弹杆,手雷
+  12. RR=179 anchor_m=179 Swiss=8 | 抓钩,步枪,填弹杆,手雷
+  13. RR=179 anchor_m=179 Swiss=8 | 葡萄弹,淬锋钢,填弹杆,步枪
+  14. RR=176 anchor_m=176 Swiss=8 | 淬锋钢,绵鳚,步枪,填弹杆
+  15. RR=175 anchor_m=175 Swiss=8 | 弹簧刀,步枪,填弹杆,手雷
+  16. RR=175 anchor_m=175 Swiss=8 | 淬锋钢,舱底蠕虫,步枪,填弹杆
+  17. RR=174 anchor_m=174 Swiss=9 | 葡萄弹,手斧,填弹杆,步枪
+  18. RR=174 anchor_m=174 Swiss=8 | 步枪,填弹杆,淬锋钢,珊瑚
+  19. RR=170 anchor_m=170 Swiss=8 | 步枪,填弹杆,流星索,珊瑚
+  20. RR=162 anchor_m=162 Swiss=8 | 燃烧响炮,步枪,填弹杆,手雷
+
+[GDF] seeds: 宠物石
+[GDF] size=6 top 20
+  1. RR=247 anchor_m=214 Swiss=9 | 宠物石,鲨齿爪,迷你弯刀,靴里剑,手斧
+  2. RR=230 anchor_m=215 Swiss=8 | 鲨齿爪,手斧,宠物石,淬锋钢,靴里剑
+  3. RR=224 anchor_m=199 Swiss=9 | 宠物石,鲨齿爪,迷你弯刀,刺刀,手斧
+  4. RR=228 anchor_m=175 Swiss=8 | 靴里剑,鲨齿爪,手斧,宠物石,舱底蠕虫
+  5. RR=196 anchor_m=176 Swiss=8 | 宠物石,鲨齿爪,迷你弯刀,弹簧刀,手斧
+  6. RR=208 anchor_m=148 Swiss=8 | 手斧,鲨齿爪,藏刃匕首,宠物石,舱底蠕虫
+  7. RR=192 anchor_m=171 Swiss=8 | 宠物石,鲨齿爪,左轮手枪,迷你弯刀,手斧
+  8. RR=198 anchor_m=133 Swiss=8 | 手斧,靴里剑,鲨齿爪,藏刃匕首,宠物石
+  9. RR=191 anchor_m=130 Swiss=8 | 手斧,宠物石,鲨齿爪,淬锋钢,舱底蠕虫
+  10. RR=240 anchor_m=31 Swiss=8 | 燃烧响炮,宠物石,打火机,绵鳚,鹦鹉皮特,毒须鲶
+  11. RR=238 anchor_m=35 Swiss=9 | 珊瑚,马龙鱼,绵鳚,淬锋钢,宠物石
+  12. RR=190 anchor_m=130 Swiss=8 | 流星索,鲨齿爪,手斧,宠物石,舱底蠕虫
+  13. RR=180 anchor_m=146 Swiss=10 | 鲨齿爪,手斧,迷你弯刀,宠物石,舱底蠕虫
+  14. RR=237 anchor_m=23 Swiss=9 | 靴里剑,燃烧响炮,宠物石,打火机,绵鳚,毒须鲶
+  15. RR=173 anchor_m=149 Swiss=8 | 鲨齿爪,手斧,宠物石,舱底蠕虫,独角鲸
+  16. RR=211 anchor_m=66 Swiss=8 | 燃烧响炮,手斧,宠物石,打火机,绵鳚,毒须鲶
+  17. RR=218 anchor_m=19 Swiss=8 | 燃烧响炮,宠物石,珊瑚,打火机,绵鳚,毒须鲶
+  18. RR=168 anchor_m=113 Swiss=8 | 手斧,鲨齿爪,左轮手枪,藏刃匕首,宠物石
+  19. RR=162 anchor_m=124 Swiss=8 | 手雷,鲨齿爪,手斧,宠物石,舱底蠕虫
+  20. RR=152 anchor_m=133 Swiss=8 | 宠物石,打火机,绵鳚,海底热泉,毒须鲶
+
+[GDF] seeds: 左轮手枪
+[GDF] size=6 top 20
+  1. RR=257 anchor_m=257 Swiss=9 | 舱底蠕虫,手斧,葡萄弹,弹簧刀,左轮手枪,淬锋钢
+  2. RR=212 anchor_m=212 Swiss=8 | 舱底蠕虫,鲨齿爪,葡萄弹,左轮手枪,淬锋钢
+  3. RR=223 anchor_m=186 Swiss=9 | 舱底蠕虫,鲨齿爪,手斧,左轮手枪,淬锋钢
+  4. RR=212 anchor_m=199 Swiss=8 | 舱底蠕虫,手雷,手斧,葡萄弹,左轮手枪,淬锋钢
+  5. RR=236 anchor_m=139 Swiss=8 | 鹦鹉皮特,左轮手枪,弹簧刀,马龙鱼,淬锋钢
+  6. RR=197 anchor_m=197 Swiss=9 | 舱底蠕虫,手斧,靴里剑,葡萄弹,左轮手枪,淬锋钢
+  7. RR=244 anchor_m=98 Swiss=9 | 靴里剑,左轮手枪,弹簧刀,马龙鱼,淬锋钢
+  8. RR=190 anchor_m=187 Swiss=8 | 舱底蠕虫,流星索,手斧,葡萄弹,左轮手枪,淬锋钢
+  9. RR=211 anchor_m=135 Swiss=9 | 迷幻蝠鲼,左轮手枪,弹簧刀,马龙鱼,淬锋钢
+  10. RR=238 anchor_m=80 Swiss=8 | 流星索,左轮手枪,弹簧刀,马龙鱼,淬锋钢
+  11. RR=219 anchor_m=113 Swiss=10 | 海螺壳,左轮手枪,弹簧刀,马龙鱼,淬锋钢
+  12. RR=224 anchor_m=97 Swiss=8 | 雪怪蟹,左轮手枪,弹簧刀,马龙鱼,淬锋钢
+  13. RR=174 anchor_m=174 Swiss=9 | 湿件战服,左轮手枪,淬锋钢,葡萄弹,手斧
+  14. RR=181 anchor_m=154 Swiss=8 | 舱底蠕虫,靴里剑,鲨齿爪,左轮手枪,淬锋钢
+  15. RR=204 anchor_m=69 Swiss=9 | 珊瑚,火药角,步枪,左轮手枪,淬锋钢
+  16. RR=194 anchor_m=85 Swiss=8 | 皮皮虾,左轮手枪,弹簧刀,马龙鱼,淬锋钢
+  17. RR=157 anchor_m=157 Swiss=8 | 舱底蠕虫,抓钩,手斧,葡萄弹,左轮手枪,淬锋钢
+  18. RR=218 anchor_m=11 Swiss=8 | 珊瑚,左轮手枪,海螺壳,水草,绵鳚,毒须鲶
+  19. RR=148 anchor_m=148 Swiss=8 | 舱底蠕虫,手斧,葡萄弹,绵鳚,左轮手枪,淬锋钢
+  20. RR=177 anchor_m=71 Swiss=8 | 燃烧响炮,左轮手枪,淬锋钢,绵鳚,马龙鱼
+
+[GDF] seeds: 弯刀
+[GDF] size=6 top 20
+  1. RR=231 anchor_m=195 Swiss=9 | 舱底蠕虫,流星索,手斧,淬锋钢,弯刀
+  2. RR=223 anchor_m=223 Swiss=8 | 水母,迷幻蝠鲼,水草,淬锋钢,弯刀
+  3. RR=220 anchor_m=220 Swiss=10 | 手斧,流星索,弹簧刀,弯刀,淬锋钢
+  4. RR=215 anchor_m=215 Swiss=8 | 靴里剑,手斧,淬锋钢,流星索,弯刀
+  5. RR=222 anchor_m=199 Swiss=8 | 舱底蠕虫,手斧,弹簧刀,弯刀,淬锋钢
+  6. RR=206 anchor_m=206 Swiss=9 | 迷幻蝠鲼,淬锋钢,木桶,弯刀
+  7. RR=203 anchor_m=202 Swiss=9 | 流星索,皮皮虾,迷幻蝠鲼,淬锋钢,弯刀
+  8. RR=206 anchor_m=194 Swiss=9 | 舱底蠕虫,皮皮虾,迷幻蝠鲼,淬锋钢,弯刀
+  9. RR=207 anchor_m=186 Swiss=9 | 舱底蠕虫,手斧,淬锋钢,绵鳚,弯刀
+  10. RR=222 anchor_m=148 Swiss=8 | 马龙鱼,弹簧刀,弯刀,淬锋钢
+  11. RR=191 anchor_m=191 Swiss=8 | 水草,淬锋钢,弯刀,毒须鲶,珊瑚
+  12. RR=188 anchor_m=188 Swiss=8 | 皮皮虾,迷幻蝠鲼,抓钩,淬锋钢,弯刀
+  13. RR=183 anchor_m=183 Swiss=8 | 迷幻蝠鲼,水草,淬锋钢,珊瑚,弯刀
+  14. RR=176 anchor_m=176 Swiss=8 | 迷幻蝠鲼,淬锋钢,弯刀,珊瑚护甲
+  15. RR=176 anchor_m=176 Swiss=8 | 水母,淬锋钢,木桶,弯刀
+  16. RR=175 anchor_m=175 Swiss=8 | 手斧,淬锋钢,火药角,流星索,弯刀
+  17. RR=182 anchor_m=159 Swiss=7 | 皮皮虾,迷幻蝠鲼,毒须鲶,淬锋钢,弯刀
+  18. RR=174 anchor_m=174 Swiss=9 | 迷幻蝠鲼,淬锋钢,弯刀,救生圈
+  19. RR=173 anchor_m=173 Swiss=7 | 葡萄弹,手斧,淬锋钢,流星索,弯刀
+  20. RR=172 anchor_m=172 Swiss=8 | 迷幻蝠鲼,水草,淬锋钢,弯刀,海螺壳
+
+[GDF] seeds: 弹簧刀
+[GDF] size=6 top 20
+  1. RR=263 anchor_m=263 Swiss=10 | 靴里剑,手斧,弹簧刀,武士刀,淬锋钢
+  2. RR=260 anchor_m=259 Swiss=9 | 手斧,弹簧刀,武士刀,刺刀,淬锋钢
+  3. RR=245 anchor_m=233 Swiss=8 | 水草,淬锋钢,马龙鱼,弹簧刀,左轮手枪
+  4. RR=235 anchor_m=211 Swiss=8 | 舱底蠕虫,手斧,弹簧刀,武士刀,淬锋钢
+  5. RR=245 anchor_m=183 Swiss=9 | 舱底蠕虫,手斧,弹簧刀,马龙鱼,淬锋钢
+  6. RR=223 anchor_m=218 Swiss=8 | 海螺壳,马龙鱼,弹簧刀,飞鱼,淬锋钢
+  7. RR=216 anchor_m=216 Swiss=8 | 珊瑚,淬锋钢,马龙鱼,弹簧刀,独角鲸
+  8. RR=191 anchor_m=191 Swiss=8 | 手斧,左轮手枪,弹簧刀,武士刀,淬锋钢
+  9. RR=203 anchor_m=156 Swiss=8 | 舱底蠕虫,流星索,弹簧刀,马龙鱼,淬锋钢
+  10. RR=187 anchor_m=187 Swiss=8 | 手斧,左轮手枪,弹簧刀,武士刀,刺刀
+  11. RR=242 anchor_m=64 Swiss=9 | 救生圈,淬锋钢,马龙鱼,弹簧刀
+  12. RR=188 anchor_m=164 Swiss=8 | 舱底蠕虫,水草,弹簧刀,马龙鱼,淬锋钢
+  13. RR=182 anchor_m=167 Swiss=8 | 马龙鱼,弹簧刀,飞鱼,淬锋钢,水草
+  14. RR=174 anchor_m=174 Swiss=8 | 珊瑚,左轮手枪,弹簧刀,武士刀,淬锋钢
+  15. RR=173 anchor_m=173 Swiss=9 | 手斧,流星索,弹簧刀,武士刀,淬锋钢
+  16. RR=169 anchor_m=169 Swiss=8 | 海螺壳,淬锋钢,马龙鱼,弹簧刀,独角鲸
+  17. RR=169 anchor_m=169 Swiss=8 | 手斧,靴里剑,左轮手枪,弹簧刀,武士刀
+  18. RR=169 anchor_m=164 Swiss=8 | 舱底蠕虫,手斧,左轮手枪,弹簧刀,独角鲸,淬锋钢
+  19. RR=169 anchor_m=142 Swiss=9 | 舱底蠕虫,抓钩,弹簧刀,马龙鱼,淬锋钢
+  20. RR=162 anchor_m=154 Swiss=9 | 马龙鱼,弹簧刀,飞鱼,淬锋钢,珊瑚
+
+[GDF] seeds: 手斧
+[GDF] size=6 top 20
+  1. RR=287 anchor_m=285 Swiss=10 | 鲨齿爪,左轮手枪,葡萄弹,手斧,靴里剑
+  2. RR=259 anchor_m=259 Swiss=9 | 鲨齿爪,左轮手枪,刺刀,手斧,靴里剑
+  3. RR=264 anchor_m=230 Swiss=9 | 靴里剑,火药角,手雷,手斧,流星索,葡萄弹
+  4. RR=246 anchor_m=243 Swiss=8 | 舱底蠕虫,鲨齿爪,左轮手枪,手斧,靴里剑
+  5. RR=236 anchor_m=236 Swiss=8 | 鲨齿爪,弹簧刀,左轮手枪,手斧,靴里剑
+  6. RR=220 anchor_m=220 Swiss=8 | 鲨齿爪,左轮手枪,独角鲸,手斧,靴里剑
+  7. RR=232 anchor_m=194 Swiss=9 | 靴里剑,火药角,手雷,手斧,淬锋钢,葡萄弹
+  8. RR=216 anchor_m=216 Swiss=8 | 靴里剑,手斧,鲨齿爪,淬锋钢,独角鲸
+  9. RR=215 anchor_m=215 Swiss=8 | 抓钩,鲨齿爪,手斧,舱底蠕虫,靴里剑
+  10. RR=215 anchor_m=213 Swiss=8 | 葡萄弹,手斧,靴里剑,弹簧刀,左轮手枪,淬锋钢
+  11. RR=213 anchor_m=213 Swiss=9 | 鲨齿爪,左轮手枪,手斧,靴里剑,迷你弯刀
+  12. RR=210 anchor_m=210 Swiss=9 | 鲨齿爪,左轮手枪,手斧,三花,靴里剑
+  13. RR=204 anchor_m=185 Swiss=8 | 靴里剑,珊瑚,火药角,手雷,手斧,葡萄弹
+  14. RR=208 anchor_m=170 Swiss=8 | 水草,淬锋钢,飞鱼,手斧,马龙鱼
+  15. RR=196 anchor_m=193 Swiss=9 | 靴里剑,左轮手枪,火药角,手雷,手斧,葡萄弹
+  16. RR=195 anchor_m=176 Swiss=8 | 舱底蠕虫,手斧,弹簧刀,马龙鱼,淬锋钢
+  17. RR=193 anchor_m=177 Swiss=8 | 靴里剑,火药角,手雷,手斧,葡萄弹,舱底蠕虫
+  18. RR=186 anchor_m=186 Swiss=8 | 靴里剑,手斧,鲨齿爪,迷你弯刀,淬锋钢
+  19. RR=184 anchor_m=174 Swiss=9 | 舱底蠕虫,鲨齿爪,手斧,淬锋钢,独角鲸
+  20. RR=180 anchor_m=180 Swiss=8 | 鲨齿爪,左轮手枪,手斧,靴里剑,淬锋钢
+
+[GDF] seeds: 手里剑
+[GDF] size=6 top 20
+  1. RR=266 anchor_m=50 Swiss=10 | 手里剑,燃烧响炮,毒须鲶,鹦鹉皮特,绵鳚,打火机
+  2. RR=185 anchor_m=185 Swiss=8 | 靴里剑,葡萄弹,手里剑,手斧,淬锋钢,飞鱼
+  3. RR=215 anchor_m=121 Swiss=9 | 手里剑,手斧,燃烧响炮,毒须鲶,绵鳚,打火机
+  4. RR=186 anchor_m=164 Swiss=8 | 马龙鱼,淬锋钢,手里剑,葡萄弹,手斧
+  5. RR=238 anchor_m=44 Swiss=9 | 手里剑,燃烧响炮,葡萄弹,毒须鲶,绵鳚,打火机
+  6. RR=170 anchor_m=170 Swiss=8 | 靴里剑,葡萄弹,手斧,手里剑,淬锋钢,迷你弯刀
+  7. RR=200 anchor_m=109 Swiss=9 | 手里剑,靴里剑,燃烧响炮,毒须鲶,绵鳚,打火机
+  8. RR=245 anchor_m=15 Swiss=9 | 水草,马龙鱼,淬锋钢,手里剑,舱底蠕虫
+  9. RR=237 anchor_m=2 Swiss=9 | 水草,马龙鱼,绵鳚,淬锋钢,手里剑
+  10. RR=218 anchor_m=35 Swiss=8 | 手里剑,燃烧响炮,毒须鲶,绵鳚,打火机,珊瑚
+  11. RR=229 anchor_m=9 Swiss=8 | 珊瑚,马龙鱼,淬锋钢,手里剑,舱底蠕虫
+  12. RR=223 anchor_m=19 Swiss=9 | 马龙鱼,弹簧刀,淬锋钢,手里剑,舱底蠕虫
+  13. RR=213 anchor_m=34 Swiss=8 | 水母,马龙鱼,淬锋钢,手里剑,舱底蠕虫
+  14. RR=220 anchor_m=14 Swiss=7 | 舱底蠕虫,靴里剑,手里剑,手斧,淬锋钢,飞鱼
+  15. RR=214 anchor_m=21 Swiss=8 | 舱底蠕虫,靴里剑,手斧,手里剑,淬锋钢,迷你弯刀
+  16. RR=190 anchor_m=49 Swiss=8 | 手里剑,燃烧响炮,海螺壳,毒须鲶,绵鳚,打火机
+  17. RR=207 anchor_m=12 Swiss=8 | 淬锋钢,火药角,步枪,手里剑,舱底蠕虫
+  18. RR=196 anchor_m=23 Swiss=7 | 海螺壳,马龙鱼,淬锋钢,手里剑,舱底蠕虫
+  19. RR=171 anchor_m=65 Swiss=8 | 马龙鱼,手斧,手里剑,淬锋钢,飞鱼
+  20. RR=138 anchor_m=128 Swiss=8 | 马龙鱼,弹簧刀,淬锋钢,手里剑,葡萄弹
+
+[GDF] seeds: 手雷
+[GDF] size=6 top 20
+  1. RR=222 anchor_m=154 Swiss=9 | 葡萄弹,步枪,填弹杆,手雷
+  2. RR=217 anchor_m=217 Swiss=10 | 手斧,靴里剑,葡萄弹,流星索,火药角,手雷
+  3. RR=212 anchor_m=172 Swiss=7 | 步枪,填弹杆,手雷,手斧
+  4. RR=218 anchor_m=151 Swiss=8 | 靴里剑,步枪,填弹杆,手雷
+  5. RR=217 anchor_m=151 Swiss=9 | 步枪,填弹杆,手雷,珊瑚
+  6. RR=193 anchor_m=193 Swiss=8 | 手斧,舱底蠕虫,葡萄弹,靴里剑,火药角,手雷
+  7. RR=185 anchor_m=185 Swiss=9 | 手斧,靴里剑,葡萄弹,火药角,手雷,淬锋钢
+  8. RR=219 anchor_m=108 Swiss=9 | 淬锋钢,步枪,填弹杆,手雷
+  9. RR=192 anchor_m=148 Swiss=9 | 弹簧刀,步枪,填弹杆,手雷
+  10. RR=177 anchor_m=177 Swiss=7 | 抓钩,手斧,葡萄弹,靴里剑,火药角,手雷
+  11. RR=190 anchor_m=136 Swiss=8 | 抓钩,步枪,填弹杆,手雷
+  12. RR=189 anchor_m=137 Swiss=9 | 藏刃匕首,步枪,填弹杆,手雷
+  13. RR=168 anchor_m=167 Swiss=8 | 珊瑚,淬锋钢,木桶,火药角,手雷
+  14. RR=179 anchor_m=144 Swiss=8 | 宠物石,步枪,填弹杆,手雷
+  15. RR=188 anchor_m=124 Swiss=9 | 步枪,填弹杆,手雷,流星索
+  16. RR=177 anchor_m=146 Swiss=8 | 步枪,填弹杆,手雷,舱底蠕虫
+  17. RR=165 anchor_m=165 Swiss=8 | 手斧,鲨齿爪,葡萄弹,火药角,手雷
+  18. RR=175 anchor_m=137 Swiss=8 | 海螺壳,步枪,填弹杆,手雷
+  19. RR=162 anchor_m=162 Swiss=8 | 手斧,珊瑚,葡萄弹,火药角,手雷,靴里剑
+  20. RR=162 anchor_m=157 Swiss=8 | 舱底蠕虫,手斧,淬锋钢,靴里剑,火药角,手雷
+
+[GDF] seeds: 打火机
+[GDF] size=6 top 20
+  1. RR=271 anchor_m=271 Swiss=10 | 火炮,葡萄弹,打火机,绵鳚,燃烧响炮
+  2. RR=263 anchor_m=263 Swiss=8 | 打火机,火药角,火炮,绵鳚,燃烧响炮
+  3. RR=260 anchor_m=260 Swiss=9 | 靴里剑,火炮,打火机,绵鳚,燃烧响炮
+  4. RR=256 anchor_m=256 Swiss=9 | 火炮,打火机,绵鳚,燃烧响炮,手斧
+  5. RR=245 anchor_m=245 Swiss=8 | 火炮,打火机,绵鳚,燃烧响炮,流星索
+  6. RR=244 anchor_m=244 Swiss=9 | 火炮,珊瑚,打火机,绵鳚,燃烧响炮
+  7. RR=237 anchor_m=237 Swiss=8 | 燃烧响炮,海螺壳,打火机,绵鳚,海底热泉
+  8. RR=222 anchor_m=222 Swiss=8 | 火炮,打火机,绵鳚,燃烧响炮,海螺壳
+  9. RR=215 anchor_m=215 Swiss=9 | 火炮,舱底蠕虫,打火机,绵鳚,燃烧响炮
+  10. RR=209 anchor_m=209 Swiss=8 | 火炮,珍珠,打火机,绵鳚,燃烧响炮
+  11. RR=208 anchor_m=208 Swiss=8 | 淬锋钢,火炮,打火机,绵鳚,燃烧响炮
+  12. RR=205 anchor_m=205 Swiss=9 | 皮皮虾,火炮,打火机,绵鳚,燃烧响炮
+  13. RR=239 anchor_m=121 Swiss=8 | 水草,海螺壳,打火机,绵鳚,海底热泉
+  14. RR=197 anchor_m=196 Swiss=8 | 珍珠,打火机,绵鳚,海底热泉,水草
+  15. RR=197 anchor_m=193 Swiss=8 | 打火机,绵鳚,海底热泉,珊瑚,水草
+  16. RR=192 anchor_m=192 Swiss=8 | 打火机,绵鳚,鹦鹉皮特,燃烧响炮,救生圈
+  17. RR=191 anchor_m=191 Swiss=8 | 燃烧响炮,珊瑚,打火机,绵鳚,海底热泉
+  18. RR=189 anchor_m=189 Swiss=8 | 龙涎香,火炮,打火机,绵鳚,燃烧响炮
+  19. RR=188 anchor_m=188 Swiss=9 | 火炮,打火机,绵鳚,燃烧响炮,水草
+  20. RR=182 anchor_m=182 Swiss=8 | 燃烧响炮,珍珠,打火机,绵鳚,海底热泉
+
+[GDF] seeds: 抓钩
+[GDF] size=6 top 20
+  1. RR=252 anchor_m=116 Swiss=10 | 火药角,手雷,靴里剑,葡萄弹,抓钩,手斧
+  2. RR=210 anchor_m=181 Swiss=9 | 抓钩,手斧,弹簧刀,武士刀,淬锋钢
+  3. RR=245 anchor_m=107 Swiss=9 | 抓钩,燃烧响炮,打火机,绵鳚,鹦鹉皮特,毒须鲶
+  4. RR=199 anchor_m=193 Swiss=8 | 抓钩,燃烧响炮,打火机,绵鳚,皮皮虾,毒须鲶
+  5. RR=221 anchor_m=143 Swiss=9 | 马龙鱼,手斧,抓钩,飞鱼,淬锋钢
+  6. RR=218 anchor_m=125 Swiss=8 | 抓钩,燃烧响炮,葡萄弹,打火机,绵鳚,毒须鲶
+  7. RR=204 anchor_m=142 Swiss=8 | 抓钩,海螺壳,绵鳚,迷幻蝠鲼,毒须鲶,皮皮虾
+  8. RR=215 anchor_m=101 Swiss=9 | 水草,马龙鱼,抓钩,飞鱼,淬锋钢
+  9. RR=223 anchor_m=80 Swiss=9 | 火药角,手雷,绵鳚,葡萄弹,抓钩,手斧
+  10. RR=185 anchor_m=147 Swiss=8 | 靴里剑,手斧,抓钩,淬锋钢,马龙鱼
+  11. RR=201 anchor_m=105 Swiss=9 | 火药角,手雷,舱底蠕虫,葡萄弹,抓钩,手斧
+  12. RR=185 anchor_m=118 Swiss=8 | 火药角,手雷,葡萄弹,抓钩,流星索,手斧
+  13. RR=171 anchor_m=135 Swiss=9 | 皮皮虾,火药角,手雷,抓钩,流星索,葡萄弹
+  14. RR=176 anchor_m=121 Swiss=8 | 马龙鱼,珊瑚,抓钩,飞鱼,淬锋钢
+  15. RR=186 anchor_m=99 Swiss=9 | 火药角,手雷,葡萄弹,珊瑚,抓钩,手斧
+  16. RR=176 anchor_m=118 Swiss=8 | 左轮手枪,火药角,手雷,葡萄弹,抓钩,手斧
+  17. RR=175 anchor_m=96 Swiss=9 | 淬锋钢,火药角,手雷,葡萄弹,抓钩,手斧
+  18. RR=161 anchor_m=121 Swiss=8 | 马龙鱼,抓钩,手斧,淬锋钢,左轮手枪
+  19. RR=176 anchor_m=87 Swiss=8 | 珊瑚,淬锋钢,马龙鱼,绵鳚,抓钩
+  20. RR=157 anchor_m=125 Swiss=8 | 皮皮虾,火药角,手雷,抓钩,手斧,葡萄弹
+
+[GDF] seeds: 救生圈
+[GDF] size=6 top 20
+  1. RR=282 anchor_m=233 Swiss=10 | 马龙鱼,救生圈,飞鱼,淬锋钢
+  2. RR=263 anchor_m=234 Swiss=9 | 雪怪蟹,毒须鲶,绵鳚,水草,救生圈
+  3. RR=249 anchor_m=238 Swiss=9 | 救生圈,藏刃匕首,淬锋钢,马龙鱼
+  4. RR=241 anchor_m=241 Swiss=9 | 救生圈,独角鲸,弹簧刀,飞鱼,淬锋钢
+  5. RR=246 anchor_m=231 Swiss=8 | 救生圈,淬锋钢,马龙鱼,手斧
+  6. RR=240 anchor_m=235 Swiss=8 | 马龙鱼,独角鲸,救生圈,淬锋钢
+  7. RR=232 anchor_m=213 Swiss=9 | 水草,绵鳚,毒须鲶,水母,救生圈
+  8. RR=221 anchor_m=219 Swiss=8 | 救生圈,毒须鲶,绵鳚,水草,珊瑚
+  9. RR=220 anchor_m=217 Swiss=8 | 迷你弯刀,马龙鱼,淬锋钢,救生圈
+  10. RR=219 anchor_m=218 Swiss=8 | 救生圈,迷你弯刀,弹簧刀,飞鱼,淬锋钢
+  11. RR=226 anchor_m=203 Swiss=9 | 水草,救生圈,珊瑚,飞鱼,淬锋钢
+  12. RR=218 anchor_m=213 Swiss=8 | 珍珠,水草,绵鳚,毒须鲶,救生圈
+  13. RR=216 anchor_m=216 Swiss=8 | 水草,救生圈,海螺壳,飞鱼,淬锋钢
+  14. RR=218 anchor_m=211 Swiss=8 | 救生圈,马龙鱼,靴里剑,淬锋钢
+  15. RR=212 anchor_m=208 Swiss=9 | 水草,救生圈,迷幻蝠鲼,飞鱼,淬锋钢
+  16. RR=224 anchor_m=166 Swiss=9 | 水草,救生圈,鱼饵,飞鱼,淬锋钢
+  17. RR=200 anchor_m=197 Swiss=8 | 水草,救生圈,水母,飞鱼,淬锋钢
+  18. RR=198 anchor_m=198 Swiss=8 | 救生圈,弹簧刀,飞鱼,淬锋钢,水草
+  19. RR=199 anchor_m=195 Swiss=8 | 水草,海螺壳,绵鳚,毒须鲶,救生圈
+  20. RR=200 anchor_m=180 Swiss=9 | 水草,绵鳚,毒须鲶,救生圈,打火机
+
+[GDF] seeds: 星图
+[GDF] size=6 top 20
+  1. RR=235 anchor_m=50 Swiss=8 | 舱底蠕虫,淬锋钢,星图,马龙鱼
+  2. RR=190 anchor_m=140 Swiss=9 | 独角鲸,弹簧刀,迷你弯刀,星图,淬锋钢
+  3. RR=210 anchor_m=99 Swiss=8 | 藏刃匕首,沙滩充气球,星图,毒须鲶
+  4. RR=227 anchor_m=51 Swiss=10 | 淬锋钢,星图,马龙鱼,手斧
+  5. RR=179 anchor_m=135 Swiss=8 | 毒须鲶,珊瑚,迷你弯刀,星图,淬锋钢
+  6. RR=165 anchor_m=147 Swiss=8 | 靴里剑,星图,沙滩充气球,毒须鲶
+  7. RR=186 anchor_m=104 Swiss=9 | 水草,海螺壳,独角鲸,星图,淬锋钢
+  8. RR=177 anchor_m=121 Swiss=8 | 左轮手枪,弹簧刀,迷你弯刀,星图,淬锋钢
+  9. RR=197 anchor_m=72 Swiss=8 | 水草,独角鲸,星图,淬锋钢,毒须鲶
+  10. RR=202 anchor_m=59 Swiss=9 | 迷你弯刀,马龙鱼,星图,淬锋钢
+  11. RR=164 anchor_m=132 Swiss=8 | 珊瑚护甲,迷你弯刀,星图,淬锋钢
+  12. RR=196 anchor_m=64 Swiss=8 | 水草,星图,毒须鲶,飞鱼,淬锋钢
+  13. RR=169 anchor_m=117 Swiss=8 | 迷你弯刀,星图,淬锋钢,水草,珊瑚
+  14. RR=165 anchor_m=121 Swiss=8 | 水草,迷你弯刀,星图,淬锋钢,毒须鲶
+  15. RR=168 anchor_m=112 Swiss=9 | 水草,弹簧刀,独角鲸,星图,淬锋钢
+  16. RR=184 anchor_m=74 Swiss=8 | 水草,星图,毒须鲶,绵鳚,珊瑚
+  17. RR=202 anchor_m=30 Swiss=9 | 靴里剑,星图,马龙鱼,淬锋钢
+  18. RR=160 anchor_m=103 Swiss=9 | 藏刃匕首,弹簧刀,独角鲸,星图,淬锋钢
+  19. RR=150 anchor_m=123 Swiss=8 | 珊瑚,水母,迷你弯刀,星图,淬锋钢
+  20. RR=152 anchor_m=116 Swiss=8 | 毒须鲶,水母,迷你弯刀,星图,淬锋钢
+
+[GDF] seeds: 木桶
+[GDF] size=6 top 20
+  1. RR=270 anchor_m=93 Swiss=8 | 水草,淬锋钢,木桶,马龙鱼
+  2. RR=265 anchor_m=110 Swiss=8 | 淬锋钢,木桶,马龙鱼,水母
+  3. RR=260 anchor_m=103 Swiss=10 | 淬锋钢,木桶,马龙鱼,毒须鲶
+  4. RR=266 anchor_m=86 Swiss=8 | 淬锋钢,木桶,马龙鱼,珊瑚
+  5. RR=224 anchor_m=165 Swiss=9 | 水草,绵鳚,毒须鲶,木桶,打火机
+  6. RR=249 anchor_m=98 Swiss=9 | 淬锋钢,木桶,马龙鱼,迷幻蝠鲼
+  7. RR=248 anchor_m=94 Swiss=9 | 淬锋钢,木桶,马龙鱼,雪怪蟹
+  8. RR=245 anchor_m=84 Swiss=9 | 沙滩充气球,毒须鲶,木桶,藏刃匕首
+  9. RR=229 anchor_m=96 Swiss=8 | 燃烧响炮,淬锋钢,木桶,马龙鱼
+  10. RR=231 anchor_m=78 Swiss=9 | 淬锋钢,木桶,马龙鱼,珍珠
+  11. RR=225 anchor_m=89 Swiss=8 | 淬锋钢,木桶,马龙鱼,鱼饵
+  12. RR=231 anchor_m=75 Swiss=9 | 淬锋钢,木桶,马龙鱼,龙涎香
+  13. RR=228 anchor_m=68 Swiss=8 | 淬锋钢,木桶,弹簧刀,马龙鱼
+  14. RR=226 anchor_m=71 Swiss=8 | 打火机,淬锋钢,木桶,马龙鱼
+  15. RR=211 anchor_m=64 Swiss=9 | 淬锋钢,木桶,马龙鱼,海螺壳
+  16. RR=185 anchor_m=99 Swiss=8 | 水草,绵鳚,毒须鲶,木桶,藏刃匕首
+  17. RR=203 anchor_m=56 Swiss=9 | 火药角,淬锋钢,木桶,马龙鱼
+  18. RR=176 anchor_m=103 Swiss=8 | 钓鱼竿,毒须鲶,木桶,水草
+  19. RR=165 anchor_m=115 Swiss=8 | 水草,绵鳚,毒须鲶,木桶,鱼饵
+  20. RR=155 anchor_m=131 Swiss=8 | 水草,绵鳚,毒须鲶,木桶,独角鲸
+
+[GDF] seeds: 步枪
+[GDF] size=6 top 20
+  1. RR=222 anchor_m=222 Swiss=9 | 手雷,填弹杆,步枪,靴里剑
+  2. RR=219 anchor_m=219 Swiss=9 | 绵鳚,步枪,填弹杆,手雷
+  3. RR=216 anchor_m=216 Swiss=9 | 葡萄弹,手雷,填弹杆,步枪
+  4. RR=211 anchor_m=207 Swiss=9 | 淬锋钢,手雷,填弹杆,步枪
+  5. RR=206 anchor_m=206 Swiss=8 | 靴里剑,葡萄弹,火药角,步枪,手斧
+  6. RR=204 anchor_m=204 Swiss=10 | 手雷,填弹杆,步枪,手斧
+  7. RR=199 anchor_m=199 Swiss=9 | 珊瑚,手雷,填弹杆,步枪
+  8. RR=195 anchor_m=195 Swiss=8 | 流星索,手雷,填弹杆,步枪
+  9. RR=192 anchor_m=192 Swiss=9 | 流星索,填弹杆,步枪,淬锋钢
+  10. RR=181 anchor_m=181 Swiss=8 | 藏刃匕首,手雷,填弹杆,步枪
+  11. RR=181 anchor_m=181 Swiss=8 | 流星索,填弹杆,步枪,手斧
+  12. RR=180 anchor_m=180 Swiss=8 | 绵鳚,步枪,填弹杆,流星索
+  13. RR=179 anchor_m=179 Swiss=8 | 舱底蠕虫,手斧,火药角,步枪,葡萄弹
+  14. RR=178 anchor_m=178 Swiss=9 | 淬锋钢,珊瑚,填弹杆,步枪
+  15. RR=178 anchor_m=178 Swiss=8 | 淬锋钢,填弹杆,步枪,葡萄弹
+  16. RR=175 anchor_m=175 Swiss=8 | 手雷,填弹杆,步枪,弹簧刀
+  17. RR=173 anchor_m=173 Swiss=8 | 舱底蠕虫,手雷,填弹杆,步枪
+  18. RR=171 anchor_m=171 Swiss=8 | 葡萄弹,火药角,步枪,手斧,抓钩
+  19. RR=166 anchor_m=166 Swiss=8 | 葡萄弹,流星索,填弹杆,步枪
+  20. RR=165 anchor_m=165 Swiss=8 | 抓钩,手雷,填弹杆,步枪
+
+[GDF] seeds: 武士刀
+[GDF] size=6 top 20
+  1. RR=284 anchor_m=284 Swiss=9 | 靴里剑,手斧,弹簧刀,武士刀,淬锋钢
+  2. RR=280 anchor_m=272 Swiss=9 | 舱底蠕虫,手斧,弹簧刀,武士刀,淬锋钢
+  3. RR=276 anchor_m=276 Swiss=9 | 手斧,弹簧刀,武士刀,刺刀,淬锋钢
+  4. RR=253 anchor_m=253 Swiss=8 | 鲨齿爪,弹簧刀,武士刀,手斧
+  5. RR=242 anchor_m=242 Swiss=9 | 珊瑚,左轮手枪,弹簧刀,武士刀,淬锋钢
+  6. RR=242 anchor_m=242 Swiss=9 | 葡萄弹,手斧,左轮手枪,弹簧刀,武士刀
+  7. RR=241 anchor_m=241 Swiss=9 | 靴里剑,手斧,弹簧刀,武士刀,刺刀
+  8. RR=239 anchor_m=239 Swiss=9 | 手斧,左轮手枪,弹簧刀,武士刀,淬锋钢
+  9. RR=232 anchor_m=232 Swiss=8 | 鲨齿爪,弹簧刀,武士刀,刺刀
+  10. RR=222 anchor_m=222 Swiss=8 | 武士刀,木桶,淬锋钢,珊瑚
+  11. RR=219 anchor_m=219 Swiss=8 | 手斧,左轮手枪,弹簧刀,武士刀,刺刀
+  12. RR=216 anchor_m=215 Swiss=9 | 马龙鱼,弹簧刀,武士刀,淬锋钢
+  13. RR=214 anchor_m=214 Swiss=8 | 手斧,藏刃匕首,弹簧刀,武士刀,淬锋钢
+  14. RR=209 anchor_m=209 Swiss=8 | 手斧,弹簧刀,武士刀,淬锋钢,珊瑚
+  15. RR=204 anchor_m=204 Swiss=8 | 手斧,独角鲸,弹簧刀,武士刀,淬锋钢
+  16. RR=200 anchor_m=200 Swiss=8 | 手斧,流星索,弹簧刀,武士刀,淬锋钢
+  17. RR=194 anchor_m=194 Swiss=8 | 珊瑚,武士刀,弹簧刀,飞鱼,淬锋钢
+  18. RR=190 anchor_m=190 Swiss=8 | 手斧,左轮手枪,弹簧刀,武士刀,靴里剑
+  19. RR=188 anchor_m=188 Swiss=9 | 水草,武士刀,木桶,淬锋钢
+  20. RR=180 anchor_m=180 Swiss=8 | 鲨齿爪,弹簧刀,武士刀,靴里剑
+
+[GDF] seeds: 毒须鲶
+[GDF] size=6 top 20
+  1. RR=266 anchor_m=57 Swiss=9 | 毒须鲶,海底热泉,绵鳚,打火机,燃烧响炮
+  2. RR=245 anchor_m=238 Swiss=10 | 珊瑚,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  3. RR=226 anchor_m=226 Swiss=9 | 珍珠,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  4. RR=243 anchor_m=179 Swiss=9 | 毒须鲶,鹦鹉皮特,绵鳚,打火机,燃烧响炮,淬锋钢
+  5. RR=216 anchor_m=213 Swiss=8 | 海螺壳,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  6. RR=202 anchor_m=195 Swiss=8 | 毒须鲶,鹦鹉皮特,绵鳚,打火机,水草,燃烧响炮
+  7. RR=214 anchor_m=151 Swiss=8 | 毒须鲶,鹦鹉皮特,绵鳚,打火机,燃烧响炮,葡萄弹
+  8. RR=186 anchor_m=186 Swiss=8 | 龙涎香,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  9. RR=221 anchor_m=105 Swiss=9 | 淬锋钢,飞鱼,马龙鱼,水草,毒须鲶
+  10. RR=184 anchor_m=162 Swiss=9 | 海螺壳,雪怪蟹,毒须鲶,绵鳚,水草,珊瑚
+  11. RR=225 anchor_m=71 Swiss=8 | 火炮,毒须鲶,绵鳚,打火机,燃烧响炮
+  12. RR=192 anchor_m=125 Swiss=8 | 皮皮虾,水母,迷幻蝠鲼,毒须鲶,绵鳚,水草
+  13. RR=165 anchor_m=165 Swiss=7 | 毒须鲶,鹦鹉皮特,绵鳚,打火机,海螺壳,燃烧响炮
+  14. RR=161 anchor_m=161 Swiss=8 | 独角鲸,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  15. RR=164 anchor_m=151 Swiss=8 | 鱼饵,海螺壳,雪怪蟹,毒须鲶,绵鳚,水草
+  16. RR=157 anchor_m=157 Swiss=9 | 迷幻蝠鲼,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  17. RR=162 anchor_m=144 Swiss=8 | 珍珠,雪怪蟹,毒须鲶,绵鳚,水草,海螺壳
+  18. RR=164 anchor_m=130 Swiss=9 | 毒须鲶,鹦鹉皮特,绵鳚,打火机,燃烧响炮,藏刃匕首
+  19. RR=168 anchor_m=122 Swiss=8 | 靴里剑,毒须鲶,鹦鹉皮特,绵鳚,打火机,燃烧响炮
+  20. RR=151 anchor_m=151 Swiss=8 | 海螺壳,雪怪蟹,毒须鲶,绵鳚,水草,独角鲸
+
+[GDF] seeds: 水母
+[GDF] size=6 top 20
+  1. RR=273 anchor_m=91 Swiss=9 | 淬锋钢,飞鱼,水母,马龙鱼,水草
+  2. RR=260 anchor_m=254 Swiss=10 | 水草,绵鳚,毒须鲶,雪怪蟹,水母,珊瑚
+  3. RR=251 anchor_m=250 Swiss=9 | 水草,绵鳚,毒须鲶,雪怪蟹,水母,珍珠
+  4. RR=239 anchor_m=228 Swiss=9 | 水草,绵鳚,毒须鲶,雪怪蟹,水母,海螺壳
+  5. RR=222 anchor_m=221 Swiss=9 | 水草,绵鳚,毒须鲶,雪怪蟹,水母,独角鲸
+  6. RR=219 anchor_m=216 Swiss=8 | 淬锋钢,飞鱼,水母,雪怪蟹,毒须鲶,水草
+  7. RR=216 anchor_m=216 Swiss=8 | 水草,绵鳚,毒须鲶,雪怪蟹,水母,迷幻蝠鲼
+  8. RR=222 anchor_m=187 Swiss=8 | 水草,绵鳚,毒须鲶,雪怪蟹,水母,鱼饵
+  9. RR=209 anchor_m=208 Swiss=8 | 水草,绵鳚,毒须鲶,雪怪蟹,水母,飞鱼
+  10. RR=209 anchor_m=207 Swiss=8 | 独角鲸,水母,雪怪蟹,毒须鲶,水草,淬锋钢
+  11. RR=208 anchor_m=208 Swiss=8 | 水草,绵鳚,毒须鲶,雪怪蟹,水母,龙涎香
+  12. RR=210 anchor_m=195 Swiss=9 | 水草,绵鳚,毒须鲶,迷幻蝠鲼,水母,皮皮虾
+  13. RR=228 anchor_m=125 Swiss=9 | 独角鲸,水母,马龙鱼,淬锋钢,水草
+  14. RR=190 anchor_m=176 Swiss=9 | 水草,绵鳚,毒须鲶,迷幻蝠鲼,水母,海螺壳
+  15. RR=227 anchor_m=99 Swiss=8 | 手斧,淬锋钢,飞鱼,水母,马龙鱼
+  16. RR=174 anchor_m=174 Swiss=8 | 打火机,水草,绵鳚,毒须鲶,水母,海螺壳
+  17. RR=176 anchor_m=164 Swiss=9 | 皮皮虾,绵鳚,迷幻蝠鲼,水母,流星索,抓钩
+  18. RR=167 anchor_m=160 Swiss=8 | 火药角,流星索,绵鳚,皮皮虾,迷幻蝠鲼,水母
+  19. RR=168 anchor_m=155 Swiss=8 | 淬锋钢,飞鱼,水母,珍珠,珊瑚,水草
+  20. RR=250 anchor_m=-10 Swiss=9 | 淬锋钢,飞鱼,水母,弹簧刀,马龙鱼
+
+[GDF] seeds: 水草
+[GDF] size=6 top 20
+  1. RR=284 anchor_m=132 Swiss=10 | 水草,淬锋钢,飞鱼,弹簧刀,马龙鱼
+  2. RR=259 anchor_m=210 Swiss=9 | 淬锋钢,马龙鱼,绵鳚,水草,飞鱼
+  3. RR=235 anchor_m=215 Swiss=8 | 水草,淬锋钢,飞鱼,迷幻蝠鲼,马龙鱼
+  4. RR=254 anchor_m=153 Swiss=9 | 淬锋钢,马龙鱼,绵鳚,水草,手斧
+  5. RR=248 anchor_m=160 Swiss=8 | 水草,淬锋钢,飞鱼,手斧,马龙鱼
+  6. RR=220 anchor_m=205 Swiss=8 | 水草,珊瑚,淬锋钢,飞鱼,马龙鱼
+  7. RR=216 anchor_m=203 Swiss=8 | 马龙鱼,水草,淬锋钢,飞鱼,海螺壳
+  8. RR=223 anchor_m=182 Swiss=8 | 淬锋钢,马龙鱼,绵鳚,水草,独角鲸
+  9. RR=239 anchor_m=138 Swiss=9 | 淬锋钢,马龙鱼,弹簧刀,独角鲸,水草
+  10. RR=226 anchor_m=140 Swiss=8 | 淬锋钢,马龙鱼,绵鳚,水草,藏刃匕首
+  11. RR=211 anchor_m=151 Swiss=9 | 淬锋钢,马龙鱼,弹簧刀,水草,珊瑚
+  12. RR=228 anchor_m=104 Swiss=9 | 淬锋钢,马龙鱼,弹簧刀,左轮手枪,水草
+  13. RR=188 anchor_m=184 Swiss=8 | 水草,珍珠,淬锋钢,飞鱼,马龙鱼
+  14. RR=220 anchor_m=83 Swiss=8 | 淬锋钢,马龙鱼,弹簧刀,水草,舱底蠕虫
+  15. RR=210 anchor_m=101 Swiss=9 | 淬锋钢,马龙鱼,弹簧刀,手斧,水草
+  16. RR=178 anchor_m=157 Swiss=8 | 水草,淬锋钢,飞鱼,流星索,马龙鱼
+  17. RR=173 anchor_m=161 Swiss=8 | 水草,淬锋钢,飞鱼,靴里剑,马龙鱼
+  18. RR=191 anchor_m=124 Swiss=8 | 淬锋钢,马龙鱼,绵鳚,靴里剑,水草
+  19. RR=179 anchor_m=147 Swiss=9 | 马龙鱼,手斧,独角鲸,淬锋钢,水草
+  20. RR=176 anchor_m=153 Swiss=8 | 淬锋钢,马龙鱼,弹簧刀,海螺壳,水草
+
+[GDF] seeds: 沙滩充气球
+[GDF] size=6 top 20
+  1. RR=245 anchor_m=237 Swiss=9 | 水草,沙滩充气球,绵鳚,毒须鲶,藏刃匕首
+  2. RR=228 anchor_m=213 Swiss=8 | 手斧,弹簧刀,独角鲸,沙滩充气球,淬锋钢
+  3. RR=230 anchor_m=202 Swiss=9 | 藏刃匕首,舱底蠕虫,毒须鲶,淬锋钢,沙滩充气球
+  4. RR=214 anchor_m=213 Swiss=8 | 藏刃匕首,弹簧刀,独角鲸,沙滩充气球,淬锋钢
+  5. RR=208 anchor_m=206 Swiss=9 | 水草,沙滩充气球,绵鳚,毒须鲶,雪怪蟹
+  6. RR=206 anchor_m=204 Swiss=8 | 水草,沙滩充气球,绵鳚,毒须鲶,珊瑚
+  7. RR=204 anchor_m=204 Swiss=8 | 水草,淬锋钢,沙滩充气球,绵鳚,毒须鲶
+  8. RR=205 anchor_m=194 Swiss=9 | 水草,独角鲸,沙滩充气球,毒须鲶,淬锋钢
+  9. RR=196 anchor_m=196 Swiss=9 | 沙滩充气球,绵鳚,毒须鲶,打火机,水草
+  10. RR=193 anchor_m=186 Swiss=8 | 靴里剑,沙滩充气球,藏刃匕首,淬锋钢,毒须鲶
+  11. RR=190 anchor_m=189 Swiss=8 | 水草,海螺壳,沙滩充气球,绵鳚,毒须鲶
+  12. RR=190 anchor_m=178 Swiss=8 | 靴里剑,弹簧刀,独角鲸,沙滩充气球,淬锋钢
+  13. RR=198 anchor_m=147 Swiss=8 | 舱底蠕虫,水草,毒须鲶,淬锋钢,沙滩充气球
+  14. RR=178 anchor_m=171 Swiss=8 | 沙滩充气球,毒须鲶,水草,藏刃匕首,淬锋钢
+  15. RR=179 anchor_m=169 Swiss=8 | 迷你弯刀,弹簧刀,独角鲸,沙滩充气球,淬锋钢
+  16. RR=175 anchor_m=173 Swiss=8 | 藏刃匕首,淬锋钢,沙滩充气球,绵鳚,毒须鲶
+  17. RR=178 anchor_m=163 Swiss=9 | 左轮手枪,弹簧刀,独角鲸,沙滩充气球,淬锋钢
+  18. RR=176 anchor_m=144 Swiss=8 | 舱底蠕虫,手斧,毒须鲶,淬锋钢,沙滩充气球
+  19. RR=174 anchor_m=141 Swiss=8 | 舱底蠕虫,靴里剑,毒须鲶,淬锋钢,沙滩充气球
+  20. RR=162 anchor_m=162 Swiss=8 | 水草,抓钩,沙滩充气球,绵鳚,毒须鲶
+
+[GDF] seeds: 流星索
+[GDF] size=6 top 20
+  1. RR=268 anchor_m=179 Swiss=9 | 燃烧响炮,流星索,皮皮虾,迷幻蝠鲼,绵鳚,打火机
+  2. RR=224 anchor_m=197 Swiss=9 | 流星索,打火机,绵鳚,皮皮虾,迷幻蝠鲼,鹦鹉皮特
+  3. RR=206 anchor_m=200 Swiss=8 | 流星索,燃烧响炮,皮皮虾,绵鳚,迷幻蝠鲼,鹦鹉皮特
+  4. RR=196 anchor_m=192 Swiss=9 | 流星索,抓钩,皮皮虾,绵鳚,迷幻蝠鲼,鹦鹉皮特
+  5. RR=251 anchor_m=48 Swiss=9 | 流星索,皮皮虾,迷幻蝠鲼,绵鳚,水草,海螺壳
+  6. RR=204 anchor_m=133 Swiss=10 | 火药角,步枪,流星索,葡萄弹,淬锋钢
+  7. RR=174 anchor_m=173 Swiss=8 | 燃烧响炮,流星索,皮皮虾,迷幻蝠鲼,绵鳚,葡萄弹
+  8. RR=214 anchor_m=73 Swiss=9 | 流星索,步枪,填弹杆,手雷
+  9. RR=227 anchor_m=39 Swiss=8 | 毒须鲶,绵鳚,水草,珍珠,海螺壳,流星索
+  10. RR=159 anchor_m=156 Swiss=8 | 燃烧响炮,流星索,皮皮虾,绵鳚,迷幻蝠鲼,飞鱼
+  11. RR=158 anchor_m=157 Swiss=8 | 葡萄弹,流星索,皮皮虾,绵鳚,迷幻蝠鲼,鹦鹉皮特
+  12. RR=156 anchor_m=156 Swiss=7 | 流星索,皮皮虾,绵鳚,迷幻蝠鲼,鹦鹉皮特,水母
+  13. RR=205 anchor_m=55 Swiss=8 | 珍珠,流星索,皮皮虾,迷幻蝠鲼,绵鳚,水草
+  14. RR=214 anchor_m=32 Swiss=8 | 毒须鲶,绵鳚,水草,海螺壳,流星索,珊瑚
+  15. RR=195 anchor_m=67 Swiss=8 | 流星索,皮皮虾,迷幻蝠鲼,绵鳚,水草,珊瑚
+  16. RR=151 anchor_m=151 Swiss=9 | 流星索,打火机,绵鳚,皮皮虾,迷幻蝠鲼,毒须鲶
+  17. RR=151 anchor_m=151 Swiss=8 | 流星索,手斧,皮皮虾,绵鳚,迷幻蝠鲼,鹦鹉皮特
+  18. RR=195 anchor_m=36 Swiss=9 | 毒须鲶,绵鳚,水草,海螺壳,流星索,鱼饵
+  19. RR=142 anchor_m=142 Swiss=8 | 流星索,皮皮虾,绵鳚,迷幻蝠鲼,食人鱼,打火机
+  20. RR=159 anchor_m=108 Swiss=8 | 打火机,流星索,皮皮虾,迷幻蝠鲼,绵鳚,水草
+
+[GDF] seeds: 海底热泉
+[GDF] size=6 top 20
+  1. RR=291 anchor_m=291 Swiss=10 | 燃烧响炮,葡萄弹,打火机,绵鳚,海底热泉
+  2. RR=280 anchor_m=280 Swiss=9 | 珊瑚,打火机,绵鳚,海底热泉,燃烧响炮
+  3. RR=274 anchor_m=274 Swiss=9 | 打火机,绵鳚,海底热泉,海螺壳,燃烧响炮
+  4. RR=271 anchor_m=271 Swiss=9 | 燃烧响炮,靴里剑,打火机,绵鳚,海底热泉
+  5. RR=265 anchor_m=265 Swiss=9 | 燃烧响炮,打火机,绵鳚,海底热泉,舱底蠕虫
+  6. RR=265 anchor_m=265 Swiss=8 | 燃烧响炮,打火机,绵鳚,海底热泉,流星索
+  7. RR=263 anchor_m=263 Swiss=9 | 燃烧响炮,淬锋钢,打火机,绵鳚,海底热泉
+  8. RR=261 anchor_m=261 Swiss=8 | 珍珠,燃烧响炮,打火机,绵鳚,海底热泉
+  9. RR=256 anchor_m=256 Swiss=9 | 燃烧响炮,打火机,绵鳚,海底热泉,水草
+  10. RR=254 anchor_m=254 Swiss=8 | 燃烧响炮,手斧,打火机,绵鳚,海底热泉
+  11. RR=253 anchor_m=253 Swiss=9 | 手雷,燃烧响炮,打火机,绵鳚,海底热泉
+  12. RR=247 anchor_m=247 Swiss=9 | 燃烧响炮,打火机,绵鳚,海底热泉,藏刃匕首
+  13. RR=222 anchor_m=222 Swiss=8 | 龙涎香,燃烧响炮,打火机,绵鳚,海底热泉
+  14. RR=221 anchor_m=221 Swiss=8 | 打火机,绵鳚,海底热泉,燃烧响炮,皮皮虾
+  15. RR=215 anchor_m=215 Swiss=8 | 水草,打火机,绵鳚,海底热泉,海螺壳
+  16. RR=194 anchor_m=194 Swiss=8 | 燃烧响炮,抓钩,打火机,绵鳚,海底热泉
+  17. RR=191 anchor_m=191 Swiss=8 | 燃烧响炮,飞鱼,打火机,绵鳚,海底热泉
+  18. RR=192 anchor_m=187 Swiss=8 | 燃烧响炮,打火机,绵鳚,海底热泉,毒须鲶
+  19. RR=186 anchor_m=186 Swiss=8 | 左轮手枪,燃烧响炮,打火机,绵鳚,海底热泉
+  20. RR=184 anchor_m=184 Swiss=8 | 燃烧响炮,三花,打火机,绵鳚,海底热泉
+
+[GDF] seeds: 海螺壳
+[GDF] size=6 top 20
+  1. RR=287 anchor_m=32 Swiss=10 | 海螺壳,淬锋钢,马龙鱼,弹簧刀,飞鱼
+  2. RR=274 anchor_m=144 Swiss=9 | 水草,绵鳚,毒须鲶,雪怪蟹,水母,海螺壳
+  3. RR=257 anchor_m=115 Swiss=9 | 水草,海螺壳,淬锋钢,马龙鱼,飞鱼
+  4. RR=274 anchor_m=60 Swiss=9 | 马龙鱼,弹簧刀,独角鲸,海螺壳,淬锋钢
+  5. RR=213 anchor_m=180 Swiss=8 | 海螺壳,雪怪蟹,毒须鲶,绵鳚,水草,打火机
+  6. RR=225 anchor_m=148 Swiss=9 | 水草,海螺壳,淬锋钢,飞鱼,弹簧刀,独角鲸
+  7. RR=201 anchor_m=145 Swiss=9 | 鱼饵,海螺壳,水草,淬锋钢,飞鱼,珊瑚
+  8. RR=200 anchor_m=138 Swiss=8 | 水草,马龙鱼,独角鲸,海螺壳,淬锋钢
+  9. RR=194 anchor_m=146 Swiss=9 | 海螺壳,雪怪蟹,毒须鲶,绵鳚,水草,鱼饵
+  10. RR=189 anchor_m=156 Swiss=8 | 绵鳚,毒须鲶,雪怪蟹,水母,珊瑚,海螺壳
+  11. RR=230 anchor_m=70 Swiss=9 | 海螺壳,淬锋钢,马龙鱼,手斧,飞鱼
+  12. RR=199 anchor_m=129 Swiss=8 | 海螺壳,淬锋钢,马龙鱼,绵鳚,飞鱼
+  13. RR=186 anchor_m=152 Swiss=8 | 水草,海螺壳,龙涎香,淬锋钢,飞鱼,鱼饵
+  14. RR=178 anchor_m=151 Swiss=8 | 毒须鲶,水草,海螺壳,淬锋钢,飞鱼,鱼饵
+  15. RR=184 anchor_m=127 Swiss=8 | 水草,绵鳚,毒须鲶,雪怪蟹,海螺壳,藏刃匕首
+  16. RR=168 anchor_m=155 Swiss=7 | 海螺壳,雪怪蟹,毒须鲶,绵鳚,水草,珊瑚
+  17. RR=165 anchor_m=155 Swiss=8 | 水草,绵鳚,毒须鲶,迷幻蝠鲼,水母,海螺壳
+  18. RR=167 anchor_m=150 Swiss=8 | 淬锋钢,飞鱼,迷幻蝠鲼,水母,海螺壳,水草
+  19. RR=163 anchor_m=155 Swiss=8 | 淬锋钢,飞鱼,水母,珍珠,海螺壳,水草
+  20. RR=162 anchor_m=155 Swiss=8 | 水草,海螺壳,珊瑚,淬锋钢,飞鱼,迷幻蝠鲼
+
+[GDF] seeds: 淬锋钢
+[GDF] size=6 top 20
+  1. RR=234 anchor_m=233 Swiss=9 | 舱底蠕虫,手斧,淬锋钢,绵鳚,马龙鱼
+  2. RR=228 anchor_m=228 Swiss=8 | 淬锋钢,弹簧刀,马龙鱼,沙滩充气球
+  3. RR=221 anchor_m=220 Swiss=10 | 舱底蠕虫,手斧,弹簧刀,马龙鱼,淬锋钢
+  4. RR=195 anchor_m=195 Swiss=9 | 飞鱼,手斧,淬锋钢,绵鳚,马龙鱼
+  5. RR=193 anchor_m=193 Swiss=8 | 舱底蠕虫,手斧,飞鱼,马龙鱼,淬锋钢
+  6. RR=190 anchor_m=190 Swiss=8 | 海螺壳,飞鱼,淬锋钢,绵鳚,马龙鱼
+  7. RR=189 anchor_m=189 Swiss=9 | 沙滩充气球,打火机,淬锋钢,马龙鱼
+  8. RR=188 anchor_m=188 Swiss=8 | 毒须鲶,淬锋钢,水草,珊瑚,马龙鱼
+  9. RR=183 anchor_m=183 Swiss=8 | 舱底蠕虫,流星索,手斧,马龙鱼,淬锋钢
+  10. RR=181 anchor_m=181 Swiss=8 | 海螺壳,淬锋钢,飞鱼,弹簧刀,马龙鱼
+  11. RR=180 anchor_m=180 Swiss=8 | 救生圈,淬锋钢,马龙鱼,水母
+  12. RR=182 anchor_m=176 Swiss=7 | 鲨齿爪,淬锋钢,弹簧刀,马龙鱼
+  13. RR=179 anchor_m=179 Swiss=9 | 舱底蠕虫,手斧,藏刃匕首,马龙鱼,淬锋钢
+  14. RR=178 anchor_m=177 Swiss=8 | 淬锋钢,武士刀,弹簧刀,马龙鱼
+  15. RR=177 anchor_m=177 Swiss=8 | 淬锋钢,飞鱼,弹簧刀,马龙鱼,水草
+  16. RR=176 anchor_m=176 Swiss=8 | 舱底蠕虫,流星索,淬锋钢,绵鳚,马龙鱼
+  17. RR=176 anchor_m=176 Swiss=8 | 水草,马龙鱼,绵鳚,淬锋钢,舱底蠕虫
+  18. RR=180 anchor_m=164 Swiss=8 | 淬锋钢,手斧,飞鱼,弹簧刀,马龙鱼
+  19. RR=173 anchor_m=173 Swiss=9 | 靴里剑,鲨齿爪,淬锋钢,马龙鱼
+  20. RR=171 anchor_m=171 Swiss=7 | 手斧,淬锋钢,绵鳚,马龙鱼,水草
+
+[GDF] seeds: 渔网
+[GDF] size=6 top 20
+  1. RR=255 anchor_m=171 Swiss=10 | 皮皮虾,迷幻蝠鲼,绵鳚,渔网,流星索
+  2. RR=227 anchor_m=207 Swiss=8 | 皮皮虾,鹦鹉皮特,迷幻蝠鲼,绵鳚,渔网
+  3. RR=224 anchor_m=202 Swiss=9 | 水草,皮皮虾,迷幻蝠鲼,绵鳚,渔网
+  4. RR=246 anchor_m=150 Swiss=8 | 皮皮虾,迷幻蝠鲼,绵鳚,抓钩,渔网
+  5. RR=251 anchor_m=107 Swiss=9 | 渔网,淬锋钢,飞鱼,水草,海螺壳
+  6. RR=200 anchor_m=188 Swiss=8 | 打火机,皮皮虾,迷幻蝠鲼,绵鳚,渔网
+  7. RR=245 anchor_m=93 Swiss=8 | 毒须鲶,绵鳚,水草,海螺壳,渔网
+  8. RR=203 anchor_m=174 Swiss=9 | 皮皮虾,迷幻蝠鲼,飞鱼,渔网,流星索
+  9. RR=192 anchor_m=185 Swiss=9 | 燃烧响炮,皮皮虾,迷幻蝠鲼,绵鳚,渔网
+  10. RR=216 anchor_m=128 Swiss=8 | 淬锋钢,水草,独角鲸,渔网,海螺壳
+  11. RR=189 anchor_m=180 Swiss=8 | 靴里剑,皮皮虾,迷幻蝠鲼,绵鳚,渔网
+  12. RR=188 anchor_m=172 Swiss=9 | 皮皮虾,迷幻蝠鲼,绵鳚,渔网,手斧
+  13. RR=193 anchor_m=152 Swiss=9 | 皮皮虾,迷幻蝠鲼,毒须鲶,渔网,流星索
+  14. RR=184 anchor_m=150 Swiss=8 | 皮皮虾,迷幻蝠鲼,水母,流星索,渔网
+  15. RR=175 anchor_m=166 Swiss=8 | 皮皮虾,绵鳚,迷幻蝠鲼,水母,渔网
+  16. RR=213 anchor_m=80 Swiss=8 | 渔网,淬锋钢,飞鱼,珍珠,水草
+  17. RR=228 anchor_m=49 Swiss=8 | 渔网,淬锋钢,飞鱼,珊瑚,水草
+  18. RR=218 anchor_m=63 Swiss=9 | 渔网,淬锋钢,飞鱼,马龙鱼
+  19. RR=174 anchor_m=134 Swiss=8 | 皮皮虾,迷幻蝠鲼,绵鳚,海螺壳,渔网
+  20. RR=165 anchor_m=144 Swiss=8 | 皮皮虾,迷幻蝠鲼,食人鱼,渔网,流星索
+
+[GDF] seeds: 温馨海湾
+[GDF] size=6 top 20
+  1. RR=287 anchor_m=67 Swiss=9 | 水草,温馨海湾,淬锋钢,独角鲸
+  2. RR=270 anchor_m=114 Swiss=9 | 温馨海湾,飞鱼,淬锋钢,水草
+  3. RR=220 anchor_m=147 Swiss=8 | 毒须鲶,雪怪蟹,水母,温馨海湾
+  4. RR=254 anchor_m=74 Swiss=8 | 水草,淬锋钢,迷你弯刀,温馨海湾
+  5. RR=217 anchor_m=125 Swiss=8 | 水草,毒须鲶,水母,温馨海湾
+  6. RR=262 anchor_m=16 Swiss=8 | 温馨海湾,水草,绵鳚,毒须鲶
+  7. RR=228 anchor_m=82 Swiss=8 | 海螺壳,温馨海湾,飞鱼,淬锋钢
+  8. RR=252 anchor_m=30 Swiss=9 | 珊瑚,温馨海湾,飞鱼,淬锋钢
+  9. RR=244 anchor_m=40 Swiss=9 | 毒须鲶,温馨海湾,飞鱼,淬锋钢
+  10. RR=247 anchor_m=26 Swiss=9 | 水草,舱底蠕虫,温馨海湾,淬锋钢
+  11. RR=239 anchor_m=37 Swiss=9 | 温馨海湾,水母,飞鱼,淬锋钢
+  12. RR=246 anchor_m=5 Swiss=10 | 毒须鲶,舱底蠕虫,温馨海湾,淬锋钢
+  13. RR=218 anchor_m=51 Swiss=8 | 温馨海湾,飞鱼,淬锋钢,舱底蠕虫
+  14. RR=235 anchor_m=10 Swiss=9 | 水母,舱底蠕虫,温馨海湾,淬锋钢
+  15. RR=198 anchor_m=52 Swiss=9 | 舱底蠕虫,温馨海湾,淬锋钢,珍珠
+  16. RR=168 anchor_m=73 Swiss=8 | 温馨海湾,珍珠,飞鱼,淬锋钢
+  17. RR=196 anchor_m=13 Swiss=8 | 温馨海湾,毒须鲶,淬锋钢,独角鲸
+  18. RR=195 anchor_m=13 Swiss=8 | 舱底蠕虫,雪怪蟹,温馨海湾,淬锋钢
+  19. RR=182 anchor_m=39 Swiss=8 | 舱底蠕虫,温馨海湾,打火机,淬锋钢
+  20. RR=179 anchor_m=30 Swiss=9 | 淬锋钢,迷你弯刀,珊瑚,温馨海湾
+
+[GDF] seeds: 湿件战服
+[GDF] size=6 top 20
+  1. RR=276 anchor_m=137 Swiss=10 | 马龙鱼,湿件战服,淬锋钢,飞鱼
+  2. RR=250 anchor_m=184 Swiss=8 | 湿件战服,淬锋钢,飞鱼,弹簧刀,独角鲸
+  3. RR=233 anchor_m=208 Swiss=9 | 湿件战服,淬锋钢,飞鱼,独角鲸,水草
+  4. RR=248 anchor_m=174 Swiss=8 | 迷你弯刀,湿件战服,淬锋钢,马龙鱼
+  5. RR=246 anchor_m=150 Swiss=9 | 马龙鱼,淬锋钢,湿件战服,独角鲸
+  6. RR=214 anchor_m=200 Swiss=8 | 湿件战服,水草,独角鲸,绵鳚,毒须鲶
+  7. RR=243 anchor_m=128 Swiss=9 | 藏刃匕首,湿件战服,马龙鱼,淬锋钢
+  8. RR=247 anchor_m=119 Swiss=9 | 藏刃匕首,水草,绵鳚,毒须鲶,湿件战服
+  9. RR=212 anchor_m=183 Swiss=8 | 湿件战服,淬锋钢,飞鱼,弹簧刀,迷你弯刀
+  10. RR=212 anchor_m=179 Swiss=9 | 飞鱼,湿件战服,水草,绵鳚,毒须鲶
+  11. RR=242 anchor_m=85 Swiss=9 | 湿件战服,水草,绵鳚,毒须鲶,雪怪蟹
+  12. RR=196 anchor_m=163 Swiss=8 | 湿件战服,淬锋钢,飞鱼,弹簧刀,水草
+  13. RR=183 anchor_m=174 Swiss=8 | 湿件战服,淬锋钢,飞鱼,藏刃匕首,水草
+  14. RR=190 anchor_m=150 Swiss=8 | 湿件战服,淬锋钢,飞鱼,水草,鱼饵
+  15. RR=184 anchor_m=160 Swiss=8 | 淬锋钢,湿件战服,独角鲸,弹簧刀,迷你弯刀
+  16. RR=200 anchor_m=122 Swiss=8 | 湿件战服,藏刃匕首,珊瑚,绵鳚,毒须鲶
+  17. RR=178 anchor_m=139 Swiss=8 | 湿件战服,淬锋钢,飞鱼,迷幻蝠鲼,水草
+  18. RR=168 anchor_m=158 Swiss=8 | 迷你弯刀,水草,湿件战服,绵鳚,毒须鲶
+  19. RR=168 anchor_m=155 Swiss=8 | 左轮手枪,湿件战服,水草,绵鳚,毒须鲶
+  20. RR=188 anchor_m=106 Swiss=8 | 藏刃匕首,绵鳚,毒须鲶,湿件战服,淬锋钢
+
+[GDF] seeds: 火炮
+[GDF] size=6 top 20
+  1. RR=269 anchor_m=269 Swiss=10 | 火药角,火炮,绵鳚,燃烧响炮,打火机
+  2. RR=268 anchor_m=263 Swiss=9 | 打火机,绵鳚,珊瑚,火炮,燃烧响炮
+  3. RR=264 anchor_m=264 Swiss=9 | 打火机,绵鳚,葡萄弹,火炮,燃烧响炮
+  4. RR=251 anchor_m=251 Swiss=9 | 打火机,绵鳚,靴里剑,火炮,燃烧响炮
+  5. RR=249 anchor_m=249 Swiss=9 | 淬锋钢,火药角,火炮,救生圈
+  6. RR=223 anchor_m=223 Swiss=8 | 手雷,打火机,绵鳚,火炮,燃烧响炮
+  7. RR=222 anchor_m=222 Swiss=8 | 流星索,打火机,绵鳚,火炮,燃烧响炮
+  8. RR=221 anchor_m=221 Swiss=8 | 打火机,火炮,燃烧响炮,绵鳚,手斧
+  9. RR=219 anchor_m=219 Swiss=9 | 打火机,火炮,燃烧响炮,葡萄弹,手斧
+  10. RR=207 anchor_m=204 Swiss=9 | 打火机,绵鳚,鹦鹉皮特,火炮,燃烧响炮
+  11. RR=206 anchor_m=206 Swiss=7 | 打火机,绵鳚,火炮,燃烧响炮,舱底蠕虫
+  12. RR=230 anchor_m=155 Swiss=9 | 火药角,火炮,水草,绵鳚,珊瑚
+  13. RR=205 anchor_m=205 Swiss=8 | 打火机,绵鳚,海螺壳,火炮,燃烧响炮
+  14. RR=203 anchor_m=203 Swiss=8 | 打火机,火药角,火炮,淬锋钢,燃烧响炮
+  15. RR=232 anchor_m=120 Swiss=9 | 打火机,火炮,燃烧响炮,淬锋钢,舱底蠕虫
+  16. RR=186 anchor_m=186 Swiss=8 | 打火机,火炮,葡萄弹,燃烧响炮,淬锋钢
+  17. RR=177 anchor_m=177 Swiss=8 | 打火机,火炮,燃烧响炮,靴里剑,手斧
+  18. RR=171 anchor_m=171 Swiss=8 | 打火机,火炮,手雷,燃烧响炮,葡萄弹
+  19. RR=173 anchor_m=165 Swiss=8 | 打火机,绵鳚,火炮,水草,燃烧响炮
+  20. RR=170 anchor_m=170 Swiss=8 | 打火机,火药角,火炮,燃烧响炮,珊瑚
+
+[GDF] seeds: 火药角
+[GDF] size=6 top 20
+  1. RR=244 anchor_m=244 Swiss=9 | 救生圈,淬锋钢,火药角,步枪
+  2. RR=236 anchor_m=236 Swiss=9 | 靴里剑,火药角,手雷,淬锋钢,手斧,葡萄弹
+  3. RR=226 anchor_m=226 Swiss=8 | 救生圈,火药角,步枪,葡萄弹
+  4. RR=219 anchor_m=208 Swiss=8 | 火药角,手雷,淬锋钢,手斧,葡萄弹,舱底蠕虫
+  5. RR=200 anchor_m=200 Swiss=9 | 火药角,手雷,绵鳚,淬锋钢,手斧,葡萄弹
+  6. RR=198 anchor_m=187 Swiss=9 | 手斧,鲨齿爪,火药角,手雷,舱底蠕虫
+  7. RR=197 anchor_m=181 Swiss=8 | 水草,火药角,手雷,淬锋钢,马龙鱼
+  8. RR=188 anchor_m=188 Swiss=9 | 葡萄弹,手斧,绵鳚,火药角,步枪
+  9. RR=183 anchor_m=183 Swiss=8 | 鲨齿爪,葡萄弹,火药角,手雷,舱底蠕虫
+  10. RR=190 anchor_m=151 Swiss=10 | 火药角,手雷,淬锋钢,手斧,靴里剑,舱底蠕虫
+  11. RR=174 anchor_m=174 Swiss=8 | 手斧,火药角,步枪,舱底蠕虫,淬锋钢
+  12. RR=173 anchor_m=173 Swiss=8 | 流星索,葡萄弹,绵鳚,火药角,步枪
+  13. RR=177 anchor_m=164 Swiss=8 | 火药角,手雷,绵鳚,淬锋钢,手斧,舱底蠕虫
+  14. RR=172 anchor_m=172 Swiss=9 | 火药角,手雷,淬锋钢,手斧,珊瑚,葡萄弹
+  15. RR=165 anchor_m=161 Swiss=7 | 火药角,手雷,鲨齿爪,靴里剑,葡萄弹
+  16. RR=162 anchor_m=162 Swiss=8 | 救生圈,绵鳚,火药角,步枪
+  17. RR=160 anchor_m=159 Swiss=8 | 鲨齿爪,火药角,手雷,舱底蠕虫,靴里剑
+  18. RR=179 anchor_m=117 Swiss=8 | 火药角,手雷,淬锋钢,弹簧刀,马龙鱼
+  19. RR=158 anchor_m=158 Swiss=8 | 火药角,手雷,葡萄弹,淬锋钢,流星索,靴里剑
+  20. RR=157 anchor_m=157 Swiss=8 | 靴里剑,火药角,步枪,舱底蠕虫,淬锋钢
+
+[GDF] seeds: 燃烧响炮
+[GDF] size=6 top 20
+  1. RR=270 anchor_m=270 Swiss=9 | 火药角,火炮,绵鳚,打火机,燃烧响炮
+  2. RR=246 anchor_m=246 Swiss=8 | 燃烧响炮,海螺壳,打火机,绵鳚,海底热泉
+  3. RR=234 anchor_m=234 Swiss=10 | 葡萄弹,火炮,打火机,绵鳚,燃烧响炮
+  4. RR=224 anchor_m=224 Swiss=9 | 手雷,火炮,燃烧响炮,绵鳚,打火机
+  5. RR=224 anchor_m=224 Swiss=9 | 燃烧响炮,绵鳚,打火机,手斧,火炮
+  6. RR=212 anchor_m=212 Swiss=9 | 燃烧响炮,葡萄弹,海底热泉,绵鳚,打火机
+  7. RR=212 anchor_m=212 Swiss=8 | 燃烧响炮,珊瑚,打火机,绵鳚,海底热泉
+  8. RR=208 anchor_m=208 Swiss=8 | 燃烧响炮,迷幻蝠鲼,皮皮虾,绵鳚,打火机,海螺壳
+  9. RR=203 anchor_m=203 Swiss=8 | 燃烧响炮,打火机,绵鳚,海底热泉,珍珠
+  10. RR=202 anchor_m=202 Swiss=8 | 火炮,燃烧响炮,绵鳚,打火机,皮皮虾
+  11. RR=198 anchor_m=198 Swiss=8 | 火炮,燃烧响炮,绵鳚,打火机,舱底蠕虫
+  12. RR=197 anchor_m=197 Swiss=8 | 火炮,燃烧响炮,鹦鹉皮特,绵鳚,打火机
+  13. RR=191 anchor_m=183 Swiss=9 | 火药角,火炮,打火机,燃烧响炮,淬锋钢
+  14. RR=187 anchor_m=181 Swiss=8 | 燃烧响炮,流星索,皮皮虾,迷幻蝠鲼,绵鳚,打火机
+  15. RR=184 anchor_m=184 Swiss=9 | 海螺壳,火炮,燃烧响炮,绵鳚,打火机
+  16. RR=182 anchor_m=182 Swiss=9 | 燃烧响炮,流星索,打火机,绵鳚,海底热泉
+  17. RR=176 anchor_m=176 Swiss=9 | 火炮,燃烧响炮,绵鳚,打火机,左轮手枪
+  18. RR=176 anchor_m=176 Swiss=8 | 手雷,燃烧响炮,打火机,绵鳚,海底热泉
+  19. RR=183 anchor_m=158 Swiss=8 | 燃烧响炮,打火机,绵鳚,海底热泉,淬锋钢
+  20. RR=173 anchor_m=173 Swiss=7 | 火炮,燃烧响炮,绵鳚,打火机,珍珠
+
+[GDF] seeds: 独角鲸
+[GDF] size=6 top 20
+  1. RR=271 anchor_m=208 Swiss=9 | 水草,独角鲸,弹簧刀,马龙鱼,淬锋钢
+  2. RR=243 anchor_m=243 Swiss=10 | 独角鲸,鲨齿爪,手斧,靴里剑,淬锋钢
+  3. RR=259 anchor_m=176 Swiss=8 | 珊瑚,马龙鱼,弹簧刀,独角鲸,淬锋钢
+  4. RR=246 anchor_m=185 Swiss=9 | 水草,独角鲸,绵鳚,马龙鱼,淬锋钢
+  5. RR=225 anchor_m=225 Swiss=8 | 独角鲸,鲨齿爪,手斧,左轮手枪,淬锋钢
+  6. RR=213 anchor_m=187 Swiss=9 | 海螺壳,马龙鱼,弹簧刀,独角鲸,淬锋钢
+  7. RR=261 anchor_m=74 Swiss=9 | 独角鲸,鲨齿爪,手斧,舱底蠕虫,淬锋钢
+  8. RR=194 anchor_m=190 Swiss=9 | 独角鲸,手斧,淬锋钢,水草,马龙鱼
+  9. RR=209 anchor_m=145 Swiss=9 | 马龙鱼,弹簧刀,手斧,独角鲸,淬锋钢
+  10. RR=194 anchor_m=173 Swiss=8 | 水草,独角鲸,弹簧刀,飞鱼,淬锋钢,舱底蠕虫
+  11. RR=185 anchor_m=181 Swiss=8 | 独角鲸,鲨齿爪,手斧,迷你弯刀,淬锋钢
+  12. RR=186 anchor_m=171 Swiss=8 | 马龙鱼,弹簧刀,独角鲸,淬锋钢,珍珠
+  13. RR=189 anchor_m=156 Swiss=8 | 独角鲸,飞鱼,手斧,淬锋钢,马龙鱼
+  14. RR=181 anchor_m=167 Swiss=8 | 鲨齿爪,马龙鱼,弹簧刀,独角鲸
+  15. RR=174 anchor_m=169 Swiss=8 | 武士刀,弹簧刀,独角鲸,淬锋钢,手斧
+  16. RR=168 anchor_m=168 Swiss=8 | 独角鲸,刺刀,鲨齿爪,手斧,淬锋钢
+  17. RR=172 anchor_m=157 Swiss=8 | 马龙鱼,弹簧刀,独角鲸,迷幻蝠鲼,淬锋钢
+  18. RR=182 anchor_m=126 Swiss=8 | 火药角,步枪,葡萄弹,淬锋钢,独角鲸
+  19. RR=190 anchor_m=109 Swiss=8 | 独角鲸,弹簧刀,手斧,靴里剑,舱底蠕虫,淬锋钢
+  20. RR=216 anchor_m=57 Swiss=9 | 马龙鱼,弹簧刀,独角鲸,舱底蠕虫,淬锋钢
+
+[GDF] seeds: 狼筅
+[GDF] size=6 top 20
+  1. RR=271 anchor_m=203 Swiss=10 | 狼筅,火药角,手雷,葡萄弹,手斧
+  2. RR=247 anchor_m=230 Swiss=8 | 葡萄弹,淬锋钢,手斧,狼筅,左轮手枪
+  3. RR=245 anchor_m=211 Swiss=9 | 狼筅,靴里剑,火药角,手雷,葡萄弹
+  4. RR=219 anchor_m=212 Swiss=8 | 淬锋钢,左轮手枪,狼筅,手斧,靴里剑
+  5. RR=211 anchor_m=186 Swiss=8 | 马龙鱼,淬锋钢,狼筅,独角鲸
+  6. RR=217 anchor_m=173 Swiss=8 | 淬锋钢,马龙鱼,狼筅,靴里剑
+  7. RR=218 anchor_m=169 Swiss=8 | 狼筅,火药角,手雷,绵鳚,葡萄弹
+  8. RR=239 anchor_m=123 Swiss=8 | 珊瑚,水草,绵鳚,毒须鲶,狼筅
+  9. RR=197 anchor_m=191 Swiss=8 | 淬锋钢,左轮手枪,狼筅,葡萄弹,靴里剑
+  10. RR=208 anchor_m=168 Swiss=8 | 狼筅,绵鳚,马龙鱼,淬锋钢
+  11. RR=227 anchor_m=122 Swiss=9 | 海螺壳,水草,绵鳚,毒须鲶,狼筅
+  12. RR=194 anchor_m=185 Swiss=9 | 飞鱼,淬锋钢,手斧,狼筅,左轮手枪
+  13. RR=213 anchor_m=142 Swiss=9 | 淬锋钢,手斧,狼筅,马龙鱼
+  14. RR=214 anchor_m=117 Swiss=8 | 淬锋钢,狼筅,火药角,手雷,葡萄弹
+  15. RR=201 anchor_m=134 Swiss=9 | 水草,绵鳚,毒须鲶,雪怪蟹,狼筅
+  16. RR=181 anchor_m=171 Swiss=9 | 狼筅,火药角,手雷,珊瑚,葡萄弹
+  17. RR=179 anchor_m=164 Swiss=8 | 狼筅,藏刃匕首,火药角,手雷,葡萄弹
+  18. RR=180 anchor_m=161 Swiss=8 | 毒须鲶,狼筅,火药角,手雷,葡萄弹
+  19. RR=208 anchor_m=98 Swiss=7 | 舱底蠕虫,淬锋钢,手斧,狼筅,靴里剑
+  20. RR=185 anchor_m=134 Swiss=8 | 狼筅,绵鳚,毒须鲶,淬锋钢,舱底蠕虫
+
+[GDF] seeds: 珊瑚
+[GDF] size=6 top 20
+  1. RR=256 anchor_m=142 Swiss=10 | 舱底蠕虫,珊瑚,淬锋钢,绵鳚,马龙鱼
+  2. RR=255 anchor_m=164 Swiss=9 | 迷幻蝠鲼,马龙鱼,水草,淬锋钢,珊瑚
+  3. RR=243 anchor_m=175 Swiss=9 | 马龙鱼,海螺壳,水草,淬锋钢,珊瑚
+  4. RR=227 anchor_m=180 Swiss=8 | 马龙鱼,水草,淬锋钢,珊瑚,珍珠
+  5. RR=250 anchor_m=128 Swiss=9 | 马龙鱼,木桶,淬锋钢,珊瑚
+  6. RR=245 anchor_m=125 Swiss=8 | 水草,马龙鱼,淬锋钢,珊瑚,毒须鲶
+  7. RR=226 anchor_m=150 Swiss=9 | 舱底蠕虫,珊瑚,淬锋钢,弹簧刀,马龙鱼
+  8. RR=218 anchor_m=111 Swiss=8 | 水草,淬锋钢,绵鳚,马龙鱼,珊瑚
+  9. RR=186 anchor_m=170 Swiss=8 | 马龙鱼,水草,淬锋钢,珊瑚,水母
+  10. RR=192 anchor_m=153 Swiss=8 | 弹簧刀,马龙鱼,水草,淬锋钢,珊瑚
+  11. RR=195 anchor_m=135 Swiss=8 | 舱底蠕虫,水草,珊瑚,淬锋钢,马龙鱼
+  12. RR=186 anchor_m=148 Swiss=9 | 迷幻蝠鲼,马龙鱼,淬锋钢,海螺壳,珊瑚
+  13. RR=181 anchor_m=155 Swiss=9 | 马龙鱼,雪怪蟹,水草,淬锋钢,珊瑚
+  14. RR=210 anchor_m=84 Swiss=8 | 靴里剑,淬锋钢,绵鳚,马龙鱼,珊瑚
+  15. RR=177 anchor_m=150 Swiss=8 | 马龙鱼,鱼饵,水草,淬锋钢,珊瑚
+  16. RR=206 anchor_m=91 Swiss=8 | 飞鱼,淬锋钢,绵鳚,马龙鱼,珊瑚
+  17. RR=208 anchor_m=78 Swiss=9 | 珊瑚,舱底蠕虫,鲨齿爪,迷你弯刀,淬锋钢
+  18. RR=202 anchor_m=84 Swiss=8 | 舱底蠕虫,手斧,珊瑚,淬锋钢,马龙鱼
+  19. RR=180 anchor_m=122 Swiss=9 | 马龙鱼,弹簧刀,飞鱼,淬锋钢,珊瑚
+  20. RR=188 anchor_m=99 Swiss=8 | 水草,马龙鱼,淬锋钢,打火机,珊瑚
+
+[GDF] seeds: 珊瑚护甲
+[GDF] size=6 top 20
+  1. RR=273 anchor_m=115 Swiss=10 | 水草,绵鳚,毒须鲶,雪怪蟹,珊瑚护甲
+  2. RR=261 anchor_m=162 Swiss=9 | 绵鳚,毒须鲶,雪怪蟹,水母,珊瑚护甲
+  3. RR=231 anchor_m=200 Swiss=8 | 水草,淬锋钢,飞鱼,珊瑚护甲,珊瑚
+  4. RR=261 anchor_m=102 Swiss=9 | 毒须鲶,雪怪蟹,水母,珊瑚护甲,水草
+  5. RR=227 anchor_m=166 Swiss=8 | 钓鱼竿,毒须鲶,绵鳚,珊瑚护甲
+  6. RR=217 anchor_m=154 Swiss=8 | 钓鱼竿,毒须鲶,雪怪蟹,珊瑚护甲
+  7. RR=231 anchor_m=122 Swiss=9 | 水草,绵鳚,毒须鲶,水母,珊瑚护甲
+  8. RR=211 anchor_m=154 Swiss=9 | 珊瑚护甲,马龙鱼,绵鳚,淬锋钢
+  9. RR=229 anchor_m=116 Swiss=8 | 毒须鲶,雪怪蟹,水母,珊瑚,珊瑚护甲
+  10. RR=211 anchor_m=148 Swiss=9 | 淬锋钢,飞鱼,马龙鱼,珊瑚护甲
+  11. RR=195 anchor_m=162 Swiss=8 | 鱼饵,淬锋钢,飞鱼,珊瑚护甲,水草
+  12. RR=219 anchor_m=108 Swiss=8 | 藏刃匕首,水草,绵鳚,毒须鲶,珊瑚护甲
+  13. RR=210 anchor_m=125 Swiss=8 | 钓鱼竿,毒须鲶,水草,珊瑚护甲
+  14. RR=176 anchor_m=167 Swiss=8 | 珊瑚护甲,淬锋钢,水草,珊瑚,独角鲸
+  15. RR=181 anchor_m=151 Swiss=9 | 钓鱼竿,毒须鲶,水母,珊瑚护甲
+  16. RR=174 anchor_m=152 Swiss=8 | 淬锋钢,飞鱼,水母,珊瑚护甲,水草
+  17. RR=172 anchor_m=148 Swiss=8 | 鱼饵,珊瑚护甲,淬锋钢,水草,独角鲸
+  18. RR=160 anchor_m=151 Swiss=9 | 淬锋钢,飞鱼,珊瑚护甲,水草,毒须鲶
+  19. RR=156 anchor_m=148 Swiss=9 | 淬锋钢,珍珠,飞鱼,珊瑚护甲,水草
+  20. RR=156 anchor_m=148 Swiss=8 | 珊瑚护甲,淬锋钢,水草,水母,独角鲸
+
+[GDF] seeds: 珍珠
+[GDF] size=6 top 20
+  1. RR=256 anchor_m=81 Swiss=8 | 珍珠,马龙鱼,弹簧刀,独角鲸,淬锋钢
+  2. RR=221 anchor_m=135 Swiss=8 | 水草,绵鳚,毒须鲶,雪怪蟹,水母,珍珠
+  3. RR=226 anchor_m=114 Swiss=7 | 淬锋钢,马龙鱼,飞鱼,水草,珍珠
+  4. RR=199 anchor_m=165 Swiss=10 | 海螺壳,毒须鲶,雪怪蟹,水母,珍珠,水草
+  5. RR=251 anchor_m=42 Swiss=9 | 淬锋钢,马龙鱼,弹簧刀,飞鱼,珍珠
+  6. RR=198 anchor_m=144 Swiss=9 | 海螺壳,水草,绵鳚,毒须鲶,雪怪蟹,珍珠
+  7. RR=246 anchor_m=45 Swiss=9 | 手斧,淬锋钢,珍珠,弹簧刀,马龙鱼
+  8. RR=221 anchor_m=80 Swiss=9 | 水草,舱底蠕虫,珍珠,马龙鱼,淬锋钢
+  9. RR=230 anchor_m=27 Swiss=9 | 舱底蠕虫,珍珠,弹簧刀,马龙鱼,淬锋钢
+  10. RR=208 anchor_m=57 Swiss=8 | 淬锋钢,珍珠,水草,弹簧刀,马龙鱼
+  11. RR=215 anchor_m=40 Swiss=8 | 淬锋钢,珍珠,左轮手枪,弹簧刀,马龙鱼
+  12. RR=167 anchor_m=134 Swiss=9 | 水草,绵鳚,毒须鲶,迷幻蝠鲼,水母,珍珠
+  13. RR=162 anchor_m=140 Swiss=8 | 淬锋钢,飞鱼,迷幻蝠鲼,水母,珍珠,水草
+  14. RR=218 anchor_m=28 Swiss=8 | 舱底蠕虫,手斧,珍珠,马龙鱼,淬锋钢
+  15. RR=201 anchor_m=57 Swiss=8 | 淬锋钢,马龙鱼,手斧,飞鱼,珍珠
+  16. RR=193 anchor_m=72 Swiss=9 | 珍珠,迷你弯刀,淬锋钢,绵鳚,马龙鱼
+  17. RR=209 anchor_m=35 Swiss=9 | 舱底蠕虫,鲨齿爪,珍珠,飞鱼,淬锋钢
+  18. RR=213 anchor_m=13 Swiss=8 | 淬锋钢,珍珠,藏刃匕首,弹簧刀,马龙鱼
+  19. RR=172 anchor_m=93 Swiss=8 | 珍珠,马龙鱼,独角鲸,淬锋钢,水草
+  20. RR=194 anchor_m=44 Swiss=8 | 淬锋钢,珊瑚,珍珠,弹簧刀,马龙鱼
+
+[GDF] seeds: 皮皮虾
+[GDF] size=6 top 20
+  1. RR=272 anchor_m=272 Swiss=9 | 打火机,绵鳚,迷幻蝠鲼,皮皮虾,流星索,燃烧响炮
+  2. RR=270 anchor_m=252 Swiss=10 | 海螺壳,皮皮虾,迷幻蝠鲼,绵鳚,毒须鲶,水草
+  3. RR=229 anchor_m=229 Swiss=9 | 打火机,绵鳚,鹦鹉皮特,迷幻蝠鲼,皮皮虾,流星索
+  4. RR=218 anchor_m=209 Swiss=9 | 打火机,皮皮虾,鹦鹉皮特,迷幻蝠鲼,绵鳚,水草
+  5. RR=200 anchor_m=184 Swiss=8 | 皮皮虾,鹦鹉皮特,迷幻蝠鲼,毒须鲶,绵鳚,水草
+  6. RR=202 anchor_m=176 Swiss=9 | 淬锋钢,马龙鱼,皮皮虾,迷幻蝠鲼,飞鱼
+  7. RR=193 anchor_m=192 Swiss=9 | 海螺壳,火药角,皮皮虾,迷幻蝠鲼,飞鱼,水草
+  8. RR=189 anchor_m=186 Swiss=8 | 打火机,皮皮虾,迷幻蝠鲼,绵鳚,毒须鲶,水草
+  9. RR=182 anchor_m=182 Swiss=8 | 皮皮虾,迷幻蝠鲼,绵鳚,水草,打火机,燃烧响炮
+  10. RR=184 anchor_m=172 Swiss=8 | 皮皮虾,迷幻蝠鲼,绵鳚,毒须鲶,雪怪蟹,水草
+  11. RR=177 anchor_m=177 Swiss=7 | 葡萄弹,抓钩,绵鳚,迷幻蝠鲼,皮皮虾,流星索
+  12. RR=189 anchor_m=143 Swiss=7 | 海螺壳,绵鳚,迷幻蝠鲼,皮皮虾,水草,珍珠
+  13. RR=175 anchor_m=169 Swiss=8 | 珍珠,皮皮虾,迷幻蝠鲼,绵鳚,毒须鲶,水草
+  14. RR=183 anchor_m=152 Swiss=8 | 皮皮虾,迷幻蝠鲼,毒须鲶,绵鳚,水草,藏刃匕首
+  15. RR=171 anchor_m=171 Swiss=8 | 抓钩,打火机,绵鳚,迷幻蝠鲼,皮皮虾,流星索
+  16. RR=204 anchor_m=94 Swiss=8 | 淬锋钢,海螺壳,皮皮虾,迷幻蝠鲼,飞鱼,水草
+  17. RR=166 anchor_m=166 Swiss=9 | 抓钩,绵鳚,鹦鹉皮特,迷幻蝠鲼,皮皮虾,流星索
+  18. RR=163 anchor_m=163 Swiss=8 | 水草,绵鳚,迷幻蝠鲼,皮皮虾,火药角,流星索
+  19. RR=161 anchor_m=161 Swiss=8 | 火药角,皮皮虾,迷幻蝠鲼,绵鳚,水草,打火机
+  20. RR=176 anchor_m=124 Swiss=9 | 舱底蠕虫,皮皮虾,迷幻蝠鲼,飞鱼,水草,淬锋钢
+
+[GDF] seeds: 绵鳚
+[GDF] size=6 top 20
+  1. RR=259 anchor_m=222 Swiss=9 | 水草,绵鳚,毒须鲶,迷幻蝠鲼,皮皮虾,海螺壳
+  2. RR=240 anchor_m=238 Swiss=9 | 打火机,绵鳚,燃烧响炮,火药角,火炮
+  3. RR=239 anchor_m=227 Swiss=8 | 打火机,绵鳚,燃烧响炮,火炮,葡萄弹
+  4. RR=230 anchor_m=223 Swiss=9 | 靴里剑,打火机,绵鳚,海底热泉,燃烧响炮
+  5. RR=231 anchor_m=214 Swiss=9 | 手斧,打火机,绵鳚,燃烧响炮,火炮
+  6. RR=224 anchor_m=223 Swiss=8 | 打火机,绵鳚,海底热泉,燃烧响炮,葡萄弹
+  7. RR=221 anchor_m=221 Swiss=9 | 淬锋钢,打火机,绵鳚,海底热泉,燃烧响炮
+  8. RR=224 anchor_m=207 Swiss=8 | 流星索,打火机,绵鳚,海底热泉,燃烧响炮
+  9. RR=210 anchor_m=210 Swiss=9 | 打火机,绵鳚,海底热泉,燃烧响炮,海螺壳
+  10. RR=206 anchor_m=205 Swiss=8 | 打火机,绵鳚,海底热泉,珊瑚,燃烧响炮
+  11. RR=218 anchor_m=172 Swiss=8 | 水草,马龙鱼,绵鳚,淬锋钢,舱底蠕虫
+  12. RR=198 anchor_m=198 Swiss=8 | 打火机,绵鳚,海底热泉,水草,燃烧响炮
+  13. RR=212 anchor_m=163 Swiss=8 | 珊瑚,马龙鱼,绵鳚,淬锋钢,舱底蠕虫
+  14. RR=194 anchor_m=194 Swiss=9 | 珍珠,打火机,绵鳚,海底热泉,燃烧响炮
+  15. RR=193 anchor_m=193 Swiss=9 | 打火机,绵鳚,燃烧响炮,火炮,皮皮虾
+  16. RR=192 anchor_m=176 Swiss=8 | 燃烧响炮,马龙鱼,绵鳚,淬锋钢,舱底蠕虫
+  17. RR=183 anchor_m=183 Swiss=8 | 打火机,绵鳚,燃烧响炮,火炮,左轮手枪
+  18. RR=183 anchor_m=183 Swiss=8 | 打火机,绵鳚,海底热泉,舱底蠕虫,燃烧响炮
+  19. RR=175 anchor_m=175 Swiss=8 | 打火机,绵鳚,海底热泉,藏刃匕首,燃烧响炮
+  20. RR=174 anchor_m=174 Swiss=8 | 打火机,绵鳚,海底热泉,燃烧响炮,手雷
+
+[GDF] seeds: 舱底蠕虫
+[GDF] size=6 top 20
+  1. RR=232 anchor_m=86 Swiss=8 | 皮皮虾,迷幻蝠鲼,绵鳚,毒须鲶,海螺壳,舱底蠕虫
+  2. RR=218 anchor_m=181 Swiss=8 | 手雷,鲨齿爪,舱底蠕虫,靴里剑,手斧
+  3. RR=216 anchor_m=179 Swiss=8 | 鲨齿爪,舱底蠕虫,靴里剑,绵鳚,手斧
+  4. RR=211 anchor_m=182 Swiss=9 | 鲨齿爪,藏刃匕首,靴里剑,舱底蠕虫,手斧
+  5. RR=204 anchor_m=191 Swiss=8 | 流星索,鲨齿爪,藏刃匕首,舱底蠕虫,手斧
+  6. RR=194 anchor_m=182 Swiss=10 | 绵鳚,鲨齿爪,舱底蠕虫,藏刃匕首,手斧
+  7. RR=198 anchor_m=172 Swiss=8 | 手雷,鲨齿爪,藏刃匕首,舱底蠕虫,手斧
+  8. RR=205 anchor_m=146 Swiss=8 | 流星索,鲨齿爪,舱底蠕虫,靴里剑,手斧
+  9. RR=184 anchor_m=171 Swiss=9 | 鲨齿爪,舱底蠕虫,左轮手枪,靴里剑,手斧
+  10. RR=185 anchor_m=168 Swiss=9 | 手雷,鲨齿爪,迷你弯刀,舱底蠕虫,手斧
+  11. RR=180 anchor_m=166 Swiss=8 | 葡萄弹,鲨齿爪,舱底蠕虫,靴里剑,手斧
+  12. RR=221 anchor_m=70 Swiss=8 | 舱底蠕虫,靴里剑,淬锋钢,绵鳚,马龙鱼
+  13. RR=217 anchor_m=78 Swiss=9 | 绵鳚,皮皮虾,迷幻蝠鲼,毒须鲶,舱底蠕虫,流星索
+  14. RR=186 anchor_m=138 Swiss=8 | 舱底蠕虫,手雷,靴里剑,淬锋钢,马龙鱼
+  15. RR=176 anchor_m=148 Swiss=8 | 流星索,鲨齿爪,舱底蠕虫,独角鲸,手斧
+  16. RR=173 anchor_m=151 Swiss=8 | 鲨齿爪,舱底蠕虫,手斧,飞鱼,藏刃匕首
+  17. RR=173 anchor_m=144 Swiss=8 | 流星索,鲨齿爪,迷你弯刀,舱底蠕虫,手斧
+  18. RR=206 anchor_m=77 Swiss=9 | 手雷,皮皮虾,迷幻蝠鲼,绵鳚,毒须鲶,舱底蠕虫
+  19. RR=168 anchor_m=150 Swiss=8 | 鲨齿爪,藏刃匕首,左轮手枪,舱底蠕虫,手斧
+  20. RR=183 anchor_m=116 Swiss=8 | 舱底蠕虫,流星索,靴里剑,淬锋钢,马龙鱼
+
+[GDF] seeds: 葡萄弹
+[GDF] size=6 top 20
+  1. RR=272 anchor_m=266 Swiss=10 | 鲨齿爪,靴里剑,葡萄弹,手斧,左轮手枪
+  2. RR=228 anchor_m=228 Swiss=8 | 靴里剑,淬锋钢,流星索,葡萄弹,手斧,左轮手枪
+  3. RR=235 anchor_m=200 Swiss=8 | 舱底蠕虫,靴里剑,手斧,淬锋钢,葡萄弹,左轮手枪
+  4. RR=205 anchor_m=203 Swiss=8 | 靴里剑,淬锋钢,葡萄弹,手斧,弹簧刀,左轮手枪
+  5. RR=218 anchor_m=177 Swiss=8 | 珊瑚,淬锋钢,舱底蠕虫,葡萄弹,手斧,左轮手枪
+  6. RR=197 anchor_m=188 Swiss=9 | 葡萄弹,鲨齿爪,手斧,弹簧刀,左轮手枪
+  7. RR=201 anchor_m=172 Swiss=9 | 靴里剑,淬锋钢,火药角,手雷,手斧,葡萄弹
+  8. RR=197 anchor_m=177 Swiss=9 | 火药角,手雷,珊瑚,手斧,葡萄弹,靴里剑
+  9. RR=186 anchor_m=186 Swiss=8 | 靴里剑,淬锋钢,葡萄弹,抓钩,手斧,左轮手枪
+  10. RR=187 anchor_m=176 Swiss=8 | 手斧,珊瑚,火药角,手雷,绵鳚,葡萄弹
+  11. RR=184 anchor_m=176 Swiss=9 | 靴里剑,淬锋钢,鲨齿爪,葡萄弹,左轮手枪
+  12. RR=195 anchor_m=143 Swiss=8 | 舱底蠕虫,火药角,手雷,葡萄弹,淬锋钢,手斧
+  13. RR=201 anchor_m=130 Swiss=8 | 舱底蠕虫,珊瑚,火药角,手雷,葡萄弹,淬锋钢
+  14. RR=173 anchor_m=163 Swiss=8 | 手斧,珊瑚,火药角,手雷,藏刃匕首,葡萄弹
+  15. RR=170 anchor_m=166 Swiss=8 | 珊瑚,葡萄弹,手斧,弹簧刀,左轮手枪,淬锋钢
+  16. RR=164 anchor_m=164 Swiss=8 | 靴里剑,淬锋钢,藏刃匕首,葡萄弹,手斧,左轮手枪
+  17. RR=177 anchor_m=136 Swiss=8 | 靴里剑,淬锋钢,珊瑚,火药角,手雷,葡萄弹
+  18. RR=175 anchor_m=135 Swiss=8 | 舱底蠕虫,葡萄弹,手斧,弹簧刀,左轮手枪,淬锋钢
+  19. RR=163 anchor_m=155 Swiss=7 | 手斧,火药角,手雷,葡萄弹,救生圈
+  20. RR=160 anchor_m=153 Swiss=8 | 舱底蠕虫,手斧,火药角,手雷,弹簧刀,葡萄弹
+
+[GDF] seeds: 藏刃匕首
+[GDF] size=6 top 20
+  1. RR=265 anchor_m=203 Swiss=9 | 手斧,藏刃匕首,弹簧刀,武士刀,淬锋钢
+  2. RR=226 anchor_m=201 Swiss=10 | 鲨齿爪,舱底蠕虫,藏刃匕首,靴里剑,手斧
+  3. RR=205 anchor_m=195 Swiss=8 | 绵鳚,鲨齿爪,手斧,舱底蠕虫,藏刃匕首
+  4. RR=224 anchor_m=147 Swiss=9 | 水草,马龙鱼,淬锋钢,手斧,藏刃匕首
+  5. RR=238 anchor_m=115 Swiss=8 | 水草,马龙鱼,绵鳚,淬锋钢,藏刃匕首
+  6. RR=223 anchor_m=135 Swiss=8 | 藏刃匕首,弹簧刀,马龙鱼,淬锋钢,珊瑚
+  7. RR=218 anchor_m=122 Swiss=8 | 流星索,藏刃匕首,弹簧刀,马龙鱼,淬锋钢
+  8. RR=203 anchor_m=151 Swiss=8 | 舱底蠕虫,手斧,藏刃匕首,淬锋钢,马龙鱼
+  9. RR=192 anchor_m=164 Swiss=9 | 靴里剑,藏刃匕首,弹簧刀,武士刀,淬锋钢
+  10. RR=235 anchor_m=75 Swiss=9 | 藏刃匕首,手斧,弹簧刀,马龙鱼,淬锋钢
+  11. RR=199 anchor_m=137 Swiss=9 | 藏刃匕首,弹簧刀,马龙鱼,水草,淬锋钢
+  12. RR=185 anchor_m=165 Swiss=9 | 手斧,鲨齿爪,舱底蠕虫,左轮手枪,藏刃匕首
+  13. RR=179 anchor_m=161 Swiss=8 | 手雷,手斧,鲨齿爪,舱底蠕虫,藏刃匕首
+  14. RR=170 anchor_m=166 Swiss=8 | 手斧,鲨齿爪,舱底蠕虫,独角鲸,藏刃匕首
+  15. RR=201 anchor_m=94 Swiss=8 | 水草,马龙鱼,淬锋钢,藏刃匕首,飞鱼
+  16. RR=181 anchor_m=131 Swiss=8 | 藏刃匕首,弹簧刀,马龙鱼,淬锋钢,毒须鲶
+  17. RR=167 anchor_m=158 Swiss=8 | 流星索,手斧,鲨齿爪,舱底蠕虫,藏刃匕首
+  18. RR=195 anchor_m=88 Swiss=8 | 手雷,藏刃匕首,弹簧刀,马龙鱼,淬锋钢
+  19. RR=167 anchor_m=136 Swiss=8 | 迷幻蝠鲼,藏刃匕首,弹簧刀,马龙鱼,淬锋钢
+  20. RR=159 anchor_m=149 Swiss=8 | 手斧,鲨齿爪,舱底蠕虫,藏刃匕首,迷你弯刀
+
+[GDF] seeds: 迷你弯刀
+[GDF] size=6 top 20
+  1. RR=274 anchor_m=258 Swiss=9 | 手斧,左轮手枪,葡萄弹,鲨齿爪,迷你弯刀
+  2. RR=257 anchor_m=254 Swiss=9 | 手斧,左轮手枪,鲨齿爪,迷你弯刀,靴里剑
+  3. RR=253 anchor_m=253 Swiss=9 | 手斧,鲨齿爪,靴里剑,迷你弯刀,刺刀
+  4. RR=258 anchor_m=211 Swiss=9 | 流星索,手斧,鲨齿爪,靴里剑,迷你弯刀
+  5. RR=242 anchor_m=241 Swiss=8 | 手斧,鲨齿爪,靴里剑,弹簧刀,迷你弯刀
+  6. RR=243 anchor_m=236 Swiss=9 | 流星索,葡萄弹,手斧,鲨齿爪,迷你弯刀
+  7. RR=239 anchor_m=239 Swiss=9 | 流星索,手斧,鲨齿爪,迷你弯刀,刺刀
+  8. RR=230 anchor_m=230 Swiss=8 | 靴里剑,手斧,淬锋钢,鲨齿爪,迷你弯刀
+  9. RR=232 anchor_m=222 Swiss=8 | 鲨齿爪,迷你弯刀,刺刀,舱底蠕虫,手斧
+  10. RR=223 anchor_m=219 Swiss=8 | 手斧,鲨齿爪,迷你弯刀,弹簧刀,左轮手枪
+  11. RR=218 anchor_m=218 Swiss=8 | 手斧,鲨齿爪,独角鲸,靴里剑,迷你弯刀
+  12. RR=213 anchor_m=210 Swiss=9 | 三花,手斧,鲨齿爪,靴里剑,迷你弯刀
+  13. RR=212 anchor_m=202 Swiss=8 | 手斧,鲨齿爪,靴里剑,抓钩,迷你弯刀
+  14. RR=205 anchor_m=202 Swiss=8 | 手斧,鲨齿爪,迷你弯刀,左轮手枪,刺刀
+  15. RR=197 anchor_m=196 Swiss=8 | 手斧,鲨齿爪,靴里剑,迷你弯刀,飞鱼
+  16. RR=188 anchor_m=188 Swiss=8 | 手斧,鲨齿爪,迷你弯刀,弹簧刀,独角鲸
+  17. RR=176 anchor_m=150 Swiss=8 | 鲨齿爪,迷你弯刀,舱底蠕虫,左轮手枪,手斧
+  18. RR=191 anchor_m=107 Swiss=8 | 珊瑚,迷你弯刀,弹簧刀,马龙鱼,淬锋钢
+  19. RR=174 anchor_m=138 Swiss=8 | 舱底蠕虫,手斧,鲨齿爪,迷你弯刀,淬锋钢
+  20. RR=163 anchor_m=158 Swiss=8 | 湿件战服,迷你弯刀,弹簧刀,独角鲸,淬锋钢
+
+[GDF] seeds: 迷幻蝠鲼
+[GDF] size=6 top 20
+  1. RR=286 anchor_m=258 Swiss=9 | 皮皮虾,迷幻蝠鲼,鹦鹉皮特,绵鳚,打火机,燃烧响炮
+  2. RR=240 anchor_m=234 Swiss=8 | 毒须鲶,绵鳚,迷幻蝠鲼,皮皮虾,水草,海螺壳
+  3. RR=227 anchor_m=217 Swiss=8 | 水草,珍珠,皮皮虾,迷幻蝠鲼,绵鳚,海螺壳
+  4. RR=219 anchor_m=207 Swiss=9 | 皮皮虾,鹦鹉皮特,迷幻蝠鲼,绵鳚,水草,海螺壳
+  5. RR=209 anchor_m=194 Swiss=8 | 水草,绵鳚,海螺壳,皮皮虾,迷幻蝠鲼,飞鱼
+  6. RR=203 anchor_m=203 Swiss=8 | 打火机,燃烧响炮,皮皮虾,迷幻蝠鲼,绵鳚,水草
+  7. RR=209 anchor_m=190 Swiss=8 | 燃烧响炮,皮皮虾,迷幻蝠鲼,绵鳚,打火机,葡萄弹
+  8. RR=200 anchor_m=199 Swiss=8 | 燃烧响炮,皮皮虾,迷幻蝠鲼,绵鳚,打火机,海螺壳
+  9. RR=205 anchor_m=180 Swiss=9 | 流星索,打火机,皮皮虾,迷幻蝠鲼,绵鳚,燃烧响炮
+  10. RR=199 anchor_m=180 Swiss=8 | 抓钩,燃烧响炮,皮皮虾,迷幻蝠鲼,绵鳚,打火机
+  11. RR=191 anchor_m=191 Swiss=8 | 皮皮虾,鹦鹉皮特,迷幻蝠鲼,绵鳚,水草,打火机
+  12. RR=216 anchor_m=138 Swiss=9 | 迷幻蝠鲼,飞鱼,淬锋钢,珍珠,海螺壳,水草
+  13. RR=189 anchor_m=189 Swiss=8 | 水草,打火机,皮皮虾,迷幻蝠鲼,绵鳚,海螺壳
+  14. RR=188 anchor_m=188 Swiss=8 | 海螺壳,抓钩,皮皮虾,迷幻蝠鲼,绵鳚,水草
+  15. RR=186 anchor_m=175 Swiss=7 | 水草,鱼饵,皮皮虾,迷幻蝠鲼,绵鳚,海螺壳
+  16. RR=183 anchor_m=175 Swiss=8 | 燃烧响炮,藏刃匕首,皮皮虾,迷幻蝠鲼,绵鳚,打火机
+  17. RR=176 anchor_m=173 Swiss=9 | 皮皮虾,迷幻蝠鲼,鹦鹉皮特,绵鳚,打火机,流星索
+  18. RR=175 anchor_m=173 Swiss=8 | 皮皮虾,飞鱼,迷幻蝠鲼,绵鳚,水草,珍珠
+  19. RR=170 anchor_m=170 Swiss=9 | 皮皮虾,飞鱼,迷幻蝠鲼,绵鳚,水草,流星索
+  20. RR=174 anchor_m=162 Swiss=8 | 燃烧响炮,皮皮虾,迷幻蝠鲼,毒须鲶,绵鳚,打火机
+
+[GDF] seeds: 钓鱼竿
+[GDF] size=6 top 20
+  1. RR=285 anchor_m=158 Swiss=9 | 钓鱼竿,马龙鱼,飞鱼,淬锋钢
+  2. RR=272 anchor_m=272 Swiss=9 | 钓鱼竿,毒须鲶,绵鳚,水草,打火机
+  3. RR=264 anchor_m=237 Swiss=10 | 钓鱼竿,毒须鲶,绵鳚,打火机,燃烧响炮
+  4. RR=255 anchor_m=250 Swiss=9 | 水草,钓鱼竿,毒须鲶,飞鱼,淬锋钢
+  5. RR=253 anchor_m=248 Swiss=9 | 燃烧响炮,钓鱼竿,毒须鲶,绵鳚,水草
+  6. RR=249 anchor_m=249 Swiss=9 | 水草,钓鱼竿,毒须鲶,绵鳚,珊瑚
+  7. RR=236 anchor_m=235 Swiss=8 | 淬锋钢,水草,钓鱼竿,毒须鲶,独角鲸
+  8. RR=234 anchor_m=227 Swiss=8 | 钓鱼竿,毒须鲶,绵鳚,藏刃匕首,水草
+  9. RR=215 anchor_m=214 Swiss=9 | 钓鱼竿,毒须鲶,雪怪蟹,水母,水草
+  10. RR=212 anchor_m=212 Swiss=8 | 钓鱼竿,毒须鲶,绵鳚,水草,海螺壳
+  11. RR=207 anchor_m=207 Swiss=8 | 钓鱼竿,毒须鲶,绵鳚,水草,淬锋钢
+  12. RR=204 anchor_m=202 Swiss=8 | 钓鱼竿,毒须鲶,绵鳚,水草,鱼饵
+  13. RR=202 anchor_m=202 Swiss=8 | 钓鱼竿,毒须鲶,绵鳚,水草,皮皮虾
+  14. RR=201 anchor_m=201 Swiss=8 | 龙涎香,钓鱼竿,毒须鲶,绵鳚,水草
+  15. RR=210 anchor_m=180 Swiss=8 | 淬锋钢,钓鱼竿,马龙鱼,独角鲸
+  16. RR=195 anchor_m=194 Swiss=9 | 水草,钓鱼竿,毒须鲶,沙滩充气球
+  17. RR=189 anchor_m=189 Swiss=8 | 钓鱼竿,毒须鲶,绵鳚,珊瑚,打火机
+  18. RR=188 anchor_m=188 Swiss=9 | 手斧,钓鱼竿,毒须鲶,绵鳚,水草
+  19. RR=186 anchor_m=186 Swiss=8 | 钓鱼竿,毒须鲶,绵鳚,水母,水草
+  20. RR=186 anchor_m=186 Swiss=8 | 珊瑚,水草,钓鱼竿,毒须鲶,雪怪蟹
+
+[GDF] seeds: 铲子
+[GDF] size=6 top 20
+  1. RR=244 anchor_m=-31 Swiss=8 | 珊瑚,淬锋钢,马龙鱼,铲子
+  2. RR=213 anchor_m=179 Swiss=8 | 铲子,靴里剑,手斧,飞鱼,淬锋钢
+  3. RR=235 anchor_m=119 Swiss=9 | 火药角,手雷,葡萄弹,淬锋钢,铲子
+  4. RR=203 anchor_m=173 Swiss=9 | 靴里剑,鲨齿爪,铲子,手斧
+  5. RR=213 anchor_m=150 Swiss=9 | 舱底蠕虫,手斧,铲子,淬锋钢,飞鱼
+  6. RR=206 anchor_m=151 Swiss=8 | 舱底蠕虫,铲子,鲨齿爪,淬锋钢
+  7. RR=223 anchor_m=102 Swiss=10 | 舱底蠕虫,铲子,马龙鱼,淬锋钢
+  8. RR=207 anchor_m=130 Swiss=9 | 火药角,手雷,绵鳚,淬锋钢,铲子
+  9. RR=219 anchor_m=105 Swiss=9 | 铲子,飞鱼,淬锋钢,马龙鱼
+  10. RR=199 anchor_m=137 Swiss=8 | 火药角,手雷,淬锋钢,手斧,铲子
+  11. RR=194 anchor_m=141 Swiss=8 | 舱底蠕虫,手斧,铲子,独角鲸,淬锋钢
+  12. RR=198 anchor_m=125 Swiss=8 | 舱底蠕虫,手斧,铲子,靴里剑,淬锋钢
+  13. RR=185 anchor_m=148 Swiss=9 | 舱底蠕虫,绵鳚,毒须鲶,铲子,淬锋钢
+  14. RR=189 anchor_m=137 Swiss=8 | 舱底蠕虫,手斧,铲子,藏刃匕首,淬锋钢
+  15. RR=200 anchor_m=94 Swiss=8 | 淬锋钢,铲子,手斧,马龙鱼
+  16. RR=210 anchor_m=72 Swiss=8 | 马龙鱼,弹簧刀,铲子,淬锋钢
+  17. RR=183 anchor_m=119 Swiss=9 | 火药角,手雷,淬锋钢,铲子,靴里剑
+  18. RR=184 anchor_m=115 Swiss=8 | 舱底蠕虫,手雷,手斧,铲子,淬锋钢
+  19. RR=167 anchor_m=147 Swiss=8 | 手斧,铲子,弹簧刀,飞鱼,淬锋钢
+  20. RR=179 anchor_m=120 Swiss=8 | 舱底蠕虫,手斧,铲子,淬锋钢,迷你弯刀
+
+[GDF] seeds: 雪怪蟹
+[GDF] size=6 top 20
+  1. RR=280 anchor_m=10 Swiss=10 | 马龙鱼,弹簧刀,飞鱼,淬锋钢,雪怪蟹
+  2. RR=252 anchor_m=247 Swiss=9 | 珊瑚,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  3. RR=249 anchor_m=248 Swiss=8 | 珍珠,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  4. RR=241 anchor_m=237 Swiss=8 | 海螺壳,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  5. RR=224 anchor_m=222 Swiss=9 | 独角鲸,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  6. RR=220 anchor_m=220 Swiss=9 | 迷幻蝠鲼,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  7. RR=222 anchor_m=213 Swiss=9 | 毒须鲶,雪怪蟹,水母,飞鱼,淬锋钢,水草
+  8. RR=215 anchor_m=213 Swiss=9 | 飞鱼,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  9. RR=205 anchor_m=205 Swiss=8 | 龙涎香,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  10. RR=199 anchor_m=180 Swiss=8 | 雪怪蟹,毒须鲶,绵鳚,水草,海螺壳,鱼饵
+  11. RR=193 anchor_m=180 Swiss=8 | 雪怪蟹,毒须鲶,绵鳚,水草,海螺壳,珍珠
+  12. RR=195 anchor_m=172 Swiss=9 | 珊瑚,雪怪蟹,毒须鲶,绵鳚,水草,海螺壳
+  13. RR=243 anchor_m=64 Swiss=9 | 马龙鱼,飞鱼,淬锋钢,雪怪蟹,水草
+  14. RR=180 anchor_m=165 Swiss=9 | 藏刃匕首,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  15. RR=173 anchor_m=173 Swiss=8 | 食人鱼,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  16. RR=193 anchor_m=123 Swiss=8 | 淬锋钢,飞鱼,马龙鱼,毒须鲶,雪怪蟹
+  17. RR=168 anchor_m=159 Swiss=8 | 海螺壳,迷幻蝠鲼,雪怪蟹,毒须鲶,绵鳚,水草
+  18. RR=210 anchor_m=58 Swiss=8 | 马龙鱼,靴里剑,飞鱼,淬锋钢,雪怪蟹
+  19. RR=211 anchor_m=47 Swiss=9 | 马龙鱼,飞鱼,淬锋钢,手斧,雪怪蟹
+  20. RR=154 anchor_m=149 Swiss=8 | 雪怪蟹,毒须鲶,绵鳚,水草,独角鲸,海螺壳
+
+[GDF] seeds: 靴里剑
+[GDF] size=6 top 20
+  1. RR=286 anchor_m=281 Swiss=10 | 流星索,手斧,鲨齿爪,葡萄弹,靴里剑
+  2. RR=267 anchor_m=249 Swiss=9 | 舱底蠕虫,靴里剑,淬锋钢,手斧,葡萄弹,左轮手枪
+  3. RR=257 anchor_m=247 Swiss=9 | 靴里剑,流星索,淬锋钢,手斧,葡萄弹,左轮手枪
+  4. RR=246 anchor_m=231 Swiss=9 | 流星索,手斧,鲨齿爪,靴里剑,左轮手枪
+  5. RR=238 anchor_m=230 Swiss=9 | 舱底蠕虫,手斧,左轮手枪,鲨齿爪,靴里剑
+  6. RR=234 anchor_m=226 Swiss=7 | 流星索,手斧,独角鲸,鲨齿爪,靴里剑
+  7. RR=231 anchor_m=227 Swiss=8 | 手斧,鲨齿爪,独角鲸,舱底蠕虫,靴里剑
+  8. RR=227 anchor_m=221 Swiss=9 | 手斧,左轮手枪,刺刀,鲨齿爪,靴里剑
+  9. RR=223 anchor_m=223 Swiss=8 | 流星索,手斧,鲨齿爪,靴里剑,飞鱼
+  10. RR=223 anchor_m=219 Swiss=8 | 靴里剑,淬锋钢,手斧,葡萄弹,弹簧刀,左轮手枪
+  11. RR=220 anchor_m=219 Swiss=9 | 流星索,手斧,皮皮虾,鲨齿爪,靴里剑
+  12. RR=219 anchor_m=214 Swiss=8 | 鲨齿爪,手斧,靴里剑,迷你弯刀,舱底蠕虫
+  13. RR=214 anchor_m=214 Swiss=8 | 手斧,左轮手枪,弹簧刀,鲨齿爪,靴里剑
+  14. RR=210 anchor_m=208 Swiss=9 | 抓钩,手斧,鲨齿爪,舱底蠕虫,靴里剑
+  15. RR=213 anchor_m=196 Swiss=8 | 靴里剑,手雷,淬锋钢,手斧,葡萄弹,左轮手枪
+  16. RR=207 anchor_m=206 Swiss=8 | 靴里剑,淬锋钢,手斧,葡萄弹,抓钩,左轮手枪
+  17. RR=203 anchor_m=201 Swiss=8 | 靴里剑,淬锋钢,手斧,葡萄弹,左轮手枪,刺刀
+  18. RR=199 anchor_m=199 Swiss=8 | 靴里剑,鲨齿爪,淬锋钢,手斧,左轮手枪
+  19. RR=196 anchor_m=196 Swiss=8 | 手斧,左轮手枪,三花,鲨齿爪,靴里剑
+  20. RR=186 anchor_m=186 Swiss=8 | 靴里剑,淬锋钢,三花,手斧,葡萄弹,左轮手枪
+
+[GDF] seeds: 飞鱼
+[GDF] size=6 top 20
+  1. RR=279 anchor_m=184 Swiss=9 | 水草,淬锋钢,飞鱼,弹簧刀,马龙鱼
+  2. RR=253 anchor_m=198 Swiss=9 | 燃烧响炮,马龙鱼,绵鳚,淬锋钢,飞鱼
+  3. RR=248 anchor_m=156 Swiss=9 | 珊瑚,马龙鱼,绵鳚,淬锋钢,飞鱼
+  4. RR=215 anchor_m=211 Swiss=8 | 海螺壳,马龙鱼,淬锋钢,手斧,飞鱼
+  5. RR=226 anchor_m=160 Swiss=8 | 鲨齿爪,手斧,靴里剑,飞鱼,舱底蠕虫
+  6. RR=207 anchor_m=182 Swiss=8 | 鲨齿爪,手斧,飞鱼,迷你弯刀,舱底蠕虫
+  7. RR=213 anchor_m=166 Swiss=9 | 水草,淬锋钢,马龙鱼,飞鱼,独角鲸
+  8. RR=213 anchor_m=164 Swiss=8 | 鲨齿爪,手斧,飞鱼,左轮手枪,舱底蠕虫
+  9. RR=196 anchor_m=191 Swiss=8 | 水草,马龙鱼,抓钩,淬锋钢,飞鱼
+  10. RR=197 anchor_m=174 Swiss=8 | 马龙鱼,手斧,淬锋钢,靴里剑,飞鱼
+  11. RR=199 anchor_m=169 Swiss=8 | 鲨齿爪,手斧,独角鲸,飞鱼,舱底蠕虫
+  12. RR=233 anchor_m=85 Swiss=8 | 水草,马龙鱼,水母,飞鱼,淬锋钢
+  13. RR=200 anchor_m=147 Swiss=9 | 马龙鱼,绵鳚,淬锋钢,手斧,飞鱼
+  14. RR=186 anchor_m=166 Swiss=8 | 水草,靴里剑,淬锋钢,飞鱼,马龙鱼
+  15. RR=176 anchor_m=162 Swiss=8 | 水草,淬锋钢,飞鱼,藏刃匕首,马龙鱼
+  16. RR=175 anchor_m=162 Swiss=8 | 水草,淬锋钢,飞鱼,弹簧刀,武士刀
+  17. RR=170 anchor_m=170 Swiss=8 | 水草,淬锋钢,飞鱼,食人鱼,马龙鱼
+  18. RR=181 anchor_m=135 Swiss=8 | 毒须鲶,马龙鱼,弹簧刀,淬锋钢,飞鱼
+  19. RR=161 anchor_m=161 Swiss=8 | 水草,淬锋钢,飞鱼,手雷,马龙鱼
+  20. RR=210 anchor_m=63 Swiss=8 | 水草,淬锋钢,飞鱼,马龙鱼,珍珠
+
+[GDF] seeds: 食人鱼
+[GDF] size=6 top 20
+  1. RR=256 anchor_m=119 Swiss=8 | 食人鱼,淬锋钢,绵鳚,马龙鱼,水草
+  2. RR=254 anchor_m=90 Swiss=9 | 食人鱼,淬锋钢,绵鳚,马龙鱼,燃烧响炮
+  3. RR=238 anchor_m=100 Swiss=9 | 食人鱼,皮皮虾,迷幻蝠鲼,毒须鲶,绵鳚,水草
+  4. RR=243 anchor_m=72 Swiss=8 | 珊瑚,食人鱼,淬锋钢,绵鳚,马龙鱼
+  5. RR=234 anchor_m=78 Swiss=9 | 食人鱼,打火机,淬锋钢,绵鳚,马龙鱼
+  6. RR=238 anchor_m=70 Swiss=9 | 舱底蠕虫,食人鱼,淬锋钢,绵鳚,马龙鱼
+  7. RR=232 anchor_m=77 Swiss=9 | 手斧,食人鱼,淬锋钢,绵鳚,马龙鱼
+  8. RR=214 anchor_m=85 Swiss=8 | 靴里剑,手斧,食人鱼,淬锋钢,马龙鱼
+  9. RR=203 anchor_m=66 Swiss=10 | 马龙鱼,弹簧刀,食人鱼,淬锋钢,飞鱼
+  10. RR=179 anchor_m=96 Swiss=9 | 食人鱼,鲨齿爪,淬锋钢,马龙鱼
+  11. RR=186 anchor_m=77 Swiss=9 | 舱底蠕虫,食人鱼,鲨齿爪,淬锋钢,靴里剑
+  12. RR=192 anchor_m=53 Swiss=8 | 靴里剑,食人鱼,淬锋钢,弹簧刀,马龙鱼
+  13. RR=177 anchor_m=77 Swiss=8 | 独角鲸,手斧,食人鱼,淬锋钢,马龙鱼
+  14. RR=181 anchor_m=68 Swiss=9 | 藏刃匕首,食人鱼,手斧,淬锋钢,马龙鱼
+  15. RR=163 anchor_m=103 Swiss=8 | 食人鱼,雪怪蟹,毒须鲶,绵鳚,水草,海螺壳
+  16. RR=177 anchor_m=72 Swiss=9 | 舱底蠕虫,食人鱼,淬锋钢,马龙鱼,水草
+  17. RR=175 anchor_m=76 Swiss=8 | 左轮手枪,手斧,食人鱼,淬锋钢,马龙鱼
+  18. RR=166 anchor_m=91 Swiss=8 | 食人鱼,淬锋钢,绵鳚,马龙鱼,珍珠
+  19. RR=148 anchor_m=120 Swiss=8 | 海螺壳,食人鱼,水母,毒须鲶,绵鳚,水草
+  20. RR=171 anchor_m=63 Swiss=8 | 舱底蠕虫,食人鱼,淬锋钢,鲨齿爪,独角鲸
+
+[GDF] seeds: 马龙鱼
+[GDF] size=6 top 20
+  1. RR=239 anchor_m=239 Swiss=9 | 救生圈,马龙鱼,水草,淬锋钢
+  2. RR=236 anchor_m=236 Swiss=9 | 舱底蠕虫,手斧,淬锋钢,绵鳚,马龙鱼
+  3. RR=223 anchor_m=223 Swiss=8 | 沙滩充气球,淬锋钢,马龙鱼,弹簧刀
+  4. RR=215 anchor_m=215 Swiss=9 | 葡萄弹,燃烧响炮,淬锋钢,绵鳚,马龙鱼
+  5. RR=212 anchor_m=212 Swiss=8 | 水草,淬锋钢,马龙鱼,迷幻蝠鲼,水母
+  6. RR=211 anchor_m=211 Swiss=8 | 水草,飞鱼,淬锋钢,绵鳚,马龙鱼
+  7. RR=197 anchor_m=197 Swiss=8 | 水草,淬锋钢,马龙鱼,迷幻蝠鲼,毒须鲶
+  8. RR=196 anchor_m=196 Swiss=9 | 救生圈,淬锋钢,马龙鱼,海螺壳
+  9. RR=195 anchor_m=195 Swiss=8 | 水草,淬锋钢,马龙鱼,迷幻蝠鲼,珍珠
+  10. RR=190 anchor_m=190 Swiss=10 | 海螺壳,飞鱼,淬锋钢,绵鳚,马龙鱼
+  11. RR=189 anchor_m=189 Swiss=9 | 淬锋钢,马龙鱼,弹簧刀,武士刀
+  12. RR=187 anchor_m=187 Swiss=8 | 马龙鱼,海螺壳,水草,珊瑚,淬锋钢
+  13. RR=182 anchor_m=182 Swiss=8 | 鲨齿爪,淬锋钢,绵鳚,马龙鱼
+  14. RR=181 anchor_m=181 Swiss=9 | 珊瑚,舱底蠕虫,淬锋钢,绵鳚,马龙鱼
+  15. RR=179 anchor_m=179 Swiss=8 | 舱底蠕虫,燃烧响炮,淬锋钢,绵鳚,马龙鱼
+  16. RR=175 anchor_m=172 Swiss=8 | 舱底蠕虫,手雷,手斧,淬锋钢,马龙鱼
+  17. RR=173 anchor_m=173 Swiss=9 | 燃烧响炮,打火机,淬锋钢,绵鳚,马龙鱼
+  18. RR=170 anchor_m=170 Swiss=8 | 飞鱼,燃烧响炮,淬锋钢,绵鳚,马龙鱼
+  19. RR=168 anchor_m=168 Swiss=8 | 舱底蠕虫,靴里剑,淬锋钢,绵鳚,马龙鱼
+  20. RR=165 anchor_m=165 Swiss=8 | 水草,淬锋钢,舱底蠕虫,弹簧刀,马龙鱼
+
+[GDF] seeds: 鱼饵
+[GDF] size=6 top 20
+  1. RR=241 anchor_m=18 Swiss=9 | 淬锋钢,飞鱼,弹簧刀,马龙鱼,鱼饵
+  2. RR=232 anchor_m=150 Swiss=8 | 鱼饵,淬锋钢,飞鱼,弹簧刀,独角鲸,水草
+  3. RR=233 anchor_m=115 Swiss=8 | 鱼饵,水母,雪怪蟹,毒须鲶,绵鳚,水草
+  4. RR=199 anchor_m=153 Swiss=9 | 毒须鲶,海螺壳,淬锋钢,飞鱼,鱼饵,水草
+  5. RR=182 anchor_m=166 Swiss=9 | 淬锋钢,飞鱼,鱼饵,水草,海螺壳,珊瑚
+  6. RR=180 anchor_m=164 Swiss=9 | 海螺壳,鱼饵,淬锋钢,飞鱼,独角鲸,水草
+  7. RR=186 anchor_m=149 Swiss=8 | 珊瑚,鱼饵,淬锋钢,独角鲸,海螺壳,水草
+  8. RR=232 anchor_m=52 Swiss=9 | 舱底蠕虫,鱼饵,淬锋钢,绵鳚,马龙鱼
+  9. RR=198 anchor_m=97 Swiss=9 | 鱼饵,雪怪蟹,毒须鲶,绵鳚,水草,海螺壳
+  10. RR=173 anchor_m=144 Swiss=8 | 海螺壳,水草,鱼饵,淬锋钢,珍珠,独角鲸
+  11. RR=177 anchor_m=132 Swiss=8 | 毒须鲶,雪怪蟹,水母,鱼饵,海螺壳,水草
+  12. RR=224 anchor_m=35 Swiss=9 | 舱底蠕虫,鱼饵,淬锋钢,弹簧刀,马龙鱼
+  13. RR=219 anchor_m=39 Swiss=9 | 舱底蠕虫,水草,鱼饵,马龙鱼,淬锋钢
+  14. RR=211 anchor_m=54 Swiss=8 | 淬锋钢,飞鱼,鱼饵,马龙鱼,水草
+  15. RR=162 anchor_m=130 Swiss=9 | 舱底蠕虫,水草,鱼饵,海螺壳,飞鱼,淬锋钢
+  16. RR=171 anchor_m=110 Swiss=8 | 鱼饵,淬锋钢,木桶,独角鲸,水草
+  17. RR=156 anchor_m=136 Swiss=8 | 鱼饵,珍珠,雪怪蟹,毒须鲶,绵鳚,水草
+  18. RR=172 anchor_m=102 Swiss=8 | 舱底蠕虫,水草,鱼饵,弹簧刀,飞鱼,淬锋钢
+  19. RR=183 anchor_m=78 Swiss=8 | 鱼饵,钓鱼竿,毒须鲶,绵鳚,水草
+  20. RR=171 anchor_m=100 Swiss=8 | 鱼饵,雪怪蟹,毒须鲶,绵鳚,水草,打火机
+
+[GDF] seeds: 鲨齿爪
+[GDF] size=6 top 20
+  1. RR=282 anchor_m=282 Swiss=10 | 靴里剑,鲨齿爪,左轮手枪,葡萄弹,手斧
+  2. RR=268 anchor_m=268 Swiss=9 | 舱底蠕虫,鲨齿爪,葡萄弹,手斧,左轮手枪
+  3. RR=263 anchor_m=263 Swiss=8 | 鲨齿爪,左轮手枪,流星索,葡萄弹,手斧
+  4. RR=255 anchor_m=255 Swiss=9 | 鲨齿爪,左轮手枪,弹簧刀,葡萄弹,手斧
+  5. RR=249 anchor_m=249 Swiss=9 | 鲨齿爪,左轮手枪,刺刀,葡萄弹,手斧
+  6. RR=237 anchor_m=237 Swiss=9 | 流星索,靴里剑,手斧,迷你弯刀,鲨齿爪
+  7. RR=233 anchor_m=233 Swiss=9 | 鲨齿爪,左轮手枪,刺刀,靴里剑,手斧
+  8. RR=220 anchor_m=220 Swiss=9 | 靴里剑,舱底蠕虫,鲨齿爪,手斧,左轮手枪
+  9. RR=219 anchor_m=219 Swiss=8 | 流星索,手斧,迷你弯刀,刺刀,鲨齿爪
+  10. RR=213 anchor_m=213 Swiss=9 | 舱底蠕虫,抓钩,手斧,靴里剑,鲨齿爪
+  11. RR=213 anchor_m=213 Swiss=9 | 鲨齿爪,左轮手枪,抓钩,葡萄弹,手斧
+  12. RR=213 anchor_m=213 Swiss=8 | 鲨齿爪,左轮手枪,葡萄弹,手斧,独角鲸
+  13. RR=213 anchor_m=213 Swiss=8 | 鲨齿爪,弹簧刀,左轮手枪,手斧,靴里剑
+  14. RR=208 anchor_m=208 Swiss=8 | 舱底蠕虫,鲨齿爪,手斧,淬锋钢,左轮手枪
+  15. RR=207 anchor_m=207 Swiss=8 | 鲨齿爪,左轮手枪,迷你弯刀,葡萄弹,手斧
+  16. RR=204 anchor_m=204 Swiss=8 | 鲨齿爪,左轮手枪,三花,葡萄弹,手斧
+  17. RR=186 anchor_m=186 Swiss=8 | 鲨齿爪,左轮手枪,藏刃匕首,葡萄弹,手斧
+  18. RR=178 anchor_m=178 Swiss=8 | 舱底蠕虫,鲨齿爪,手斧,左轮手枪,刺刀
+  19. RR=172 anchor_m=172 Swiss=8 | 手斧,靴里剑,迷你弯刀,鲨齿爪,舱底蠕虫
+  20. RR=169 anchor_m=169 Swiss=8 | 舱底蠕虫,鲨齿爪,马龙鱼,淬锋钢
+
+[GDF] seeds: 鹦鹉皮特
+[GDF] size=6 top 20
+  1. RR=277 anchor_m=154 Swiss=9 | 燃烧响炮,火炮,鹦鹉皮特,绵鳚,打火机
+  2. RR=271 anchor_m=270 Swiss=9 | 燃烧响炮,流星索,皮皮虾,鹦鹉皮特,绵鳚,打火机
+  3. RR=260 anchor_m=248 Swiss=8 | 燃烧响炮,皮皮虾,迷幻蝠鲼,鹦鹉皮特,绵鳚,打火机
+  4. RR=239 anchor_m=232 Swiss=9 | 救生圈,燃烧响炮,鹦鹉皮特,绵鳚,打火机
+  5. RR=233 anchor_m=233 Swiss=8 | 手斧,燃烧响炮,葡萄弹,鹦鹉皮特,绵鳚,打火机
+  6. RR=233 anchor_m=233 Swiss=8 | 燃烧响炮,皮皮虾,鹦鹉皮特,绵鳚,打火机,珊瑚
+  7. RR=229 anchor_m=229 Swiss=8 | 燃烧响炮,淬锋钢,葡萄弹,鹦鹉皮特,绵鳚,打火机
+  8. RR=227 anchor_m=227 Swiss=9 | 燃烧响炮,葡萄弹,皮皮虾,鹦鹉皮特,绵鳚,打火机
+  9. RR=215 anchor_m=215 Swiss=8 | 飞鱼,鹦鹉皮特,绵鳚,打火机,珊瑚,燃烧响炮
+  10. RR=212 anchor_m=208 Swiss=8 | 燃烧响炮,珊瑚,葡萄弹,鹦鹉皮特,绵鳚,打火机
+  11. RR=255 anchor_m=102 Swiss=10 | 海螺壳,水草,绵鳚,毒须鲶,迷幻蝠鲼,鹦鹉皮特
+  12. RR=200 anchor_m=199 Swiss=8 | 珊瑚,毒须鲶,鹦鹉皮特,绵鳚,打火机,燃烧响炮
+  13. RR=199 anchor_m=199 Swiss=8 | 葡萄弹,燃烧响炮,靴里剑,鹦鹉皮特,绵鳚,打火机
+  14. RR=199 anchor_m=199 Swiss=8 | 飞鱼,鹦鹉皮特,绵鳚,打火机,燃烧响炮,水草
+  15. RR=250 anchor_m=86 Swiss=9 | 珊瑚,水草,绵鳚,毒须鲶,迷幻蝠鲼,鹦鹉皮特
+  16. RR=195 anchor_m=195 Swiss=8 | 水草,燃烧响炮,迷幻蝠鲼,鹦鹉皮特,绵鳚,打火机
+  17. RR=230 anchor_m=117 Swiss=9 | 珍珠,水草,绵鳚,毒须鲶,迷幻蝠鲼,鹦鹉皮特
+  18. RR=187 anchor_m=187 Swiss=8 | 靴里剑,淬锋钢,燃烧响炮,鹦鹉皮特,绵鳚,打火机
+  19. RR=188 anchor_m=185 Swiss=7 | 淬锋钢,珊瑚,燃烧响炮,鹦鹉皮特,绵鳚,打火机
+  20. RR=182 anchor_m=182 Swiss=9 | 葡萄弹,飞鱼,鹦鹉皮特,绵鳚,打火机,燃烧响炮
+
+[GDF] seeds: 龙涎香
+[GDF] size=6 top 20
+  1. RR=279 anchor_m=49 Swiss=10 | 龙涎香,马龙鱼,弹簧刀,飞鱼,淬锋钢
+  2. RR=261 anchor_m=49 Swiss=9 | 龙涎香,马龙鱼,绵鳚,淬锋钢,舱底蠕虫
+  3. RR=254 anchor_m=42 Swiss=8 | 水草,龙涎香,马龙鱼,绵鳚,淬锋钢
+  4. RR=239 anchor_m=48 Swiss=9 | 龙涎香,飞鱼,淬锋钢,手斧,马龙鱼
+  5. RR=227 anchor_m=71 Swiss=9 | 海螺壳,龙涎香,马龙鱼,绵鳚,淬锋钢
+  6. RR=226 anchor_m=48 Swiss=8 | 龙涎香,淬锋钢,手斧,弹簧刀,马龙鱼
+  7. RR=224 anchor_m=45 Swiss=9 | 龙涎香,马龙鱼,绵鳚,淬锋钢,飞鱼
+  8. RR=200 anchor_m=78 Swiss=9 | 龙涎香,马龙鱼,飞鱼,淬锋钢,水草
+  9. RR=221 anchor_m=24 Swiss=9 | 燃烧响炮,龙涎香,马龙鱼,绵鳚,淬锋钢
+  10. RR=210 anchor_m=41 Swiss=8 | 龙涎香,舱底蠕虫,淬锋钢,弹簧刀,马龙鱼
+  11. RR=204 anchor_m=46 Swiss=8 | 龙涎香,马龙鱼,绵鳚,淬锋钢,手斧
+  12. RR=212 anchor_m=29 Swiss=8 | 藏刃匕首,淬锋钢,绵鳚,马龙鱼,龙涎香
+  13. RR=206 anchor_m=32 Swiss=8 | 龙涎香,淬锋钢,舱底蠕虫,手斧,马龙鱼
+  14. RR=200 anchor_m=42 Swiss=8 | 龙涎香,马龙鱼,绵鳚,淬锋钢,珊瑚
+  15. RR=181 anchor_m=58 Swiss=9 | 龙涎香,马龙鱼,绵鳚,淬锋钢,独角鲸
+  16. RR=178 anchor_m=62 Swiss=8 | 龙涎香,马龙鱼,绵鳚,淬锋钢,左轮手枪
+  17. RR=181 anchor_m=50 Swiss=8 | 龙涎香,武士刀,弹簧刀,飞鱼,淬锋钢
+  18. RR=185 anchor_m=41 Swiss=9 | 龙涎香,马龙鱼,靴里剑,飞鱼,淬锋钢
+  19. RR=174 anchor_m=56 Swiss=8 | 水草,淬锋钢,龙涎香,独角鲸,马龙鱼
+  20. RR=188 anchor_m=22 Swiss=8 | 龙涎香,靴里剑,淬锋钢,手斧,马龙鱼
