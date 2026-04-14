@@ -73,6 +73,7 @@ static void PatchPhysicalSideSlot(core::SideState& side, int physical_slot) {
 
 /// 与 `engine/cli/main.cpp` 中 `RunBatchSlice` 每局循环一致：先装两侧与沙尘暴，再清 sink、播种、InitializeSimulator，最后 Run。
 /// 配合 `thread_local` 复用 `Simulator`，避免每局堆分配，同时保证局间状态与 CLI 批量对战一致。
+/// `Run(false)`：时间耗尽时必须按残局判胜负；若返回 -1（平局），BoN 的 `RunBoNStream` 会误计分并可能无限循环。
 static int RunSingleBattleReturn(core::Simulator& sim, const core::SideState& side_a, const core::SideState& side_b, int swap, int rng_seed) {
     if (swap == 0) {
         sim.sides[0] = side_a;

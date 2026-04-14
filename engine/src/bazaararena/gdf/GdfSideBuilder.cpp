@@ -30,7 +30,9 @@ bool BuildSideSpecFromDeck(const DeckRep& rep, int player_level, int combat_tier
         bazaararena::io::ItemSpec is;
         is.key = std::move(ri.db_key);
         is.tier = tier;
-        if (ri.custom_1.has_value()) is.custom_1 = *ri.custom_1;
+        if (ri.quest_index.has_value() && *ri.quest_index > 0 && *ri.quest_index <= 30) {
+            is.quest = (1 << (*ri.quest_index - 1));
+        }
         out.items.push_back(std::move(is));
     }
     return true;

@@ -35,8 +35,11 @@ GdfItemPrototypeCache::GdfItemPrototypeCache(const ItemPool& pool, int player_le
             st.attrs[ik] = GdfLevelRules::ComputeOverridableValue(*t, ik, player_level);
         }
         st.attrs[core::ItemKey::Tier] = combat_tier;
-        if (ri.custom_1.has_value()) {
-            st.attrs[core::ItemKey::Custom_1] = *ri.custom_1;
+        if (ri.quest_index.has_value()) {
+            const int qi = *ri.quest_index;
+            if (qi > 0 && qi <= 30) {
+                st.attrs[core::ItemKey::Quest] = (1 << (qi - 1));
+            }
         }
         const int ammo_cap = st.attrs[core::ItemKey::AmmoCap];
         if (ammo_cap > 0) {

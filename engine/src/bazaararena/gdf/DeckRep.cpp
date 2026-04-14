@@ -17,12 +17,12 @@ std::string DeckRep::Signature() const {
 ResolvedItem ResolveItemAlias(std::string_view display_name) {
     ResolvedItem r;
     r.db_key = std::string(display_name);
-    if (display_name == "烙刀（Q1）") {
+    if (display_name == "减速烙刀") {
         r.db_key = "烙刀";
-        r.custom_1 = 1;
-    } else if (display_name == "烙刀（Q2）") {
+        r.quest_index = 1;
+    } else if (display_name == "加速烙刀") {
         r.db_key = "烙刀";
-        r.custom_1 = 2;
+        r.quest_index = 2;
     }
     return r;
 }

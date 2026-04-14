@@ -62,12 +62,12 @@ ItemPool::ItemPool(int player_level, std::string_view pool_hero, const std::unor
     sort_u8(medium_);
     sort_u8(large_);
 
-    // 烙刀 Q1/Q2 变体（与 legacy 一致；仅当池为 Vanessa 且存在「烙刀」）
+    // 烙刀变体：作为两个不同展示名参与搜索（仅当池为 Vanessa 且存在「烙刀」）
     if (pool_l == "vanessa") {
         auto it = std::find(medium_.begin(), medium_.end(), "烙刀");
         if (it != medium_.end() && excluded.count("烙刀") == 0) {
-            medium_.push_back("烙刀（Q1）");
-            medium_.push_back("烙刀（Q2）");
+            medium_.push_back("减速烙刀");
+            medium_.push_back("加速烙刀");
             std::sort(medium_.begin(), medium_.end());
         }
     }

@@ -15,10 +15,11 @@ struct DeckRep {
 
 struct ResolvedItem {
     std::string db_key;
-    std::optional<int> custom_1;
+    /// 物品 Quest 位图（ItemKey::Quest）。例如 quest_index=1 => Quest bit0；2 => bit1。
+    std::optional<int> quest_index;
 };
 
-/// 烙刀（Q1/Q2）等别名解析。
+/// 物品展示名别名解析（例如烙刀变体）。
 ResolvedItem ResolveItemAlias(std::string_view display_name);
 
 std::string BuildComboKey(const std::vector<std::string>& item_names);
