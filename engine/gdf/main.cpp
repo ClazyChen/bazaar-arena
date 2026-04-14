@@ -43,8 +43,8 @@ struct Args {
     std::string pool_hero = "Vanessa";
     std::unordered_set<std::string> excluded;
     std::string output_path;
-    double lambda_anchor = 0;
-    double mu_diversity = 0;
+    double lambda_anchor = 0.5;
+    double mu_diversity = 2;
     bool diversity_exclude_seeds = false;
     bool timing = false;
 };
