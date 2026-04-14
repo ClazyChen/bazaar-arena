@@ -78,4 +78,5 @@ docs/*-raw.log
 # Web app（依赖与构建产物、本地数据库）
 app/frontend/node_modules/
 app/frontend/dist/
+app/frontend/.vite/
 app/backend/data/*.db
