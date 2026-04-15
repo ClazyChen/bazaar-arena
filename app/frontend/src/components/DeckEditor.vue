@@ -33,9 +33,6 @@ const emit = defineEmits<{
 const catalog = useCatalogStore();
 const session = useBuilderSession();
 
-const filterHero = ref<string>("all");
-const filterSize = ref<string>("all");
-const filterTier = ref<string>("all");
 const saveMsg = ref<string | null>(null);
 
 /** 双击编辑 Custom/Quest */
@@ -87,11 +84,11 @@ const heroes = computed(() => {
 
 const filteredPool = computed(() => {
     return catalog.items.filter((it) => {
-        if (filterHero.value !== "all" && it.hero !== filterHero.value) return false;
-        if (filterSize.value === "small" && it.size !== 1) return false;
-        if (filterSize.value === "medium" && it.size !== 2) return false;
-        if (filterSize.value === "large" && it.size !== 3) return false;
-        if (filterTier.value !== "all" && String(it.min_tier) !== filterTier.value)
+        if (session.filterHero !== "all" && it.hero !== session.filterHero) return false;
+        if (session.filterSize === "small" && it.size !== 1) return false;
+        if (session.filterSize === "medium" && it.size !== 2) return false;
+        if (session.filterSize === "large" && it.size !== 3) return false;
+        if (session.filterTier !== "all" && String(it.min_tier) !== session.filterTier)
             return false;
         return true;
     });
@@ -535,14 +532,14 @@ function onSlotEditConfirm(): void {
             <div class="pool-head">
                 <span class="fil">
                     英雄
-                    <select v-model="filterHero">
+                    <select v-model="session.filterHero">
                         <option value="all">全部</option>
                         <option v-for="h in heroes" :key="h" :value="h">{{ h }}</option>
                     </select>
                 </span>
                 <span class="fil">
                     体型
-                    <select v-model="filterSize">
+                    <select v-model="session.filterSize">
                         <option value="all">全部</option>
                         <option value="small">小型</option>
                         <option value="medium">中型</option>
@@ -551,7 +548,7 @@ function onSlotEditConfirm(): void {
                 </span>
                 <span class="fil">
                     稀有度
-                    <select v-model="filterTier">
+                    <select v-model="session.filterTier">
                         <option value="all">全部</option>
                         <option value="0">铜</option>
                         <option value="1">银</option>

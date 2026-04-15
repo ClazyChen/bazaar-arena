@@ -53,6 +53,15 @@ int ComputeDerivedTags(const core::ItemTemplate& templ) {
             case core::AbilityType::Damage:
                 tags |= core::DerivedTag::Damage;
                 break;
+            case core::AbilityType::Shield:
+                tags |= core::DerivedTag::Shield;
+                break;
+            case core::AbilityType::Heal:
+                tags |= core::DerivedTag::Heal;
+                break;
+            case core::AbilityType::Regen:
+                tags |= core::DerivedTag::Regen;
+                break;
             case core::AbilityType::Charge:
                 tags |= core::DerivedTag::Charge;
                 break;

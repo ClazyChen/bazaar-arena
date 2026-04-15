@@ -7,6 +7,7 @@ import {
     DAMAGE_KEYWORD_RGB,
     FREEZE_KEYWORD_RGB,
     HEAL_KEYWORD_RGB,
+    LIFESTEAL_KEYWORD_RGB,
     POISON_KEYWORD_RGB,
     REGEN_KEYWORD_RGB,
     SHIELD_KEYWORD_RGB,
@@ -19,6 +20,7 @@ const KEYWORD_COLORS: { needle: string; color: string }[] = [
     { needle: "治疗", color: HEAL_KEYWORD_RGB },
     { needle: "生命上限", color: "rgb(97, 176, 60)" },
     { needle: "生命再生", color: REGEN_KEYWORD_RGB },
+    { needle: "吸血", color: LIFESTEAL_KEYWORD_RGB },
     { needle: "弹药", color: AMMO_KEYWORD_RGB },
     { needle: "装填", color: AMMO_KEYWORD_RGB },
     { needle: "加速", color: CHARGE_KEYWORD_RGB },
@@ -328,6 +330,43 @@ function filterBrandingIronDeckDesc(desc: string, effectiveQuest: 1 | 2): string
     return out.join("；");
 }
 
+function questMaskEffective(item: ItemRow, tier: number, attrsOverride?: DeckSlotAttrsOverride | null): number | null {
+    const tDeck = Math.min(Math.max(tier, 0), 4);
+    if (attrsOverride?.quest !== undefined && attrsOverride?.quest !== null) {
+        return attrsOverride.quest;
+    }
+    const q = tooltipTierValue(item.tooltip_attrs, "Quest", tDeck);
+    return Number.isFinite(q) ? q : null;
+}
+
+/**
+ * deck 模式：按 quest 掩码过滤 Desc 中的【Qx】行，只保留已完成的分支。
+ * - 约定：Q1→bit0(1)，Q2→bit1(2)，Q3→bit2(4)...
+ * - 不带【Qx】前缀的普通行保留
+ * - 保留的 Q 行会去掉前缀「【Qx】」
+ */
+function filterQuestMaskDeckDesc(desc: string, questMask: number): string {
+    const parts = desc
+        .split(/[；;]/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+    const out: string[] = [];
+    for (const p of parts) {
+        const m = /^【Q(\d+)】\s*/.exec(p);
+        if (!m) {
+            out.push(p);
+            continue;
+        }
+        const qi = Number(m[1]);
+        if (!Number.isFinite(qi) || qi <= 0) continue;
+        const bit = 1 << (qi - 1);
+        if ((questMask & bit) === 0) continue;
+        out.push(p.replace(/^【Q\d+】\s*/, ""));
+    }
+    return out.join("；");
+}
+
 function formatDescHtml(
     desc: string,
     attrs: Record<string, number[]> | null | undefined,
@@ -423,6 +462,12 @@ export function buildItemTooltipHtml(
         const eq = brandingIronEffectiveQuest(item, tier, opts.attrs_override);
         if (eq === 1 || eq === 2) {
             descForDeck = filterBrandingIronDeckDesc(item.desc, eq);
+        }
+    }
+    if (opts.mode === "deck" && /【Q\d+】/.test(descForDeck)) {
+        const mask = questMaskEffective(item, tier, opts.attrs_override);
+        if (mask !== null) {
+            descForDeck = filterQuestMaskDeckDesc(descForDeck, mask);
         }
     }
 

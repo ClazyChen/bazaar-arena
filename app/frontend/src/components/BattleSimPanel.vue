@@ -16,6 +16,7 @@ import {
     FREEZE_KEYWORD_RGB,
     SLOW_KEYWORD_RGB,
     HEAL_KEYWORD_RGB,
+    LIFESTEAL_KEYWORD_RGB,
     POISON_KEYWORD_RGB,
     REGEN_KEYWORD_RGB,
     SHIELD_KEYWORD_RGB,
@@ -484,12 +485,14 @@ function itemStatBadgeRow(
 ): ItemStatBadge[] | null {
     const it = itemSnapshotForSlot(side, slotIndex);
     if (!it) return null;
+    const hasLifeSteal = (it.LifeSteal ?? 0) > 0;
     const slices: { v: number; bg: string }[] = [];
     for (const { key, bg } of STAT_BADGE_DEFS) {
         const raw = it[key];
         const v = typeof raw === "number" ? raw : Number(raw ?? 0);
         if (!Number.isFinite(v) || v <= 0) continue;
-        slices.push({ v, bg });
+        const bgFinal = key === "Damage" && hasLifeSteal ? LIFESTEAL_KEYWORD_RGB : bg;
+        slices.push({ v, bg: bgFinal });
     }
     if (slices.length === 0) return null;
     const n = slices.length;
@@ -1374,6 +1377,9 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                     <span v-if="side0.shield > 0" class="hp-bar-num hp-bar-num--shield">{{
                                         Math.round(side0.shield)
                                     }}</span>
+                                    <span v-if="side0.regen > 0" class="hp-bar-num hp-bar-num--regen">{{
+                                        Math.round(side0.regen)
+                                    }}</span>
                                     <span v-if="side0.burn > 0" class="hp-bar-num hp-bar-num--burn"
                                         ><span class="hp-debuff-glyph" aria-hidden="true">火</span
                                         >{{ Math.round(side0.burn) }}</span
@@ -1382,9 +1388,6 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                         ><span class="hp-debuff-glyph" aria-hidden="true">毒</span
                                         >{{ Math.round(side0.poison) }}</span
                                     >
-                                    <span v-if="side0.regen > 0" class="hp-bar-num hp-bar-num--regen">{{
-                                        Math.round(side0.regen)
-                                    }}</span>
                                 </div>
                             </div>
                         </div>
@@ -1759,6 +1762,9 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                     <span v-if="side1.shield > 0" class="hp-bar-num hp-bar-num--shield">{{
                                         Math.round(side1.shield)
                                     }}</span>
+                                    <span v-if="side1.regen > 0" class="hp-bar-num hp-bar-num--regen">{{
+                                        Math.round(side1.regen)
+                                    }}</span>
                                     <span v-if="side1.burn > 0" class="hp-bar-num hp-bar-num--burn"
                                         ><span class="hp-debuff-glyph" aria-hidden="true">火</span
                                         >{{ Math.round(side1.burn) }}</span
@@ -1767,9 +1773,6 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                         ><span class="hp-debuff-glyph" aria-hidden="true">毒</span
                                         >{{ Math.round(side1.poison) }}</span
                                     >
-                                    <span v-if="side1.regen > 0" class="hp-bar-num hp-bar-num--regen">{{
-                                        Math.round(side1.regen)
-                                    }}</span>
                                 </div>
                             </div>
                         </div>

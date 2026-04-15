@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "jobId": "http-54-vs-54",
+  "mode": "simulate",
+  "payload": {
+    "allowTie": true,
+    "debug": {
+      "enabled": true,
+      "level": "detailed",
+      "maxEvents": 50000
+    },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 2,
+        "items": [
+          {
+            "key": "再生药水",
+            "tier": "bronze"
+          },
+          {
+            "key": "剑杖",
+            "tier": "bronze"
+          },
+          {
+            "key": "云精灵",
+            "tier": "bronze"
+          },
+          {
+            "key": "嗅盐",
+            "tier": "bronze"
+          },
+          {
+            "key": "昏睡药水",
+            "tier": "bronze"
+          }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 2,
+        "items": [
+          {
+            "key": "再生药水",
+            "tier": "bronze"
+          },
+          {
+            "key": "剑杖",
+            "tier": "bronze"
+          },
+          {
+            "key": "云精灵",
+            "tier": "bronze"
+          },
+          {
+            "key": "嗅盐",
+            "tier": "bronze"
+          },
+          {
+            "key": "昏睡药水",
+            "tier": "bronze"
+          }
+        ]
+      }
+    ],
+    "seed": 1036362079
+  },
+  "cliReproMeta": {
+    "exportedAt": "2026-04-15T18:07:13+00:00",
+    "deck0_as_side0": {
+      "deckId": 54,
+      "name": "测试卡组1",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "再生药水",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "剑杖",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "云精灵",
+          "tier": 0
+        },
+        {
+          "position": 3,
+          "item_name": "嗅盐",
+          "tier": 0
+        },
+        {
+          "position": 4,
+          "item_name": "昏睡药水",
+          "tier": 0
+        }
+      ]
+    },
+    "deck1_as_side1": {
+      "deckId": 54,
+      "name": "测试卡组1",
+      "playerLevel": 2,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "再生药水",
+          "tier": 0
+        },
+        {
+          "position": 1,
+          "item_name": "剑杖",
+          "tier": 0
+        },
+        {
+          "position": 2,
+          "item_name": "云精灵",
+          "tier": 0
+        },
+        {
+          "position": 3,
+          "item_name": "嗅盐",
+          "tier": 0
+        },
+        {
+          "position": 4,
+          "item_name": "昏睡药水",
+          "tier": 0
+        }
+      ]
+    },
+    "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。"
+  }
+}

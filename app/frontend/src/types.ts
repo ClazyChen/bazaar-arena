@@ -144,6 +144,8 @@ export interface FrameEndItemSnapshot {
     /** 弹药上限 / 剩余弹药，与引擎 `AmmoCap` / `AmmoRemaining` 一致 */
     AmmoCap?: number;
     AmmoRemaining?: number;
+    /** 是否吸血（百分比），与引擎 `LifeSteal` 一致 */
+    LifeSteal?: number;
     /** 是否在飞行中，与引擎 `InFlight` 一致（非 0 视为是） */
     InFlight?: number;
     /** 多重释放次数，与引擎 `Multicast` 一致 */

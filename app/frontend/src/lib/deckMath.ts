@@ -28,6 +28,9 @@ export const HEAL_KEYWORD_RGB = "rgb(97, 176, 60)";
 /** 与 itemTooltip「生命再生」关键词一致 */
 export const REGEN_KEYWORD_RGB = "rgb(142, 234, 49)";
 
+/** 吸血：特殊着色（对战徽章/关键词一致） */
+export const LIFESTEAL_KEYWORD_RGB = "rgb(157, 74, 111)";
+
 /** 对战卡面充能遮罩（与 CHARGE_KEYWORD_RGB 同色、半透明） */
 export function chargeOverlayRgba(alpha: number): string {
     return `rgba(0, 236, 195, ${alpha})`;

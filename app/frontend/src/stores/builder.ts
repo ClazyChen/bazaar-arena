@@ -9,6 +9,11 @@ export const useBuilderSession = defineStore("builderSession", () => {
     const dirty = ref(false);
     const baselineLevel = ref(5);
 
+    /** 物品池筛选（DeckEditor 内使用；切换页面时保留） */
+    const filterHero = ref<string>("all");
+    const filterSize = ref<string>("all");
+    const filterTier = ref<string>("all");
+
     function resetFromServer(level: number, serverSlots: DeckSlotEntry[]): void {
         editorLevel.value = level;
         baselineLevel.value = level;
@@ -52,5 +57,8 @@ export const useBuilderSession = defineStore("builderSession", () => {
         setSlots,
         setEditorLevel,
         syncSavedLevel,
+        filterHero,
+        filterSize,
+        filterTier,
     };
 });
