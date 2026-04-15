@@ -14,6 +14,28 @@
 namespace bazaararena::gdf {
 namespace core = bazaararena::core;
 
+namespace {
+
+static int ComputeMakQuestOverride(std::string_view db_key, int player_level) {
+    // Mak 的部分物品在 legacy 扁平化中会按等级覆写 Quest。
+    // 规则来自用户说明：
+    // - 时间之砂、永恒火炬、生命导体、腐朽圣像：L2=0，L3-4=1，L5-7=3，L8+=7
+    // - 空白石碑：L2-4=0，L5+=31
+    if (db_key == "时间之砂" || db_key == "永恒火炬" || db_key == "生命导体" || db_key == "腐朽圣像") {
+        if (player_level <= 2) return 0;
+        if (player_level <= 4) return 1;
+        if (player_level <= 7) return 3;
+        return 7;
+    }
+    if (db_key == "空白石碑") {
+        if (player_level <= 4) return 0;
+        return 31;
+    }
+    return -1;
+}
+
+}  // namespace
+
 GdfItemPrototypeCache::GdfItemPrototypeCache(const ItemPool& pool, int player_level) {
     const int combat_tier = GdfLevelRules::CombatTier(player_level);
     std::vector<std::string> names;
@@ -40,6 +62,10 @@ GdfItemPrototypeCache::GdfItemPrototypeCache(const ItemPool& pool, int player_le
             if (qi > 0 && qi <= 30) {
                 st.attrs[core::ItemKey::Quest] = (1 << (qi - 1));
             }
+        }
+        {
+            const int q = ComputeMakQuestOverride(ri.db_key, player_level);
+            if (q >= 0) st.attrs[core::ItemKey::Quest] = q;
         }
         const int ammo_cap = st.attrs[core::ItemKey::AmmoCap];
         if (ammo_cap > 0) {

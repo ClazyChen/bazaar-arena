@@ -26,6 +26,13 @@ static bool HeroMatches(std::string_view file_hero, std::string_view pool_lower)
     return Lower(file_hero) == std::string(pool_lower);
 }
 
+static bool IsIgnoredMakItemForGdf(std::string_view key, std::string_view hero) {
+    // Mak 的部分物品在 GDF 中未实现：直接从池中移除。
+    // 注意：这里用 YAML 顶层 `hero:` 过滤，避免误伤同名跨英雄物品（若未来存在）。
+    if (Lower(hero) != "mak") return false;
+    return key == "产药药水" || key == "催化剂";
+}
+
 }  // namespace
 
 int ItemPool::SizeOfItem(const core::ItemTemplate* templ) {
@@ -46,6 +53,7 @@ ItemPool::ItemPool(int player_level, std::string_view pool_hero, const std::unor
         if (excluded.count(std::string(key))) continue;
         auto it = key_to_hero.find(std::string(key));
         if (it == key_to_hero.end()) continue;
+        if (IsIgnoredMakItemForGdf(key, it->second)) continue;
         if (!HeroMatches(it->second, pool_l)) continue;
         const core::ItemTemplate* t = rec.templ;
         const int min_tier = t->attributes[core::ItemTier::Bronze][core::ItemKey::MinTier];

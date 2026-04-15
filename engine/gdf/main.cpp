@@ -230,48 +230,56 @@ static void RunOneSearch(bazaararena::gdf::ItemPool& pool, const Args& args, con
 }  // namespace
 
 int main(int argc, char** argv) {
-    Args args;
-    std::string err;
-    if (!ParseArgs(argc, argv, args, err)) {
-        if (!err.empty()) std::cerr << err << "\n";
-        PrintUsage(std::cout);
-        return err.empty() ? 0 : 2;
-    }
+    try {
+        Args args;
+        std::string err;
+        if (!ParseArgs(argc, argv, args, err)) {
+            if (!err.empty()) std::cerr << err << "\n";
+            PrintUsage(std::cout);
+            return err.empty() ? 0 : 2;
+        }
 
-    std::unordered_map<std::string, std::string> key_to_hero;
-    if (!bazaararena::gdf::LoadItemHeroByKeyFromDataDir(args.data_items_dir, key_to_hero, err)) {
-        std::cerr << "[GDF] " << err << "\n";
-        return 2;
-    }
-
-    bazaararena::gdf::ItemPool pool(args.level, args.pool_hero, args.excluded, key_to_hero);
-
-    std::ofstream fout;
-    std::ostream* out_stream = &std::cout;
-    if (!args.output_path.empty()) {
-        fout.open(args.output_path, std::ios::binary);
-        if (!fout) {
-            std::cerr << "failed to open output: " << args.output_path << "\n";
+        std::unordered_map<std::string, std::string> key_to_hero;
+        if (!bazaararena::gdf::LoadItemHeroByKeyFromDataDir(args.data_items_dir, key_to_hero, err)) {
+            std::cerr << "[GDF] " << err << "\n";
             return 2;
         }
-        out_stream = &fout;
-    }
 
-    const bazaararena::EngineVersion v = bazaararena::GetEngineVersion();
-    *out_stream << "bazaararena_gdf engine_version=" << v.major << '.' << v.minor << '.' << v.patch << "\n";
+        bazaararena::gdf::ItemPool pool(args.level, args.pool_hero, args.excluded, key_to_hero);
 
-    if (args.enumerate_anchors) {
-        std::vector<std::string> keys;
-        CollectAllPoolKeys(pool, keys);
-        for (const auto& k : keys) {
-            if (args.excluded.count(k)) continue;
-            std::unordered_set<std::string> seed_set{k};
-            RunOneSearch(pool, args, {k}, seed_set, *out_stream);
+        std::ofstream fout;
+        std::ostream* out_stream = &std::cout;
+        if (!args.output_path.empty()) {
+            fout.open(args.output_path, std::ios::binary);
+            if (!fout) {
+                std::cerr << "failed to open output: " << args.output_path << "\n";
+                return 2;
+            }
+            out_stream = &fout;
         }
-    } else {
-        std::unordered_set<std::string> seed_set(args.seed_items.begin(), args.seed_items.end());
-        RunOneSearch(pool, args, args.seed_items, seed_set, *out_stream);
-    }
 
-    return 0;
+        const bazaararena::EngineVersion v = bazaararena::GetEngineVersion();
+        *out_stream << "bazaararena_gdf engine_version=" << v.major << '.' << v.minor << '.' << v.patch << "\n";
+
+        if (args.enumerate_anchors) {
+            std::vector<std::string> keys;
+            CollectAllPoolKeys(pool, keys);
+            for (const auto& k : keys) {
+                if (args.excluded.count(k)) continue;
+                std::unordered_set<std::string> seed_set{k};
+                RunOneSearch(pool, args, {k}, seed_set, *out_stream);
+            }
+        } else {
+            std::unordered_set<std::string> seed_set(args.seed_items.begin(), args.seed_items.end());
+            RunOneSearch(pool, args, args.seed_items, seed_set, *out_stream);
+        }
+
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << "[GDF] fatal: " << e.what() << "\n";
+        return 2;
+    } catch (...) {
+        std::cerr << "[GDF] fatal: unknown exception\n";
+        return 2;
+    }
 }

@@ -28,6 +28,8 @@ _RANK_RE = re.compile(
 )
 _SIZE_RE = re.compile(r"^\[GDF\] size=(?P<size>\d+) top (?P<top>\d+)\s*$")
 
+_DEFAULT_EXCLUDED_ANCHORS = {"烙刀"}
+
 
 def _default_gdf_exe(repo_root: Path) -> Path:
     if sys.platform == "win32":
@@ -37,6 +39,7 @@ def _default_gdf_exe(repo_root: Path) -> Path:
 
 def _parse_gdf_output(
     text: str,
+    excluded_anchors: set[str],
 ) -> tuple[
     list[tuple[str, str, str, str, str]],
     list[tuple[str, str | None, list[tuple[str, str, str, str, str]]]],
@@ -73,6 +76,12 @@ def _parse_gdf_output(
         if m_seeds:
             _flush_anchor()
             current_anchor = m_seeds.group(1).strip()
+            if current_anchor in excluded_anchors:
+                current_anchor = None
+                last_top1 = None
+                pending_ranks = []
+                last_size_line = None
+                continue
             last_top1 = None
             pending_ranks = []
             last_size_line = None
@@ -174,6 +183,11 @@ def main() -> int:
         default=None,
         help="满槽最后一档完整 Top-K 输出路径（默认：与 -o 同目录 <stem>_full_topk.txt）",
     )
+    p.add_argument(
+        "--exclude-anchor",
+        default=None,
+        help="排除锚点（逗号分隔；默认排除：烙刀）",
+    )
     args = p.parse_args()
 
     repo_root: Path = args.repo_root.resolve()
@@ -249,7 +263,14 @@ def main() -> int:
 
     raw_text = "".join(chunks)
 
-    rows, full_blocks = _parse_gdf_output(raw_text)
+    excluded_anchors = set(_DEFAULT_EXCLUDED_ANCHORS)
+    if args.exclude_anchor:
+        for s in str(args.exclude_anchor).split(","):
+            t = s.strip()
+            if t:
+                excluded_anchors.add(t)
+
+    rows, full_blocks = _parse_gdf_output(raw_text, excluded_anchors)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     out_tsv = args.output.resolve()
     with args.output.open("w", encoding="utf-8", newline="\n") as out:

@@ -46,6 +46,11 @@ static std::unordered_map<std::string, int> BuildItemSizeWeights(const bazaarare
     return w;
 }
 
+static void RemoveItemFromPoolKeys(std::vector<std::string>& keys, std::unordered_map<std::string, int>& weights, std::string_view item) {
+    keys.erase(std::remove(keys.begin(), keys.end(), std::string(item)), keys.end());
+    weights.erase(std::string(item));
+}
+
 static bazaararena::gdf::DeckRep DeckFromSignature(const std::string& sig) {
     bazaararena::gdf::DeckRep r;
     size_t i = 0;
@@ -214,6 +219,10 @@ int main(int argc, char** argv) {
     std::vector<std::string> pool_keys;
     CollectAllPoolKeys(pool, pool_keys);
 
+    // GDF 输出仅包含「减速烙刀」「加速烙刀」两个展示名；GDF-PA 侧从分析宇宙中移除「烙刀」。
+    auto item_weights_mut = item_weights;
+    RemoveItemFromPoolKeys(pool_keys, item_weights_mut, "烙刀");
+
     std::vector<bazaararena::gdf_pa::GeneralityRow> gen_rows;
     if (!bazaararena::gdf_pa::ComputeGeneralityTable(blocks, args.top_k, pool_keys, gen_rows, err)) {
         std::cerr << "[gdf_pa] generality: " << err << "\n";
@@ -316,7 +325,7 @@ int main(int argc, char** argv) {
     }
 
     std::vector<bazaararena::gdf_pa::DirectedEdge> edges;
-    if (!bazaararena::gdf_pa::RunDiffOneBattles(graph_nodes, eval, args.graph_symmetric_diff_max, item_weights, edges, err)) {
+    if (!bazaararena::gdf_pa::RunDiffOneBattles(graph_nodes, eval, args.graph_symmetric_diff_max, item_weights_mut, edges, err)) {
         std::cerr << "[gdf_pa] graph: " << err << "\n";
         return 2;
     }
