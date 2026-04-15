@@ -3,6 +3,7 @@
 #include <bazaararena/gdf/BattleEvaluator.hpp>
 #include <bazaararena/gdf/DeckRep.hpp>
 
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -15,10 +16,11 @@ struct DirectedEdge {
     int games_used = 0;
 };
 
-/// 同槽 multiset 下，对称差 s = sum|Delta count|（偶数；s/2 为置换次数）。2 <= s <= symmetric_diff_max 则连边（默认 max=2 等价于原 max_replacements=1）。
+/// 连边判定：对称差权重和 S = sum(w(item)*|Delta count|)，其中 w(小/中/大)=1/2/3。
+/// 若 S 为偶数，则替换成本 = S/2；当 1 <= S/2 <= symmetric_diff_max 时连边。
 /// 定向为 BoN 胜者 -> 败者；先 100 局计分，若接近 0.5 再打到累计 1000 局。
 [[nodiscard]] bool RunDiffOneBattles(const std::vector<bazaararena::gdf::DeckRep>& nodes, bazaararena::gdf::BattleEvaluator& eval,
-    int symmetric_diff_max, std::vector<DirectedEdge>& edges_out, std::string& err);
+    int symmetric_diff_max, const std::unordered_map<std::string, int>& item_weights, std::vector<DirectedEdge>& edges_out, std::string& err);
 
 [[nodiscard]] bool WriteEdgesCsv(const std::string& path, const std::vector<DirectedEdge>& edges, const std::vector<std::string>& node_sigs,
     std::string& err);

@@ -14,24 +14,33 @@
 namespace bazaararena::gdf_pa {
 namespace {
 
-/// multiset 对称差大小 s = sum|Δcount|（等价于“需要删除的元素数 + 需要新增的元素数”）。
-/// - 允许不同张数：例如 {A,B,C} vs {A,B,C,D} => s=1。
-/// - 等张数时 s 必为偶数，此时置换次数 = s/2。
-/// - 非全同需 s>=1。
-static bool MultisetSymmetricDiffAccept(const bazaararena::gdf::DeckRep& a, const bazaararena::gdf::DeckRep& b, int symmetric_diff_max) {
+/// 对称差权重和 S = sum(w(item)*|Δcount|)，其中 w(小/中/大)=1/2/3。
+/// - 若 S 为奇数，说明“替换成本”不是整数（例如 1 槽换 2 槽），按当前设计拒绝连边。
+/// - 成本 = S/2；非全同需成本>=1。
+static bool MultisetWeightedSymmetricDiffAccept(const bazaararena::gdf::DeckRep& a, const bazaararena::gdf::DeckRep& b, int replacement_cost_max,
+    const std::unordered_map<std::string, int>& item_weights) {
     std::unordered_map<std::string, int> ca;
     for (const auto& n : a.item_names) ca[n]++;
     for (const auto& n : b.item_names) ca[n]--;
-    int s = 0;
-    for (const auto& kv : ca) s += std::abs(kv.second);
-    if (s < 1) return false;
-    return s <= symmetric_diff_max;
+    long long S = 0;
+    for (const auto& kv : ca) {
+        const int d = std::abs(kv.second);
+        if (d <= 0) continue;
+        int w = 1;
+        const auto it = item_weights.find(kv.first);
+        if (it != item_weights.end() && it->second > 0) w = it->second;
+        S += static_cast<long long>(w) * static_cast<long long>(d);
+    }
+    if (S < 2) return false;
+    if ((S & 1LL) != 0) return false;
+    const int cost = static_cast<int>(S / 2);
+    return cost <= replacement_cost_max;
 }
 
 }  // namespace
 
 bool RunDiffOneBattles(const std::vector<bazaararena::gdf::DeckRep>& nodes, bazaararena::gdf::BattleEvaluator& eval,
-    int symmetric_diff_max, std::vector<DirectedEdge>& edges_out, std::string& err) {
+    int symmetric_diff_max, const std::unordered_map<std::string, int>& item_weights, std::vector<DirectedEdge>& edges_out, std::string& err) {
     err.clear();
     edges_out.clear();
     if (symmetric_diff_max < 1) {
@@ -41,7 +50,7 @@ bool RunDiffOneBattles(const std::vector<bazaararena::gdf::DeckRep>& nodes, baza
     const int n = static_cast<int>(nodes.size());
     for (int i = 0; i < n; ++i) {
         for (int j = i + 1; j < n; ++j) {
-            if (!MultisetSymmetricDiffAccept(nodes[static_cast<size_t>(i)], nodes[static_cast<size_t>(j)], symmetric_diff_max))
+            if (!MultisetWeightedSymmetricDiffAccept(nodes[static_cast<size_t>(i)], nodes[static_cast<size_t>(j)], symmetric_diff_max, item_weights))
                 continue;
             bazaararena::gdf::MatchPoints m100 = eval.PlaySeriesPoints(nodes[static_cast<size_t>(i)], nodes[static_cast<size_t>(j)], 100);
             double pa = m100.a;
@@ -170,13 +179,23 @@ std::vector<PeelStep> PeelGraphStructured(int n, const std::vector<DirectedEdge>
         int pick = -1;
         for (int v = 0; v < n; ++v) {
             if (!alive[static_cast<size_t>(v)]) continue;
-            double sw = 0;
+            double out_sum = 0;
+            double in_sum = 0;
+            int out_cnt = 0;
+            int in_cnt = 0;
             for (const auto& e : edges) {
-                if (e.from != v) continue;
-                if (e.to < 0 || e.to >= n) continue;
-                if (!alive[static_cast<size_t>(e.to)]) continue;
-                sw += e.weight;
+                if (e.from < 0 || e.from >= n || e.to < 0 || e.to >= n) continue;
+                if (!alive[static_cast<size_t>(e.from)] || !alive[static_cast<size_t>(e.to)]) continue;
+                if (e.from == v) {
+                    out_sum += e.weight;
+                    out_cnt++;
+                } else if (e.to == v) {
+                    in_sum += e.weight;
+                    in_cnt++;
+                }
             }
+            const int deg = out_cnt + in_cnt;
+            const double sw = (deg > 0) ? ((out_sum - in_sum) / static_cast<double>(deg)) : 0.0;
             if (sw < best_w || (sw == best_w && (pick < 0 || v < pick))) {
                 best_w = sw;
                 pick = v;

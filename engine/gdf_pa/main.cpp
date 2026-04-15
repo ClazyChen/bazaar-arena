@@ -38,6 +38,14 @@ static void CollectAllPoolKeys(const bazaararena::gdf::ItemPool& pool, std::vect
     keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
 }
 
+static std::unordered_map<std::string, int> BuildItemSizeWeights(const bazaararena::gdf::ItemPool& pool) {
+    std::unordered_map<std::string, int> w;
+    for (const auto& n : pool.SmallNames()) w[n] = 1;
+    for (const auto& n : pool.MediumNames()) w[n] = 2;
+    for (const auto& n : pool.LargeNames()) w[n] = 3;
+    return w;
+}
+
 static bazaararena::gdf::DeckRep DeckFromSignature(const std::string& sig) {
     bazaararena::gdf::DeckRep r;
     size_t i = 0;
@@ -62,13 +70,13 @@ static void PrintUsage(std::ostream& os) {
           "  --bo <n>                             odd BoN length (default 5)\n"
           "  --top-k <K>                          H_K 与泛用度截断 (default 10)\n"
           "  --max-anchors <n>                    仅处理前 n 个锚点块（开发用；0=不限制）\n"
-          "  --graph-symmetric-diff-max <s>       建图：multiset 对称差大小 s=sum|Delta count| 上限（>=1；同槽时必为偶数，置换次数=s/2；默认 2=原「差一换」）\n"
+          "  --graph-symmetric-diff-max <c>       建图：替换成本上限 c（>=1）。定义：S=sum(w*|Delta count|)，w(小/中/大)=1/2/3；若 S 为偶数则成本=S/2（默认 2）\n"
           "  --cluster-specialty-min <x>          簇收录仅看锚点 specialty>=x（不再筛 top1 的 (anchor_m/rr)^3）；达标收录 top3，未达整块不收（默认 0.5）\n"
           "  --quality-rr-games <n>               剥点来源排名：每对打 n 局系列赛；按 BO_N 总局分排名（默认 100）\n"
           "  --help\n"
           "\n"
           "输入：gdf_enumerate_anchor_top1.py 生成的 full_topk 文本。\n"
-          "输出：generality.csv、generality_per_anchor.csv、specialty.csv（含 rank；字段按需 RFC4180 引号）；\n"
+          "输出：generality.csv、specialty.csv（含 rank；字段按需 RFC4180 引号）；\n"
           "      quality_decks.csv、quality_ranking.csv（quality_peel_sources 卡组系列赛循环）；clusters.csv、graph_edges.csv、\n"
           "      peel_order.csv（含 phase）、quality_peel_sources.csv（仅 phase=source_quality）、run_log.txt\n";
 }
@@ -147,7 +155,7 @@ static bool ParseArgs(int argc, char** argv, Args& out, std::string& err) {
     if (out.top_k <= 0) out.top_k = 10;
     if (out.best_of <= 0 || out.best_of % 2 == 0) out.best_of = 5;
     if (out.workers < 0) out.workers = DefaultWorkers();
-    if (out.graph_symmetric_diff_max < 2) out.graph_symmetric_diff_max = 2;
+    if (out.graph_symmetric_diff_max < 1) out.graph_symmetric_diff_max = 1;
     if (out.graph_symmetric_diff_max > 128) {
         err = "--graph-symmetric-diff-max must be <= 128";
         return false;
@@ -202,6 +210,7 @@ int main(int argc, char** argv) {
     }
 
     bazaararena::gdf::ItemPool pool(args.level, args.pool_hero, {}, key_to_hero);
+    const auto item_weights = BuildItemSizeWeights(pool);
     std::vector<std::string> pool_keys;
     CollectAllPoolKeys(pool, pool_keys);
 
@@ -212,10 +221,6 @@ int main(int argc, char** argv) {
     }
     bazaararena::gdf_pa::SortAndRankGeneralityForOutput(gen_rows);
     if (!bazaararena::gdf_pa::WriteGeneralityCsv((out_path / "generality.csv").string(), gen_rows, err)) {
-        std::cerr << "[gdf_pa] " << err << "\n";
-        return 2;
-    }
-    if (!bazaararena::gdf_pa::WriteGeneralityPerAnchorCsv((out_path / "generality_per_anchor.csv").string(), gen_rows, err)) {
         std::cerr << "[gdf_pa] " << err << "\n";
         return 2;
     }
@@ -268,7 +273,9 @@ int main(int argc, char** argv) {
     std::vector<bazaararena::gdf::DeckRep> graph_nodes;
     std::vector<std::string> graph_sigs;
 
+    size_t cluster_i = 0;
     for (auto& kv : clusters) {
+        cluster_i++;
         auto& decks = kv.second;
         if (decks.empty()) continue;
         std::sort(decks.begin(), decks.end(), [](const bazaararena::gdf::DeckRep& a, const bazaararena::gdf::DeckRep& b) {
@@ -279,6 +286,19 @@ int main(int argc, char** argv) {
                          return a.Signature() == b.Signature();
                      }),
             decks.end());
+        // 提前验证：full_topk 里若出现不在当前 pool(level/hero) 的物品展示名，会在对战构建 side 时抛异常并导致进程异常退出。
+        // 这里把错误变成可读的报错，方便定位“输入 full_topk 与本次 pool 参数不匹配”的根因。
+        try {
+            for (const auto& d : decks) {
+                for (const auto& name : d.item_names) {
+                    (void)protos.At(name);
+                }
+            }
+        } catch (...) {
+            std::cerr << "[gdf_pa] cluster prototype validation failed (unknown exception)\n";
+            return 2;
+        }
+
         const int rep_i = bazaararena::gdf_pa::RunClusterRepresentative(decks, eval);
         const std::string rep_sig = decks[static_cast<size_t>(rep_i)].Signature();
         cl << bazaararena::gdf_pa::CsvEscapeField(kv.first) << ',' << bazaararena::gdf_pa::CsvEscapeField(rep_sig) << ',' << decks.size()
@@ -296,7 +316,7 @@ int main(int argc, char** argv) {
     }
 
     std::vector<bazaararena::gdf_pa::DirectedEdge> edges;
-    if (!bazaararena::gdf_pa::RunDiffOneBattles(graph_nodes, eval, args.graph_symmetric_diff_max, edges, err)) {
+    if (!bazaararena::gdf_pa::RunDiffOneBattles(graph_nodes, eval, args.graph_symmetric_diff_max, item_weights, edges, err)) {
         std::cerr << "[gdf_pa] graph: " << err << "\n";
         return 2;
     }

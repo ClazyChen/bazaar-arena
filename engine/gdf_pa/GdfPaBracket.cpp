@@ -267,6 +267,21 @@ int RunClusterRepresentative(const std::vector<bazaararena::gdf::DeckRep>& decks
     if (m == 2) {
         return eval.PlayBoN(decks[0], decks[1]) == 0 ? 0 : 1;
     }
+    if (m <= 8) {
+        std::vector<int> wins(static_cast<size_t>(m), 0);
+        for (int i = 0; i < m; ++i) {
+            for (int j = i + 1; j < m; ++j) {
+                const int r = eval.PlayBoN(decks[static_cast<size_t>(i)], decks[static_cast<size_t>(j)]);
+                if (r == 0) wins[static_cast<size_t>(i)]++;
+                else wins[static_cast<size_t>(j)]++;
+            }
+        }
+        int best = 0;
+        for (int i = 1; i < m; ++i) {
+            if (wins[static_cast<size_t>(i)] > wins[static_cast<size_t>(best)]) best = i;
+        }
+        return best;
+    }
     if (m == 3) {
         int wins[3] = {0, 0, 0};
         auto play = [&](int a, int b) {
