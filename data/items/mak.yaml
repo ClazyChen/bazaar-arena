@@ -1,4 +1,590 @@
 schemaVersion: 1
 hero: Mak
-items: []
-
+items:
+  - Name: "倒刺利爪"
+    Desc: "▶ 造成 {Damage} 伤害；如果敌方承受剧毒，此物品 {+Custom_0} 多重释放；如果己方承受剧毒，此物品 {+Custom_0} 多重释放"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 6s
+    Damage: [5, 10, 20, 40]
+    Custom_0: 1
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Opp
+              params: [Poison]
+        value: Custom_0
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Side
+              params: [Poison]
+        value: Custom_0
+  - Name: "再生药水"
+    Desc: "▶ 获得 {Regen} 生命再生；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Bronze
+    Tags: [Potion]
+    Cooldown: 5s
+    Regen: [5, 10, 20, 30]
+    AmmoCap: 1
+    Abilities:
+      - type: Regen
+        priority: High
+  - Name: "剧毒药水"
+    Desc: "▶ 造成 {Poison} 剧毒；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Bronze
+    Tags: [Potion]
+    Cooldown: 4s
+    Poison: [3, 6, 9, 12]
+    AmmoCap: 1
+    Abilities:
+      - type: Poison
+  - Name: "嗅盐"
+    Desc: "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；此物品或相邻物品触发减速时，加速此物品左侧的物品 {Haste} 秒"
+    Size: Small
+    Tier: Bronze
+    Cooldown: 7s
+    Slow: [1s, 2s, 3s, 4s]
+    SlowTargetCount: 1
+    Haste: [1s, 2s, 3s, 4s]
+    Abilities:
+      - type: Slow
+      - type: Haste
+        ex_condition:
+          type: Or
+          params:
+            - SameAsCaster
+            - AdjacentToCaster
+        target_condition: LeftOfCaster
+  - Name: "地刺陷阱"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 造成 {Poison} 剧毒；任意玩家使用武器时，为此物品充能 {Charge} 秒"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Trap]
+    Cooldown: [9s, 8s, 7s, 6s]
+    Damage: 20
+    Poison: 2
+    Charge: 1s
+    Abilities:
+      - type: Damage
+      - type: Poison
+      - type: Charge
+        trigger: UseItem
+        condition:
+          type: HasTag
+          params: [Weapon]
+        target_condition: SameAsCaster
+  - Name: "塔兹迪亚匕首"
+    Desc: "▶ 造成 {Damage} 伤害；此物品左侧的药水 {+Custom_0} 最大弹药量"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Relic]
+    Cooldown: 6s
+    Damage: [10, 20, 30, 40]
+    Custom_0: [1, 2, 3, 4]
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: AmmoCap
+        condition:
+          type: And
+          params:
+            - LeftOfCaster
+            - type: HasTag
+              params: [Potion]
+        value: Custom_0
+  - Name: "彩虹药水"
+    Desc: "▶ 造成 {Burn} 灼烧；▶ 造成 {Poison} 剧毒；▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Bronze
+    Tags: [Potion]
+    Cooldown: 6s
+    Burn: [3, 6, 9, 12]
+    Poison: [3, 6, 9, 12]
+    Freeze: 1s
+    FreezeTargetCount: 1
+    Slow: 2s
+    SlowTargetCount: 1
+    AmmoCap: 1
+    Abilities:
+      - type: Burn
+      - type: Poison
+      - type: Freeze
+      - type: Slow
+  - Name: "手术刀"
+    Desc: "▶ 造成伤害，等量于此物品的暴击率；暴击率：{CritRate%}；造成暴击时，此物品的暴击率提高 {Custom_0%}（限本场战斗）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Tool]
+    Cooldown: 5s
+    CritRate: 10
+    Custom_0: [10, 15, 20, 25]
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        trigger: Crit
+        key: CritRate
+        value: Custom_0
+        target_condition: SameAsCaster
+        priority: High
+    Auras:
+      - attribute: Damage
+        value: CritRate
+  - Name: "拆信刀"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 此物品的暴击率降低 {Custom_0%}（限本场战斗）；暴击率：{CritRate%}"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Tool]
+    Cooldown: 5s
+    Damage: [10, 20, 40, 80]
+    Custom_0: 25
+    CritRate: [100, 125, 150, 175]
+    Abilities:
+      - type: Damage
+      - type: ReduceAttribute
+        key: CritRate
+        value: Custom_0
+        target_condition: SameAsCaster
+  - Name: "昏睡药水"
+    Desc: "▶ 减速 {SlowTargetCount} 件敌方冷却时间最长的物品 {Slow} 秒；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Bronze
+    Tags: [Potion]
+    Cooldown: 4s
+    Slow: [3s, 4s, 5s, 6s]
+    SlowTargetCount: 1
+    AmmoCap: 1
+    Abilities:
+      - type: Slow
+        ex_target_condition:
+          type: Eq
+          params:
+            - type: OppMax
+              params: [Cooldown]
+            - type: Item
+              params: [Cooldown]
+  - Name: "毒液"
+    Desc: "使用此物品左侧的物品时，造成 {Poison} 剧毒"
+    Size: Small
+    Tier: Bronze
+    Poison: [2, 3, 4, 5]
+    Abilities:
+      - type: Poison
+        trigger: UseItem
+        condition: LeftOfCaster
+  - Name: "毒液注射"
+    Desc: "▶ 造成 {Poison} 剧毒；▶ 对自己造成 {Poison} 剧毒；▶ 获得生命再生，等量于此物品的剧毒"
+    Size: Small
+    Tier: Bronze
+    Cooldown: 5s
+    Poison: [2, 4, 6, 8]
+    Abilities:
+      - type: Poison
+      - type: PoisonSelf
+      - type: Regen
+    Auras:
+      - attribute: Regen
+        value: Poison
+  - Name: "云精灵"
+    Desc: "▶ 加速此物品左侧的物品 {Haste} 秒；【局外】此物品转化时，为其赋予疾速附魔（如适用）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Reagent]
+    Cooldown: 5s
+    Haste: [1s, 2s, 3s, 4s]
+    Abilities:
+      - type: Haste
+        target_condition: LeftOfCaster
+  - Name: "催化剂"
+    Desc: "【局外】出售此物品时，转化你最左侧的物品"
+    Size: Small
+    Tier: Bronze
+    Tags: [Loot]
+  - Name: "毒芹"
+    Desc: "▶ 造成 {Poison} 剧毒；【局外】此物品转化时，为其赋予剧毒附魔（如适用）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Reagent]
+    Cooldown: 6s
+    Poison: [2, 3, 4, 5]
+    Abilities:
+      - type: Poison
+  - Name: "毒蜥"
+    Desc: "▶ 造成 {Poison} 剧毒；▶ 获得 {Regen} 生命再生"
+    Size: Small
+    Tier: Bronze
+    Tags: [Friend]
+    Cooldown: [6s, 5s, 4s, 3s]
+    Poison: 2
+    Regen: 1
+    Abilities:
+      - type: Poison
+      - type: Regen
+        priority: Low
+  - Name: "没药"
+    Desc: "▶ 获得 {Regen} 生命再生；【局外】此物品转化时，为其赋予回复附魔（如适用）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Reagent]
+    Cooldown: 6s
+    Regen: [1, 3, 5, 7]
+    Abilities:
+      - type: Regen
+  - Name: "火焰药水"
+    Desc: "▶ 造成 {Burn} 灼烧；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Bronze
+    Tags: [Potion]
+    Cooldown: 5s
+    Burn: [6, 8, 10, 12]
+    AmmoCap: 1
+    Abilities:
+      - type: Burn
+  - Name: "熏香"
+    Desc: "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；▶ 获得 {Regen} 生命再生"
+    Size: Small
+    Tier: Bronze
+    Cooldown: 6s
+    Slow: 1s
+    SlowTargetCount: [1, 2, 3, 4]
+    Regen: [2, 4, 6, 8]
+    Abilities:
+      - type: Slow
+      - type: Regen
+        priority: Low
+  - Name: "猫头鹰奥利"
+    Desc: "造成暴击时，{ModifyTargetCount} 件物品开始飞行；飞行物品 {+Custom_1%} 暴击率"
+    Size: Small
+    Tier: Bronze
+    Tags: [Friend]
+    ModifyTargetCount: 1
+    Custom_0: 1
+    Custom_1: [20, 30, 40, 50]
+    Abilities:
+      - type: AddAttribute
+        trigger: Crit
+        key: InFlight
+        value: Custom_0
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: And
+          params:
+            - SameSide
+            - type: Item
+              params: [InFlight]
+        value: Custom_1
+  - Name: "瓶装闪电"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 造成 {Burn} 灼烧；弹药：{AmmoCap}；暴击率：{CritRate%}"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Potion]
+    Cooldown: 6s
+    Damage: [15, 30, 60, 120]
+    Burn: [1, 2, 3, 4]
+    AmmoCap: 1
+    CritRate: 100
+    Abilities:
+      - type: Damage
+      - type: Burn
+  - Name: "真菌孢子"
+    Desc: "▶ 剧毒物品的剧毒提高 {Custom_0}（限本场战斗）"
+    Size: Small
+    Tier: Bronze
+    Cooldown: 5s
+    Custom_0: [2, 3, 4, 5]
+    Abilities:
+      - type: AddAttribute
+        ex_target_condition:
+          type: HasDerivedTag
+          params: [Poison]
+        key: Poison
+        value: Custom_0
+  - Name: "硫磺"
+    Desc: "▶ 造成 {Burn} 灼烧；【局外】此物品转化时，为其赋予炽焰附魔（如适用）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Reagent]
+    Cooldown: 6s
+    Burn: [2, 3, 4, 5]
+    Abilities:
+      - type: Burn
+  - Name: "碎瓶"
+    Desc: "▶ 造成 {Damage} 伤害；弹药：{AmmoCap}；使用其他药水时，装填此物品；使用其他药水时，为此物品充能 {Charge} 秒"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Potion]
+    Cooldown: 4s
+    Damage: [20, 40, 80, 160]
+    AmmoCap: 1
+    Charge: 1s
+    Abilities:
+      - type: Damage
+      - type: Reload
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Potion]
+            - DifferentFromCaster
+        target_condition: SameAsCaster
+      - type: Charge
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Potion]
+            - DifferentFromCaster
+        target_condition: SameAsCaster
+  - Name: "离子闪电"
+    Desc: "相邻物品 {+Custom_0%} 暴击率；【局外】此物品转化时，为其赋予致命附魔（如适用）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Reagent]
+    Custom_0: [10, 20, 30, 40]
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: And
+          params:
+            - AdjacentToCaster
+            - CanCrit
+        value: Custom_0
+  - Name: "笔与墨"
+    Desc: "▶ 造成 {Poison} 剧毒；▶ 获得 {Regen} 生命再生；如果没有其他武器，此物品 {+Custom_0} 多重触发"
+    Size: Small
+    Tier: Bronze
+    Tags: [Tool]
+    Cooldown: [7s, 6s, 5s, 4s]
+    Poison: 1
+    Regen: 1
+    Custom_0: 1
+    Abilities:
+      - type: Poison
+      - type: Regen
+        priority: Low
+    Auras:
+      - attribute: Multicast
+        condition:
+          type: Eq
+          params:
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: HasTag
+                      params: [Weapon]
+            - 0
+        value: Custom_0
+  - Name: "红宝石"
+    Desc: "▶ 造成 {Burn} 灼烧；其他灼烧物品 {+Custom_0} 灼烧"
+    Size: Small
+    Tier: Bronze
+    Tags: [Relic]
+    Cooldown: 7s
+    Burn: [2, 3, 4, 5]
+    Custom_0: [2, 3, 4, 5]
+    Abilities:
+      - type: Burn
+    Auras:
+      - attribute: Burn
+        condition:
+          type: And
+          params:
+            - SameSide
+            - DifferentFromCaster
+            - type: HasDerivedTag
+              params: [Burn]
+        value: Custom_0
+  - Name: "翡翠"
+    Desc: "▶ 造成 {Poison} 剧毒；其他剧毒物品 {+Custom_0} 剧毒"
+    Size: Small
+    Tier: Bronze
+    Tags: [Relic]
+    Cooldown: 7s
+    Poison: [2, 3, 4, 5]
+    Custom_0: [2, 3, 4, 5]
+    Abilities:
+      - type: Poison
+    Auras:
+      - attribute: Poison
+        condition:
+          type: And
+          params:
+            - SameSide
+            - DifferentFromCaster
+            - type: HasDerivedTag
+              params: [Poison]
+        value: Custom_0
+  - Name: "萤火虫"
+    Desc: "▶ 造成 {Burn} 灼烧；触发减速时，此物品的灼烧提高 {Custom_0}（限本场战斗）；触发减速时，此物品开始飞行"
+    Size: Small
+    Tier: Bronze
+    Tags: [Friend]
+    Cooldown: 8s
+    Burn: 5
+    Custom_0: [2, 3, 4, 5]
+    Custom_1: 1
+    Abilities:
+      - type: Burn
+      - type: AddAttribute
+        trigger: Slow
+        key: Burn
+        value: Custom_0
+        target_condition: SameAsCaster
+      - type: AddAttribute
+        trigger: Slow
+        key: InFlight
+        value: Custom_1
+        target_condition: SameAsCaster
+  - Name: "蛇怪之牙"
+    Desc: "▶ 造成 {Damage} 伤害；如果敌方承受剧毒，此物品 {+Custom_0%} 暴击率；吸血"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Relic]
+    Cooldown: 4s
+    Damage: [10, 20, 40, 80]
+    Custom_0: [25, 50, 75, 100]
+    LifeSteal: 100
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: Opp
+          params: [Poison]
+        value: Custom_0
+  - Name: "贤者之石"
+    Desc: "▶ 获得 {Regen} 生命再生；【局外】转化原料时，此物品的生命再生提高 {Custom_0}；【默认】已转化的原料数量：{Custom_1}；【局外】购买此物品时，获得 1 件催化剂"
+    Size: Small
+    Tier: Bronze
+    Tags: [Relic]
+    Cooldown: 5s
+    Regen: 1
+    Custom_0: [2, 3, 4, 5]
+    Custom_1: [2, 4, 6, 8]
+    overridable: [Custom_1]
+    Abilities:
+      - type: Regen
+    Auras:
+      - attribute: Regen
+        value:
+          type: Mul
+          params:
+            - type: Caster
+              params: [Custom_0]
+            - type: Caster
+              params: [Custom_1]
+  - Name: "青苔"
+    Desc: "▶ 相邻生命再生物品的生命再生提高 {Custom_0}（限本场战斗）；【局外】此物品转化时，为其赋予长青附魔（如适用）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Reagent]
+    Cooldown: 5s
+    Custom_0: [1, 2, 3, 4]
+    Abilities:
+      - type: AddAttribute
+        target_condition:
+          type: And
+          params:
+            - AdjacentToCaster
+            - type: HasDerivedTag
+              params: [Regen]
+        value: Custom_0
+        priority: High
+  - Name: "飞蛾粉末"
+    Desc: "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；【局外】此物品转化时，为其赋予沉重附魔（如适用）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Reagent]
+    Cooldown: 5s
+    Slow: [1s, 2s, 3s, 4s]
+    SlowTargetCount: 1
+    Abilities:
+      - type: Slow
+  - Name: "香炉"
+    Desc: "▶ 造成 {Burn} 灼烧；▶ 获得 {Regen} 生命再生"
+    Size: Small
+    Tier: Bronze
+    Tags: [Tool, Relic]
+    Cooldown: [6s, 5s, 4s, 3s]
+    Burn: 5
+    Regen: 1
+    Abilities:
+      - type: Burn
+      - type: Regen
+  - Name: "鳄鱼眼泪"
+    Desc: "▶ 造成 {Damage} 伤害；敌方生命值降低时，此物品的伤害提高 {Custom_0}（限本场战斗）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Potion]
+    Cooldown: [13s, 12s, 11s, 10s]
+    Damage: 1
+    Custom_0: [8, 16, 24, 32]
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        trigger: Damage
+        key: Damage
+        value: Custom_0
+        priority: Low
+        target_condition: SameAsCaster
+      - type: AddAttribute
+        trigger: EveryFrame
+        condition:
+          type: Or
+          params:
+            - type: And
+              params:
+                - type: Opp
+                  params: [Burn]
+                - IsBurnTick
+            - type: And
+              params:
+                - type: Opp
+                  params: [Poison]
+                - IsPoisonTick
+            - IsSandstormTick
+        key: Damage
+        value: Custom_0
+        priority: Low
+        target_condition: SameAsCaster
+  - Name: "黑曜石碎片"
+    Desc: "▶ 造成 {Damage} 伤害；吸血；【局外】此物品转化时，为其赋予黑曜石附魔（如适用）"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon, Reagent]
+    Cooldown: 5s
+    Damage: [5, 10, 20, 40]
+    LifeSteal: 100
+    Abilities:
+      - type: Damage
+  - Name: "黑玫瑰"
+    Desc: "▶ 获得 {Regen} 生命再生；触发剧毒时，此物品的生命再生提高 {Custom_0}（限本场战斗）"
+    Size: Small
+    Tier: Bronze
+    Cooldown: 6s
+    Regen: 2
+    Custom_0: [1, 2, 3, 4]
+    Abilities:
+      - type: Regen
+      - type: AddAttribute
+        trigger: Poison
+        key: Regen
+        value: Custom_0
+        priority: Low
+        target_condition: SameAsCaster

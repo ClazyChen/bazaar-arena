@@ -38,6 +38,9 @@ public:
     int GetSideInt(int key) const; // 读取能力/光环释放者所在阵营的某个属性
     int GetOppInt(int key) const; // 读取能力/光环释放者所在阵营的对手阵营的某个属性
 
+    // 获取能力/光环释放者所在阵营的对手阵营的指定字段的最大值
+    int GetOppMaxInt(int key) const;
+    
     // 公式类型（函数指针），和 formula::Formula 一致
     using Formula = int(*)(const BattleContext&);
 
@@ -49,6 +52,10 @@ public:
 
     // 满足某个条件的最右侧的物品
     int IsRightmostWith(Formula condition) const;
+
+    int IsBurnTick() const; // 当前是否为灼烧帧
+    int IsPoisonTick() const; // 当前是否为剧毒帧
+    int IsSandstormTick() const; // 当前是否为沙尘暴帧
 
 };
 

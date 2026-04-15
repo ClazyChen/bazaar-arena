@@ -133,4 +133,14 @@ constexpr Formula QuestComplete = [](const BattleContext& ctx) -> int {
     return (Caster<ItemKey::Quest>(ctx) & (1 << (quest_index - 1))) != 0 ? 1 : 0;
 };
 
+constexpr Formula IsBurnTick = [](const BattleContext& ctx) -> int {
+    return ctx.IsBurnTick();
+};
+constexpr Formula IsPoisonTick = [](const BattleContext& ctx) -> int {
+    return ctx.IsPoisonTick();
+};
+constexpr Formula IsSandstormTick = [](const BattleContext& ctx) -> int {
+    return ctx.IsSandstormTick();
+};
+
 }

@@ -183,6 +183,9 @@ def _emit_named_leaf(name: str, *, where: str) -> str:
         "StrictlyRightOfCaster": "StrictlyRightOfCaster",
         "InFlight": "InFlight",
         "NotInFlight": "NotInFlight",
+        "IsBurnTick": "IsBurnTick",
+        "IsPoisonTick": "IsPoisonTick",
+        "IsSandstormTick": "IsSandstormTick",
     }
     if name in direct:
         return direct[name]
@@ -275,6 +278,12 @@ def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
         if n is None:
             raise ValueError(f"{where}: SideKey 缺少整型映射：{k}")
         return f"formula::Opp<{n}>"
+
+    if typ == "OppMax":
+        if len(params) != 1:
+            raise ValueError(f"{where}: OppMax 需要 1 个 ItemKey 名")
+        k = _key_name(params[0], "ItemKey", where)
+        return f"formula::OppMax<({_item_key_cpp(k)})>"
 
     if typ == "HasTag":
         if len(params) != 1:

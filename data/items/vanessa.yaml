@@ -382,7 +382,7 @@ items:
     Abilities:
       - type: Damage
   - Name: "珍珠"
-    Desc: "▶ 获得 {Shield} 护盾；使用其他水系物品时，为此物品充能 1 秒"
+    Desc: "▶ 获得 {Shield} 护盾；使用其他水系物品时，为此物品充能 {Charge} 秒"
     Size: Small
     Tier: Bronze
     Tags: [Aquatic]
@@ -459,7 +459,7 @@ items:
                       params: [Friend]
         value: Custom_0
   - Name: "食人鱼"
-    Desc: "▶ 造成 {Damage} 伤害；使用其他伙伴或食物时，为此物品充能 1 秒"
+    Desc: "▶ 造成 {Damage} 伤害；使用其他伙伴或食物时，为此物品充能 {Charge} 秒"
     Size: Small
     Tier: Bronze
     Tags: [Weapon, Aquatic, Friend]

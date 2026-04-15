@@ -91,6 +91,21 @@ int BattleContext::GetOppInt(int key) const {
     return simulator->sides[si].attrs[key];
 }
 
+// 获取能力/光环释放者所在阵营的对手阵营的指定字段的最大值
+int BattleContext::GetOppMaxInt(int key) const {
+    const int si = 1 - caster->attrs[ItemKey::SideIndex];
+    const auto& side = simulator->sides[si];
+    if (side.attrs[SideKey::ItemCount] <= 0) return 0;
+    int max_value = 0;
+    for (int i = 0; i < side.attrs[SideKey::ItemCount]; i++) {
+        auto& item = side.items[i];
+        if (item.attrs[ItemKey::Destroyed] == 1) continue;
+        int value = GetItemInt(&item, key);
+        if (value > max_value) max_value = value;
+    }
+    return max_value;
+}
+
 // 计算满足某个条件的物品数量（双方所有物品；条件内可用 SameSide / DifferentSide 等）
 int BattleContext::CountItems(Formula condition) const {
     BattleContext ctx = *this;
@@ -144,6 +159,18 @@ int BattleContext::IsRightmostWith(Formula condition) const {
     }
     if (last == nullptr) return 0;
     return this->item == last ? 1 : 0;
+}
+
+int BattleContext::IsBurnTick() const {
+    return simulator->time % Simulator::BurnTickInterval == 0;
+}
+
+int BattleContext::IsPoisonTick() const {
+    return simulator->time % Simulator::PoisonTickInterval == 0;
+}
+
+int BattleContext::IsSandstormTick() const {
+    return simulator->time >= simulator->sandstorm.next_tick;
 }
 
 } // namespace bazaararena::core

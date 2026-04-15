@@ -74,6 +74,12 @@ constexpr Formula Opp = [](const BattleContext& ctx) -> int {
     return ctx.GetOppInt(key); 
 };
 
+// 能力/光环释放者所在阵营的对手阵营的指定字段的最大值
+template<int key>
+constexpr Formula OppMax = [](const BattleContext& ctx) -> int { 
+    return ctx.GetOppMaxInt(key); 
+};
+
 // 公式的组合计算（条件语义：子式 0 为假、非 0 为真；勿用按位 & 与 Count 等相组合，否则偶数计数会被截断为 0）
 template<Formula... formulas>
 constexpr Formula And = [](const BattleContext& ctx) -> int {
