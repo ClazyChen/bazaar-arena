@@ -3,7 +3,6 @@
 
 #include <bazaararena/gdf/DeckRep.hpp>
 
-#include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
