@@ -47,11 +47,17 @@ public:
     // 计算满足某个条件的物品数量
     int CountItems(Formula condition) const;
 
+    // 己方所有物品的类型
+    int GetSideItemTypes() const;
+    
     // 满足某个条件的最左侧的物品
     int IsLeftmostWith(Formula condition) const;
 
     // 满足某个条件的最右侧的物品
     int IsRightmostWith(Formula condition) const;
+
+    // 当前的时间（毫秒）
+    int GetTime() const;
 
     int IsBurnTick() const; // 当前是否为灼烧帧
     int IsPoisonTick() const; // 当前是否为剧毒帧

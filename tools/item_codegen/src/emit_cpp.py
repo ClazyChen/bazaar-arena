@@ -188,9 +188,19 @@ def _trigger_to_cpp(trig: str) -> str:
 
 # 基础目标条件（AbilityType）
 _BASIC_TARGET_SAME_SIDE = frozenset(
-    {"Charge", "Haste", "Reload", "Repair", "AddAttribute", "Cast"}
+    {
+        "Charge",
+        "Haste",
+        "Reload",
+        "Repair",
+        "AddAttribute",
+        "Cast",
+        "Transform_quicksilver",
+        "StartSandstorm",
+        "AddMaxHp",
+    }
 )
-_BASIC_TARGET_DIFF_SIDE = frozenset({"Slow", "Destroy", "Freeze", "ReduceAttribute"})
+_BASIC_TARGET_DIFF_SIDE = frozenset({"Slow", "Destroy", "Freeze", "ReduceAttribute", "ReduceMaxHp"})
 
 
 def _basic_target_condition_for_ability(ability_type: str) -> str:
@@ -288,6 +298,11 @@ def _resolve_value_key_cpp(ab: dict, ability_type: str, *, where: str) -> str:
         "Resistance": "Custom_0",
         "PoisonSelf": "Poison",
         "Cast": "Custom_2",
+        # 特殊能力默认映射（多数不需要 value_key，但 AbilityDefinition 结构要求填一个合法 key）
+        "Transform_quicksilver": "Custom_0",
+        "StartSandstorm": "Custom_0",
+        "AddMaxHp": "Custom_0",
+        "ReduceMaxHp": "Custom_0",
     }
     if ability_type in defaults:
         return f"core::ItemKey::{defaults[ability_type]}"

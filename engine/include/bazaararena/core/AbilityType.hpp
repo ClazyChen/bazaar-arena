@@ -26,8 +26,14 @@ public:
     static constexpr int PoisonSelf = 18; // 自身施加剧毒
     static constexpr int Cast = 19; // 立刻施放
 
+    // 特殊实现的能力
+    static constexpr int Transform_quicksilver = 20; // 水银的转化效果
+    static constexpr int StartSandstorm = 21; // 开始沙尘暴
+    static constexpr int AddMaxHp = 22; // 增加最大生命值
+    static constexpr int ReduceMaxHp = 23; // 减少敌方的最大生命值
+
     // 能力类型数量
-    static constexpr int Count = 20; // 能力类型数量
+    static constexpr int Count = 24; // 能力类型数量
 };
 
 }  // namespace bazaararena::core

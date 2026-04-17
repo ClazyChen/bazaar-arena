@@ -353,6 +353,15 @@ function filterQuestMaskDeckDesc(desc: string, questMask: number): string {
 
     const out: string[] = [];
     for (const p of parts) {
+        // 「魂石」等互斥分支提示：当任一分支已完成时不再展示“只能生效一个”
+        // 约定：Q1→bit0(1)，Q2→bit1(2)，Q3→bit2(4)，Q4→bit3(8)
+        if ((questMask & (1 | 2)) !== 0 && /【Q1】.*【Q2】.*只能生效一个/.test(p)) {
+            continue;
+        }
+        if ((questMask & (4 | 8)) !== 0 && /【Q3】.*【Q4】.*只能生效一个/.test(p)) {
+            continue;
+        }
+
         const m = /^【Q(\d+)】\s*/.exec(p);
         if (!m) {
             out.push(p);

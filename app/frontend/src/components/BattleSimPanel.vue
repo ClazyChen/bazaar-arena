@@ -284,6 +284,10 @@ function hudFloatStyle(ev: HudFloatEvent): Record<string, string> {
     return style;
 }
 
+function sideIsInvuln(side: FrameEndSideSnapshot | null): boolean {
+    return (side?.resistance ?? 0) >= 100;
+}
+
 function outcomeForSide(sideIndex: 0 | 1): { text: string; cls: string } | null {
     const r = simEnvelope.value?.result;
     if (!r || !simEnvelope.value?.ok) return null;
@@ -304,6 +308,16 @@ function itemSnapshotForSlot(
     const by = side.items.find((x) => x.itemIndex === slotIndex);
     if (by) return by;
     return side.items[slotIndex] ?? null;
+}
+
+function itemArtNameForSlot(
+    side: FrameEndSideSnapshot | null,
+    slotIndex: number,
+    slot: DeckSlotPayload | undefined,
+): string {
+    const fallback = slot?.item_name ?? "";
+    const it = itemSnapshotForSlot(side, slotIndex);
+    return (it?.name ?? "").trim() || fallback;
 }
 
 function slotIsDestroyed(side: FrameEndSideSnapshot | null, slotIndex: number): boolean {
@@ -1362,7 +1376,7 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                             >{{ hudFloatLabel(item.ev) }}</span>
                         </div>
                         <div class="bars">
-                            <div class="bar hp-bar">
+                            <div class="bar hp-bar" :class="{ 'hp-bar--invuln': sideIsInvuln(side0) }">
                                 <div class="fill hp-fill" :style="{ width: `${hpFrac(side0) * 100}%` }" />
                                 <div
                                     v-if="side0.shield > 0"
@@ -1426,7 +1440,7 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                     >
                                         <img
                                             class="thumb"
-                                            :src="webpUrl(s.item_name)"
+                                            :src="webpUrl(itemArtNameForSlot(side0, i, s))"
                                             :alt="s.item_name"
                                             loading="lazy"
                                             decoding="async"
@@ -1601,7 +1615,7 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                                     >
                                         <img
                                             class="thumb"
-                                            :src="webpUrl(s.item_name)"
+                                            :src="webpUrl(itemArtNameForSlot(side1, i, s))"
                                             :alt="s.item_name"
                                             loading="lazy"
                                             decoding="async"
@@ -1747,7 +1761,7 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
                             >{{ hudFloatLabel(item.ev) }}</span>
                         </div>
                         <div class="bars">
-                            <div class="bar hp-bar">
+                            <div class="bar hp-bar" :class="{ 'hp-bar--invuln': sideIsInvuln(side1) }">
                                 <div class="fill hp-fill" :style="{ width: `${hpFrac(side1) * 100}%` }" />
                                 <div
                                     v-if="side1.shield > 0"
@@ -2362,6 +2376,9 @@ function shieldFrac(s: FrameEndSideSnapshot | null): number {
     height: 100%;
     background: linear-gradient(90deg, #8b2b2b, #f55a4a);
     border-radius: 4px;
+}
+.hp-bar--invuln .hp-fill {
+    background: linear-gradient(90deg, #b12a6f, #ff7ab8);
 }
 .hp-shield-overlay {
     position: absolute;

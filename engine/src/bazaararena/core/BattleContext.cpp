@@ -122,6 +122,16 @@ int BattleContext::CountItems(Formula condition) const {
     return count;
 }
 
+// 己方所有物品的类型
+int BattleContext::GetSideItemTypes() const {
+    int types = 0;
+    for (int i = 0; i < simulator->sides[caster->attrs[ItemKey::SideIndex]].attrs[SideKey::ItemCount]; i++) {
+        auto& item = simulator->sides[caster->attrs[ItemKey::SideIndex]].items[i];
+        types |= item.attrs[ItemKey::Tags];
+    }
+    return types;
+}
+
 // 满足某个条件的最左侧的物品（扫描顺序：阵营 0→1，每阵营内物品槽 0→ItemCount-1）
 int BattleContext::IsLeftmostWith(Formula condition) const {
     BattleContext ctx = *this;
@@ -171,6 +181,10 @@ int BattleContext::IsPoisonTick() const {
 
 int BattleContext::IsSandstormTick() const {
     return simulator->time >= simulator->sandstorm.next_tick;
+}
+
+int BattleContext::GetTime() const {
+    return simulator->time;
 }
 
 } // namespace bazaararena::core

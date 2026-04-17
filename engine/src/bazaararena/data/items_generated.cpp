@@ -26,7 +26,7 @@ using namespace bazaararena::condition;
 namespace core = bazaararena::core;
 namespace formula = bazaararena::formula;
 
-static const std::array<GeneratedItem, 185> kItems = {
+static const std::array<GeneratedItem, 204> kItems = {
     GeneratedItem{
         .key = "三花",
         .templ = []() {
@@ -431,6 +431,57 @@ static const std::array<GeneratedItem, 185> kItems = {
 }(),
     },
     GeneratedItem{
+        .key = "光学强化",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "光学强化";
+    t.desc = "战斗开始时，对自己造成 {Poison} 剧毒；此物品左侧的物品暴击率提高，等量于己方承受的剧毒";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Tool);
+    t.attributes[1][core::ItemKey::Poison] = 8;
+    t.attributes[2][core::ItemKey::Poison] = 12;
+    t.attributes[3][core::ItemKey::Poison] = 16;
+    t.attributes[4][core::ItemKey::Poison] = 16;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::PoisonSelf;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::BattleStart;
+        a.trigger_entries[0].condition = SameSide;
+        a.target_condition = Always;
+        a.value_key = core::ItemKey::Poison;
+    }
+    t.aura_count = 0;
+    {
+        auto& g = t.auras[t.aura_count++];
+        g.attribute = bazaararena::core::ItemKey::CritRate;
+        g.condition = formula::And<LeftOfCaster, CanCrit>;
+        g.value = formula::Side<5>;
+        g.percent = false;
+    }
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
         .key = "六分仪",
         .templ = []() {
     core::ItemTemplate t;
@@ -802,6 +853,72 @@ static const std::array<GeneratedItem, 185> kItems = {
         a.value_key = core::ItemKey::Poison;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
+        .key = "力量药水",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "力量药水";
+    t.desc = "▶ 己方物品的暴击率提高 {Custom_0%}，持续 {Custom_1:} 秒；弹药：{AmmoCap}";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Potion);
+    for (auto& tier : t.attributes) tier[core::ItemKey::AmmoCap] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 6_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_0] = 100;
+    t.attributes[1][core::ItemKey::Custom_1] = 3_s;
+    t.attributes[2][core::ItemKey::Custom_1] = 4_s;
+    t.attributes[3][core::ItemKey::Custom_1] = 5_s;
+    t.attributes[4][core::ItemKey::Custom_1] = 5_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_2] = 0_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_3] = 0_s;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::AddAttribute;
+        a.priority = core::AbilityPriority::Immediate;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = SameAsCaster;
+        a.value_key = bazaararena::core::ItemKey::Custom_3;
+        a.attribute_key = bazaararena::core::ItemKey::Custom_2;
+        a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
+    }
+    t.aura_count = 0;
+    {
+        auto& g = t.auras[t.aura_count++];
+        g.attribute = bazaararena::core::ItemKey::Custom_3;
+        g.condition = SameAsCaster;
+        g.value = formula::Sub<formula::Add<formula::Time, formula::Caster<(bazaararena::core::ItemKey::Custom_1)>>, formula::Caster<(bazaararena::core::ItemKey::Custom_2)>>;
+        g.percent = false;
+    }
+    {
+        auto& g = t.auras[t.aura_count++];
+        g.attribute = bazaararena::core::ItemKey::CritRate;
+        g.condition = formula::And<formula::Lt<formula::Time, formula::Caster<(bazaararena::core::ItemKey::Custom_2)>>, SameSide, CanCrit>;
+        g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
+        g.percent = false;
+    }
     t.overridable_key_count = 0;
     return t;
 }(),
@@ -3297,6 +3414,129 @@ static const std::array<GeneratedItem, 185> kItems = {
 }(),
     },
     GeneratedItem{
+        .key = "无敌药水",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "无敌药水";
+    t.desc = "▶ 获得无敌 {Custom_0:} 秒；弹药：{AmmoCap}";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Potion);
+    t.attributes[1][core::ItemKey::AmmoCap] = 1;
+    t.attributes[2][core::ItemKey::AmmoCap] = 2;
+    t.attributes[3][core::ItemKey::AmmoCap] = 3;
+    t.attributes[4][core::ItemKey::AmmoCap] = 3;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 7_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_0] = 1_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_1] = 0_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_2] = 0_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_3] = 100;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::AddAttribute;
+        a.priority = core::AbilityPriority::Immediate;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = SameAsCaster;
+        a.value_key = bazaararena::core::ItemKey::Custom_2;
+        a.attribute_key = bazaararena::core::ItemKey::Custom_1;
+        a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
+    }
+    t.aura_count = 0;
+    {
+        auto& g = t.auras[t.aura_count++];
+        g.attribute = bazaararena::core::ItemKey::Custom_2;
+        g.condition = SameAsCaster;
+        g.value = formula::Sub<formula::Add<formula::Time, formula::Caster<(bazaararena::core::ItemKey::Custom_0)>>, formula::Caster<(bazaararena::core::ItemKey::Custom_1)>>;
+        g.percent = false;
+    }
+    {
+        auto& g = t.auras[t.aura_count++];
+        g.attribute = bazaararena::core::ItemKey::Resistance;
+        g.condition = formula::And<formula::Lt<formula::Time, formula::Caster<(bazaararena::core::ItemKey::Custom_1)>>, SameSide>;
+        g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_3)>;
+        g.percent = false;
+    }
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
+        .key = "无限药水",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "无限药水";
+    t.desc = "▶ 获得 {Regen} 生命再生；▶ 装填此物品；弹药：{AmmoCap}";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Potion);
+    for (auto& tier : t.attributes) tier[core::ItemKey::AmmoCap] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 4_s;
+    t.attributes[1][core::ItemKey::Regen] = 3;
+    t.attributes[2][core::ItemKey::Regen] = 6;
+    t.attributes[3][core::ItemKey::Regen] = 9;
+    t.attributes[4][core::ItemKey::Regen] = 9;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Regen;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = Always;
+        a.value_key = core::ItemKey::Regen;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Reload;
+        a.priority = core::AbilityPriority::Low;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = SameAsCaster;
+        a.value_key = core::ItemKey::Reload;
+        a.target_count_key = core::ItemKey::ReloadTargetCount;
+    }
+    t.aura_count = 0;
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
         .key = "时间之砂",
         .templ = []() {
     core::ItemTemplate t;
@@ -4520,6 +4760,48 @@ static const std::array<GeneratedItem, 185> kItems = {
 }(),
     },
     GeneratedItem{
+        .key = "水银",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "水银";
+    t.desc = "▶ 转化为一件其他的非传奇小型物品（限本场战斗）；【局外】购买此物品时，获得 1 件催化剂";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 3_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_0] = 1;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Transform_quicksilver;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = SameSide;
+        a.value_key = core::ItemKey::Custom_0;
+        a.target_count_key = bazaararena::core::ItemKey::Custom_0;
+    }
+    t.aura_count = 0;
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
         .key = "永恒火炬",
         .templ = []() {
     core::ItemTemplate t;
@@ -4648,6 +4930,48 @@ static const std::array<GeneratedItem, 185> kItems = {
         a.target_count_key = core::ItemKey::HasteTargetCount;
     }
     t.aura_count = 0;
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
+        .key = "沙漏",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "沙漏";
+    t.desc = "相邻物品缩短 {Custom_0%} 冷却时间";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Tool);
+    t.attributes[1][core::ItemKey::Custom_0] = 6;
+    t.attributes[2][core::ItemKey::Custom_0] = 9;
+    t.attributes[3][core::ItemKey::Custom_0] = 12;
+    t.attributes[4][core::ItemKey::Custom_0] = 12;
+    t.ability_count = 0;
+    t.aura_count = 0;
+    {
+        auto& g = t.auras[t.aura_count++];
+        g.attribute = bazaararena::core::ItemKey::CooldownReductionPercent;
+        g.condition = formula::And<AdjacentToCaster, HasCooldown>;
+        g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
+        g.percent = false;
+    }
     t.overridable_key_count = 0;
     return t;
 }(),
@@ -6998,6 +7322,61 @@ static const std::array<GeneratedItem, 185> kItems = {
 }(),
     },
     GeneratedItem{
+        .key = "琥珀",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "琥珀";
+    t.desc = "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；减速物品增加 {Custom_0:} 秒减速时间";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Relic);
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 6_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_0] = 1_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Slow] = 3_s;
+    t.attributes[1][core::ItemKey::SlowTargetCount] = 1;
+    t.attributes[2][core::ItemKey::SlowTargetCount] = 2;
+    t.attributes[3][core::ItemKey::SlowTargetCount] = 3;
+    t.attributes[4][core::ItemKey::SlowTargetCount] = 3;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Slow;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = DifferentSide;
+        a.value_key = core::ItemKey::Slow;
+        a.target_count_key = core::ItemKey::SlowTargetCount;
+    }
+    t.aura_count = 0;
+    {
+        auto& g = t.auras[t.aura_count++];
+        g.attribute = bazaararena::core::ItemKey::Slow;
+        g.condition = formula::And<SameSide, HasDerivedTag<core::DerivedTag::Slow>>;
+        g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
+        g.percent = false;
+    }
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
         .key = "瓶装闪电",
         .templ = []() {
     core::ItemTemplate t;
@@ -7053,6 +7432,63 @@ static const std::array<GeneratedItem, 185> kItems = {
         a.trigger_entries[0].condition = SameAsCaster;
         a.target_condition = Always;
         a.value_key = core::ItemKey::Burn;
+    }
+    t.aura_count = 0;
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
+        .key = "瓶装龙卷风",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "瓶装龙卷风";
+    t.desc = "▶ 立刻开始沙尘暴；▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；弹药：{AmmoCap}";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Potion);
+    for (auto& tier : t.attributes) tier[core::ItemKey::AmmoCap] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 5_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Slow] = 3_s;
+    t.attributes[1][core::ItemKey::SlowTargetCount] = 1;
+    t.attributes[2][core::ItemKey::SlowTargetCount] = 2;
+    t.attributes[3][core::ItemKey::SlowTargetCount] = 3;
+    t.attributes[4][core::ItemKey::SlowTargetCount] = 3;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::StartSandstorm;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = SameSide;
+        a.value_key = core::ItemKey::Custom_0;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Slow;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = DifferentSide;
+        a.value_key = core::ItemKey::Slow;
+        a.target_count_key = core::ItemKey::SlowTargetCount;
     }
     t.aura_count = 0;
     t.overridable_key_count = 0;
@@ -7837,6 +8273,67 @@ static const std::array<GeneratedItem, 185> kItems = {
 }(),
     },
     GeneratedItem{
+        .key = "符文药水",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "符文药水";
+    t.desc = "▶ 加速吸血武器 {Haste} 秒；▶ {ModifyTargetCount} 件武器获得吸血（限本场战斗）；弹药：{AmmoCap}";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Potion);
+    t.attributes[1][core::ItemKey::AmmoCap] = 1;
+    t.attributes[2][core::ItemKey::AmmoCap] = 2;
+    t.attributes[3][core::ItemKey::AmmoCap] = 3;
+    t.attributes[4][core::ItemKey::AmmoCap] = 3;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 4_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_0] = 100;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Haste] = 1_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 1;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Haste;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = formula::And<SameSide, formula::And<HasTag<core::Tag::Weapon>, formula::Gt<formula::Item<(bazaararena::core::ItemKey::LifeSteal)>, formula::Constant<0>>>>;
+        a.value_key = core::ItemKey::Haste;
+        a.target_count_key = core::ItemKey::HasteTargetCount;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::AddAttribute;
+        a.priority = core::AbilityPriority::Low;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = formula::And<SameSide, formula::And<HasTag<core::Tag::Weapon>, formula::Eq<formula::Item<(bazaararena::core::ItemKey::LifeSteal)>, formula::Constant<0>>>>;
+        a.value_key = bazaararena::core::ItemKey::Custom_0;
+        a.attribute_key = bazaararena::core::ItemKey::LifeSteal;
+        a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
+    }
+    t.aura_count = 0;
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
         .key = "篝火",
         .templ = []() {
     core::ItemTemplate t;
@@ -8025,6 +8522,53 @@ static const std::array<GeneratedItem, 185> kItems = {
 }(),
     },
     GeneratedItem{
+        .key = "缩小药水",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "缩小药水";
+    t.desc = "▶ 敌方最大生命值降低 {Custom_0%}（限本场战斗）；弹药：{AmmoCap}";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Potion);
+    for (auto& tier : t.attributes) tier[core::ItemKey::AmmoCap] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 6_s;
+    t.attributes[1][core::ItemKey::Custom_0] = 10;
+    t.attributes[2][core::ItemKey::Custom_0] = 15;
+    t.attributes[3][core::ItemKey::Custom_0] = 20;
+    t.attributes[4][core::ItemKey::Custom_0] = 20;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::ReduceMaxHp;
+        a.priority = core::AbilityPriority::Low;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = DifferentSide;
+        a.value_key = bazaararena::core::ItemKey::Custom_0;
+    }
+    t.aura_count = 0;
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
         .key = "翡翠",
         .templ = []() {
     core::ItemTemplate t;
@@ -8083,6 +8627,65 @@ static const std::array<GeneratedItem, 185> kItems = {
 }(),
     },
     GeneratedItem{
+        .key = "耳环",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "耳环";
+    t.desc = "▶ 最大生命值提高 {Custom_0}（限本场战斗）；触发加速或减速时，为此物品充能 {Charge} 秒";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Apparel | core::Tag::Relic);
+    for (auto& tier : t.attributes) tier[core::ItemKey::Charge] = 1_s;
+    t.attributes[1][core::ItemKey::Cooldown] = 6_s;
+    t.attributes[2][core::ItemKey::Cooldown] = 5_s;
+    t.attributes[3][core::ItemKey::Cooldown] = 4_s;
+    t.attributes[4][core::ItemKey::Cooldown] = 4_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_0] = 50;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::AddMaxHp;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = SameSide;
+        a.value_key = bazaararena::core::ItemKey::Custom_0;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Charge;
+        a.priority = core::AbilityPriority::Low;
+        a.trigger_entry_count = 2;
+        a.trigger_entries[0].trigger = core::Trigger::Haste;
+        a.trigger_entries[0].condition = SameSide;
+        a.trigger_entries[1].trigger = core::Trigger::Slow;
+        a.trigger_entries[1].condition = SameSide;
+        a.target_condition = SameAsCaster;
+        a.value_key = core::ItemKey::Charge;
+        a.target_count_key = core::ItemKey::ChargeTargetCount;
+    }
+    t.aura_count = 0;
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
         .key = "肥皂块",
         .templ = []() {
     core::ItemTemplate t;
@@ -8122,6 +8725,54 @@ static const std::array<GeneratedItem, 185> kItems = {
         a.trigger_entries[0].condition = SameAsCaster;
         a.target_condition = Always;
         a.value_key = core::ItemKey::Heal;
+    }
+    t.aura_count = 0;
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
+        .key = "能量药水",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "能量药水";
+    t.desc = "▶ 加速其他物品 {Haste} 秒；弹药：{AmmoCap}";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Potion);
+    for (auto& tier : t.attributes) tier[core::ItemKey::AmmoCap] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 6_s;
+    t.attributes[1][core::ItemKey::Haste] = 1_s;
+    t.attributes[2][core::ItemKey::Haste] = 2_s;
+    t.attributes[3][core::ItemKey::Haste] = 3_s;
+    t.attributes[4][core::ItemKey::Haste] = 3_s;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Haste;
+        a.priority = core::AbilityPriority::High;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = formula::And<SameSide, DifferentFromCaster>;
+        a.value_key = core::ItemKey::Haste;
+        a.target_count_key = core::ItemKey::HasteTargetCount;
     }
     t.aura_count = 0;
     t.overridable_key_count = 0;
@@ -8574,6 +9225,61 @@ static const std::array<GeneratedItem, 185> kItems = {
 }(),
     },
     GeneratedItem{
+        .key = "蓝宝石",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "蓝宝石";
+    t.desc = "▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；此物品左侧的冻结物品增加 {Custom_0:} 秒冻结时间";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Relic);
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 7_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_0] = 0.5_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Freeze] = 1_s;
+    t.attributes[1][core::ItemKey::FreezeTargetCount] = 1;
+    t.attributes[2][core::ItemKey::FreezeTargetCount] = 2;
+    t.attributes[3][core::ItemKey::FreezeTargetCount] = 3;
+    t.attributes[4][core::ItemKey::FreezeTargetCount] = 3;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Freeze;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = DifferentSide;
+        a.value_key = core::ItemKey::Freeze;
+        a.target_count_key = core::ItemKey::FreezeTargetCount;
+    }
+    t.aura_count = 0;
+    {
+        auto& g = t.auras[t.aura_count++];
+        g.attribute = bazaararena::core::ItemKey::Freeze;
+        g.condition = formula::And<LeftOfCaster, HasDerivedTag<core::DerivedTag::Freeze>>;
+        g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
+        g.percent = false;
+    }
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
         .key = "蓝蕉",
         .templ = []() {
     core::ItemTemplate t;
@@ -8789,6 +9495,65 @@ static const std::array<GeneratedItem, 185> kItems = {
         g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
         g.percent = false;
     }
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
+        .key = "蜘蛛连枷",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "蜘蛛连枷";
+    t.desc = "▶ 造成 {Damage} 伤害；触发剧毒或减速时，为此物品充能 {Charge} 秒";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Weapon | core::Tag::Relic);
+    for (auto& tier : t.attributes) tier[core::ItemKey::Charge] = 2_s;
+    t.attributes[1][core::ItemKey::Cooldown] = 10_s;
+    t.attributes[2][core::ItemKey::Cooldown] = 9_s;
+    t.attributes[3][core::ItemKey::Cooldown] = 8_s;
+    t.attributes[4][core::ItemKey::Cooldown] = 8_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Damage] = 25;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Damage;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = Always;
+        a.value_key = core::ItemKey::Damage;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Charge;
+        a.priority = core::AbilityPriority::Low;
+        a.trigger_entry_count = 2;
+        a.trigger_entries[0].trigger = core::Trigger::Poison;
+        a.trigger_entries[0].condition = SameSide;
+        a.trigger_entries[1].trigger = core::Trigger::Slow;
+        a.trigger_entries[1].condition = SameSide;
+        a.target_condition = SameAsCaster;
+        a.value_key = core::ItemKey::Charge;
+        a.target_count_key = core::ItemKey::ChargeTargetCount;
+    }
+    t.aura_count = 0;
     t.overridable_key_count = 0;
     return t;
 }(),
@@ -9339,6 +10104,54 @@ static const std::array<GeneratedItem, 185> kItems = {
 }(),
     },
     GeneratedItem{
+        .key = "采掘工具",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "采掘工具";
+    t.desc = "▶ 为 {ChargeTargetCount} 件相邻的遗物充能 {Charge} 秒；【局外】购买此物品时，获得 1 件催化剂";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Tool);
+    t.attributes[1][core::ItemKey::Charge] = 1_s;
+    t.attributes[2][core::ItemKey::Charge] = 2_s;
+    t.attributes[3][core::ItemKey::Charge] = 3_s;
+    t.attributes[4][core::ItemKey::Charge] = 3_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 4_s;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Charge;
+        a.priority = core::AbilityPriority::High;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = formula::And<SameSide, formula::And<HasTag<core::Tag::Relic>, AdjacentToCaster>>;
+        a.value_key = core::ItemKey::Charge;
+        a.target_count_key = core::ItemKey::ChargeTargetCount;
+    }
+    t.aura_count = 0;
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
         .key = "钓鱼竿",
         .templ = []() {
     core::ItemTemplate t;
@@ -9666,6 +10479,54 @@ static const std::array<GeneratedItem, 185> kItems = {
 }(),
     },
     GeneratedItem{
+        .key = "霜冻药水",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "霜冻药水";
+    t.desc = "▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；弹药：{AmmoCap}";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Potion);
+    for (auto& tier : t.attributes) tier[core::ItemKey::AmmoCap] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 6_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Freeze] = 1_s;
+    t.attributes[1][core::ItemKey::FreezeTargetCount] = 1;
+    t.attributes[2][core::ItemKey::FreezeTargetCount] = 2;
+    t.attributes[3][core::ItemKey::FreezeTargetCount] = 3;
+    t.attributes[4][core::ItemKey::FreezeTargetCount] = 3;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Freeze;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = DifferentSide;
+        a.value_key = core::ItemKey::Freeze;
+        a.target_count_key = core::ItemKey::FreezeTargetCount;
+    }
+    t.aura_count = 0;
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
         .key = "青苔",
         .templ = []() {
     core::ItemTemplate t;
@@ -9986,6 +10847,68 @@ static const std::array<GeneratedItem, 185> kItems = {
 }(),
     },
     GeneratedItem{
+        .key = "飞行药水",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "飞行药水";
+    t.desc = "▶ 加速其他飞行物品 {Haste} 秒；▶ {ModifyTargetCount} 件物品开始飞行；弹药：{AmmoCap}";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Potion);
+    for (auto& tier : t.attributes) tier[core::ItemKey::AmmoCap] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 3_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_0] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Haste] = 1_s;
+    t.attributes[1][core::ItemKey::ModifyAttributeTargetCount] = 2;
+    t.attributes[2][core::ItemKey::ModifyAttributeTargetCount] = 3;
+    t.attributes[3][core::ItemKey::ModifyAttributeTargetCount] = 4;
+    t.attributes[4][core::ItemKey::ModifyAttributeTargetCount] = 4;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Haste;
+        a.priority = core::AbilityPriority::High;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = formula::And<SameSide, formula::Item<(bazaararena::core::ItemKey::InFlight)>>;
+        a.value_key = core::ItemKey::Haste;
+        a.target_count_key = core::ItemKey::HasteTargetCount;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::AddAttribute;
+        a.priority = core::AbilityPriority::Low;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = SameSide;
+        a.value_key = bazaararena::core::ItemKey::Custom_0;
+        a.attribute_key = bazaararena::core::ItemKey::InFlight;
+        a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
+    }
+    t.aura_count = 0;
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
         .key = "飞镖发射器",
         .templ = []() {
     core::ItemTemplate t;
@@ -10254,6 +11177,76 @@ static const std::array<GeneratedItem, 185> kItems = {
 }(),
     },
     GeneratedItem{
+        .key = "马克显微镜",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "马克显微镜";
+    t.desc = "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；如果有一件其他的遗物/任务/伙伴/附魔物品，对每个词条，此物品 {+Custom_0} 多重释放；【默认】计算多重释放时认为我方总是有附魔物品";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Tool);
+    t.attributes[1][core::ItemKey::Cooldown] = 7_s;
+    t.attributes[2][core::ItemKey::Cooldown] = 6_s;
+    t.attributes[3][core::ItemKey::Cooldown] = 5_s;
+    t.attributes[4][core::ItemKey::Cooldown] = 5_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_0] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 2;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Slow] = 1_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 1;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Slow;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = DifferentSide;
+        a.value_key = core::ItemKey::Slow;
+        a.target_count_key = core::ItemKey::SlowTargetCount;
+    }
+    t.aura_count = 0;
+    {
+        auto& g = t.auras[t.aura_count++];
+        g.attribute = bazaararena::core::ItemKey::Multicast;
+        g.condition = formula::And<SameAsCaster, Count<formula::And<SameSide, DifferentFromCaster, HasTag<core::Tag::Relic>>>>;
+        g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
+        g.percent = false;
+    }
+    {
+        auto& g = t.auras[t.aura_count++];
+        g.attribute = bazaararena::core::ItemKey::Multicast;
+        g.condition = formula::And<SameAsCaster, Count<formula::And<SameSide, DifferentFromCaster, formula::Item<(bazaararena::core::ItemKey::Quest)>>>>;
+        g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
+        g.percent = false;
+    }
+    {
+        auto& g = t.auras[t.aura_count++];
+        g.attribute = bazaararena::core::ItemKey::Multicast;
+        g.condition = formula::And<SameAsCaster, Count<formula::And<SameSide, DifferentFromCaster, HasTag<core::Tag::Friend>>>>;
+        g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
+        g.percent = false;
+    }
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
         .key = "马龙鱼",
         .templ = []() {
     core::ItemTemplate t;
@@ -10365,6 +11358,112 @@ static const std::array<GeneratedItem, 185> kItems = {
         a.trigger_entries[0].condition = SameAsCaster;
         a.target_condition = Always;
         a.value_key = core::ItemKey::Poison;
+    }
+    t.aura_count = 0;
+    t.overridable_key_count = 0;
+    return t;
+}(),
+    },
+    GeneratedItem{
+        .key = "魂石",
+        .templ = []() {
+    core::ItemTemplate t;
+    t.name = "魂石";
+    t.desc = "▶ 获得 {Regen} 生命再生；【Q1】▶ 造成 {Poison} 剧毒；【Q2】▶ 造成 {Burn} 灼烧；【Q3】▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；【Q4】▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；【Q1】和【Q2】只能生效一个；【Q3】和【Q4】只能生效一个";
+    for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Small;
+    for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Silver;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
+    for (auto& tier : t.attributes) tier[core::ItemKey::CritDamage] = 200;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Reload] = 99;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ChargeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::HasteTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::SlowTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::FreezeTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ReloadTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::DestroyTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::RepairTargetCount] = 20;
+    for (auto& tier : t.attributes) tier[core::ItemKey::ModifyAttributeTargetCount] = 20;
+    t.attributes[0][core::ItemKey::Value] = 1;
+    t.attributes[1][core::ItemKey::Value] = 2;
+    t.attributes[2][core::ItemKey::Value] = 4;
+    t.attributes[3][core::ItemKey::Value] = 8;
+    t.attributes[4][core::ItemKey::Value] = 32;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Relic);
+    t.attributes[1][core::ItemKey::Burn] = 3;
+    t.attributes[2][core::ItemKey::Burn] = 6;
+    t.attributes[3][core::ItemKey::Burn] = 9;
+    t.attributes[4][core::ItemKey::Burn] = 9;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 4_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Freeze] = 0.5_s;
+    t.attributes[1][core::ItemKey::FreezeTargetCount] = 1;
+    t.attributes[2][core::ItemKey::FreezeTargetCount] = 2;
+    t.attributes[3][core::ItemKey::FreezeTargetCount] = 3;
+    t.attributes[4][core::ItemKey::FreezeTargetCount] = 3;
+    t.attributes[1][core::ItemKey::Poison] = 3;
+    t.attributes[2][core::ItemKey::Poison] = 6;
+    t.attributes[3][core::ItemKey::Poison] = 9;
+    t.attributes[4][core::ItemKey::Poison] = 9;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Quest] = 0;
+    t.attributes[1][core::ItemKey::Regen] = 3;
+    t.attributes[2][core::ItemKey::Regen] = 6;
+    t.attributes[3][core::ItemKey::Regen] = 9;
+    t.attributes[4][core::ItemKey::Regen] = 9;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Slow] = 1_s;
+    t.attributes[1][core::ItemKey::SlowTargetCount] = 1;
+    t.attributes[2][core::ItemKey::SlowTargetCount] = 2;
+    t.attributes[3][core::ItemKey::SlowTargetCount] = 3;
+    t.attributes[4][core::ItemKey::SlowTargetCount] = 3;
+    t.ability_count = 0;
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Regen;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = Always;
+        a.value_key = core::ItemKey::Regen;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Poison;
+        a.priority = core::AbilityPriority::Low;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = formula::And<SameAsCaster, QuestComplete<1>>;
+        a.target_condition = Always;
+        a.value_key = core::ItemKey::Poison;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Burn;
+        a.priority = core::AbilityPriority::Low;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = formula::And<SameAsCaster, QuestComplete<2>>;
+        a.target_condition = Always;
+        a.value_key = core::ItemKey::Burn;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Slow;
+        a.priority = core::AbilityPriority::Low;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = formula::And<SameAsCaster, QuestComplete<3>>;
+        a.target_condition = DifferentSide;
+        a.value_key = core::ItemKey::Slow;
+        a.target_count_key = core::ItemKey::SlowTargetCount;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Freeze;
+        a.priority = core::AbilityPriority::Low;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = formula::And<SameAsCaster, QuestComplete<4>>;
+        a.target_condition = DifferentSide;
+        a.value_key = core::ItemKey::Freeze;
+        a.target_count_key = core::ItemKey::FreezeTargetCount;
     }
     t.aura_count = 0;
     t.overridable_key_count = 0;

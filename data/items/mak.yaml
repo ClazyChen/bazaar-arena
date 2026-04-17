@@ -1139,3 +1139,428 @@ items:
         value: Custom_1
         target_condition: SameAsCaster
         priority: Low
+  - Name: "飞行药水"
+    Desc: "▶ 加速其他飞行物品 {Haste} 秒；▶ {ModifyTargetCount} 件物品开始飞行；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Silver
+    Tags: [Potion]
+    Cooldown: 3s
+    Haste: 1s
+    ModifyTargetCount: [2, 3, 4]
+    AmmoCap: 1
+    Custom_0: 1
+    Abilities:
+      - type: Haste
+        ex_target_condition:
+          type: Item
+          params: [InFlight]
+        priority: High
+      - type: AddAttribute
+        key: InFlight
+        value: Custom_0
+        priority: Low
+  - Name: "采掘工具"
+    Desc: "▶ 为 {ChargeTargetCount} 件相邻的遗物充能 {Charge} 秒；【局外】购买此物品时，获得 1 件催化剂"
+    Size: Small
+    Tier: Silver
+    Tags: [Tool]
+    Cooldown: 4s
+    Charge: [1s, 2s, 3s]
+    ChargeTargetCount: 1
+    Abilities:
+      - type: Charge
+        ex_target_condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Relic]
+            - AdjacentToCaster
+        priority: High
+  - Name: "马克显微镜"
+    Desc: "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；如果有一件其他的遗物/任务/伙伴/附魔物品，对每个词条，此物品 {+Custom_0} 多重释放；【默认】计算多重释放时认为我方总是有附魔物品"
+    Size: Small
+    Tier: Silver
+    Tags: [Tool]
+    Cooldown: [7s, 6s, 5s]
+    Slow: 1s
+    SlowTargetCount: 1
+    Custom_0: 1
+    Multicast: 2
+    Abilities:
+      - type: Slow
+    Auras:
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: HasTag
+                      params: [Relic]
+        value: Custom_0
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: Item
+                      params: [Quest]
+        value: Custom_0
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: HasTag
+                      params: [Friend]
+        value: Custom_0
+  - Name: "魂石"
+    Desc: "▶ 获得 {Regen} 生命再生；【Q1】▶ 造成 {Poison} 剧毒；【Q2】▶ 造成 {Burn} 灼烧；【Q3】▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；【Q4】▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；【Q1】和【Q2】只能生效一个；【Q3】和【Q4】只能生效一个"
+    Size: Small
+    Tier: Silver
+    Tags: [Relic]
+    Cooldown: 4s
+    Regen: [3, 6, 9]
+    Poison: [3, 6, 9]
+    Burn: [3, 6, 9]
+    Slow: 1s
+    SlowTargetCount: [1, 2, 3]
+    Freeze: 0.5s
+    FreezeTargetCount: [1, 2, 3]
+    Quest: 0
+    Abilities:
+      - type: Regen
+      - type: Poison
+        ex_condition:
+          type: QuestComplete
+          params: [1]
+        priority: Low
+      - type: Burn
+        ex_condition:
+          type: QuestComplete
+          params: [2]
+        priority: Low
+      - type: Slow
+        ex_condition:
+          type: QuestComplete
+          params: [3]
+        priority: Low
+      - type: Freeze
+        ex_condition:
+          type: QuestComplete
+          params: [4]
+        priority: Low
+  - Name: "光学强化"
+    Desc: "战斗开始时，对自己造成 {Poison} 剧毒；此物品左侧的物品暴击率提高，等量于己方承受的剧毒"
+    Size: Small
+    Tier: Silver
+    Tags: [Tool]
+    Poison: [8, 12, 16]
+    Abilities:
+      - type: PoisonSelf
+        trigger: BattleStart
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: And
+          params:
+            - LeftOfCaster
+            - CanCrit
+        value:
+          type: Side
+          params: [Poison]
+  - Name: "力量药水"
+    Desc: "▶ 己方物品的暴击率提高 {Custom_0%}，持续 {Custom_1:} 秒；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Silver
+    Tags: [Potion]
+    Cooldown: 6s
+    Custom_0: 100
+    Custom_1: [3s, 4s, 5s]
+    # Custom_2 表示此物品上次触发效果的结束时间
+    Custom_2: 0s
+    # 用于计算暴击光环结束时间
+    Custom_3: 0s
+    AmmoCap: 1
+    Abilities:
+      - type: AddAttribute
+        key: Custom_2
+        target_condition: SameAsCaster
+        value: Custom_3
+        priority: Immediate
+    Auras:
+      - attribute: Custom_3
+        value:
+          type: Sub
+          params:
+            - type: Add
+              params:
+                - type: Time
+                - type: Caster
+                  params: [Custom_1]
+            - type: Caster
+              params: [Custom_2]
+      - attribute: CritRate
+        condition:
+          type: And
+          params:
+            - type: Lt
+              params:
+                - type: Time
+                - type: Caster
+                  params: [Custom_2]
+            - SameSide
+            - CanCrit
+        value: Custom_0    
+  - Name: "无敌药水"
+    Desc: "▶ 获得无敌 {Custom_0:} 秒；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Silver
+    Tags: [Potion]
+    Cooldown: 7s
+    Custom_0: 1s
+    # 上次触发效果的结束时间
+    Custom_1: 0s
+    # 用于计算无敌结束时间
+    Custom_2: 0s
+    Custom_3: 100
+    AmmoCap: [1, 2, 3]
+    Abilities:
+      - type: AddAttribute
+        key: Custom_1
+        target_condition: SameAsCaster
+        value: Custom_2
+        priority: Immediate
+    Auras:
+      - attribute: Custom_2
+        value:
+          type: Sub
+          params:
+            - type: Add
+              params:
+                - type: Time
+                - type: Caster
+                  params: [Custom_0]
+            - type: Caster
+              params: [Custom_1]
+      - attribute: Resistance
+        condition:
+          type: And
+          params:
+            - type: Lt
+              params:
+                - type: Time
+                - type: Caster
+                  params: [Custom_1]
+            - SameSide
+        value: Custom_3
+  - Name: "无限药水"
+    Desc: "▶ 获得 {Regen} 生命再生；▶ 装填此物品；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Silver
+    Tags: [Potion]
+    Cooldown: 4s
+    Regen: [3, 6, 9]
+    AmmoCap: 1
+    Abilities:
+      - type: Regen
+      - type: Reload
+        target_condition: SameAsCaster
+        priority: Low
+  - Name: "水银"
+    Desc: "▶ 转化为一件其他的非传奇小型物品（限本场战斗）；【局外】购买此物品时，获得 1 件催化剂"
+    Size: Small
+    Tier: Silver
+    Cooldown: 3s
+    Custom_0: 1
+    Abilities:
+      - type: Transform_quicksilver
+        target_count_key: Custom_0
+  - Name: "沙漏"
+    Desc: "相邻物品缩短 {Custom_0%} 冷却时间"
+    Size: Small
+    Tier: Silver
+    Tags: [Tool]
+    Custom_0: [6, 9, 12]
+    Auras:
+      - attribute: CooldownReductionPercent
+        condition:
+          type: And
+          params:
+            - AdjacentToCaster
+            - HasCooldown
+        value: Custom_0
+  - Name: "琥珀"
+    Desc: "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；减速物品增加 {Custom_0:} 秒减速时间"
+    Size: Small
+    Tier: Silver
+    Tags: [Relic]
+    Cooldown: 6s
+    Slow: 3s
+    SlowTargetCount: [1, 2, 3]
+    Custom_0: 1s
+    Abilities:
+      - type: Slow
+    Auras:
+      - attribute: Slow
+        condition:
+          type: And
+          params:
+            - SameSide
+            - type: HasDerivedTag
+              params: [Slow]
+        value: Custom_0
+  - Name: "瓶装龙卷风"
+    Desc: "▶ 立刻开始沙尘暴；▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Silver
+    Tags: [Potion]
+    Cooldown: 5s
+    Slow: 3s
+    SlowTargetCount: [1, 2, 3]
+    AmmoCap: 1
+    Abilities:
+      - type: StartSandstorm
+      - type: Slow
+  - Name: "符文药水"
+    Desc: "▶ 加速吸血武器 {Haste} 秒；▶ {ModifyTargetCount} 件武器获得吸血（限本场战斗）；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Silver
+    Tags: [Potion]
+    Cooldown: 4s
+    Haste: 1s
+    ModifyTargetCount: 1
+    AmmoCap: [1, 2, 3]
+    Custom_0: 100
+    Abilities:
+      - type: Haste
+        ex_target_condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Weapon]
+            - type: Gt
+              params:
+                - type: Item
+                  params: [LifeSteal]
+                - 0
+          priority: High
+      - type: AddAttribute
+        key: LifeSteal
+        value: Custom_0
+        ex_target_condition:
+          type: And
+          params:
+            - type: HasTag
+              params: [Weapon]
+            - type: Eq
+              params:
+                - type: Item
+                  params: [LifeSteal]
+                - 0
+        priority: Low
+  - Name: "缩小药水"
+    Desc: "▶ 敌方最大生命值降低 {Custom_0%}（限本场战斗）；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Silver
+    Tags: [Potion]
+    Cooldown: 6s
+    Custom_0: [10, 15, 20]
+    AmmoCap: 1
+    Abilities:
+      - type: ReduceMaxHp
+        value_key: Custom_0
+        priority: Low
+  - Name: "耳环"
+    Desc: "▶ 最大生命值提高 {Custom_0}（限本场战斗）；触发加速或减速时，为此物品充能 {Charge} 秒"
+    Size: Small
+    Tier: Silver
+    Tags: [Apparel, Relic]
+    Cooldown: [6s, 5s, 4s]
+    Custom_0: 50
+    Charge: 1s
+    Abilities:
+      - type: AddMaxHp
+        value_key: Custom_0
+      - type: Charge
+        triggers:
+          - trigger: Haste
+          - trigger: Slow
+        target_condition: SameAsCaster
+        priority: Low
+  - Name: "能量药水"
+    Desc: "▶ 加速其他物品 {Haste} 秒；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Silver
+    Tags: [Potion]
+    Cooldown: 6s
+    Haste: [1s, 2s, 3s]
+    AmmoCap: 1
+    Abilities:
+      - type: Haste
+        ex_target_condition: DifferentFromCaster
+        priority: High
+  - Name: "蓝宝石"
+    Desc: "▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；此物品左侧的冻结物品增加 {Custom_0:} 秒冻结时间"
+    Size: Small
+    Tier: Silver
+    Tags: [Relic]
+    Cooldown: 7s
+    Freeze: 1s
+    FreezeTargetCount: [1, 2, 3]
+    Custom_0: 0.5s
+    Abilities:
+      - type: Freeze
+    Auras:
+      - attribute: Freeze
+        condition:
+          type: And
+          params:
+            - LeftOfCaster
+            - type: HasDerivedTag
+              params: [Freeze]
+        value: Custom_0
+  - Name: "蜘蛛连枷"
+    Desc: "▶ 造成 {Damage} 伤害；触发剧毒或减速时，为此物品充能 {Charge} 秒"
+    Size: Small
+    Tier: Silver
+    Tags: [Weapon, Relic]
+    Cooldown: [10s, 9s, 8s]
+    Damage: 25
+    Charge: 2s
+    Abilities:
+      - type: Damage
+      - type: Charge
+        triggers:
+          - trigger: Poison
+          - trigger: Slow
+        target_condition: SameAsCaster
+        priority: Low
+  - Name: "霜冻药水"
+    Desc: "▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；弹药：{AmmoCap}"
+    Size: Small
+    Tier: Silver
+    Tags: [Potion]
+    Cooldown: 6s
+    Freeze: 1s
+    FreezeTargetCount: [1, 2, 3]
+    AmmoCap: 1
+    Abilities:
+      - type: Freeze

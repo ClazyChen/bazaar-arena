@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "jobId": "http-57-vs-56",
+  "mode": "simulate",
+  "payload": {
+    "allowTie": true,
+    "debug": {
+      "enabled": true,
+      "level": "detailed",
+      "maxEvents": 50000
+    },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 5,
+        "items": [
+          {
+            "key": "力量药水",
+            "tier": "silver"
+          },
+          {
+            "key": "采掘工具",
+            "tier": "silver"
+          },
+          {
+            "key": "魂石",
+            "tier": "silver",
+            "attrsOverride": {
+              "quest": 15
+            }
+          },
+          {
+            "key": "蓝宝石",
+            "tier": "silver"
+          },
+          {
+            "key": "霜冻药水",
+            "tier": "silver"
+          },
+          {
+            "key": "马克显微镜",
+            "tier": "silver"
+          }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 5,
+        "items": [
+          {
+            "key": "无限药水",
+            "tier": "silver"
+          },
+          {
+            "key": "光学强化",
+            "tier": "silver"
+          },
+          {
+            "key": "毒液注射",
+            "tier": "silver"
+          },
+          {
+            "key": "沙漏",
+            "tier": "silver"
+          },
+          {
+            "key": "缩小药水",
+            "tier": "silver"
+          }
+        ]
+      }
+    ],
+    "seed": 217292084
+  },
+  "cliReproMeta": {
+    "exportedAt": "2026-04-17T17:42:30+00:00",
+    "deck0_as_side0": {
+      "deckId": 57,
+      "name": "test2",
+      "playerLevel": 5,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "力量药水",
+          "tier": 1
+        },
+        {
+          "position": 1,
+          "item_name": "采掘工具",
+          "tier": 1
+        },
+        {
+          "position": 2,
+          "item_name": "魂石",
+          "tier": 1,
+          "attrs_override": {
+            "quest": 15
+          }
+        },
+        {
+          "position": 3,
+          "item_name": "蓝宝石",
+          "tier": 1
+        },
+        {
+          "position": 4,
+          "item_name": "霜冻药水",
+          "tier": 1
+        },
+        {
+          "position": 5,
+          "item_name": "马克显微镜",
+          "tier": 1
+        }
+      ]
+    },
+    "deck1_as_side1": {
+      "deckId": 56,
+      "name": "test",
+      "playerLevel": 5,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "无限药水",
+          "tier": 1
+        },
+        {
+          "position": 1,
+          "item_name": "光学强化",
+          "tier": 1
+        },
+        {
+          "position": 2,
+          "item_name": "毒液注射",
+          "tier": 1
+        },
+        {
+          "position": 3,
+          "item_name": "沙漏",
+          "tier": 1
+        },
+        {
+          "position": 4,
+          "item_name": "缩小药水",
+          "tier": 1
+        }
+      ]
+    },
+    "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。"
+  }
+}

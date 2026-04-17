@@ -80,6 +80,11 @@ constexpr Formula OppMax = [](const BattleContext& ctx) -> int {
     return ctx.GetOppMaxInt(key); 
 };
 
+// 当前的时间（毫秒）
+constexpr Formula Time = [](const BattleContext& ctx) -> int { 
+    return ctx.GetTime(); 
+};
+
 // 公式的组合计算（条件语义：子式 0 为假、非 0 为真；勿用按位 & 与 Count 等相组合，否则偶数计数会被截断为 0）
 template<Formula... formulas>
 constexpr Formula And = [](const BattleContext& ctx) -> int {
@@ -145,10 +150,29 @@ constexpr Formula Ge = [](const BattleContext& ctx) -> int {
     return a(ctx) >= b(ctx) ? 1 : 0; 
 };
 
+template<Formula... formulas>
+constexpr Formula Max = [](const BattleContext& ctx) -> int {
+    int values[] = {formulas(ctx)...};
+    int best = values[0];
+    for (int v : values) {
+        if (v > best) best = v;
+    }
+    return best;
+};
+
 template<Formula a>
 constexpr Formula Abs = [](const BattleContext& ctx) -> int { 
     int value = a(ctx);
     return value >= 0 ? value : -value;
+};
+
+constexpr Formula SideItemTypes = [](const BattleContext& ctx) -> int {
+    return ctx.GetSideItemTypes();
+};
+
+template<Formula a>
+constexpr Formula BitCount = [](const BattleContext& ctx) -> int {
+    return __builtin_popcount(a(ctx));
 };
 
 } // namespace bazaararena::formula

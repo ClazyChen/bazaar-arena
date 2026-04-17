@@ -157,6 +157,7 @@ def _emit_named_leaf(name: str, *, where: str) -> str:
     direct = {
         "True": "formula::True",
         "False": "formula::False",
+        "Time": "formula::Time",
         "Always": "Always",
         "Never": "Never",
         # Item size predicates (defined in engine/include/bazaararena/formula/Condition.hpp)
@@ -208,7 +209,7 @@ def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
             pass
 
     # 组合子（formula 命名空间）
-    nary = ("And", "Or", "Xor", "Add", "Sub", "Mul", "Eq", "Ne", "Lt", "Le", "Gt", "Ge")
+    nary = ("And", "Or", "Xor", "Add", "Sub", "Mul", "Eq", "Ne", "Lt", "Le", "Gt", "Ge", "Max")
     if typ in nary:
         ch = _emit_children(params, where=where)
         if len(ch) < 1:

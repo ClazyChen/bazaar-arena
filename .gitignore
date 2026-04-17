@@ -75,6 +75,9 @@ BenchmarkDotNet.Artifacts/
 # 大体积原始日志
 docs/*-raw.log
 
+# Excel 导出产物（本地生成）
+docs/generality_export.xlsx
+
 # Web app（依赖与构建产物、本地数据库）
 app/frontend/node_modules/
 app/frontend/dist/
