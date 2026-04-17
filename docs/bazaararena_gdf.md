@@ -34,7 +34,7 @@ cmake --build . --config Release --target bazaararena_gdf
 | `--bo <n>`                  | 循环赛 / 锚点增广中**每对**系列赛的局数，须为**正奇数**（非法或偶数时回退为 5）                                                                                                    |
 | `--workers <n>`             | 对战评估并行线程数。**省略**该参数时默认 `std::thread::hardware_concurrency()`（极致性能）；`0` 表示对战全程单线程（便于对照或调试）                                                         |
 | `--seed <int>`              | **仅影响 Greedy 搜索**（扩展/瑞士等同分桶内随机等）的 `mt19937` 种子（可选）。**单局对战 RNG 不由此参数决定**，GDF 侧为性能使用廉价熵与 `thread_local` 复用模拟器，**不保证对战可复现**；对局正确性由引擎 `Simulator` 保证。 |
-| `--pool-hero <name>`        | 物品池过滤：`Vanessa`                                                                                                                                   |
+| `--pool-hero <name>`        | 物品池过滤：`Vanessa`、`Mak`、`Common`、`All`（与 `ItemPool` 一致）                                                                                      |
 | `--exclude-item <a,b>`      | 排除物品；可多次传入或逗号分隔                                                                                                                                   |
 | `--lambda-anchor <x>`       | 锚点边际权重 λ；`**0`（默认）** 时不计算成对对照增广系列赛（与纯 RR 排序退化一致）                                                                                                  |
 | `--mu-diversity <x>`        | 多样性惩罚系数 μ；对已与入选集合的 **Jaccard 相似度** 取最大值后从目标中减去 `μ * sim`                                                                                          |
@@ -52,7 +52,14 @@ cmake --build . --config Release --target bazaararena_gdf
 - **槽位上限**：与 legacy 一致，1→4、2→6、3→8、4+→10 槽（按物品 **Size** 之和）。
 - **池子 MinTier**：与 legacy `GreedyLevelRules` 一致（银≥5 级、金≥8、钻≥11 等）。
 - **战斗档位**：由 `GdfLevelRules::CombatTier(level)` 决定物品 `tier`（bronze/silver/gold/diamond），经 `BuildSideState` 写入 `SideState`。
-- **烙刀 Q1/Q2**：当池为 Vanessa 且池中存在「烙刀」时，会额外加入展示名 `烙刀（Q1）`、`烙刀（Q2）`（映射到同一模板与 `custom_1`）。
+- **烙刀 Q1/Q2**：当池为 Vanessa 且池中存在「烙刀」时，会额外加入展示名 `减速烙刀`、`加速烙刀`（`ResolveItemAlias` 映射到同一 `db_key`，并写入 `Quest` 的对应位）。
+- **Mak 魂石（四分支）**：当池为 Mak 且存在「魂石」时，会额外加入展示名 `剧毒减速魂石`、`剧毒冻结魂石`、`灼烧减速魂石`、`灼烧冻结魂石`（映射到 `魂石`，`Quest` 为 Q1+Q3 / Q1+Q4 / Q2+Q3 / Q2+Q4 的位图）。
+- **Mak 任务进度按等级覆写**（`GdfItemPrototypeCache::ComputeMakQuestOverride`，与腐朽圣像等共用入口、规则独立）：`寒霜图腾`：L5→0，L6→1，L7→3，L8+→7；`先祖墓`：L5→0，L6→1，L7+→3；`时间之砂`/`永恒火炬`/`生命导体`/`腐朽圣像` 仍为 L2→0，L3–4→1，L5–7→3，L8+→7；`空白石碑` 等见实现。
+- **Mak 不参与搜索的物品**（与 `催化剂` 同理，自池中剔除）：`产药药水`、`催化剂`、`筛盘`、`奥秘之书`、`亚罕典籍`、`蒸馏器`。
+
+### GDF-PA（`bazaararena_gdf_pa`）
+
+- 泛用度分析用的物品宇宙与 GDF 池键一致，但会去掉基底名 **`烙刀`**、**`魂石`**（签名中仅出现变体展示名，避免与四魂石/双烙刀重复计数）。
 
 ### 每档 `size` 流水线
 

@@ -219,9 +219,10 @@ int main(int argc, char** argv) {
     std::vector<std::string> pool_keys;
     CollectAllPoolKeys(pool, pool_keys);
 
-    // GDF 输出仅包含「减速烙刀」「加速烙刀」两个展示名；GDF-PA 侧从分析宇宙中移除「烙刀」。
+    // GDF 输出仅含烙刀/魂石变体展示名；GDF-PA 侧从分析宇宙中移除基底名以免与变体重复计数。
     auto item_weights_mut = item_weights;
     RemoveItemFromPoolKeys(pool_keys, item_weights_mut, "烙刀");
+    RemoveItemFromPoolKeys(pool_keys, item_weights_mut, "魂石");
 
     std::vector<bazaararena::gdf_pa::GeneralityRow> gen_rows;
     if (!bazaararena::gdf_pa::ComputeGeneralityTable(blocks, args.top_k, pool_keys, gen_rows, err)) {

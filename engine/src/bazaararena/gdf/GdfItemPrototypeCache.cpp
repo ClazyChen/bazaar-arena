@@ -31,6 +31,17 @@ static int ComputeMakQuestOverride(std::string_view db_key, int player_level) {
         if (player_level <= 4) return 0;
         return 31;
     }
+    if (db_key == "寒霜图腾") {
+        if (player_level <= 5) return 0;
+        if (player_level <= 6) return 1;
+        if (player_level <= 7) return 3;
+        return 7;
+    }
+    if (db_key == "先祖墓") {
+        if (player_level <= 5) return 0;
+        if (player_level <= 6) return 1;
+        return 3;
+    }
     return -1;
 }
 
@@ -57,7 +68,9 @@ GdfItemPrototypeCache::GdfItemPrototypeCache(const ItemPool& pool, int player_le
             st.attrs[ik] = GdfLevelRules::ComputeOverridableValue(*t, ik, player_level);
         }
         st.attrs[core::ItemKey::Tier] = combat_tier;
-        if (ri.quest_index.has_value()) {
+        if (ri.quest_mask.has_value()) {
+            st.attrs[core::ItemKey::Quest] = *ri.quest_mask;
+        } else if (ri.quest_index.has_value()) {
             const int qi = *ri.quest_index;
             if (qi > 0 && qi <= 30) {
                 st.attrs[core::ItemKey::Quest] = (1 << (qi - 1));

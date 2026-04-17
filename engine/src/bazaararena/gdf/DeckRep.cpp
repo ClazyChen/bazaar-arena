@@ -23,6 +23,18 @@ ResolvedItem ResolveItemAlias(std::string_view display_name) {
     } else if (display_name == "加速烙刀") {
         r.db_key = "烙刀";
         r.quest_index = 2;
+    } else if (display_name == "剧毒减速魂石") {
+        r.db_key = "魂石";
+        r.quest_mask = (1 << 0) | (1 << 2);  // Q1 + Q3
+    } else if (display_name == "剧毒冻结魂石") {
+        r.db_key = "魂石";
+        r.quest_mask = (1 << 0) | (1 << 3);  // Q1 + Q4
+    } else if (display_name == "灼烧减速魂石") {
+        r.db_key = "魂石";
+        r.quest_mask = (1 << 1) | (1 << 2);  // Q2 + Q3
+    } else if (display_name == "灼烧冻结魂石") {
+        r.db_key = "魂石";
+        r.quest_mask = (1 << 1) | (1 << 3);  // Q2 + Q4
     }
     return r;
 }

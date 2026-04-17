@@ -27,10 +27,11 @@ static bool HeroMatches(std::string_view file_hero, std::string_view pool_lower)
 }
 
 static bool IsIgnoredMakItemForGdf(std::string_view key, std::string_view hero) {
-    // Mak 的部分物品在 GDF 中未实现：直接从池中移除。
+    // Mak 的部分物品在 GDF 中未实现或纯局外：直接从池中移除。
     // 注意：这里用 YAML 顶层 `hero:` 过滤，避免误伤同名跨英雄物品（若未来存在）。
     if (Lower(hero) != "mak") return false;
-    return key == "产药药水" || key == "催化剂";
+    return key == "产药药水" || key == "催化剂" || key == "筛盘" || key == "奥秘之书" || key == "亚罕典籍" ||
+           key == "蒸馏器";
 }
 
 }  // namespace
@@ -77,6 +78,17 @@ ItemPool::ItemPool(int player_level, std::string_view pool_hero, const std::unor
             medium_.push_back("减速烙刀");
             medium_.push_back("加速烙刀");
             std::sort(medium_.begin(), medium_.end());
+        }
+    }
+    // 魂石变体：四个 Quest 组合展示名（仅当池为 Mak 且存在「魂石」）
+    if (pool_l == "mak") {
+        auto it = std::find(small_.begin(), small_.end(), "魂石");
+        if (it != small_.end() && excluded.count("魂石") == 0) {
+            small_.push_back("剧毒减速魂石");
+            small_.push_back("剧毒冻结魂石");
+            small_.push_back("灼烧减速魂石");
+            small_.push_back("灼烧冻结魂石");
+            std::sort(small_.begin(), small_.end());
         }
     }
 }

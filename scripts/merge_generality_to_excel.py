@@ -16,7 +16,7 @@
 
 扩展列：
 - vanessa: l2..l7
-- mak: l2..l4
+- mak: l2..l7（与 out/mak/l*/generality.csv 对齐；魂石补四分支展示名）
 每列来自 out/<hero>/l*/generality.csv 的 generality，经公式变换：
   y = INT(100 * ((x*a)^sqrt(10/b)))
   x: generality.csv 的 generality
@@ -522,8 +522,27 @@ def main() -> int:
 
     # 特殊规则
     extra_include_items_vanessa = ["加速烙刀", "减速烙刀"]
+    extra_include_items_mak = [
+        "剧毒减速魂石",
+        "剧毒冻结魂石",
+        "灼烧减速魂石",
+        "灼烧冻结魂石",
+    ]
     base_only_items_common = {"烙刀", "产药药水", "催化剂"}
+    base_only_items_mak = base_only_items_common | {
+        "筛盘",
+        "奥秘之书",
+        "亚罕典籍",
+        "蒸馏器",
+        "魂石",
+    }
     clone_from = {"加速烙刀": "烙刀", "减速烙刀": "烙刀"}
+    clone_from_mak = {
+        "剧毒减速魂石": "魂石",
+        "剧毒冻结魂石": "魂石",
+        "灼烧减速魂石": "魂石",
+        "灼烧冻结魂石": "魂石",
+    }
 
     try:
         vanessa_header, vanessa_rows = _build_rows_for_hero(
@@ -541,10 +560,10 @@ def main() -> int:
             hero_title=mak_title,
             yaml_items=mak_items,
             repo_root=repo_root,
-            levels=["l2", "l3", "l4"],
-            extra_include_items=[],
-            base_only_items=base_only_items_common,
-            clone_from_item={},
+            levels=["l2", "l3", "l4", "l5", "l6", "l7"],
+            extra_include_items=extra_include_items_mak,
+            base_only_items=base_only_items_mak,
+            clone_from_item=clone_from_mak,
         )
     except Exception as e:
         print(f"error: {e}", file=sys.stderr)
