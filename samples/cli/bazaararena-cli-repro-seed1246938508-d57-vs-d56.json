@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "jobId": "http-57-vs-56",
+  "mode": "simulate",
+  "payload": {
+    "allowTie": true,
+    "debug": {
+      "enabled": true,
+      "level": "detailed",
+      "maxEvents": 50000
+    },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 5,
+        "items": [
+          {
+            "key": "符文巨斧",
+            "tier": "silver"
+          },
+          {
+            "key": "符文匕首",
+            "tier": "silver"
+          },
+          {
+            "key": "符文双射弓",
+            "tier": "silver"
+          },
+          {
+            "key": "盗龙轿辇",
+            "tier": "silver"
+          }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 5,
+        "items": [
+          {
+            "key": "蕨叶蜘蛛",
+            "tier": "silver"
+          },
+          {
+            "key": "快速注射系统",
+            "tier": "silver"
+          },
+          {
+            "key": "无限药水",
+            "tier": "silver"
+          },
+          {
+            "key": "箭背野猪",
+            "tier": "silver"
+          },
+          {
+            "key": "坩埚",
+            "tier": "silver"
+          }
+        ]
+      }
+    ],
+    "seed": 1246938508
+  },
+  "cliReproMeta": {
+    "exportedAt": "2026-04-17T19:37:06+00:00",
+    "deck0_as_side0": {
+      "deckId": 57,
+      "name": "test2",
+      "playerLevel": 5,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "符文巨斧",
+          "tier": 1
+        },
+        {
+          "position": 1,
+          "item_name": "符文匕首",
+          "tier": 1
+        },
+        {
+          "position": 2,
+          "item_name": "符文双射弓",
+          "tier": 1
+        },
+        {
+          "position": 3,
+          "item_name": "盗龙轿辇",
+          "tier": 1
+        }
+      ]
+    },
+    "deck1_as_side1": {
+      "deckId": 56,
+      "name": "test",
+      "playerLevel": 5,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "蕨叶蜘蛛",
+          "tier": 1
+        },
+        {
+          "position": 1,
+          "item_name": "快速注射系统",
+          "tier": 1
+        },
+        {
+          "position": 2,
+          "item_name": "无限药水",
+          "tier": 1
+        },
+        {
+          "position": 3,
+          "item_name": "箭背野猪",
+          "tier": 1
+        },
+        {
+          "position": 4,
+          "item_name": "坩埚",
+          "tier": 1
+        }
+      ]
+    },
+    "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。"
+  }
+}

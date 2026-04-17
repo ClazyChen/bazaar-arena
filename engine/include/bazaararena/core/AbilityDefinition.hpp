@@ -40,6 +40,9 @@ public:
     // 对于修改属性的能力，属性对应的 key
     int attribute_key = 0;
 
+    // 若为 true：数值取当前触发链 ctx.source 上该 key（GetItemInt，含光环），而非能力所属物品。
+    bool value_from_source = false;
+
 };
 
 } // namespace bazaararena::core

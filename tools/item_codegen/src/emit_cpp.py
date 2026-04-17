@@ -499,6 +499,8 @@ def _emit_item_lambda(item: dict) -> str:
             lines.append(f"        a.target_condition = {tg_merged};")
 
         lines.append(f"        a.value_key = {_resolve_value_key_cpp(ab, typ, where=where_ab)};")
+        if ab.get("value_from_source") is True:
+            lines.append("        a.value_from_source = true;")
         attr_k = _resolve_attribute_key_cpp(ab, typ, where=where_ab)
         if attr_k is not None:
             lines.append(f"        a.attribute_key = {attr_k};")

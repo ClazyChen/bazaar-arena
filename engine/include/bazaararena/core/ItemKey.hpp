@@ -100,7 +100,8 @@ constexpr bool IsAuraEffect = (
     key == ItemKey::Custom_1 ||
     key == ItemKey::Custom_2 ||
     key == ItemKey::Custom_3 ||
-    key == ItemKey::Resistance
+    key == ItemKey::Resistance ||
+    key == ItemKey::Tags
 );
 
 }  // namespace bazaararena::core

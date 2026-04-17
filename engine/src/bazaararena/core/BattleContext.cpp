@@ -27,6 +27,7 @@ int BattleContext::GetItemInt(const ItemState* item, int key) const {
     ctx.target = item;
     int percent_sum = 0;
     int additive_sum = 0;
+    int tags_or_sum = 0; // Tags 为位图，光环贡献须按位或合并（坩埚 SideItemTypes 等），勿用算术加
     while (aura_bitmap != 0) {
         int index = static_cast<int>(std::countr_zero(aura_bitmap));
         aura_bitmap &= ~(1 << index);
@@ -44,6 +45,8 @@ int BattleContext::GetItemInt(const ItemState* item, int key) const {
             auto aura_value = aura.value(ctx);
             if (aura.percent) {
                 percent_sum += aura_value;
+            } else if (key == ItemKey::Tags) {
+                tags_or_sum |= aura_value;
             } else {
                 additive_sum += aura_value;
             }
@@ -56,8 +59,12 @@ int BattleContext::GetItemInt(const ItemState* item, int key) const {
         (key == ItemKey::PercentFreezeReduction || key == ItemKey::PercentSlowReduction)) {
         additive_sum += 50;
     }
-    base_value += additive_sum;
-    base_value += formula::PercentFloor(base_value, percent_sum);
+    if (key == ItemKey::Tags) {
+        base_value |= tags_or_sum;
+    } else {
+        base_value += additive_sum;
+        base_value += formula::PercentFloor(base_value, percent_sum);
+    }
     base_value = std::max(base_value, 0);
     // 冷却时间是特判的，需要考虑冷却时间减少和冷却时间减少百分比，以及冷却时间最小为 1 秒
     if (key == ItemKey::Cooldown) {

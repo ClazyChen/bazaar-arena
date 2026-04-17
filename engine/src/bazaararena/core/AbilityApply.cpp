@@ -340,7 +340,9 @@ void Destroy(const AbilityDefinition& ability, const BattleContext& ctx) {
 
 // 增加属性
 void AddAttribute(const AbilityDefinition& ability, const BattleContext& ctx) {
-    int attribute = ctx.GetItemInt(ctx.caster, ability.value_key);
+    int attribute = ability.value_from_source && ctx.source != nullptr
+        ? ctx.GetItemInt(ctx.source, ability.value_key)
+        : ctx.GetItemInt(ctx.caster, ability.value_key);
     BattleContext ctx_copy = ctx; // 复制一份上下文用于选择目标
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     int target_count = 
@@ -367,7 +369,9 @@ void AddAttribute(const AbilityDefinition& ability, const BattleContext& ctx) {
 
 // 减少属性
 void ReduceAttribute(const AbilityDefinition& ability, const BattleContext& ctx) {
-    int attribute = ctx.GetItemInt(ctx.caster, ability.value_key);
+    int attribute = ability.value_from_source && ctx.source != nullptr
+        ? ctx.GetItemInt(ctx.source, ability.value_key)
+        : ctx.GetItemInt(ctx.caster, ability.value_key);
     BattleContext ctx_copy = ctx; // 复制一份上下文用于选择目标
     auto simulator = const_cast<Simulator*>(ctx.simulator);
     int target_count =     

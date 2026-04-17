@@ -355,6 +355,17 @@ def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
             raise TypeError(f"{where}: QuestComplete 参数必须是 int")
         return f"QuestComplete<{qi}>"
 
+    if typ == "SideItemTypes":
+        if len(params) != 0:
+            raise ValueError(f"{where}: SideItemTypes 不需要参数")
+        return "formula::SideItemTypes"
+
+    if typ == "BitCount":
+        if len(params) != 1:
+            raise ValueError(f"{where}: BitCount 需要 1 个公式参数")
+        inner = emit_formula_ast(params[0], where=f"{where}.0")
+        return f"formula::BitCount<{inner}>"
+
     raise ValueError(f"{where}: 未知的公式类型：{typ}")
 
 

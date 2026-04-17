@@ -1,5 +1,7 @@
 #pragma once
 
+#include <bit>
+
 #include <bazaararena/core/BattleContext.hpp>
 #include <bazaararena/core/ItemKey.hpp>
 
@@ -172,7 +174,7 @@ constexpr Formula SideItemTypes = [](const BattleContext& ctx) -> int {
 
 template<Formula a>
 constexpr Formula BitCount = [](const BattleContext& ctx) -> int {
-    return __builtin_popcount(a(ctx));
+    return static_cast<int>(std::popcount(static_cast<unsigned>(a(ctx))));
 };
 
 } // namespace bazaararena::formula

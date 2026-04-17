@@ -1564,3 +1564,722 @@ items:
     AmmoCap: 1
     Abilities:
       - type: Freeze
+  - Name: "筛盘"
+    Desc: "【局外】每天开始时，获得 1 件催化剂；【局外】催化剂 {+Custom_0} 价值"
+    Size: Medium
+    Tier: Silver
+    Tags: [Tool]
+    Custom_0: [1, 2, 3]
+  - Name: "奥秘之书"
+    Desc: "【局外】每天开始时，获得任意英雄的 1 项随机技能"
+    Size: Medium
+    Tier: Silver
+    Tags: [Relic]
+  - Name: "蕨叶蜘蛛"
+    Desc: "▶ 造成 {Poison} 剧毒；【局外】此物品上场赢得战斗时，此物品 +2 多重释放；【局外】如果此加成达到 {Custom_0}，重置此加成；【默认】在计算中总是按照最大加成"
+    Size: Medium
+    Tier: Silver
+    Tags: [Friend]
+    Cooldown: 4s
+    Poison: [4, 6, 8]
+    Custom_0: [2, 4, 6]
+    Abilities:
+      - type: Poison
+    Auras:
+      - attribute: Multicast
+        value: Custom_0
+  - Name: "彩虹法杖"
+    Desc: "▶ 造成 {Burn} 灼烧；▶ 造成 {Poison} 剧毒；▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；【局外】购买此物品和每天开始时，为此物品附魔"
+    Size: Medium
+    Tier: Silver
+    Tags: [Relic]
+    Cooldown: 6s
+    Burn: [3, 6, 9]
+    Poison: [3, 6, 9]
+    Slow: 2s
+    SlowTargetCount: 1
+    Freeze: 1s
+    FreezeTargetCount: 1
+    Abilities:
+      - type: Burn
+      - type: Poison
+      - type: Slow
+      - type: Freeze
+  - Name: "重力之石"
+    Desc: "使用药水或遗物时，{ModifyTargetCount} 件其他物品开始飞行；使用飞行物品时，获得 {Regen} 生命再生"
+    Size: Medium
+    Tier: Silver
+    Tags: [Relic, Property]
+    ModifyTargetCount: 1
+    Regen: [6, 12, 18]
+    Custom_0: 1
+    Abilities:
+      - type: AddAttribute
+        trigger: UseItem
+        ex_condition:
+          type: Or
+          params:
+            - type: HasTag
+              params: [Potion]
+            - type: HasTag
+              params: [Relic]
+        key: InFlight
+        value: Custom_0
+        ex_target_condition: DifferentFromCaster
+      - type: Regen
+        trigger: UseItem
+        ex_condition:
+          type: Item
+          params: [InFlight]
+  - Name: "寒霜图腾"
+    Desc: "▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；【Q1】此物品 {+Custom_0} 多重释放；【Q2】使用相邻遗物时，为此物品充能 {Charge} 秒；【Q3】此物品 {+Custom_2} 冻结目标数量"
+    Size: Medium
+    Tier: Silver
+    Tags: [Relic]
+    Cooldown: [7s, 6s, 5s]
+    Freeze: 1s
+    FreezeTargetCount: 1
+    Charge: 1s
+    Custom_0: 1
+    Custom_1: 1s
+    Custom_2: 1
+    Abilities:
+      - type: Freeze
+      - type: Charge
+        trigger: UseItem
+        ex_condition:
+          type: And
+          params:
+            - AdjacentToCaster
+            - type: HasTag
+              params: [Relic]
+            - type: QuestComplete
+              params: [2]
+        target_condition: SameAsCaster
+    Auras:
+      - attribute: Multicast
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: QuestComplete
+              params: [1]
+        value: Custom_0
+      - attribute: FreezeTargetCount
+        condition:
+          type: And
+          params:
+            - SameAsCaster
+            - type: QuestComplete
+              params: [3]
+        value: Custom_2
+  - Name: "快速注射系统"
+    Desc: "对自己触发剧毒时，造成 {Poison} 剧毒；使用相邻物品时，对自己造成 {Poison} 剧毒；使用相邻物品时，获得 {Regen} 生命再生"
+    Size: Medium
+    Tier: Silver
+    Tags: [Tool]
+    Poison: [3, 6, 9]
+    Regen: [3, 6, 9]
+    Abilities:
+      - type: Poison
+        trigger: Poison
+        ex_condition:
+          type: Eq
+          params:
+            - type: Target
+              params: [SideIndex]
+            - type: Caster
+              params: [SideIndex]
+        priority: High
+      - type: PoisonSelf
+        trigger: UseItem
+        ex_condition: AdjacentToCaster
+      - type: Regen
+        trigger: UseItem
+  - Name: "注能护腕"
+    Desc: "▶ 造成 {Poison} 剧毒；▶ 对自己造成 {Poison} 剧毒；对自己触发剧毒时，武器伤害提高，等量于该物品的剧毒（限本场战斗）；此物品左侧的武器获得吸血"
+    Size: Medium
+    Tier: Silver
+    Tags: [Apparel, Tool]
+    Cooldown: [6s, 5s, 4s]
+    Poison: [8, 16, 24]
+    Custom_0: 100
+    Abilities:
+      - type: Poison
+      - type: PoisonSelf
+      - type: AddAttribute
+        trigger: Poison
+        ex_condition:
+          type: Eq
+          params:
+            - type: Target
+              params: [SideIndex]
+            - type: Caster
+              params: [SideIndex]
+        key: Damage
+        value_key: Poison
+        value_from_source: true
+        ex_target_condition:
+          type: HasTag
+          params: [Weapon]
+        priority: Low
+    Auras:
+      - attribute: LifeSteal
+        condition:
+          type: And
+          params:
+            - LeftOfCaster
+            - type: HasTag
+              params: [Weapon]
+        value: Custom_0
+  - Name: "箭背野猪"
+    Desc: "使用武器时，对自己造成 {Poison} 剧毒；敌方使用武器时，造成 {Poison} 剧毒；使用非武器物品时，获得 {Regen} 生命再生"
+    Size: Medium
+    Tier: Silver
+    Tags: [Friend]
+    Poison: [2, 4, 6]
+    Regen: [2, 4, 6]
+    Abilities:
+      - type: PoisonSelf
+        trigger: UseItem
+        ex_condition:
+          type: HasTag
+          params: [Weapon]
+      - type: Poison
+        trigger: UseItem
+        condition:
+          type: And
+          params:
+            - DifferentSide
+            - type: HasTag
+              params: [Weapon]
+      - type: Regen
+        trigger: UseItem
+        ex_condition:
+          type: NotHasTag
+          params: [Weapon]
+  - Name: "肾上腺素调节服"
+    Desc: "▶ 造成 {Poison} 剧毒；▶ 对自己造成 {Poison} 剧毒；对自己触发剧毒时，获得 {Regen} 生命再生；对自己触发剧毒时，加速 {HasteTargetCount} 件物品 {Haste} 秒"
+    Size: Medium
+    Tier: Silver
+    Tags: [Apparel]
+    Cooldown: 5s
+    Poison: [5, 10, 15]
+    Regen: [5, 10, 15]
+    Haste: 1s
+    HasteTargetCount: 1
+    Abilities:
+      - type: Poison
+      - type: PoisonSelf
+      - type: Regen
+        trigger: Poison
+        ex_condition:
+          type: Eq
+          params:
+            - type: Target
+              params: [SideIndex]
+            - type: Caster
+              params: [SideIndex]
+      - type: Haste
+        trigger: Poison
+        ex_condition:
+          type: Eq
+          params:
+            - type: Target
+              params: [SideIndex]
+            - type: Caster
+              params: [SideIndex]
+  - Name: "亚罕典籍"
+    Desc: "【局外】转化原料时，永久获得 {Custom_0} 生命再生；【局外】每天开始时，获得 1 件小型原料"
+    Size: Medium
+    Tier: Silver
+    Tags: [Relic]
+    Custom_0: [3, 6, 9]
+  - Name: "冰爪"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；触发冻结时，此物品的伤害提高 {Custom_0}（限本场战斗）"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon, Relic]
+    Cooldown: 7s
+    Damage: 60
+    Freeze: 1s
+    FreezeTargetCount: [1, 2, 3]
+    Custom_0: [60, 90, 120]
+    Abilities:
+      - type: Damage
+      - type: Freeze
+      - type: AddAttribute
+        trigger: Freeze
+        target_condition: SameAsCaster
+        key: Damage
+        value: Custom_0
+        priority: Low
+  - Name: "回收桶"
+    Desc: "使用药水时，将其转化为来自任意英雄的 1 件其他药水（限本场战斗）；药水缩短 {Custom_0：} 秒冷却时间；此物品没有实现"
+    Size: Medium
+    Tier: Silver
+    Custom_0: [0.5s, 1s, 1.5s]
+  - Name: "坩埚"
+    Desc: "▶ 此物品每拥有一个类型，造成 {Custom_0} 灼烧；▶ 此物品每拥有一个类型，造成 {Custom_0} 剧毒；此物品拥有己方所有物品的类型"
+    Size: Medium
+    Tier: Silver
+    Tags: [Tool]
+    Cooldown: 4s
+    Custom_0: [2, 4, 6]
+    Abilities:
+      - type: Burn
+      - type: Poison
+    Auras:
+      - attribute: Tags
+        value:
+          type: SideItemTypes
+      - attribute: Burn
+        value:
+          type: Mul
+          params:
+            - type: Caster
+              params: [Custom_0]
+            - type: BitCount
+              params:
+                - type: Caster
+                  params: [Tags]
+      - attribute: Poison
+        value:
+          type: Mul
+          params:
+            - type: Caster
+              params: [Custom_0]
+            - type: BitCount
+              params:
+                - type: Caster
+                  params: [Tags]
+  - Name: "巨龙吐息"
+    Desc: "▶ 造成 {Burn} 灼烧；弹药：{AmmoCap}；使用相邻物品或飞行物品时，此物品的灼烧提高 {Custom_0}（限本场战斗）；【局外】购买此物品时，获得任意英雄的 1 件小型灼烧物品"
+    Size: Medium
+    Tier: Silver
+    Tags: [Dragon, Potion, Relic]
+    Cooldown: [8s, 7s, 6s]
+    Burn: 10
+    AmmoCap: 1
+    Custom_0: [10, 20, 30]
+    Abilities:
+      - type: Burn
+      - type: AddAttribute
+        trigger: UseItem
+        ex_condition:
+          type: Or
+          params:
+            - type: AdjacentToCaster
+            - type: Item
+              params: [InFlight]
+        key: Burn
+        value: Custom_0
+        target_condition: SameAsCaster
+  - Name: "投掷捕兽网"
+    Desc: "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；敌方每有一件武器或伙伴，此物品 {+Custom_0} 多重释放"
+    Size: Medium
+    Tier: Silver
+    Cooldown: 5s
+    Slow: [1s, 2s, 3s]
+    SlowTargetCount: 1
+    Custom_0: 1
+    Abilities:
+      - type: Slow
+    Auras:
+      - attribute: Multicast
+        value:
+          type: Mul
+          params:
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - DifferentSide
+                    - type: Or
+                      params:
+                        - type: HasTag
+                          params: [Weapon]
+                        - type: HasTag
+                          params: [Friend]
+            - type: Caster
+              params: [Custom_0]
+  - Name: "挎包"
+    Desc: "▶ 装填 {ReloadTargetCount} 件物品；触发装填时，获得 {Regen} 生命再生；【局外】购买药水时，此物品的生命再生提高 {Custom_0}；【默认】已购买的药水数量：{Custom_1}"
+    Size: Medium
+    Tier: Silver
+    Tags: [Tool]
+    Cooldown: 7s
+    ReloadTargetCount: [2, 3, 4]
+    Regen: 2
+    Custom_0: [2, 4, 6]
+    Custom_1: [3, 6, 9]
+    overridable: [Custom_1]
+    Abilities:
+      - type: Reload
+        priority: Lowest
+      - type: Regen
+        trigger: Reload
+        priority: Low
+    Auras:
+      - attribute: Regen
+        value:
+          type: Mul
+          params:
+            - type: Caster
+              params: [Custom_0]
+            - type: Caster
+              params: [Custom_1]
+  - Name: "毒伞菇"
+    Desc: "▶ 造成 {Poison} 剧毒；使用武器时，剧毒物品的剧毒提高 {Custom_0}（限本场战斗）；使用武器时，生命再生物品的生命再生提高 {Custom_0}（限本场战斗）；【局外】此物品转化时，为其赋予毒素附魔（如适用）"
+    Size: Medium
+    Tier: Silver
+    Tags: [Reagent]
+    Cooldown: 5s
+    Poison: 5
+    Custom_0: [1, 2, 3]
+    Abilities:
+      - type: Poison
+      - type: AddAttribute
+        trigger: UseItem
+        ex_condition:
+          type: HasTag
+          params: [Weapon]
+        key: Poison
+        value: Custom_0
+        ex_target_condition:
+          type: HasDerivedTag
+          params: [Poison]
+      - type: AddAttribute
+        trigger: UseItem
+        ex_condition:
+          type: HasTag
+          params: [Weapon]
+        key: Regen
+        value: Custom_0
+        ex_target_condition:
+          type: HasDerivedTag
+          params: [Regen]
+  - Name: "油灯"
+    Desc: "▶ 造成 {Burn} 灼烧；触发生命再生时，为此物品充能 {Charge} 秒"
+    Size: Medium
+    Tier: Silver
+    Tags: [Tool]
+    Cooldown: [8s, 7s, 6s]
+    Burn: [10, 20, 30]
+    Charge: 1s
+    Abilities:
+      - type: Burn
+      - type: Charge
+        trigger: Regen
+        target_condition: SameAsCaster
+  - Name: "蒸馏器"
+    Desc: "【局外】每天开始时，获得 1 件催化剂；【局外】每天开始时，将此物品左侧相邻的小型物品转化为任意英雄的药水；【局外】购买此物品时，获得 1 件小型原料"
+    Size: Medium
+    Tier: Silver
+    Tags: [Tool]
+  - Name: "百足鼬"
+    Desc: "▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒；触发减速或剧毒时，为此物品充能 {Charge} 秒"
+    Size: Medium
+    Tier: Silver
+    Tags: [Friend]
+    Cooldown: [8s, 7s, 6s]
+    Freeze: 0.5s
+    FreezeTargetCount: 1
+    Charge: 2s
+    Abilities:
+      - type: Freeze
+      - type: Charge
+        triggers:
+          - trigger: Slow
+          - trigger: Poison
+        target_condition: SameAsCaster
+        priority: Low
+  - Name: "符文匕首"
+    Desc: "▶ 造成 {Damage} 伤害；多重释放：{Multicast}；其他物品造成暴击时，为此物品充能 {Charge} 秒；吸血"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon, Relic]
+    Cooldown: [6s, 5s, 4s]
+    Damage: 10
+    Multicast: 2
+    Charge: 1s
+    LifeSteal: 100
+    Abilities:
+      - type: Damage
+      - type: Charge
+        trigger: Crit
+        ex_condition: DifferentFromCaster
+        target_condition: SameAsCaster
+        priority: High
+  - Name: "符文双射弓"
+    Desc: "▶ 造成 {Damage} 伤害；多重释放：{Multicast}；其他物品造成暴击时，此物品的伤害提高 {Custom_0}（限本场战斗）；吸血"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon, Relic]
+    Cooldown: 6s
+    Damage: [20, 30, 40]
+    Multicast: 2
+    Custom_0: [20, 30, 40]
+    LifeSteal: 100
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        trigger: Crit
+        ex_condition: DifferentFromCaster
+        key: Damage
+        value: Custom_0
+        target_condition: SameAsCaster
+        priority: High
+  - Name: "蛇首手杖"
+    Desc: "▶ 造成 {Damage} 伤害；触发剧毒或生命再生时，武器伤害提高 {Custom_0}（限本场战斗）"
+    Size: Medium
+    Tier: Silver
+    Tags: [Weapon, Relic]
+    Cooldown: 6s
+    Damage: 10
+    Custom_0: [4, 8, 12]
+    Abilities:
+      - type: Damage
+      - type: AddAttribute
+        triggers:
+          - trigger: Poison
+          - trigger: Regen
+        key: Damage
+        value: Custom_0
+        ex_target_condition:
+          type: HasTag
+          params: [Weapon]
+        priority: Low
+  - Name: "衔尾蛇雕像"
+    Desc: "▶ 造成 {Poison} 剧毒；触发剧毒时，获得 {Regen} 生命再生"
+    Size: Medium
+    Tier: Silver
+    Tags: [Relic]
+    Cooldown: 6s
+    Poison: 5
+    Regen: [3, 6, 9]
+    Abilities:
+      - type: Poison
+      - type: Regen
+        trigger: Poison
+        priority: Low
+  - Name: "先祖墓"
+    Desc: "▶ 获得 {Regen} 生命再生；每有一件其他遗物，此物品 {+Custom_0} 多重释放；【Q1】▶ 造成 {Poison} 剧毒；【Q2】▶ 冻结 {FreezeTargetCount} 件物品 {Freeze} 秒"
+    Size: Large
+    Tier: Silver
+    Tags: [Relic, Property]
+    Cooldown: 6s
+    Regen: [5, 10, 15]
+    Poison: [5, 10, 15]
+    Custom_0: 1
+    Freeze: 0.5s
+    FreezeTargetCount: 1
+    Abilities:
+      - type: Regen
+      - type: Poison
+        ex_condition:
+          type: QuestComplete
+          params: [1]
+        priority: Low
+      - type: Freeze
+        ex_condition:
+          type: QuestComplete
+          params: [2]
+        priority: Low
+    Auras:
+      - attribute: Multicast
+        value:
+          type: Mul
+          params:
+            - type: Count
+              params:
+                - type: And
+                  params:
+                    - SameSide
+                    - DifferentFromCaster
+                    - type: HasTag
+                      params: [Relic]
+            - type: Caster
+              params: [Custom_0]
+  - Name: "冰霜烈焰"
+    Desc: "▶ 造成 {Burn} 灼烧；触发冻结时，此物品的灼烧提高 {Custom_0}（限本场战斗）；己方生命值首次降低到一半时，冻结敌方所有物品 {Freeze} 秒"
+    Size: Large
+    Tier: Silver
+    Tags: [Relic]
+    Cooldown: 4s
+    Burn: 10
+    Custom_0: [10, 20, 30]
+    Freeze: [1s, 1.5s, 2s]
+    Custom_1: 0
+    Custom_2: 1
+    Abilities:
+      - type: Burn
+      - type: AddAttribute
+        trigger: Freeze
+        target_condition: SameAsCaster
+        key: Burn
+        value: Custom_0
+      - type: Freeze
+        trigger: EveryFrame
+        ex_condition:
+          type: And
+          params:
+            - type: Eq
+              params:
+                - type: Caster
+                  params: [Custom_1]
+                - 0
+            - type: Le
+              params:
+                - type: Side
+                  params: [Hp]
+                - type: PercentFloor
+                  params:
+                    - type: Side
+                      params: [MaxHp]
+                    - 50
+        target_condition: DifferentSide
+        priority: Low
+      - type: AddAttribute
+        trigger: EveryFrame
+        ex_condition:
+          type: And
+          params:
+            - type: Eq
+              params:
+                - type: Caster
+                  params: [Custom_1]
+                - 0
+            - type: Le
+              params:
+                - type: Side
+                  params: [Hp]
+                - type: PercentFloor
+                  params:
+                    - type: Side
+                      params: [MaxHp]
+                    - 50
+        key: Custom_1
+        value: Custom_2
+        priority: Immediate
+  - Name: "炼金炉"
+    Desc: "▶ 装填相邻物品；使用药水时，造成 {Burn} 灼烧；【局外】每天开始时，升级 1 件低级别药水；【局外】每天开始时，获得 1 件催化剂"
+    Size: Large
+    Tier: Silver
+    Tags: [Property]
+    Cooldown: 5s
+    Burn: [8, 16, 24]
+    Abilities:
+      - type: Reload
+        target_condition: AdjacentToCaster
+        priority: High
+      - type: Burn
+        trigger: UseItem
+        ex_condition:
+          type: HasTag
+          params: [Potion]
+  - Name: "盗龙轿辇"
+    Desc: "己方物品 {+Custom_0%} 暴击率；造成暴击时，该物品的冷却时间缩短 {Custom_1%}（限本场战斗）"
+    Size: Large
+    Tier: Silver
+    Tags: [Vehicle, Dinosaur]
+    Custom_0: [15, 30, 50]
+    Custom_1: [4, 8, 12]
+    Abilities:
+      - type: AddAttribute
+        trigger: Crit
+        key: CooldownReductionPercent
+        value: Custom_1
+        target_condition: SameAsSource
+        priority: Low
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: And
+          params:
+            - SameSide
+            - CanCrit
+        value: Custom_0
+  - Name: "符文巨斧"
+    Desc: "▶ 造成 {Damage} 伤害；吸血武器 {+Custom_0%} 暴击率；吸血"
+    Size: Large
+    Tier: Silver
+    Tags: [Weapon, Relic]
+    Cooldown: 6s
+    Damage: [50, 100, 200]
+    Custom_0: [50, 75, 100]
+    LifeSteal: 100
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: CritRate
+        condition:
+          type: And
+          params:
+            - SameSide
+            - type: HasTag
+              params: [Weapon]
+            - type: Gt
+              params:
+                - type: Item
+                  params: [LifeSteal]
+                - 0
+        value: Custom_0
+  - Name: "药房"
+    Desc: "▶ 获得 {Regen} 生命再生；触发加速、减速、剧毒或灼烧时，为此物品充能 {Charge} 秒；【局外】每天开始时，获得 1 件原料"
+    Size: Large
+    Tier: Silver
+    Tags: [Property]
+    Cooldown: 5s
+    Regen: [10, 20, 30]
+    Charge: 1s
+    Abilities:
+      - type: Regen
+      - type: Charge
+        triggers:
+          - trigger: Haste
+          - trigger: Slow
+          - trigger: Poison
+          - trigger: Burn
+        target_condition: SameAsCaster
+        priority: Low
+  - Name: "药水蒸馏厂"
+    Desc: "药水 {+Custom_0} 最大弹药量；药水减少 {Custom_1%} 冷却时间；【局外】拜访商人时，将此物品左侧的小型物品转化为 1 件任意英雄的药水"
+    Size: Large
+    Tier: Silver
+    Tags: [Tool, Property]
+    Custom_0: [1, 2, 3]
+    Custom_1: [10, 15, 20]
+    Auras:
+      - attribute: AmmoCap
+        condition:
+          type: And
+          params:
+            - SameSide
+            - type: HasTag
+              params: [Potion]
+            - type: HasDerivedTag
+              params: [Ammo]
+        value: Custom_0
+      - attribute: CooldownReductionPercent
+        condition:
+          type: And
+          params:
+            - SameSide
+            - type: HasTag
+              params: [Potion]
+            - HasCooldown
+        value: Custom_1
+  - Name: "黏液链枷"
+    Desc: "▶ 造成 {Damage} 伤害；▶ 造成剧毒，等量于此物品的伤害；多重释放：{Multicast}"
+    Size: Large
+    Tier: Silver
+    Tags: [Weapon]
+    Cooldown: [11s, 10s, 9s]
+    Damage: 1
+    Multicast: 3
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: Poison
+        value: Damage
