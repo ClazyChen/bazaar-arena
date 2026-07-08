@@ -47,6 +47,9 @@ public:
     // 计算满足某个条件的物品数量
     int CountItems(Formula condition) const;
 
+    // 对满足条件的物品，累加指定 ItemKey（含光环）
+    int SumItemsInt(int key, Formula condition) const;
+
     // 己方所有物品的类型
     int GetSideItemTypes() const;
     

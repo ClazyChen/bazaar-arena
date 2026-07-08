@@ -60,6 +60,7 @@ static void ApplyItemCustomOverrides(core::ItemState& item, const ItemSpec& spec
     if (spec.custom_1.has_value()) item.attrs[core::ItemKey::Custom_1] = *spec.custom_1;
     if (spec.custom_2.has_value()) item.attrs[core::ItemKey::Custom_2] = *spec.custom_2;
     if (spec.custom_3.has_value()) item.attrs[core::ItemKey::Custom_3] = *spec.custom_3;
+    if (spec.custom_4.has_value()) item.attrs[core::ItemKey::Custom_4] = *spec.custom_4;
     if (spec.quest.has_value()) item.attrs[core::ItemKey::Quest] = *spec.quest;
 }
 

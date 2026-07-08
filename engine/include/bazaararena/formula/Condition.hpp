@@ -111,6 +111,11 @@ constexpr Formula Count = [](const BattleContext& ctx) -> int {
     return ctx.CountItems(condition);
 };
 
+template<Formula condition, int key>
+constexpr Formula SumItems = [](const BattleContext& ctx) -> int {
+    return ctx.SumItemsInt(key, condition);
+};
+
 template<Formula condition>
 constexpr Formula Only = And<
     condition,

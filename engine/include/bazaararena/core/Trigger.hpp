@@ -33,8 +33,9 @@ public:
     
     static constexpr int AboutToLose = 21; // 即将落败时触发（Source = Target = null）
     static constexpr int CritRateIncreased = 22; // 暴击率提高时触发（Source = 暴击率提高来源，Target = 暴击率提高目标）
+    static constexpr int FirstHalfHp = 23; // 己方生命值首次下降到一半以下时触发（Source = Target = 该阵营第 1 个物品）
 
-    static constexpr int Count = 23; // 触发器数量
+    static constexpr int Count = 24; // 触发器数量
 };
 
 }

@@ -159,6 +159,7 @@ const DESC_KEY_TO_DECK_OVERRIDE: Partial<Record<string, keyof DeckSlotAttrsOverr
     Custom_1: "custom_1",
     Custom_2: "custom_2",
     Custom_3: "custom_3",
+    Custom_4: "custom_4",
     Quest: "quest",
 };
 

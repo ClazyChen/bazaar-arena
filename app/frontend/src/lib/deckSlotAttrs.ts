@@ -6,6 +6,7 @@ export interface SlotAttrDraft {
     custom_1: number;
     custom_2: number;
     custom_3: number;
+    custom_4: number;
     quest: number;
 }
 
@@ -32,6 +33,7 @@ export function draftFromSlot(
         custom_1: slot.attrs_override?.custom_1 ?? t("Custom_1"),
         custom_2: slot.attrs_override?.custom_2 ?? t("Custom_2"),
         custom_3: slot.attrs_override?.custom_3 ?? t("Custom_3"),
+        custom_4: slot.attrs_override?.custom_4 ?? t("Custom_4"),
         quest: slot.attrs_override?.quest ?? t("Quest"),
     };
 }
@@ -47,6 +49,7 @@ export function attrsOverrideFromDraft(
         ["custom_1", "Custom_1"],
         ["custom_2", "Custom_2"],
         ["custom_3", "Custom_3"],
+        ["custom_4", "Custom_4"],
         ["quest", "Quest"],
     ];
     const out: DeckSlotAttrsOverride = {};

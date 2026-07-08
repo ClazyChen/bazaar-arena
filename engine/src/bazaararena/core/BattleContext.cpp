@@ -129,6 +129,23 @@ int BattleContext::CountItems(Formula condition) const {
     return count;
 }
 
+int BattleContext::SumItemsInt(int key, Formula condition) const {
+    BattleContext ctx = *this;
+    int sum = 0;
+    for (int sj = 0; sj < Simulator::SideCount; sj++) {
+        const int n = simulator->sides[sj].attrs[SideKey::ItemCount];
+        for (int i = 0; i < n; i++) {
+            auto& item = simulator->sides[sj].items[i];
+            if (item.attrs[ItemKey::Destroyed] == 1) continue;
+            ctx.item = &item;
+            if (condition(ctx) != 0) {
+                sum += GetItemInt(&item, key);
+            }
+        }
+    }
+    return sum;
+}
+
 // 己方所有物品的类型
 int BattleContext::GetSideItemTypes() const {
     int types = 0;

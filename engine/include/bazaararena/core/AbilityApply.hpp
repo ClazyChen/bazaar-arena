@@ -39,9 +39,11 @@ void Cast(const AbilityDefinition& ability, const BattleContext& ctx); // 立刻
 
 // 特殊实现的能力
 void Transform_quicksilver(const AbilityDefinition& ability, const BattleContext& ctx); // 水银的转化效果
+void Transform_mirror(const AbilityDefinition& ability, const BattleContext& ctx); // 镜子的转化效果
 void StartSandstorm(const AbilityDefinition& ability, const BattleContext& ctx); // 开始沙尘暴
 void AddMaxHp(const AbilityDefinition& ability, const BattleContext& ctx); // 增加最大生命值
 void ReduceMaxHp(const AbilityDefinition& ability, const BattleContext& ctx); // 减少敌方的最大生命值
+void SetHp(const AbilityDefinition& ability, const BattleContext& ctx); // 直接设置生命值（不触发治疗）
 
 // 能力应用表
 constexpr std::array<void(*)(const AbilityDefinition& ability, const BattleContext& ctx), AbilityType::Count> AbilityApplyTable = {
@@ -69,6 +71,8 @@ constexpr std::array<void(*)(const AbilityDefinition& ability, const BattleConte
     StartSandstorm,
     AddMaxHp,
     ReduceMaxHp,
+    SetHp,
+    Transform_mirror,
 };
 
 

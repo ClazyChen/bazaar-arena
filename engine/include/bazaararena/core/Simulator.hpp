@@ -100,6 +100,11 @@ public:
 
     /// 阵营伤害抗性有效百分比（槽位 0 物品的 ItemKey::Resistance，含光环）
     int GetSideEffectiveResistance(int side_index) const;
+
+    /// 各阵营是否已触发「生命值首次下降到一半以下」
+    std::array<bool, SideCount> first_half_hp_triggered{};
+
+    void CheckFirstHalfHp();
 };
 
 }

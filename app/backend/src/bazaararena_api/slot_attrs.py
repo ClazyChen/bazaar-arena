@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 
 # 与引擎 job JSON attrsOverride 键名、deck_slots 列名一致
-SLOT_ATTR_KEYS = ("custom_0", "custom_1", "custom_2", "custom_3", "quest")
+SLOT_ATTR_KEYS = ("custom_0", "custom_1", "custom_2", "custom_3", "custom_4", "quest")
 
 
 def api_slot_dict_from_row(r: sqlite3.Row) -> dict[str, object]:
@@ -35,10 +35,10 @@ def engine_attrs_override_from_slot_dict(slot: dict[str, object]) -> dict[str, i
 
 
 def parse_attrs_override_from_put_entry(entry: dict[str, object], idx: int) -> tuple[int | None, ...]:
-    """PUT body slots[i].attrs_override → 五列可空整数。缺省或 null 表示不覆盖。"""
+    """PUT body slots[i].attrs_override → 六列可空整数。缺省或 null 表示不覆盖。"""
     ao = entry.get("attrs_override")
     if ao is None:
-        return (None, None, None, None, None)
+        return (None, None, None, None, None, None)
     if not isinstance(ao, dict):
         raise ValueError(f"slots[{idx}].attrs_override must be an object or null")
     allowed = frozenset(SLOT_ATTR_KEYS)

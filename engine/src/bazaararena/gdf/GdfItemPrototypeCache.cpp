@@ -20,7 +20,7 @@ static int ComputeMakQuestOverride(std::string_view db_key, int player_level) {
     // Mak 的部分物品在 legacy 扁平化中会按等级覆写 Quest。
     // 规则来自用户说明：
     // - 时间之砂、永恒火炬、生命导体、腐朽圣像：L2=0，L3-4=1，L5-7=3，L8+=7
-    // - 空白石碑：L2-4=0，L5+=31
+    // - 空白石碑：L2=0，L3=1，L4=3，L5-6=7，L7-8=15，L9+=31（Quest 位图）
     if (db_key == "时间之砂" || db_key == "永恒火炬" || db_key == "生命导体" || db_key == "腐朽圣像") {
         if (player_level <= 2) return 0;
         if (player_level <= 4) return 1;
@@ -28,7 +28,11 @@ static int ComputeMakQuestOverride(std::string_view db_key, int player_level) {
         return 7;
     }
     if (db_key == "空白石碑") {
-        if (player_level <= 4) return 0;
+        if (player_level <= 2) return 0;
+        if (player_level <= 3) return 1;
+        if (player_level <= 4) return 3;
+        if (player_level <= 6) return 7;
+        if (player_level <= 8) return 15;
         return 31;
     }
     if (db_key == "寒霜图腾") {

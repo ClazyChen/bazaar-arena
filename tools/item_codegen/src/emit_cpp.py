@@ -196,6 +196,7 @@ _BASIC_TARGET_SAME_SIDE = frozenset(
         "AddAttribute",
         "Cast",
         "Transform_quicksilver",
+        "Transform_mirror",
         "StartSandstorm",
         "AddMaxHp",
     }
@@ -300,9 +301,11 @@ def _resolve_value_key_cpp(ab: dict, ability_type: str, *, where: str) -> str:
         "Cast": "Custom_2",
         # 特殊能力默认映射（多数不需要 value_key，但 AbilityDefinition 结构要求填一个合法 key）
         "Transform_quicksilver": "Custom_0",
+        "Transform_mirror": "Custom_0",
         "StartSandstorm": "Custom_0",
         "AddMaxHp": "Custom_0",
         "ReduceMaxHp": "Custom_0",
+        "SetHp": "Heal",
     }
     if ability_type in defaults:
         return f"core::ItemKey::{defaults[ability_type]}"

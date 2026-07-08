@@ -119,6 +119,8 @@ static std::string_view ItemKeyZhForAttributeModify(int attribute) {
             return "自定义2";
         case IK::Custom_3:
             return "自定义3";
+        case IK::Custom_4:
+            return "自定义4";
         case IK::Resistance:
             return "抗性";
         default:

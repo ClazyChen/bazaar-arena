@@ -83,7 +83,7 @@ def ensure_cli_identity(cli: Path) -> None:
 def _deck_slots(conn, deck_id: int) -> list[dict[str, object]]:
     cur = conn.execute(
         """
-        SELECT position, item_name, tier, custom_0, custom_1, custom_2, custom_3, quest
+        SELECT position, item_name, tier, custom_0, custom_1, custom_2, custom_3, custom_4, quest
         FROM deck_slots WHERE deck_id = ? ORDER BY position
         """,
         (deck_id,),

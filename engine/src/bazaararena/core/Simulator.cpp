@@ -170,6 +170,9 @@ int Simulator::Run(bool allow_tie) {
         // 8. 处理能力队列
         ability_queue.Scan(this, time);
 
+        // 8.5 检查「生命值首次下降到一半以下」
+        CheckFirstHalfHp();
+
         // 9. 检查胜负
         bool dead0 = sides[0].attrs[SideKey::Hp] <= 0;
         bool dead1 = sides[1].attrs[SideKey::Hp] <= 0;
@@ -258,6 +261,20 @@ int Simulator::GetSideEffectiveResistance(int side_index) const {
     const auto& side = sides[side_index];
     if (side.attrs[SideKey::ItemCount] <= 0) return 0;
     return GetItemInt(&side.items[0], ItemKey::Resistance);
+}
+
+void Simulator::CheckFirstHalfHp() {
+    for (int i = 0; i < SideCount; i++) {
+        if (first_half_hp_triggered[i]) continue;
+        const int hp = sides[i].attrs[SideKey::Hp];
+        const int max_hp = sides[i].attrs[SideKey::MaxHp];
+        if (max_hp <= 0) continue;
+        const int threshold = formula::PercentFloor(max_hp, 50);
+        if (hp <= threshold) {
+            first_half_hp_triggered[i] = true;
+            InvokeTrigger(Trigger::FirstHalfHp, &sides[i].items[0], &sides[i].items[0]);
+        }
+    }
 }
 
 // 应用某个能力的效果

@@ -54,8 +54,8 @@ cmake --build . --config Release --target bazaararena_gdf
 - **战斗档位**：由 `GdfLevelRules::CombatTier(level)` 决定物品 `tier`（bronze/silver/gold/diamond），经 `BuildSideState` 写入 `SideState`。
 - **烙刀 Q1/Q2**：当池为 Vanessa 且池中存在「烙刀」时，会额外加入展示名 `减速烙刀`、`加速烙刀`（`ResolveItemAlias` 映射到同一 `db_key`，并写入 `Quest` 的对应位）。
 - **Mak 魂石（四分支）**：当池为 Mak 且存在「魂石」时，会额外加入展示名 `剧毒减速魂石`、`剧毒冻结魂石`、`灼烧减速魂石`、`灼烧冻结魂石`（映射到 `魂石`，`Quest` 为 Q1+Q3 / Q1+Q4 / Q2+Q3 / Q2+Q4 的位图）。
-- **Mak 任务进度按等级覆写**（`GdfItemPrototypeCache::ComputeMakQuestOverride`，与腐朽圣像等共用入口、规则独立）：`寒霜图腾`：L5→0，L6→1，L7→3，L8+→7；`先祖墓`：L5→0，L6→1，L7+→3；`时间之砂`/`永恒火炬`/`生命导体`/`腐朽圣像` 仍为 L2→0，L3–4→1，L5–7→3，L8+→7；`空白石碑` 等见实现。
-- **Mak 不参与搜索的物品**（与 `催化剂` 同理，自池中剔除）：`产药药水`、`催化剂`、`筛盘`、`奥秘之书`、`亚罕典籍`、`蒸馏器`。
+- **Mak 任务进度按等级覆写**（`GdfItemPrototypeCache::ComputeMakQuestOverride`，与腐朽圣像等共用入口、规则独立）：`寒霜图腾`：L5→0，L6→1，L7→3，L8+→7；`先祖墓`：L5→0，L6→1，L7+→3；`时间之砂`/`永恒火炬`/`生命导体`/`腐朽圣像` 仍为 L2→0，L3–4→1，L5–7→3，L8+→7；`空白石碑`（Quest 位图）：L2→0，L3→1，L4→3，L5–6→7，L7–8→15，L9+→31。
+- **Mak 不参与搜索的物品**（与 `催化剂` 同理，自池中剔除）：`产药药水`、`催化剂`、`筛盘`、`奥秘之书`、`亚罕典籍`、`蒸馏器`、`空灵灰烬`。
 
 ### GDF-PA（`bazaararena_gdf_pa`）
 

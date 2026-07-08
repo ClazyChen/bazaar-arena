@@ -24,7 +24,7 @@ def _migrate_deck_slots_attr_columns(conn: sqlite3.Connection) -> None:
         return
     cur = conn.execute("PRAGMA table_info(deck_slots)")
     cols = {str(r[1]) for r in cur.fetchall()}
-    for name in ("custom_0", "custom_1", "custom_2", "custom_3", "quest"):
+    for name in ("custom_0", "custom_1", "custom_2", "custom_3", "custom_4", "quest"):
         if name not in cols:
             conn.execute(f"ALTER TABLE deck_slots ADD COLUMN {name} INTEGER")
 

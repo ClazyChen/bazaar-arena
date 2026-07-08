@@ -32,6 +32,7 @@ export interface DeckSlotAttrsOverride {
     custom_1?: number;
     custom_2?: number;
     custom_3?: number;
+    custom_4?: number;
     quest?: number;
 }
 

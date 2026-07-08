@@ -1,5 +1,6 @@
 #include "bazaararena/core/DerivedTag.hpp"
 #include "bazaararena/core/ItemKey.hpp"
+#include "bazaararena/core/ItemTier.hpp"
 #include "bazaararena/formula/Formula.hpp"
 #include <bazaararena/core/AbilityApply.hpp>
 #include <bazaararena/core/AbilityDefinition.hpp>
@@ -18,6 +19,13 @@ namespace {
 int CritScaledAmount(int base_amount, const BattleContext& ctx) {
     int pct = ctx.GetItemInt(ctx.caster, ItemKey::CritDamage);
     return formula::PercentFloor(base_amount, pct);
+}
+
+// 战斗内复制转化：根据目标当前 tier 与 min_tier 决定转化后的 tier
+int ResolveTransformCopyTier(int target_tier, int caster_tier, int min_tier) {
+    if (target_tier <= caster_tier) return caster_tier;
+    if (min_tier <= caster_tier) return caster_tier;
+    return min_tier;
 }
 
 } // namespace
@@ -199,6 +207,51 @@ int GetTargets(const AbilityDefinition& ability, BattleContext& ctx, formula::Fo
     std::shuffle(simulator->targets.begin(), simulator->targets.begin() + candidate_count, simulator->rng.rng);
     return target_count;
 }
+
+namespace {
+
+void TransformIntoCopy(const AbilityDefinition& ability, const BattleContext& ctx,
+                       formula::Formula candidate_condition) {
+    BattleContext ctx_copy = ctx;
+    auto simulator = const_cast<Simulator*>(ctx.simulator);
+    int target_count = GetTargets(ability, ctx_copy, candidate_condition);
+    if (target_count == 0) return;
+    auto target = simulator->targets[0];
+    auto caster_item = const_cast<core::ItemState*>(ctx.caster);
+    caster_item->templ = target->templ;
+    const auto side_index = ctx.caster->attrs[ItemKey::SideIndex];
+    const auto item_index = ctx.caster->attrs[ItemKey::ItemIndex];
+    const auto caster_tier = ctx.caster->attrs[ItemKey::Tier];
+    const auto target_tier = target->attrs[ItemKey::Tier];
+    const auto min_tier = ctx.GetItemInt(target, ItemKey::MinTier);
+    const auto tier = ResolveTransformCopyTier(target_tier, caster_tier, min_tier);
+    caster_item->attrs = target->templ->attributes[tier];
+    caster_item->attrs[ItemKey::SideIndex] = side_index;
+    caster_item->attrs[ItemKey::ItemIndex] = item_index;
+    caster_item->attrs[ItemKey::Tier] = tier;
+    caster_item->attrs[ItemKey::AmmoRemaining] = ctx.GetItemInt(caster_item, ItemKey::AmmoCap);
+    const unsigned int bit = 1u << ((side_index << 4) | item_index);
+    for (int ai = 0; ai < caster_item->templ->ability_count; ai++) {
+        const auto& ab = caster_item->templ->abilities[ai];
+        for (int ti = 0; ti < ab.trigger_entry_count; ti++) {
+            const int tr = ab.trigger_entries[ti].trigger;
+            if (tr >= 0 && tr < Trigger::Count) {
+                simulator->ability_bitmap[tr] &= ~bit;
+                simulator->ability_bitmap[tr] |= bit;
+            }
+        }
+    }
+    for (int ui = 0; ui < caster_item->templ->aura_count; ui++) {
+        const auto& aura = caster_item->templ->auras[ui];
+        const int key = aura.attribute;
+        if (key >= 0 && key < ItemKey::Count) {
+            simulator->aura_bitmap[key] &= ~bit;
+            simulator->aura_bitmap[key] |= bit;
+        }
+    }
+}
+
+} // namespace
 
 // 充能
 void Charge(const AbilityDefinition& ability, const BattleContext& ctx) {
@@ -422,57 +475,28 @@ void Cast(const AbilityDefinition& ability, const BattleContext& ctx) {
 // 特殊实现的能力
 // 水银的转化效果
 void Transform_quicksilver(const AbilityDefinition& ability, const BattleContext& ctx) {
-    // 转化为一件其他的非传奇小型物品（限本场战斗）
-    BattleContext ctx_copy = ctx; // 复制一份上下文用于选择目标
-    auto simulator = const_cast<Simulator*>(ctx.simulator);
-    // 目前要求必须是小型物品，且最低等级不超过当前等级（传奇物品自然不满足要求）
-    int target_count = GetTargets(ability, ctx_copy, 
-        formula::And<
-            condition::NotDestroyed,
-            condition::IsSmall,
-            condition::DifferentFromCaster,
-            formula::Le<
-                formula::Item<ItemKey::Tier>,
-                formula::Caster<ItemKey::Tier>
-            >
-        >);
-    if (target_count == 0) return; // 没有符合条件的物品
-    // 选择一个符合条件的物品，作为转化目标
-    auto target = simulator->targets[0];
-    // 水银自身的状态
-    auto quicksilver = const_cast<core::ItemState*>(ctx.caster);
-    // 复制目标物品的模板给水银
-    quicksilver->templ = target->templ;
-    // 初始化若干属性的信息，保留 side index, item index, tier，其他全部重置为 0
-    const auto side_index = ctx.caster->attrs[ItemKey::SideIndex];
-    const auto item_index = ctx.caster->attrs[ItemKey::ItemIndex];
-    const auto tier = target->attrs[ItemKey::Tier];
-    quicksilver->attrs = target->templ->attributes[tier];
-    quicksilver->attrs[ItemKey::SideIndex] = side_index;
-    quicksilver->attrs[ItemKey::ItemIndex] = item_index;
-    quicksilver->attrs[ItemKey::Tier] = tier;
-    // 初始化 ammo remaining
-    quicksilver->attrs[ItemKey::AmmoRemaining] = ctx.GetItemInt(quicksilver, ItemKey::AmmoCap);
-    // 重新创建 auras 和 abilities 的映射
-    const unsigned int bit = 1u << ((side_index << 4) | item_index);
-    for (int ai = 0; ai < quicksilver->templ->ability_count; ai++) {
-        const auto& ab = quicksilver->templ->abilities[ai];
-        for (int ti = 0; ti < ab.trigger_entry_count; ti++) {
-            const int tr = ab.trigger_entries[ti].trigger;
-            if (tr >= 0 && tr < Trigger::Count) {
-                simulator->ability_bitmap[tr] &= ~bit; // 清除旧的映射
-                simulator->ability_bitmap[tr] |= bit; // 重新添加新的映射
-            }
-        }
-    }
-    for (int ui = 0; ui < quicksilver->templ->aura_count; ui++) {
-        const auto& aura = quicksilver->templ->auras[ui];
-        const int key = aura.attribute;
-        if (key >= 0 && key < ItemKey::Count) {
-            simulator->aura_bitmap[key] &= ~bit; // 清除旧的映射
-            simulator->aura_bitmap[key] |= bit; // 重新添加新的映射
-        }
-    }
+    TransformIntoCopy(ability, ctx, formula::And<
+        condition::NotDestroyed,
+        condition::IsSmall,
+        condition::DifferentFromCaster,
+        formula::Lt<
+            formula::Item<ItemKey::Tier>,
+            formula::Constant<ItemTier::Legendary>
+        >
+    >);
+}
+
+// 镜子的转化效果
+void Transform_mirror(const AbilityDefinition& ability, const BattleContext& ctx) {
+    TransformIntoCopy(ability, ctx, formula::And<
+        condition::NotDestroyed,
+        condition::IsMedium,
+        condition::LeftOfCaster,
+        formula::Lt<
+            formula::Item<ItemKey::Tier>,
+            formula::Constant<ItemTier::Legendary>
+        >
+    >);
 }
 
 void StartSandstorm(const AbilityDefinition& ability, const BattleContext& ctx) {
@@ -500,6 +524,13 @@ void ReduceMaxHp(const AbilityDefinition& ability, const BattleContext& ctx) {
     if (simulator->sides[target_side].attrs[SideKey::Hp] > simulator->sides[target_side].attrs[SideKey::MaxHp]) {
         simulator->sides[target_side].attrs[SideKey::Hp] = simulator->sides[target_side].attrs[SideKey::MaxHp];
     }
+}
+
+void SetHp(const AbilityDefinition& ability, const BattleContext& ctx) {
+    const int hp = ctx.GetItemInt(ctx.caster, ability.value_key);
+    auto simulator = const_cast<Simulator*>(ctx.simulator);
+    auto& side = simulator->sides[ctx.caster->attrs[ItemKey::SideIndex]];
+    side.attrs[SideKey::Hp] = std::min(hp, side.attrs[SideKey::MaxHp]);
 }
 
 } // namespace bazaararena::core

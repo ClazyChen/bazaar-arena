@@ -60,9 +60,12 @@ public:
     static constexpr int Custom_3 = 50; // 自定义属性3，可以被光环影响
     /// 阵营伤害抗性（百分比减免）；存于槽位 0 物品上，可被光环影响。「阵营抗性」读法见 BattleContext::GetSideInt(SideKey::Resistance)。
     static constexpr int Resistance = 51;
+    /// 仅用于光环 `attribute`：开战时写入己方 `SideKey::Regen`，不参与 `GetItemInt` 对物品 Regen 的叠算。
+    static constexpr int BaseRegen = 52;
+    static constexpr int Custom_4 = 53; // 自定义属性4，可以被光环影响
 
     // 物品状态属性数量
-    static constexpr int Count = Resistance + 1; // 物品状态属性数量
+    static constexpr int Count = Custom_4 + 1; // 物品状态属性数量
 };
 
 template <int key>
@@ -100,6 +103,7 @@ constexpr bool IsAuraEffect = (
     key == ItemKey::Custom_1 ||
     key == ItemKey::Custom_2 ||
     key == ItemKey::Custom_3 ||
+    key == ItemKey::Custom_4 ||
     key == ItemKey::Resistance ||
     key == ItemKey::Tags
 );

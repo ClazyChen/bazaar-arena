@@ -73,7 +73,7 @@
     - `key`: string（必需；中文显示名，UTF-8；用于 `GetItemByKey`）
     - `tier`: string（可选；`bronze|silver|gold|diamond`，默认 `bronze`）
     - `attrsOverride`: object（可选）
-      - 仅允许：`custom_0|custom_1|custom_2|custom_3`（其他键拒绝）
+      - 仅允许：`custom_0|custom_1|custom_2|custom_3|custom_4|quest`（其他键拒绝）
 
 ### side 默认初始化规则（无 attrsOverride 时）
 

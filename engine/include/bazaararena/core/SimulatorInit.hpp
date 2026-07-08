@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bazaararena/core/BaseAttributeAura.hpp>
 #include <bazaararena/core/Simulator.hpp>
 #include <bazaararena/core/DerivedTag.hpp>
 
@@ -14,6 +15,7 @@ inline void InitializeSimulator(Simulator& sim) {
     sim.aura_bitmap.fill(0);
     sim.crit_bitmap = 0;
     sim.crit_checked_bitmap = 0;
+    sim.first_half_hp_triggered.fill(false);
 
     // Build ability bitmap & aura bitmap from current sides/items.
     for (int side = 0; side < Simulator::SideCount; side++) {
@@ -58,6 +60,8 @@ inline void InitializeSimulator(Simulator& sim) {
             item.attrs[ItemKey::AmmoRemaining] = std::max(0, cap);
         }
     }
+
+    ApplyBaseAttributeAuras(sim);
 }
 
 }  // namespace bazaararena::core

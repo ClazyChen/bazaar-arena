@@ -72,7 +72,9 @@ ITEM_KEY_NAMES = frozenset(
         "Custom_1",
         "Custom_2",
         "Custom_3",
+        "Custom_4",
         "Resistance",
+        "BaseRegen",
     }
 )
 
@@ -340,6 +342,13 @@ def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
             raise ValueError(f"{where}: Count 需要 1 个条件子式")
         inner = emit_formula_ast(params[0], where=f"{where}.0")
         return f"Count<{inner}>"
+
+    if typ == "Sum":
+        if len(params) != 2:
+            raise ValueError(f"{where}: Sum 需要条件子式和 ItemKey 名")
+        inner = emit_formula_ast(params[0], where=f"{where}.0")
+        k = item_key_cpp_from_name(str(params[1]), where=f"{where}.1")
+        return f"SumItems<{inner}, {k}>"
 
     if typ == "Only":
         if len(params) != 1:

@@ -31,7 +31,7 @@ static bool IsIgnoredMakItemForGdf(std::string_view key, std::string_view hero) 
     // 注意：这里用 YAML 顶层 `hero:` 过滤，避免误伤同名跨英雄物品（若未来存在）。
     if (Lower(hero) != "mak") return false;
     return key == "产药药水" || key == "催化剂" || key == "筛盘" || key == "奥秘之书" || key == "亚罕典籍" ||
-           key == "蒸馏器";
+           key == "蒸馏器" || key == "空灵灰烬";
 }
 
 }  // namespace

@@ -42,6 +42,7 @@ const editDraft = ref<SlotAttrDraft>({
     custom_1: 0,
     custom_2: 0,
     custom_3: 0,
+    custom_4: 0,
     quest: 0,
 });
 
@@ -356,7 +357,7 @@ function onSlotEditReset(): void {
 }
 
 function draftIsValid(d: SlotAttrDraft): boolean {
-    const vals = [d.custom_0, d.custom_1, d.custom_2, d.custom_3, d.quest];
+    const vals = [d.custom_0, d.custom_1, d.custom_2, d.custom_3, d.custom_4, d.quest];
     return vals.every((v) => typeof v === "number" && Number.isFinite(v));
 }
 
@@ -508,6 +509,10 @@ function onSlotEditConfirm(): void {
                             <label class="slot-attr-row"
                                 ><span>Custom 3</span
                                 ><input v-model.number="editDraft.custom_3" type="number" step="1"
+                            /></label>
+                            <label class="slot-attr-row"
+                                ><span>Custom 4</span
+                                ><input v-model.number="editDraft.custom_4" type="number" step="1"
                             /></label>
                             <label class="slot-attr-row"
                                 ><span>Quest</span

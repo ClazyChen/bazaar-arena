@@ -332,7 +332,7 @@ def create_app() -> Flask:
             new_id = int(conn.execute("SELECT last_insert_rowid()").fetchone()[0])
             slots = conn.execute(
                 """
-                SELECT position, item_name, tier, custom_0, custom_1, custom_2, custom_3, quest
+                SELECT position, item_name, tier, custom_0, custom_1, custom_2, custom_3, custom_4, quest
                 FROM deck_slots WHERE deck_id = ? ORDER BY position
                 """,
                 (did,),
@@ -342,8 +342,8 @@ def create_app() -> Flask:
                     """
                     INSERT INTO deck_slots (
                         deck_id, position, item_name, tier,
-                        custom_0, custom_1, custom_2, custom_3, quest
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        custom_0, custom_1, custom_2, custom_3, custom_4, quest
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         new_id,
@@ -354,6 +354,7 @@ def create_app() -> Flask:
                         s["custom_1"],
                         s["custom_2"],
                         s["custom_3"],
+                        s["custom_4"],
                         s["quest"],
                     ),
                 )
@@ -377,7 +378,7 @@ def create_app() -> Flask:
                 return jsonify({"error": "not found"}), 404
             cur = conn.execute(
                 """
-                SELECT position, item_name, tier, custom_0, custom_1, custom_2, custom_3, quest
+                SELECT position, item_name, tier, custom_0, custom_1, custom_2, custom_3, custom_4, quest
                 FROM deck_slots WHERE deck_id = ? ORDER BY position
                 """,
                 (did,),
@@ -430,7 +431,7 @@ def create_app() -> Flask:
                 except (TypeError, ValueError):
                     return jsonify({"error": f"slots[{i}] invalid tier"}), 400
                 try:
-                    c0, c1, c2, c3, quest = parse_attrs_override_from_put_entry(entry, i)
+                    c0, c1, c2, c3, c4, quest = parse_attrs_override_from_put_entry(entry, i)
                 except ValueError as e:
                     return jsonify({"error": str(e)}), 400
                 if item_name not in item_by_name:
@@ -445,18 +446,18 @@ def create_app() -> Flask:
                 total += size_i
                 if total > budget:
                     return jsonify({"error": "exceeds slot budget for this level"}), 400
-                normalized.append((item_name, tier_i, c0, c1, c2, c3, quest))
+                normalized.append((item_name, tier_i, c0, c1, c2, c3, c4, quest))
 
             conn.execute("DELETE FROM deck_slots WHERE deck_id = ?", (did,))
-            for pos, (item_name, tier_i, c0, c1, c2, c3, quest) in enumerate(normalized):
+            for pos, (item_name, tier_i, c0, c1, c2, c3, c4, quest) in enumerate(normalized):
                 conn.execute(
                     """
                     INSERT INTO deck_slots (
                         deck_id, position, item_name, tier,
-                        custom_0, custom_1, custom_2, custom_3, quest
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        custom_0, custom_1, custom_2, custom_3, custom_4, quest
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (did, pos, item_name, tier_i, c0, c1, c2, c3, quest),
+                    (did, pos, item_name, tier_i, c0, c1, c2, c3, c4, quest),
                 )
             conn.commit()
             return jsonify({"ok": True, "max_slots": budget, "used_slots": total})

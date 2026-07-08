@@ -60,6 +60,7 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
             custom_1 INTEGER,
             custom_2 INTEGER,
             custom_3 INTEGER,
+            custom_4 INTEGER,
             quest INTEGER,
             FOREIGN KEY (deck_id) REFERENCES decks(id) ON DELETE CASCADE,
             FOREIGN KEY (item_name) REFERENCES items(name),
@@ -112,7 +113,7 @@ def _migrate_deck_slots_attr_columns(conn: sqlite3.Connection) -> None:
         return
     cur = conn.execute("PRAGMA table_info(deck_slots)")
     cols = {str(r[1]) for r in cur.fetchall()}
-    for name in ("custom_0", "custom_1", "custom_2", "custom_3", "quest"):
+    for name in ("custom_0", "custom_1", "custom_2", "custom_3", "custom_4", "quest"):
         if name not in cols:
             conn.execute(f"ALTER TABLE deck_slots ADD COLUMN {name} INTEGER")
 
