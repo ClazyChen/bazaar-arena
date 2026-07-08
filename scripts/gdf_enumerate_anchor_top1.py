@@ -28,7 +28,10 @@ _RANK_RE = re.compile(
 )
 _SIZE_RE = re.compile(r"^\[GDF\] size=(?P<size>\d+) top (?P<top>\d+)\s*$")
 
-_DEFAULT_EXCLUDED_ANCHORS = {"烙刀"}
+# 与 GDF 的“烙刀/魂石变体”策略保持一致：
+# - 基础物品（烙刀/魂石）不作为 anchor
+# - 变体展示名各自作为 anchor（由引擎侧 ItemPool 注入）
+_DEFAULT_EXCLUDED_ANCHORS = {"烙刀", "魂石"}
 
 
 def _default_gdf_exe(repo_root: Path) -> Path:

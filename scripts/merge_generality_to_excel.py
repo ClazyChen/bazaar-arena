@@ -16,7 +16,7 @@
 
 扩展列：
 - vanessa: l2..l7
-- mak: l2..l7（与 out/mak/l*/generality.csv 对齐；魂石补四分支展示名）
+- mak: l2..l7（与 out/mak/l*/generality.csv 对齐；魂石使用四个变体展示名，基础「魂石」不参与搜索）
 每列来自 out/<hero>/l*/generality.csv 的 generality，经公式变换：
   y = INT(100 * ((x*a)^sqrt(10/b)))
   x: generality.csv 的 generality

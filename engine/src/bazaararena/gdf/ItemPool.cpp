@@ -82,8 +82,8 @@ ItemPool::ItemPool(int player_level, std::string_view pool_hero, const std::unor
     }
     // 魂石变体：四个 Quest 组合展示名（仅当池为 Mak 且存在「魂石」）
     if (pool_l == "mak") {
-        auto it = std::find(small_.begin(), small_.end(), "魂石");
-        if (it != small_.end() && excluded.count("魂石") == 0) {
+        // 注入 4 个展示变体供搜索使用；基础「魂石」是否参与搜索由上层（如脚本默认排除 anchor）控制。
+        if (excluded.count("魂石") == 0) {
             small_.push_back("剧毒减速魂石");
             small_.push_back("剧毒冻结魂石");
             small_.push_back("灼烧减速魂石");

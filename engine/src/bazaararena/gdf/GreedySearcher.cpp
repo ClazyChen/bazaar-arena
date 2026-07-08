@@ -83,6 +83,12 @@ static std::vector<T> RunBatchedKnockoutMany(std::vector<std::vector<T>> sources
     return result;
 }
 
+static bool IsMakSoulstoneVariant(std::string_view name) {
+    // Mak 专用：魂石的 4 个展示变体（带 quest override）在每个 deck 内互斥。
+    // 注意：基础“魂石”本身不作为 GDF 可选物品出现（仅作为生成变体的前提 key）。
+    return name == "剧毒减速魂石" || name == "剧毒冻结魂石" || name == "灼烧减速魂石" || name == "灼烧冻结魂石";
+}
+
 }  // namespace
 
 GreedySearcher::GreedySearcher(const ItemPool& pool, BattleEvaluator& evaluator, std::mt19937& rng, const GreedyConfig& config,
@@ -233,10 +239,13 @@ std::unordered_map<int, std::vector<CandidateState>> GreedySearcher::Run(const s
 
             for (const auto& prev : it_prev->second) {
                 std::unordered_set<std::string> used(prev.representative.item_names.begin(), prev.representative.item_names.end());
+                const bool prev_has_soulstone_variant = std::any_of(prev.representative.item_names.begin(),
+                    prev.representative.item_names.end(), [](const std::string& n) { return IsMakSoulstoneVariant(n); });
                 const auto& names_q = pool_.NamesForSize(q);
                 std::vector<std::vector<DeckRep>> rep_jobs;
                 for (const auto& item : names_q) {
                     if (used.count(item)) continue;
+                    if (prev_has_soulstone_variant && IsMakSoulstoneVariant(item)) continue;
                     rep_jobs.push_back(BuildInsertionReps(prev.representative, item));
                 }
                 if (rep_jobs.empty()) continue;
