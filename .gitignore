@@ -8,12 +8,6 @@ x86/
 bld/
 [Bb]in/
 [Oo]bj/
-# out/：用于跨机器共享的计算输出（仅跟踪目录占位与说明；具体产物由各任务自行决定是否提交）
-# 注意：`[Oo]ut/` 会忽略整个目录，因此改为忽略其下内容，但允许提交 `out/.gitkeep` 与 `out/README.md`。
-# out/：仅跟踪仓库根目录的 out/（便于跨机器共享计算输出），忽略其他目录下生成的 out/
-**/[Oo]ut/
-!/[Oo]ut/
-!/[Oo]ut/**
 [Ll]og/
 [Ll]ogs/
 publish/
@@ -63,6 +57,13 @@ build/
 __pycache__/
 *.pyc
 
+# 本地运行产物（GDF / GDF-PA / CLI / 调试日志）
+# 仅跟踪仓库根目录 out/.gitkeep 作为占位
+/out/**
+!/out/
+!/out/.gitkeep
+**/[Oo]ut/
+
 # Greedy 批量脚本临时输出目录
 **/.tmp_greedy_vanessa_top1*/
 
@@ -77,6 +78,7 @@ docs/*-raw.log
 
 # Excel 导出产物（本地生成）
 docs/generality_export.xlsx
+docs/*.xlsx
 
 # Web app（依赖与构建产物、本地数据库）
 app/frontend/node_modules/

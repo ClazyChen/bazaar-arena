@@ -49,8 +49,8 @@ cmake --build . --config Release --target bazaararena_gdf
 
 ### 等级与池子
 
-- **槽位上限**：与 legacy 一致，1→4、2→6、3→8、4+→10 槽（按物品 **Size** 之和）。
-- **池子 MinTier**：与 legacy `GreedyLevelRules` 一致（银≥5 级、金≥8、钻≥11 等）。
+- **槽位上限**：1→4、2→6、3→8、4+→10 槽（按物品 **Size** 之和）。
+- **池子 MinTier**：银≥5 级、金≥8、钻≥11 等（见 `GdfLevelRules`）。
 - **战斗档位**：由 `GdfLevelRules::CombatTier(level)` 决定物品 `tier`（bronze/silver/gold/diamond），经 `BuildSideState` 写入 `SideState`。
 - **烙刀 Q1/Q2**：当池为 Vanessa 且池中存在「烙刀」时，会额外加入展示名 `减速烙刀`、`加速烙刀`（`ResolveItemAlias` 映射到同一 `db_key`，并写入 `Quest` 的对应位）。
 - **Mak 魂石（四分支）**：当池为 Mak 且存在「魂石」时，会额外加入展示名 `剧毒减速魂石`、`剧毒冻结魂石`、`灼烧减速魂石`、`灼烧冻结魂石`（映射到 `魂石`，`Quest` 为 Q1+Q3 / Q1+Q4 / Q2+Q3 / Q2+Q4 的位图）。
@@ -71,9 +71,9 @@ cmake --build . --config Release --target bazaararena_gdf
 5. **最终 TopK 选取**：按
   `objective = RR + λ·anchor_margin − μ·max_{已选 d} Jaccard(D, d)`  
    **贪心**选满 `k` 名（MMR 式多样性）。
-6. **满槽档**：对并列最高 RR 的子集可加赛系列赛（实现与 legacy playoff 思路一致）。
+6. **满槽档**：对并列最高 RR 的子集可加赛系列赛（playoff）。
 
-当 `λ = μ = 0` 时，不进行锚点增广；瑞士晋级后走**全循环赛再按 RR 排序取 TopK**（与 legacy `RunRoundRobinAndPickTop` 一致，同分辅以瑞士分与随机 tie-break）。若 `λ` 或 `μ` 非零，则在循环赛（及可选锚点边际）后仍用 MMR 式贪心选 TopK。
+当 `λ = μ = 0` 时，不进行锚点增广；瑞士晋级后走**全循环赛再按 RR 排序取 TopK**（同分辅以瑞士分与随机 tie-break）。若 `λ` 或 `μ` 非零，则在循环赛（及可选锚点边际）后仍用 MMR 式贪心选 TopK。
 
 ## 输出说明
 
@@ -98,10 +98,10 @@ bin/bazaararena_gdf.exe --data-dir data/items --seed-items 龙涎香,刺刀 --le
 bin/bazaararena_gdf.exe --data-dir data/items --enumerate-anchors --level 4 --top-k 3 --workers 4
 ```
 
-## 与 legacy C# GreedyDeckFinder 的差异（须知）
+## 实现须知
 
-- **数据入口**：C++ 版从 `data/items/*.yaml` 解析 `hero` 与 `Name`；legacy 使用 .NET 物品库。请保持 YAML 与生成物品一致。
-- **模板扁平 / Overridable 插值**：legacy 的 `GreedyPreflattenedResolver` 对模板做了档位合并与 overridable 缩放；当前 C++ 版直接使用 `**CombatTier` 对应档位** 的 `ItemTemplate` 属性。若需与 legacy **逐局数值完全一致**，需要后续单独对齐扁平化规则。
+- **数据入口**：从 `data/items/*.yaml` 解析 `hero` 与 `Name`；请保持 YAML 与生成物品一致。
+- **Overridable**：GDF 使用 `CombatTier` 对应档位属性，并对 YAML `overridable` 列出的 key 按玩家等级缩放（见 `GdfLevelRules::ComputeOverridableValue` / `GdfItemPrototypeCache`）。
 - **后端集成**：当前 GDF **仅命令行**；未接入 `bazaararena_cli` 的 JSON `mode`。Web 若需调用应单独包装进程或后续扩展协议。
 
 ## 与 `bazaararena_cli` 的对战一致性对照
@@ -116,7 +116,7 @@ bin/bazaararena_gdf.exe --data-dir data/items --enumerate-anchors --level 4 --to
 
 ## 性能与瓶颈分析
 
-若墙钟显著慢于预期或慢于 legacy，请先阅读 `**[docs/gdf_performance_analysis.md](gdf_performance_analysis.md)`**。文档会随实现更新：当前 C++ 侧已采用 `**thread_local` 复用 `Simulator`**、批内廉价熵派生子种子、`**deck_cache_` 读写锁**，并默认 **硬件并发** 作为 `--workers`，以优先极致性能；仍可能存在的瓶颈（如每批新建 `std::thread`）见该文。
+当前 C++ 侧已采用 `thread_local` 复用 `Simulator`、批内廉价熵派生子种子、`deck_cache_` 读写锁，并默认 **硬件并发** 作为 `--workers`，以优先极致性能。
 
 ## 相关文件
 

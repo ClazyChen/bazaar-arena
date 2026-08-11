@@ -1,13 +1,13 @@
-# Bazaar Arena（重构中）
+# Bazaar Arena
 
-本仓库已进入新技术栈重构阶段，采用 **monorepo** 结构。
+本仓库采用 **monorepo** 结构：
 
-- `legacy/`：旧版 C# 参考实现（只读参考，避免继续扩展）。
 - `data/`：物品数据源（YAML）与 schema（仅提交源数据）。
 - `tools/`：YAML 校验与代码/数据库生成工具（Python）。
-- `engine/`：C++ 计算层（核心库 + CLI / GDF）。
+- `engine/`：C++ 计算层（核心库 + CLI / GDF / GDF-PA）。
 - `app/`：Web 应用（后端 Flask + 前端 Vue）。
-- `docs/`：新栈架构、协议与开发指南；Greedy Deck Finder 见 [`docs/bazaararena_gdf.md`](docs/bazaararena_gdf.md)，性能瓶颈分析见 [`docs/gdf_performance_analysis.md`](docs/gdf_performance_analysis.md)。
+- `docs/`：架构、协议与开发指南。
+- `out/`：本地运行产物目录（不入库；仅保留 `.gitkeep`）。
 
 以下命令均在**仓库根目录**执行（除非另有说明）。
 
@@ -107,7 +107,7 @@ bin\bazaararena_gdf.exe --data-dir data/items --anchor-item 刺刀 --level 6 --t
 **多种子有序卡组**
 
 ```powershell
-bin\bazaararena_gdf.exe --data-dir data/items --seed-items 龙涎香,刺刀 --level 8 --output gdf_out.txt
+bin\bazaararena_gdf.exe --data-dir data/items --seed-items 龙涎香,刺刀 --level 8 --output out/gdf_out.txt
 ```
 
 **Mak 英雄池**
@@ -124,7 +124,7 @@ bin\bazaararena_gdf.exe --data-dir data/items --enumerate-anchors --level 4 --to
 
 ## 5. GDF 分析流水线（枚举 → 泛用度 → Excel）
 
-典型流程：先用 Python 脚本批量跑 GDF 并汇总 Top-K，再跑 GDF-PA 生成 `generality.csv` 等，最后导出 Excel。
+运行产物写入本地 `out/`（已 gitignore，不提交）。典型流程：先用 Python 脚本批量跑 GDF 并汇总 Top-K，再跑 GDF-PA 生成 `generality.csv` 等，最后导出 Excel。
 
 ### 5.1 枚举全部锚点，输出 TSV 与 full Top-K
 
@@ -179,7 +179,6 @@ npm run dev
 |------|------|
 | [`docs/engine_cli.md`](docs/engine_cli.md) | `bazaararena_cli` JSON 协议 |
 | [`docs/bazaararena_gdf.md`](docs/bazaararena_gdf.md) | GDF 参数、算法与输出 |
-| [`docs/gdf_performance_analysis.md`](docs/gdf_performance_analysis.md) | GDF 性能瓶颈 |
 | [`docs/architecture.md`](docs/architecture.md) | 整体架构 |
 | [`app/README.md`](app/README.md) | Web 前后端 |
 | [`tools/item_codegen/README.md`](tools/item_codegen/README.md) | YAML → C++ / SQLite |
