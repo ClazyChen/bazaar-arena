@@ -37,7 +37,7 @@ bool AbilityHasCastTrigger(const core::AbilityDefinition& ab) {
     return false;
 }
 
-int ComputeDerivedTags(const core::ItemTemplate& templ) {
+int ComputeDerivedTagsImpl(const core::ItemTemplate& templ) {
     int tags = 0;
 
     // 静态推导：DerivedTags 不考虑随 tier 变化，但需要覆盖 MinTier!=Bronze 的物品，
@@ -128,7 +128,7 @@ std::span<const ItemRecord> BuildCache() {
     records_storage.reserve(views.size());
     for (size_t i = 0; i < views.size(); i++) {
         auto* templ = views[i].templ;
-        const int derived = ComputeDerivedTags(*templ);
+        const int derived = ComputeDerivedTagsImpl(*templ);
         for (auto& tier : templ->attributes) {
             tier[core::ItemKey::DerivedTags] = derived;
         }
@@ -162,6 +162,10 @@ const core::ItemTemplate* GetItemByKey(std::string_view key) {
         if (r.key == key) return r.templ;
     }
     return nullptr;
+}
+
+int ComputeDerivedTags(const core::ItemTemplate& templ) {
+    return ComputeDerivedTagsImpl(templ);
 }
 
 }  // namespace bazaararena::data

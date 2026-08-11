@@ -40,7 +40,7 @@ import {
 } from "@/lib/battleSim";
 import { useCatalogStore } from "@/stores/catalog";
 import ItemTooltipAnchor from "@/components/ItemTooltipAnchor.vue";
-import { deckSlotDisplayItemName, itemCooldownMsForDeckTier } from "@/lib/itemTooltip";
+import { deckSlotDisplayItemName, effectiveQuestMask, isItemStatBadgeVisible, itemCooldownMsForDeckTier } from "@/lib/itemTooltip";
 import type {
     DeckSlotPayload,
     FrameEndItemSnapshot,
@@ -496,12 +496,16 @@ function itemStatBadgeRow(
     side: FrameEndSideSnapshot | null,
     slotIndex: number,
     dcardOuterPx: number,
+    slot: DeckSlotPayload | undefined,
 ): ItemStatBadge[] | null {
     const it = itemSnapshotForSlot(side, slotIndex);
     if (!it) return null;
+    const row = slot ? catalog.byName.get(slot.item_name) : undefined;
+    const questMask = effectiveQuestMask(row, slot?.tier ?? 0, slot?.attrs_override);
     const hasLifeSteal = (it.LifeSteal ?? 0) > 0;
     const slices: { v: number; bg: string }[] = [];
     for (const { key, bg } of STAT_BADGE_DEFS) {
+        if (!isItemStatBadgeVisible(row, key, questMask)) continue;
         const raw = it[key];
         const v = typeof raw === "number" ? raw : Number(raw ?? 0);
         if (!Number.isFinite(v) || v <= 0) continue;
@@ -532,7 +536,7 @@ const p1StatBadgeRows = computed((): (ItemStatBadge[] | null)[] => {
     const out: (ItemStatBadge[] | null)[] = [];
     for (let i = 0; i < n; i++) {
         const sz = catalog.byName.get(slotsP1.value[i].item_name)?.size ?? 1;
-        out.push(itemStatBadgeRow(side, i, dcardOuterWidthPx(sz)));
+        out.push(itemStatBadgeRow(side, i, dcardOuterWidthPx(sz), slotsP1.value[i]));
     }
     return out;
 });
@@ -543,7 +547,7 @@ const p2StatBadgeRows = computed((): (ItemStatBadge[] | null)[] => {
     const out: (ItemStatBadge[] | null)[] = [];
     for (let i = 0; i < n; i++) {
         const sz = catalog.byName.get(slotsP2.value[i].item_name)?.size ?? 1;
-        out.push(itemStatBadgeRow(side, i, dcardOuterWidthPx(sz)));
+        out.push(itemStatBadgeRow(side, i, dcardOuterWidthPx(sz), slotsP2.value[i]));
     }
     return out;
 });

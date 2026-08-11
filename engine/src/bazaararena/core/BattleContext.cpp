@@ -4,8 +4,54 @@
 #include <bazaararena/core/Simulator.hpp>
 #include <bazaararena/formula/Percent.hpp>
 #include <bit>
+#include <array>
+#include <cstdint>
 
 namespace bazaararena::core {
+
+namespace {
+
+thread_local std::array<uint32_t, 32> g_get_item_int_stack{};
+thread_local int g_get_item_int_depth = 0;
+
+uint32_t PackItemAttrToken(const ItemState* item, int key) {
+    const int si = item->attrs[ItemKey::SideIndex];
+    const int ii = item->attrs[ItemKey::ItemIndex];
+    return (static_cast<uint32_t>(key) << 16)
+         | (static_cast<uint32_t>(si) << 8)
+         | static_cast<uint32_t>(ii);
+}
+
+bool IsItemAttrOnStack(uint32_t token) {
+    for (int d = 0; d < g_get_item_int_depth; ++d) {
+        if (g_get_item_int_stack[d] == token) return true;
+    }
+    return false;
+}
+
+struct GetItemIntDepthGuard {
+    explicit GetItemIntDepthGuard(uint32_t token) {
+        g_get_item_int_stack[g_get_item_int_depth++] = token;
+    }
+    ~GetItemIntDepthGuard() { --g_get_item_int_depth; }
+};
+
+int FinalizeItemIntValue(const ItemState* item, int key, int value, const BattleContext& ctx) {
+    if (item->attrs[ItemKey::InFlight] == 1 &&
+        (key == ItemKey::PercentFreezeReduction || key == ItemKey::PercentSlowReduction)) {
+        value += 50;
+    }
+    value = std::max(value, 0);
+    if (key == ItemKey::Cooldown) {
+        int cooldown_reduction = ctx.GetItemInt(item, ItemKey::CooldownReduction);
+        int cooldown_reduction_percent = formula::PercentFloor(value, ctx.GetItemInt(item, ItemKey::CooldownReductionPercent));
+        value -= cooldown_reduction + cooldown_reduction_percent;
+        value = std::max(value, 1_s);
+    }
+    return value;
+}
+
+} // namespace
 
 // 读取物品的某个属性（不受光环的影响）
 int BattleContext::GetItemIntRaw(const ItemState* item, int key) const {
@@ -17,6 +63,12 @@ int BattleContext::GetItemIntRaw(const ItemState* item, int key) const {
 int BattleContext::GetItemInt(const ItemState* item, int key) const {
     if (item == nullptr) return 0;
     int base_value = item->attrs[key];
+    const uint32_t token = PackItemAttrToken(item, key);
+    if (IsItemAttrOnStack(token) || g_get_item_int_depth >= static_cast<int>(g_get_item_int_stack.size())) {
+        return FinalizeItemIntValue(item, key, base_value, *this);
+    }
+    GetItemIntDepthGuard depth_guard(token);
+
     auto aura_bitmap = simulator->aura_bitmap[key];
     BattleContext ctx = *this;
     // 按 BattleContext.hpp 的约定：读取某件物品属性时，item/source/target 都应指向该“被读属性主体”。
@@ -33,7 +85,10 @@ int BattleContext::GetItemInt(const ItemState* item, int key) const {
         aura_bitmap &= ~(1 << index);
         auto side_index = index >> 4;
         auto item_index = index & 0x0F;
+        if (side_index < 0 || side_index >= Simulator::SideCount) continue;
+        if (item_index < 0 || item_index >= simulator->sides[side_index].attrs[SideKey::ItemCount]) continue;
         auto& aura_caster = simulator->sides[side_index].items[item_index];
+        if (aura_caster.templ == nullptr) continue;
         if (aura_caster.attrs[ItemKey::Destroyed] == 1) continue;
         ctx.caster = &aura_caster;
         for (int i = 0; i < aura_caster.templ->aura_count; i++) {
@@ -52,28 +107,13 @@ int BattleContext::GetItemInt(const ItemState* item, int key) const {
             }
         }
     }
-    // 飞行的物品：冻结/减速减免百分比 +50（例如 1s → 0.5s）。
-    // 注意这两个 ItemKey 本身就是“百分比值”，应按加法累加，而不是按 base_value 的百分比叠加；
-    // 否则当基础值为 0 时（常见）会被 PercentFloor 吃掉，导致减免不生效。
-    if (item->attrs[ItemKey::InFlight] == 1 &&
-        (key == ItemKey::PercentFreezeReduction || key == ItemKey::PercentSlowReduction)) {
-        additive_sum += 50;
-    }
     if (key == ItemKey::Tags) {
         base_value |= tags_or_sum;
     } else {
         base_value += additive_sum;
         base_value += formula::PercentFloor(base_value, percent_sum);
     }
-    base_value = std::max(base_value, 0);
-    // 冷却时间是特判的，需要考虑冷却时间减少和冷却时间减少百分比，以及冷却时间最小为 1 秒
-    if (key == ItemKey::Cooldown) {
-        int cooldown_reduction = GetItemInt(item, ItemKey::CooldownReduction);
-        int cooldown_reduction_percent = formula::PercentFloor(base_value, GetItemInt(item, ItemKey::CooldownReductionPercent));
-        base_value -= cooldown_reduction + cooldown_reduction_percent;
-        base_value = std::max(base_value, 1_s);
-    }
-    return base_value;
+    return FinalizeItemIntValue(item, key, base_value, *this);
 }
 
 // 读取能力/光环释放者所在阵营的某个属性

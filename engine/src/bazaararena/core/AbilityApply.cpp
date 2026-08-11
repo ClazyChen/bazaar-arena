@@ -1,6 +1,8 @@
 #include "bazaararena/core/DerivedTag.hpp"
 #include "bazaararena/core/ItemKey.hpp"
 #include "bazaararena/core/ItemTier.hpp"
+#include "bazaararena/core/Trigger.hpp"
+#include "bazaararena/data/ItemDatabase.hpp"
 #include "bazaararena/formula/Formula.hpp"
 #include <bazaararena/core/AbilityApply.hpp>
 #include <bazaararena/core/AbilityDefinition.hpp>
@@ -198,6 +200,7 @@ int GetTargets(const AbilityDefinition& ability, BattleContext& ctx, formula::Fo
             ctx.item = &item;
             if (!force_condition(ctx)) continue; // 强制条件不满足
             if (!ability.target_condition(ctx)) continue; // 目标条件不满足
+            if (candidate_count >= static_cast<int>(simulator->targets.size())) break;
             simulator->targets[candidate_count++] = &item;
         }
     }
@@ -218,25 +221,32 @@ void TransformIntoCopy(const AbilityDefinition& ability, const BattleContext& ct
     if (target_count == 0) return;
     auto target = simulator->targets[0];
     auto caster_item = const_cast<core::ItemState*>(ctx.caster);
-    caster_item->templ = target->templ;
     const auto side_index = ctx.caster->attrs[ItemKey::SideIndex];
     const auto item_index = ctx.caster->attrs[ItemKey::ItemIndex];
     const auto caster_tier = ctx.caster->attrs[ItemKey::Tier];
     const auto target_tier = target->attrs[ItemKey::Tier];
     const auto min_tier = ctx.GetItemInt(target, ItemKey::MinTier);
     const auto tier = ResolveTransformCopyTier(target_tier, caster_tier, min_tier);
+    caster_item->templ = target->templ;
     caster_item->attrs = target->templ->attributes[tier];
     caster_item->attrs[ItemKey::SideIndex] = side_index;
     caster_item->attrs[ItemKey::ItemIndex] = item_index;
     caster_item->attrs[ItemKey::Tier] = tier;
+    caster_item->attrs[ItemKey::DerivedTags] = bazaararena::data::ComputeDerivedTags(*caster_item->templ);
     caster_item->attrs[ItemKey::AmmoRemaining] = ctx.GetItemInt(caster_item, ItemKey::AmmoCap);
+
     const unsigned int bit = 1u << ((side_index << 4) | item_index);
+    for (auto& bm : simulator->ability_bitmap) {
+        bm &= ~bit;
+    }
+    for (auto& bm : simulator->aura_bitmap) {
+        bm &= ~bit;
+    }
     for (int ai = 0; ai < caster_item->templ->ability_count; ai++) {
         const auto& ab = caster_item->templ->abilities[ai];
         for (int ti = 0; ti < ab.trigger_entry_count; ti++) {
             const int tr = ab.trigger_entries[ti].trigger;
             if (tr >= 0 && tr < Trigger::Count) {
-                simulator->ability_bitmap[tr] &= ~bit;
                 simulator->ability_bitmap[tr] |= bit;
             }
         }
@@ -245,7 +255,6 @@ void TransformIntoCopy(const AbilityDefinition& ability, const BattleContext& ct
         const auto& aura = caster_item->templ->auras[ui];
         const int key = aura.attribute;
         if (key >= 0 && key < ItemKey::Count) {
-            simulator->aura_bitmap[key] &= ~bit;
             simulator->aura_bitmap[key] |= bit;
         }
     }

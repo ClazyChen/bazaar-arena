@@ -47,6 +47,7 @@ struct Args {
     double mu_diversity = 2;
     bool diversity_exclude_seeds = false;
     bool timing = false;
+    bool stub_battles = false;
 };
 
 static void PrintUsage(std::ostream& os) {
@@ -67,6 +68,7 @@ static void PrintUsage(std::ostream& os) {
           "  --diversity-exclude-seeds  Jaccard ignores seed item names\n"
           "  --output <path>            write text summary\n"
           "  --timing                   print GDF phase timings + simulator games/s after each search\n"
+          "  --stub-battles             skip Simulator; deterministic fake outcomes (GDF debug only)\n"
           "  --help\n";
 }
 
@@ -130,6 +132,8 @@ static bool ParseArgs(int argc, char** argv, Args& out, std::string& err) {
             out.diversity_exclude_seeds = true;
         } else if (tok == "--timing") {
             out.timing = true;
+        } else if (tok == "--stub-battles") {
+            out.stub_battles = true;
         } else if (tok == "--output" && need("--output")) {
             out.output_path = argv[++i];
         } else {
@@ -205,7 +209,11 @@ static void RunOneSearch(bazaararena::gdf::ItemPool& pool, const Args& args, con
     }
 
     bazaararena::gdf::GdfItemPrototypeCache gdf_prototypes(pool, args.level);
-    bazaararena::gdf::BattleEvaluator evaluator(args.best_of, args.workers, args.level, args.timing ? &run_timing : nullptr, &gdf_prototypes);
+    bazaararena::gdf::BattleEvaluator evaluator(args.best_of, args.workers, args.level, args.timing ? &run_timing : nullptr, &gdf_prototypes,
+        args.stub_battles);
+    if (args.stub_battles) {
+        out << "[GDF] stub-battles=1 (Simulator disabled)\n";
+    }
     bazaararena::gdf::GreedySearcher searcher(pool, evaluator, rng, gcfg, seed_set);
 
     out << "[GDF] seeds:";

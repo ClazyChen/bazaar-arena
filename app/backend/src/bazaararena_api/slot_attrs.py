@@ -55,4 +55,4 @@ def parse_attrs_override_from_put_entry(entry: dict[str, object], idx: int) -> t
                 vals.append(int(v))
             except (TypeError, ValueError) as e:
                 raise ValueError(f"slots[{idx}].attrs_override.{k} must be integer or null") from e
-    return (vals[0], vals[1], vals[2], vals[3], vals[4])
+    return tuple(vals)

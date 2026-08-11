@@ -7,8 +7,12 @@ namespace bazaararena::core {
 
 // 将一个能力加入到队列
 void AbilityQueue::Enqueue(int ability_index, int ability_priority, const BattleContext& ctx) {
-
-    // 完成加入到队列的流程
+    if (ability_index < 0 || ability_index >= MaxAbilityCount) {
+        return;
+    }
+    if (queue_size >= MaxQueueSize) {
+        return;
+    }
     entries[queue_size].ability_index = ability_index;
     entries[queue_size].caster = ctx.caster;
     entries[queue_size].source = ctx.source;

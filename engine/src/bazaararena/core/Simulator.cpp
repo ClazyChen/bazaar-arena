@@ -8,8 +8,19 @@
 
 namespace bazaararena::core {
 
+namespace {
+thread_local int g_invoke_trigger_depth = 0;
+thread_local int g_apply_ability_depth = 0;
+constexpr int kMaxTriggerRecursionDepth = 128;
+}  // namespace
+
 // 调用触发器并执行相关效果
-void Simulator::InvokeTrigger(int trigger, const ItemState* source, const ItemState* target) { 
+void Simulator::InvokeTrigger(int trigger, const ItemState* source, const ItemState* target) {
+    if (g_invoke_trigger_depth >= kMaxTriggerRecursionDepth) return;
+    struct DepthGuard {
+        ~DepthGuard() { --g_invoke_trigger_depth; }
+        DepthGuard() { ++g_invoke_trigger_depth; }
+    } depth_guard;
     auto trigger_bitmap = ability_bitmap[trigger];
     BattleContext ctx = { this, source, source, source, target };
     while (trigger_bitmap != 0) {
@@ -17,7 +28,10 @@ void Simulator::InvokeTrigger(int trigger, const ItemState* source, const ItemSt
         trigger_bitmap &= ~(1u << index);
         auto side_index = index >> 4;
         auto item_index = index & 0x0F;
+        if (side_index < 0 || side_index >= SideCount) continue;
+        if (item_index < 0 || item_index >= sides[side_index].attrs[SideKey::ItemCount]) continue;
         auto& ability_caster = sides[side_index].items[item_index];
+        if (ability_caster.templ == nullptr) continue;
         if (ability_caster.attrs[ItemKey::Destroyed] == 1) continue;
         if (source != nullptr) {
             ctx.caster = &ability_caster;
@@ -279,11 +293,20 @@ void Simulator::CheckFirstHalfHp() {
 
 // 应用某个能力的效果
 void Simulator::ApplyAbility(const AbilityQueue::Entry& entry) {
+    if (g_apply_ability_depth >= kMaxTriggerRecursionDepth) return;
+    struct DepthGuard {
+        ~DepthGuard() { --g_apply_ability_depth; }
+        DepthGuard() { ++g_apply_ability_depth; }
+    } depth_guard;
     int index = entry.ability_index;
     auto side_index = index >> 7;
     auto item_index = (index >> 3) & 0x0F;
     auto ability_index = index & 0x07;
+    if (side_index < 0 || side_index >= SideCount) return;
+    if (item_index < 0 || item_index >= sides[side_index].attrs[SideKey::ItemCount]) return;
     auto& item = sides[side_index].items[item_index];
+    if (item.templ == nullptr) return;
+    if (ability_index < 0 || ability_index >= item.templ->ability_count) return;
     auto& ability = item.templ->abilities[ability_index];
     BattleContext ctx = { this, &item, &item, entry.source, entry.target };
     AbilityApplyTable[ability.type](ability, ctx);

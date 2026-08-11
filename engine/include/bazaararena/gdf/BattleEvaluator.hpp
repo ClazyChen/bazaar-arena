@@ -33,8 +33,9 @@ class BattleEvaluator {
 public:
     /// `timing` 可选；启用时统计 `ToSide`、批对战与并行批主线程等待（见 `GdfRunTiming`）。
     /// `item_prototypes` 非空时 `ToSide` 使用 YAML overridable + legacy 缩放后的预计算 `ItemState`（仅 GDF）。
+    /// `stub_battles`：跳过 `Simulator`，按卡组签名确定性返回胜负（仅用于 GDF 框架排查）。
     BattleEvaluator(int best_of, int workers, int player_level, GdfRunTiming* timing = nullptr,
-        const GdfItemPrototypeCache* item_prototypes = nullptr);
+        const GdfItemPrototypeCache* item_prototypes = nullptr, bool stub_battles = false);
     ~BattleEvaluator();
 
     BattleEvaluator(const BattleEvaluator&) = delete;
@@ -55,6 +56,7 @@ private:
     int combat_tier_;
     GdfRunTiming* timing_ = nullptr;
     const GdfItemPrototypeCache* item_prototypes_ = nullptr;
+    bool stub_battles_ = false;
 
     mutable std::shared_mutex deck_cache_mu_;
     std::unordered_map<std::string, bazaararena::core::SideState> deck_cache_;

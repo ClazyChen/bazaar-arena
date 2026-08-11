@@ -4,7 +4,7 @@
 调用 bin/bazaararena_gdf（--enumerate-anchors），解析每个锚点物品在**满槽最后一档**
 的 Top-1 候选，汇总写入表格文件。
 
-可调参数：--pool-hero、--level、--top-k、--top-multiplier、--data-dir、--gdf、--repo-root。
+可调参数：--pool-hero、--level、--top-k、--top-multiplier、--data-dir、--gdf、--repo-root、--anchors-only。
 其余与 GDF 一致且固定：--lambda-anchor 0.5、--mu-diversity 0.1、--diversity-exclude-seeds；
 不传入 --workers（沿用可执行文件默认硬件并发）、不传入 --seed/--exclude-item/--timing。
 
@@ -21,6 +21,8 @@ import subprocess
 import sys
 import threading
 from pathlib import Path
+
+_ANCHOR_LIST_SEP_RE = re.compile(r"[,，、]")
 
 _SEEDS_RE = re.compile(r"^\[GDF\] seeds:\s*(.+)\s*$")
 _RANK_RE = re.compile(
@@ -135,6 +137,98 @@ def _write_full_topk_file(
                 out.write(f"  {rank}. RR={rr} anchor_m={am} Swiss={sw} | {sig_esc}\n")
 
 
+def _split_anchor_list(raw: str) -> list[str]:
+    """按英文/中文逗号、顿号拆分锚点列表，去空白、去重（保序）。"""
+    out: list[str] = []
+    seen: set[str] = set()
+    for part in _ANCHOR_LIST_SEP_RE.split(raw):
+        name = part.strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        out.append(name)
+    return out
+
+
+def _build_gdf_cmd(
+    gdf: Path,
+    data_dir: Path,
+    *,
+    pool_hero: str,
+    level: int,
+    top_k: int,
+    top_multiplier: int,
+    anchor_item: str | None = None,
+) -> list[str]:
+    cmd: list[str] = [
+        str(gdf),
+        "--data-dir",
+        str(data_dir),
+        "--pool-hero",
+        str(pool_hero),
+        "--level",
+        str(level),
+        "--top-k",
+        str(top_k),
+        "--top-multiplier",
+        str(top_multiplier),
+        "--lambda-anchor",
+        "0.5",
+        "--mu-diversity",
+        "0.1",
+        "--diversity-exclude-seeds",
+    ]
+    if anchor_item is not None:
+        cmd.extend(["--anchor-item", anchor_item])
+    else:
+        cmd.append("--enumerate-anchors")
+    return cmd
+
+
+def _run_gdf(cmd: list[str], repo_root: Path) -> tuple[int, str]:
+    """运行 GDF，stdout 实时打印并返回 (exit_code, stdout_text)。"""
+    proc = subprocess.Popen(
+        cmd,
+        cwd=str(repo_root),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        bufsize=0,
+    )
+    assert proc.stdout is not None
+    stderr_data: list[str] = []
+
+    def _drain_stderr() -> None:
+        if proc.stderr is None:
+            return
+        stderr_data.append(proc.stderr.read())
+
+    err_thread = threading.Thread(target=_drain_stderr, daemon=True)
+    err_thread.start()
+
+    chunks: list[str] = []
+    try:
+        for line in proc.stdout:
+            chunks.append(line)
+            sys.stdout.write(line)
+            sys.stdout.flush()
+    finally:
+        proc.stdout.close()
+    err_thread.join(timeout=600)
+    err = "".join(stderr_data)
+    proc.wait()
+    if proc.returncode != 0:
+        if err:
+            sys.stderr.write(err)
+        print(f"error: GDF exited with code {proc.returncode}", file=sys.stderr)
+        return proc.returncode or 1, ""
+    if err:
+        sys.stderr.write(err)
+    return 0, "".join(chunks)
+
+
 def main() -> int:
     script_dir = Path(__file__).resolve().parent
     default_repo = script_dir.parent
@@ -189,7 +283,13 @@ def main() -> int:
     p.add_argument(
         "--exclude-anchor",
         default=None,
-        help="排除锚点（逗号分隔；默认排除：烙刀）",
+        help="排除锚点（逗号分隔；默认排除：烙刀、魂石）",
+    )
+    p.add_argument(
+        "--anchors-only",
+        default=None,
+        metavar="NAMES",
+        help="仅枚举所列锚点（英文/中文逗号或顿号分隔，如：刺刀，地刺陷阱、酸液槽）",
     )
     args = p.parse_args()
 
@@ -204,71 +304,37 @@ def main() -> int:
         print(f"error: data items directory not found: {data_dir}", file=sys.stderr)
         return 2
 
-    cmd: list[str] = [
-        str(gdf),
-        "--data-dir",
-        str(data_dir),
-        "--enumerate-anchors",
-        "--pool-hero",
-        str(args.pool_hero),
-        "--level",
-        str(int(args.level)),
-        "--top-k",
-        str(int(args.top_k)),
-        "--top-multiplier",
-        str(int(args.top_multiplier)),
-        "--lambda-anchor",
-        "0.5",
-        "--mu-diversity",
-        "0.1",
-        "--diversity-exclude-seeds",
-    ]
-    # 不传 --output：GDF 写 stdout；我们边读边打到控制台，避免「只写文件时控制台无输出」。
-    proc = subprocess.Popen(
-        cmd,
-        cwd=str(repo_root),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        bufsize=0,
+    gdf_kw = dict(
+        pool_hero=str(args.pool_hero),
+        level=int(args.level),
+        top_k=int(args.top_k),
+        top_multiplier=int(args.top_multiplier),
     )
-    assert proc.stdout is not None
-    stderr_data: list[str] = []
 
-    def _drain_stderr() -> None:
-        if proc.stderr is None:
-            return
-        stderr_data.append(proc.stderr.read())
+    raw_parts: list[str] = []
+    if args.anchors_only:
+        anchor_names = _split_anchor_list(str(args.anchors_only))
+        if not anchor_names:
+            print("error: --anchors-only is empty after parsing", file=sys.stderr)
+            return 2
+        for anchor in anchor_names:
+            cmd = _build_gdf_cmd(gdf, data_dir, anchor_item=anchor, **gdf_kw)
+            code, text = _run_gdf(cmd, repo_root)
+            if code != 0:
+                return code
+            raw_parts.append(text)
+    else:
+        cmd = _build_gdf_cmd(gdf, data_dir, **gdf_kw)
+        code, text = _run_gdf(cmd, repo_root)
+        if code != 0:
+            return code
+        raw_parts.append(text)
 
-    err_thread = threading.Thread(target=_drain_stderr, daemon=True)
-    err_thread.start()
-
-    chunks: list[str] = []
-    try:
-        for line in proc.stdout:
-            chunks.append(line)
-            sys.stdout.write(line)
-            sys.stdout.flush()
-    finally:
-        proc.stdout.close()
-    err_thread.join(timeout=600)
-    err = "".join(stderr_data)
-    proc.wait()
-    if proc.returncode != 0:
-        if err:
-            sys.stderr.write(err)
-        print(f"error: GDF exited with code {proc.returncode}", file=sys.stderr)
-        return proc.returncode or 1
-    if err:
-        sys.stderr.write(err)
-
-    raw_text = "".join(chunks)
+    raw_text = "".join(raw_parts)
 
     excluded_anchors = set(_DEFAULT_EXCLUDED_ANCHORS)
     if args.exclude_anchor:
-        for s in str(args.exclude_anchor).split(","):
+        for s in _ANCHOR_LIST_SEP_RE.split(str(args.exclude_anchor)):
             t = s.strip()
             if t:
                 excluded_anchors.add(t)

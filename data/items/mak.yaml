@@ -1671,6 +1671,8 @@ items:
     Custom_0: 1
     Custom_1: 1s
     Custom_2: 1
+    # 任务位掩码（MinTier Silver）：silver = 无，gold+ = Q1 | Q2 | Q3
+    Quest: [0, 7, 7]
     Abilities:
       - type: Freeze
       - type: Charge
@@ -1854,7 +1856,7 @@ items:
         value: Custom_0
         priority: Low
   - Name: "回收桶"
-    Desc: "使用药水时，将其转化为来自任意英雄的 1 件其他药水（限本场战斗）；药水缩短 {Custom_0：} 秒冷却时间；此物品没有实现"
+    Desc: "使用药水时，将其转化为来自任意英雄的 1 件其他药水（限本场战斗）；药水缩短 {Custom_0:} 秒冷却时间；此物品没有实现"
     Size: Medium
     Tier: Silver
     Custom_0: [0.5s, 1s, 1.5s]
@@ -2507,7 +2509,7 @@ items:
         value_key: Custom_0
         priority: Low
   - Name: "勿忘死亡"
-    Desc: "每场战斗即将首次落败时，将生命值设置为 {Heal}；每场战斗即将首次落败时，获得无敌 {Custom_3} 秒"
+    Desc: "每场战斗即将首次落败时，将生命值设置为 {Heal}；每场战斗即将首次落败时，获得无敌 {Custom_3:} 秒"
     Size: Medium
     Tier: Gold
     Tags: [Relic]
@@ -2600,7 +2602,7 @@ items:
     ChargeTargetCount: 10
     Abilities:
       - type: Charge
-        condition:
+        ex_condition:
           type: Eq
           params:
             - type: Count
@@ -2617,7 +2619,7 @@ items:
                     - NotDestroyed
         ex_target_condition: DifferentFromCaster
       - type: Charge
-        condition:
+        ex_condition:
           type: Ne
           params:
             - type: Count
@@ -2634,7 +2636,7 @@ items:
                     - NotDestroyed
         ex_target_condition: AdjacentToCaster
   - Name: "恶臭蘑菇"
-    Desc: "任何物品被使用时，其冷却时间延长 {Custom_0} 秒（限本场战斗）"
+    Desc: "任何物品被使用时，其冷却时间延长 {Custom_0:} 秒（限本场战斗）"
     Size: Medium
     Tier: Gold
     Custom_0: [0.5s, 1s]
@@ -2844,7 +2846,7 @@ items:
         ex_condition: SameAsCaster
         priority: Low
   - Name: "图书馆"
-    Desc: "己方武器的冷却时间延长 {Custom_0} 秒；己方非武器物品的冷却时间缩短 {Custom_0} 秒"
+    Desc: "己方武器的冷却时间延长 {Custom_0:} 秒；己方非武器物品的冷却时间缩短 {Custom_0:} 秒"
     Size: Large
     Tier: Gold
     Tags: [Property]
@@ -3021,7 +3023,7 @@ items:
         value: Custom_0
         target_condition: SameAsCaster
   - Name: "驼鹿角杖"
-    Desc: "▶ 造成 {Damage} 伤害；多重释放：{Multicast}；每场战斗首次生命值下降到一半以下时，获得无敌 {Custom_0} 秒；每场战斗首次生命值下降到一半以下时，获得 {Regen} 生命再生；己方武器 {+Damage} 伤害，等量于己方持有的生命再生"
+    Desc: "▶ 造成 {Damage} 伤害；多重释放：{Multicast}；每场战斗首次生命值下降到一半以下时，获得无敌 {Custom_0:} 秒；每场战斗首次生命值下降到一半以下时，获得 {Regen} 生命再生；己方武器 {+Damage} 伤害，等量于己方持有的生命再生"
     Size: Large
     Tier: Gold
     Tags: [Weapon, Relic]

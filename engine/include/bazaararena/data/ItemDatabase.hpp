@@ -19,5 +19,8 @@ std::span<const ItemRecord> GetAllItems();
 const core::ItemTemplate* GetItemById(int id);
 const core::ItemTemplate* GetItemByKey(std::string_view key);
 
+// 由模板静态推导 DerivedTags（与 BuildCache 中逻辑一致，供战斗内转化等场景使用）
+int ComputeDerivedTags(const core::ItemTemplate& templ);
+
 }  // namespace bazaararena::data
 

@@ -340,6 +340,75 @@ function questMaskEffective(item: ItemRow, tier: number, attrsOverride?: DeckSlo
     return Number.isFinite(q) ? q : null;
 }
 
+export type ItemStatBadgeKey = "Damage" | "Shield" | "Heal" | "Burn" | "Poison" | "Regen";
+
+const STAT_BADGE_PLACEHOLDER_KEYS: Record<ItemStatBadgeKey, readonly string[]> = {
+    Damage: ["Damage"],
+    Shield: ["Shield"],
+    Heal: ["Heal"],
+    Burn: ["Burn"],
+    Poison: ["Poison"],
+    Regen: ["Regen"],
+};
+
+/** 从 Desc 解析【Qx】行内首个 `{Placeholder}` 对应的引擎键名 */
+function parseQuestLinePlaceholderKeys(desc: string): Map<number, string> {
+    const map = new Map<number, string>();
+    for (const part of desc.split(/[；;]/)) {
+        const trimmed = part.trim();
+        const qm = /^【Q(\d+)】/.exec(trimmed);
+        if (!qm) continue;
+        const ph = /\{(\+?)([A-Za-z_0-9]+)/.exec(trimmed);
+        if (!ph) continue;
+        map.set(Number(qm[1]), ph[2]);
+    }
+    return map;
+}
+
+function placeholderKeyMatchesStatBadge(placeholderKey: string, statKey: ItemStatBadgeKey): boolean {
+    const aliases = STAT_BADGE_PLACEHOLDER_KEYS[statKey];
+    return aliases?.includes(placeholderKey) ?? false;
+}
+
+/**
+ * 对战卡面数值色块：按 Quest 掩码与 Desc 中【Qx】分支决定是否展示某 stat。
+ * 未带【Qx】的 stat（如魂石基础 Regen）始终展示；互斥组（Q1/Q2、Q3/Q4）与 tooltip 一致。
+ */
+export function isItemStatBadgeVisible(
+    item: ItemRow | undefined,
+    statKey: ItemStatBadgeKey,
+    questMask: number | null,
+): boolean {
+    if (!item || questMask === null) return true;
+    if (!/【Q\d+】/.test(item.desc ?? "")) return true;
+
+    const qToKey = parseQuestLinePlaceholderKeys(item.desc);
+    const gatedQs: number[] = [];
+    for (const [qi, pk] of qToKey) {
+        if (placeholderKeyMatchesStatBadge(pk, statKey)) gatedQs.push(qi);
+    }
+    if (gatedQs.length === 0) return true;
+
+    const anyComplete = gatedQs.some((qi) => (questMask & (1 << (qi - 1))) !== 0);
+    if (!anyComplete) return false;
+
+    const flat = item.desc.replace(/[；;\n]/g, "");
+    if ((questMask & (1 | 2)) !== 0 && /【Q1】.*【Q2】.*只能生效一个/.test(flat)) {
+        if (statKey === "Poison" && (questMask & 2) !== 0) return false;
+        if (statKey === "Burn" && (questMask & 1) !== 0) return false;
+    }
+    return true;
+}
+
+export function effectiveQuestMask(
+    item: ItemRow | undefined,
+    tier: number,
+    attrsOverride?: DeckSlotAttrsOverride | null,
+): number | null {
+    if (!item) return null;
+    return questMaskEffective(item, tier, attrsOverride);
+}
+
 /**
  * deck 模式：按 quest 掩码过滤 Desc 中的【Qx】行，只保留已完成的分支。
  * - 约定：Q1→bit0(1)，Q2→bit1(2)，Q3→bit2(4)...
