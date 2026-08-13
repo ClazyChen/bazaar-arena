@@ -45,6 +45,19 @@ add_executable(bazaararena_gdf
 )
 target_link_libraries(bazaararena_gdf PRIVATE bazaararena_engine Threads::Threads)
 
+# 批量对战评估 CLI（meta_search 管线；复用 gdf 物品规则，语义可复现，不改 Simulator）
+add_executable(bazaararena_meta
+  meta/main.cpp
+  meta/ReasonMine.cpp
+  src/bazaararena/gdf/GdfLevelRules.cpp
+  src/bazaararena/gdf/GdfLoadYamlPool.cpp
+  src/bazaararena/gdf/ItemPool.cpp
+  src/bazaararena/gdf/DeckRep.cpp
+  src/bazaararena/gdf/GdfSideBuilder.cpp
+  src/bazaararena/gdf/GdfItemPrototypeCache.cpp
+)
+target_link_libraries(bazaararena_meta PRIVATE bazaararena_engine Threads::Threads)
+
 # 统一 CLI 输出到仓库根目录 bin/（与后端 simulate_run.default_cli_path 约定一致）
 set(BAZAARARENA_CLI_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../bin")
 file(MAKE_DIRECTORY "${BAZAARARENA_CLI_OUTPUT_DIR}")
@@ -57,6 +70,14 @@ set_target_properties(bazaararena_cli PROPERTIES
 )
 
 set_target_properties(bazaararena_gdf PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${BAZAARARENA_CLI_OUTPUT_DIR}"
+  RUNTIME_OUTPUT_DIRECTORY_DEBUG "${BAZAARARENA_CLI_OUTPUT_DIR}"
+  RUNTIME_OUTPUT_DIRECTORY_RELEASE "${BAZAARARENA_CLI_OUTPUT_DIR}"
+  RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${BAZAARARENA_CLI_OUTPUT_DIR}"
+  RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${BAZAARARENA_CLI_OUTPUT_DIR}"
+)
+
+set_target_properties(bazaararena_meta PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${BAZAARARENA_CLI_OUTPUT_DIR}"
   RUNTIME_OUTPUT_DIRECTORY_DEBUG "${BAZAARARENA_CLI_OUTPUT_DIR}"
   RUNTIME_OUTPUT_DIRECTORY_RELEASE "${BAZAARARENA_CLI_OUTPUT_DIR}"
