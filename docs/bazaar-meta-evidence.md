@@ -1,5 +1,11 @@
 # 超越贪心：优质阵容搜索的实证研究与方向建议（Mak · L8）
 
+> **⚠️ 口径更新（2026-08）**：本文 v1/v2 矩阵基于存在 bug 的物品实现（秘密配方/蛇怪之牙等 10 件，
+> 见 docs/item-audit-mak-l8.md），**文中所有绝对强度结论（meta 之王、Nash 支撑构成、各流派胜率）
+> 已被修复后重算推翻或改写**，当前真值见 docs/mak-l8-meta-v3-postfix.md（matrix_l8_v3 / DO v4）。
+> 方法论结论（非传递性、噪声量级、排列等价类、贪心路径脆弱性、流派纯度、DO 外环成本）
+> 不受影响，仍然有效。旧数据文件已删除。
+
 > 本文是 `docs/bazaar-core.md` 的实证续篇。基于 2026-08 在 Mak + 8 级环境下的一组对照实验，
 > 用数据验证/修正该文档的方向判断，并提出可操作的算法设计提示。
 > 实验工具与原始数据在本地 `out/gdf_mak_l8/` 与 `out/exp/`（gitignored）：并行锚点枚举器、
@@ -271,19 +277,22 @@ C++ 评估层（`engine/meta/` → `bin/bazaararena_meta`，须 Release 构建�
 全 meta 矩阵（8911 对，自适应 CI）67s 无缓存 / 3s 缓存命中；一轮完整 DO 实验 ~1min。
 详见 `scripts/meta_search/README.md`（模块图与 Python/C++ 职责分界——**禁止 Python 复刻规则或逐局调进程**）。
 
-**已验证结论**：PSRO 外环正确性（受限博弈 3/3）、v3 开放运行发现**合法版遗物再生王**
-（魔法石 替代非法双魂石配置，平非法参照、胜 炼金炉 0.573）；智者之杖精英地位证伪（§0.2/§2.6）；
-真值矩阵为 `out/meta_search/matrix_l8_v2.json`（注意：其中 先祖墓 top1 卡组违反魂石全家族互斥，
-仅作参照，不代表合法阵容）。
+**已验证结论**（当前有效口径，2026-08 物品修复后）：PSRO 外环正确性（受限博弈 3/3）；
+智者之杖精英地位证伪（§0.2/§2.6）；v4 开放运行由提议器合成**矩阵宇宙外的新王**
+（冰霜之怖冻结控制，循环赛 0.729、0.675 胜矩阵王股骨）。
+真值矩阵为 `out/meta_search/matrix_l8_v3.json`。
+（更早的"v3 发现合法版遗物再生王"结论随物品修复失效，见文末口径更新。）
 
 **待办/开放问题（按优先级）**：
 1. **用户人工评审** `docs/reason-graph-review.md`（§3 逐轴清单、§6.2 未建模词元建议）——
    评审结论驱动理由图提取规则迭代；
-2. 提议器覆盖残余：自毒注射 在 v3 覆盖但 σ 支撑中未站稳；天平/图书馆 注释表的最终形态；
+2. 提议器覆盖残余：减速重炮/图书馆壳/天平充能靠 GDF topk 兜底
+   （docs/reason-graph-proposer-investigation.md 的根因与 R1–R3 方案）；
 3. DO 产物化：把 σ + 精英池输出为正式报告（卡组、权重、克制关系、exploitability）；
 4. 泛化验证：Vanessa 英雄 / 其他等级的管线适用性（目前全部结论限于 Mak L8）；
 5. 性能余量（不急）：长尾对局细粒度任务拆分、C++ 挖掘字符串键改索引。
 
-**关键数据位置**（本地 out/，gitignored）：`matrix_l8_v2.json`（真值矩阵）、
-`gdf_mak_l8_full_topk.txt`（GDF 枚举 topk）、`battle_cache_v2.jsonl`（对战缓存）、
-`mined_engines_v2.json` / `engines_cpp.json`（挖掘结果）、`open_do_l8_v3.json`（v3 运行记录）。
+**关键数据位置**（本地 out/，gitignored；均为物品修复后的当前口径）：
+`matrix_l8_v3.json`（真值矩阵）、`gdf_mak_l8_v3.tsv` / `gdf_mak_l8_v3_full_topk.txt` / `raw_v3/`（枚举）、
+`battle_cache_v2.jsonl`（对战缓存，修复后重建）、`mined_engines_v2.json`（挖掘缓存）、
+`open_do_l8_v4.json`（DO v4 运行记录）。**v1/v2 时代的数据文件已删除**（基于 bug 实现，无保留价值）。

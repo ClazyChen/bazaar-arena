@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "jobId": "http-36-vs-34",
+  "mode": "simulate",
+  "payload": {
+    "allowTie": true,
+    "debug": {
+      "enabled": true,
+      "level": "detailed",
+      "maxEvents": 50000
+    },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 8,
+        "items": [
+          {
+            "key": "马格努斯的股骨",
+            "tier": "gold"
+          },
+          {
+            "key": "马克显微镜",
+            "tier": "gold"
+          },
+          {
+            "key": "符文药水",
+            "tier": "gold"
+          },
+          {
+            "key": "采掘工具",
+            "tier": "gold"
+          },
+          {
+            "key": "时间之砂",
+            "tier": "gold",
+            "attrsOverride": {
+              "quest": 7
+            }
+          },
+          {
+            "key": "嗅盐",
+            "tier": "gold"
+          },
+          {
+            "key": "琥珀",
+            "tier": "gold"
+          }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 8,
+        "items": [
+          {
+            "key": "魂戒",
+            "tier": "gold"
+          },
+          {
+            "key": "蛇怪之牙",
+            "tier": "gold"
+          },
+          {
+            "key": "魔法石",
+            "tier": "gold",
+            "attrsOverride": {
+              "custom_1": 5
+            }
+          },
+          {
+            "key": "魂石",
+            "tier": "gold",
+            "attrsOverride": {
+              "quest": 10
+            }
+          },
+          {
+            "key": "秘密配方",
+            "tier": "gold"
+          },
+          {
+            "key": "先祖墓",
+            "tier": "gold",
+            "attrsOverride": {
+              "quest": 3
+            }
+          },
+          {
+            "key": "采掘工具",
+            "tier": "gold"
+          }
+        ]
+      }
+    ],
+    "seed": 421011588
+  },
+  "cliReproMeta": {
+    "exportedAt": "2026-08-16T03:08:40+00:00",
+    "deck0_as_side0": {
+      "deckId": 36,
+      "name": "σ2 减速·马克显微镜",
+      "playerLevel": 8,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "马格努斯的股骨",
+          "tier": 2
+        },
+        {
+          "position": 1,
+          "item_name": "马克显微镜",
+          "tier": 2
+        },
+        {
+          "position": 2,
+          "item_name": "符文药水",
+          "tier": 2
+        },
+        {
+          "position": 3,
+          "item_name": "采掘工具",
+          "tier": 2
+        },
+        {
+          "position": 4,
+          "item_name": "时间之砂",
+          "tier": 2,
+          "attrs_override": {
+            "quest": 7
+          }
+        },
+        {
+          "position": 5,
+          "item_name": "嗅盐",
+          "tier": 2
+        },
+        {
+          "position": 6,
+          "item_name": "琥珀",
+          "tier": 2
+        }
+      ]
+    },
+    "deck1_as_side1": {
+      "deckId": 34,
+      "name": "F1 遗物王·冻结魂石变体（与σ1平级）",
+      "playerLevel": 8,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "魂戒",
+          "tier": 2
+        },
+        {
+          "position": 1,
+          "item_name": "蛇怪之牙",
+          "tier": 2
+        },
+        {
+          "position": 2,
+          "item_name": "魔法石",
+          "tier": 2,
+          "attrs_override": {
+            "custom_1": 5
+          }
+        },
+        {
+          "position": 3,
+          "item_name": "魂石",
+          "tier": 2,
+          "attrs_override": {
+            "quest": 10
+          }
+        },
+        {
+          "position": 4,
+          "item_name": "秘密配方",
+          "tier": 2
+        },
+        {
+          "position": 5,
+          "item_name": "先祖墓",
+          "tier": 2,
+          "attrs_override": {
+            "quest": 3
+          }
+        },
+        {
+          "position": 6,
+          "item_name": "采掘工具",
+          "tier": 2
+        }
+      ]
+    },
+    "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。"
+  }
+}

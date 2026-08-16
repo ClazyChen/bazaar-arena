@@ -191,6 +191,10 @@ npm run dev
 | `docs/architecture.md` | 分层架构 |
 | `docs/bazaar-core.md` | 游戏规则与搜索问题形式化描述 |
 | `docs/bazaar-meta-evidence.md` | 超越贪心的实证研究与方向（meta 矩阵、非传递性、噪声、路线图） |
+| `docs/reason-graph-proposer-investigation.md` | 理由图提议器盲区根因分解（挖掘消融实验）与改进方向（BR 搜索 / 静态估值 / 格子化覆盖） |
+| `docs/gdf-vs-meta-routes.md` | GDF 与 meta 两条探测路线的优势/问题系统对照与综合判断 |
+| `docs/item-audit-mak-l8.md` | Mak L8 物品数据审计（Desc↔实现一致性）与防再犯 lint 建议 |
+| `docs/mak-l8-meta-v3-postfix.md` | 物品修复后的 meta 重算（matrix_l8_v3 / DO v4）：新精英层与流派清单 |
 | `docs/data_format.md` | YAML 数据格式契约 |
 | `docs/api.md` | HTTP API |
 | `app/README.md`、`app/backend/README.md` | Web 前后端 |

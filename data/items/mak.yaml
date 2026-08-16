@@ -474,8 +474,11 @@ items:
     Auras:
       - attribute: CritRate
         condition:
-          type: Opp
-          params: [Poison]
+          type: And
+          params:
+            - SameAsCaster
+            - type: Opp
+              params: [Poison]
         value: Custom_0
   - Name: "魔法石"
     Desc: "▶ 获得 {Regen} 生命再生；【局外】每转化过 1 件原料，此物品的生命再生提高 {Custom_0}；【默认】已转化的原料数量：{Custom_1}；【局外】购买此物品时，获得 1 件催化剂"
@@ -507,6 +510,7 @@ items:
     Custom_0: [1, 2, 3, 4]
     Abilities:
       - type: AddAttribute
+        key: Regen
         target_condition:
           type: And
           params:
@@ -663,6 +667,7 @@ items:
     Regen: 4
     Custom_0: [6, 12, 18, 24]
     Custom_1: [2, 4, 6, 8]
+    overridable: [Custom_0]
     Abilities:
       - type: Regen
       - type: GainGold
@@ -958,8 +963,12 @@ items:
     Abilities:
       - type: AddAttribute
         ex_target_condition:
-          type: Item
-          params: [LifeSteal]
+          type: And
+          params:
+            - type: HasTag
+              params: [Weapon]
+            - type: Item
+              params: [LifeSteal]
         key: Damage
         value: Custom_0
     Auras:
@@ -1078,7 +1087,7 @@ items:
         ex_condition: IsSmall
         target_condition: SameAsCaster
   - Name: "贪婪渡鸦"
-    Desc: "▶ 造成 {Damage} 伤害；使用其他遗物或附魔物品时，为此物品充能 {Charge} 秒；使用其他遗物或附魔物品时，此物品开始飞行"
+    Desc: "▶ 造成 {Damage} 伤害；使用其他遗物时，为此物品充能 {Charge} 秒；使用其他遗物时，此物品开始飞行"
     Size: Medium
     Tier: Bronze
     Tags: [Weapon, Friend]
@@ -1160,8 +1169,11 @@ items:
     Abilities:
       - type: Haste
         ex_target_condition:
-          type: Item
-          params: [InFlight]
+          type: And
+          params:
+            - DifferentFromCaster
+            - type: Item
+              params: [InFlight]
         priority: High
       - type: AddAttribute
         key: InFlight
@@ -1726,6 +1738,7 @@ items:
         ex_condition: AdjacentToCaster
       - type: Regen
         trigger: UseItem
+        ex_condition: AdjacentToCaster
   - Name: "注能护腕"
     Desc: "▶ 造成 {Poison} 剧毒；▶ 对自己造成 {Poison} 剧毒；对自己触发剧毒时，武器伤害提高，等量于该物品的剧毒（限本场战斗）；此物品左侧的武器获得吸血"
     Size: Medium
@@ -2248,6 +2261,7 @@ items:
     Tier: Silver
     Tags: [Weapon, Friend, Dragon, Vehicle]
     Cooldown: 4s
+    Burn: [10, 20, 30]
     Custom_0: [10, 20, 30]
     Custom_1: [100, 200, 400]
     Custom_2: 1
@@ -2265,7 +2279,6 @@ items:
       - type: Burn
         trigger: StartFlying
         ex_condition: SameAsTarget
-        value_key: Custom_0
         priority: Low
       - type: AddAttribute
         trigger: StartFlying
@@ -2277,7 +2290,6 @@ items:
       - type: Damage
         trigger: StopFlying
         ex_condition: SameAsTarget
-        value_key: Custom_1
         priority: Low
       - type: AddAttribute
         trigger: StopFlying
@@ -2404,6 +2416,7 @@ items:
     Multicast: 3
     Abilities:
       - type: Damage
+      - type: Poison
     Auras:
       - attribute: Poison
         value: Damage
@@ -2751,32 +2764,39 @@ items:
         priority: High
       - type: Damage
   - Name: "秘密配方"
-    Desc: "▶ 获得 {Regen} 生命再生；左侧相邻的灼烧物品的灼烧提高，等量于己方持有的生命再生（限本场战斗）；右侧相邻的剧毒物品的剧毒提高，等量于己方持有的生命再生（限本场战斗）"
+    Desc: "▶ 获得 {Regen} 生命再生；▶ 左侧相邻的灼烧物品的灼烧提高，等量于己方持有的生命再生（限本场战斗）；▶ 右侧相邻的剧毒物品的剧毒提高，等量于己方持有的生命再生（限本场战斗）"
     Size: Medium
     Tier: Gold
     Tags: [Relic]
     Cooldown: [9s, 7s]
     Regen: [5, 10]
+    Custom_0: 0
     Abilities:
       - type: Regen
-    Auras:
-      - attribute: Burn
-        condition:
+      - type: AddAttribute
+        key: Burn
+        value: Custom_0
+        target_condition:
           type: And
           params:
             - LeftOfCaster
             - type: HasDerivedTag
               params: [Burn]
-        value:
-          type: Side
-          params: [Regen]
-      - attribute: Poison
-        condition:
+        priority: High
+      - type: AddAttribute
+        key: Poison
+        value: Custom_0
+        target_condition:
           type: And
           params:
             - RightOfCaster
             - type: HasDerivedTag
               params: [Poison]
+        priority: High
+    Auras:
+      # 自我光环：让 Custom_0 动态跟踪己方当前生命再生（魂戒同款惯例），
+      # 供主动 AddAttribute 通过 value_key 读取（能力数值只能取物品属性，不能直接取 Side 资源）。
+      - attribute: Custom_0
         value:
           type: Side
           params: [Regen]
@@ -2843,7 +2863,6 @@ items:
       - type: Freeze
       - type: Poison
         trigger: Freeze
-        ex_condition: SameAsCaster
         priority: Low
   - Name: "图书馆"
     Desc: "己方武器的冷却时间延长 {Custom_0:} 秒；己方非武器物品的冷却时间缩短 {Custom_0:} 秒"

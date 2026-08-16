@@ -1716,7 +1716,8 @@ static const std::array<GeneratedItem, 268> kItems = {
         g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
         g.percent = false;
     }
-    t.overridable_key_count = 0;
+    t.overridable_key_count = 1;
+    t.overridable_keys[0] = bazaararena::core::ItemKey::Custom_0;
     return t;
 }(),
     },
@@ -3698,7 +3699,7 @@ static const std::array<GeneratedItem, 268> kItems = {
         a.type = core::AbilityType::Regen;
         a.trigger_entry_count = 1;
         a.trigger_entries[0].trigger = core::Trigger::UseItem;
-        a.trigger_entries[0].condition = SameSide;
+        a.trigger_entries[0].condition = formula::And<SameSide, AdjacentToCaster>;
         a.target_condition = Always;
         a.value_key = core::ItemKey::Regen;
     }
@@ -10154,7 +10155,7 @@ static const std::array<GeneratedItem, 268> kItems = {
         a.trigger_entry_count = 1;
         a.trigger_entries[0].trigger = core::Trigger::Cast;
         a.trigger_entries[0].condition = SameAsCaster;
-        a.target_condition = formula::And<SameSide, formula::Item<(bazaararena::core::ItemKey::LifeSteal)>>;
+        a.target_condition = formula::And<SameSide, formula::And<HasTag<core::Tag::Weapon>, formula::Item<(bazaararena::core::ItemKey::LifeSteal)>>>;
         a.value_key = bazaararena::core::ItemKey::Custom_0;
         a.attribute_key = bazaararena::core::ItemKey::Damage;
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
@@ -10333,7 +10334,7 @@ static const std::array<GeneratedItem, 268> kItems = {
         .templ = []() {
     core::ItemTemplate t;
     t.name = "秘密配方";
-    t.desc = "▶ 获得 {Regen} 生命再生；左侧相邻的灼烧物品的灼烧提高，等量于己方持有的生命再生（限本场战斗）；右侧相邻的剧毒物品的剧毒提高，等量于己方持有的生命再生（限本场战斗）";
+    t.desc = "▶ 获得 {Regen} 生命再生；▶ 左侧相邻的灼烧物品的灼烧提高，等量于己方持有的生命再生（限本场战斗）；▶ 右侧相邻的剧毒物品的剧毒提高，等量于己方持有的生命再生（限本场战斗）";
     for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Medium;
     for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Gold;
     for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
@@ -10356,6 +10357,7 @@ static const std::array<GeneratedItem, 268> kItems = {
     t.attributes[2][core::ItemKey::Cooldown] = 9_s;
     t.attributes[3][core::ItemKey::Cooldown] = 7_s;
     t.attributes[4][core::ItemKey::Cooldown] = 7_s;
+    for (auto& tier : t.attributes) tier[core::ItemKey::Custom_0] = 0;
     t.attributes[2][core::ItemKey::Regen] = 5;
     t.attributes[3][core::ItemKey::Regen] = 10;
     t.attributes[4][core::ItemKey::Regen] = 10;
@@ -10369,18 +10371,35 @@ static const std::array<GeneratedItem, 268> kItems = {
         a.target_condition = Always;
         a.value_key = core::ItemKey::Regen;
     }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::AddAttribute;
+        a.priority = core::AbilityPriority::High;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = formula::And<LeftOfCaster, HasDerivedTag<core::DerivedTag::Burn>>;
+        a.value_key = bazaararena::core::ItemKey::Custom_0;
+        a.attribute_key = bazaararena::core::ItemKey::Burn;
+        a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
+    }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::AddAttribute;
+        a.priority = core::AbilityPriority::High;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = formula::And<RightOfCaster, HasDerivedTag<core::DerivedTag::Poison>>;
+        a.value_key = bazaararena::core::ItemKey::Custom_0;
+        a.attribute_key = bazaararena::core::ItemKey::Poison;
+        a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
+    }
     t.aura_count = 0;
     {
         auto& g = t.auras[t.aura_count++];
-        g.attribute = bazaararena::core::ItemKey::Burn;
-        g.condition = formula::And<LeftOfCaster, HasDerivedTag<core::DerivedTag::Burn>>;
-        g.value = formula::Side<6>;
-        g.percent = false;
-    }
-    {
-        auto& g = t.auras[t.aura_count++];
-        g.attribute = bazaararena::core::ItemKey::Poison;
-        g.condition = formula::And<RightOfCaster, HasDerivedTag<core::DerivedTag::Poison>>;
+        g.attribute = bazaararena::core::ItemKey::Custom_0;
+        g.condition = SameAsCaster;
         g.value = formula::Side<6>;
         g.percent = false;
     }
@@ -10413,6 +10432,10 @@ static const std::array<GeneratedItem, 268> kItems = {
     t.attributes[3][core::ItemKey::Value] = 24;
     t.attributes[4][core::ItemKey::Value] = 32;
     for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Weapon | core::Tag::Friend | core::Tag::Dragon | core::Tag::Vehicle);
+    t.attributes[1][core::ItemKey::Burn] = 10;
+    t.attributes[2][core::ItemKey::Burn] = 20;
+    t.attributes[3][core::ItemKey::Burn] = 30;
+    t.attributes[4][core::ItemKey::Burn] = 30;
     for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 4_s;
     t.attributes[1][core::ItemKey::Custom_0] = 10;
     t.attributes[2][core::ItemKey::Custom_0] = 20;
@@ -10454,7 +10477,7 @@ static const std::array<GeneratedItem, 268> kItems = {
         a.trigger_entries[0].trigger = core::Trigger::StartFlying;
         a.trigger_entries[0].condition = formula::And<SameSide, SameAsTarget>;
         a.target_condition = Always;
-        a.value_key = bazaararena::core::ItemKey::Custom_0;
+        a.value_key = core::ItemKey::Burn;
     }
     {
         auto& a = t.abilities[t.ability_count++];
@@ -10476,7 +10499,7 @@ static const std::array<GeneratedItem, 268> kItems = {
         a.trigger_entries[0].trigger = core::Trigger::StopFlying;
         a.trigger_entries[0].condition = formula::And<SameSide, SameAsTarget>;
         a.target_condition = Always;
-        a.value_key = bazaararena::core::ItemKey::Custom_1;
+        a.value_key = core::ItemKey::Damage;
     }
     {
         auto& a = t.abilities[t.ability_count++];
@@ -12712,7 +12735,7 @@ static const std::array<GeneratedItem, 268> kItems = {
     {
         auto& g = t.auras[t.aura_count++];
         g.attribute = bazaararena::core::ItemKey::CritRate;
-        g.condition = formula::Opp<5>;
+        g.condition = formula::And<SameAsCaster, formula::Opp<5>>;
         g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
         g.percent = false;
     }
@@ -13002,7 +13025,7 @@ static const std::array<GeneratedItem, 268> kItems = {
         .templ = []() {
     core::ItemTemplate t;
     t.name = "贪婪渡鸦";
-    t.desc = "▶ 造成 {Damage} 伤害；使用其他遗物或附魔物品时，为此物品充能 {Charge} 秒；使用其他遗物或附魔物品时，此物品开始飞行";
+    t.desc = "▶ 造成 {Damage} 伤害；使用其他遗物时，为此物品充能 {Charge} 秒；使用其他遗物时，此物品开始飞行";
     for (auto& tier : t.attributes) tier[core::ItemKey::Size] = core::ItemSize::Medium;
     for (auto& tier : t.attributes) tier[core::ItemKey::MinTier] = core::ItemTier::Bronze;
     for (auto& tier : t.attributes) tier[core::ItemKey::Multicast] = 1;
@@ -14011,7 +14034,7 @@ static const std::array<GeneratedItem, 268> kItems = {
         a.trigger_entries[0].condition = SameAsCaster;
         a.target_condition = formula::And<AdjacentToCaster, HasDerivedTag<core::DerivedTag::Regen>>;
         a.value_key = bazaararena::core::ItemKey::Custom_0;
-        a.attribute_key = core::ItemKey::Damage;
+        a.attribute_key = bazaararena::core::ItemKey::Regen;
         a.target_count_key = core::ItemKey::ModifyAttributeTargetCount;
     }
     t.aura_count = 0;
@@ -14417,7 +14440,7 @@ static const std::array<GeneratedItem, 268> kItems = {
         a.trigger_entry_count = 1;
         a.trigger_entries[0].trigger = core::Trigger::Cast;
         a.trigger_entries[0].condition = SameAsCaster;
-        a.target_condition = formula::And<SameSide, formula::Item<(bazaararena::core::ItemKey::InFlight)>>;
+        a.target_condition = formula::And<SameSide, formula::And<DifferentFromCaster, formula::Item<(bazaararena::core::ItemKey::InFlight)>>>;
         a.value_key = core::ItemKey::Haste;
         a.target_count_key = core::ItemKey::HasteTargetCount;
     }
@@ -15923,6 +15946,15 @@ static const std::array<GeneratedItem, 268> kItems = {
         a.target_condition = Always;
         a.value_key = core::ItemKey::Damage;
     }
+    {
+        auto& a = t.abilities[t.ability_count++];
+        a.type = core::AbilityType::Poison;
+        a.trigger_entry_count = 1;
+        a.trigger_entries[0].trigger = core::Trigger::Cast;
+        a.trigger_entries[0].condition = SameAsCaster;
+        a.target_condition = Always;
+        a.value_key = core::ItemKey::Poison;
+    }
     t.aura_count = 0;
     {
         auto& g = t.auras[t.aura_count++];
@@ -15984,7 +16016,7 @@ static const std::array<GeneratedItem, 268> kItems = {
         a.priority = core::AbilityPriority::Low;
         a.trigger_entry_count = 1;
         a.trigger_entries[0].trigger = core::Trigger::Freeze;
-        a.trigger_entries[0].condition = formula::And<SameSide, SameAsCaster>;
+        a.trigger_entries[0].condition = SameSide;
         a.target_condition = Always;
         a.value_key = core::ItemKey::Poison;
     }
