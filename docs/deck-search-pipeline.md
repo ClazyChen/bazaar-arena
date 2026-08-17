@@ -55,14 +55,14 @@
 
 ## 3. 等级特性速查（Mak 实证）
 
-| 等级 | 血/格/档 | 池 | 形态 | 闭环注意 |
+| 等级 | 血/格/档 | 池 | 形态（v4） | 闭环注意 |
 |---|---|---|---|---|
 | L2 | 400/6/青铜 | 55 | 一王独大（纯策略） | 小场易噪声游移，撞迭代上限就续跑 |
-| L5 | 1000/10/白银 | 109 | 生态最宽（σ 7） | — |
-| L8 | 2100/10/黄金 | 135 | 多流派尖峰 | 40 局制即够 |
-| L11 | 3900/10/钻石 | 137（+采样仪/摆锤） | 双壳对立 | — |
-| L14 | 6600/10/钻石 | 137 | 单家族多 tech | 需 100 局制/换 seed 续跑 |
-| L17 | 10200/10/钻石 | 137 | **高原型** | 点最优不可达，按家族代表报告 |
+| L5 | 1000/10/白银 | 107 | 双王克制（自毒 avg 王 vs 双射弓 σ=1） | v4 结构剧变，旧精英多跌落 |
+| L8 | 2100/10/黄金 | 135 | 摆锤王族 + 冻结控制（σ 4） | 40 局制即够 |
+| L11 | 3900/10/钻石 | 136（+采样仪） | 双壳对立（智者杖系 vs 图书馆冻结系） | — |
+| L14 | 6600/10/钻石 | 136 | 单家族多 tech（智者杖系 5 席） | 需 100 局制/换 seed 续跑 |
+| L17 | 10200/10/钻石 | 136 | **高原型**（干扰系 + 摆锤智者杖） | 点最优不可达，按家族代表报告 |
 
 ## 4. 测量纪律（血泪教训，不可妥协）
 
@@ -89,12 +89,14 @@
 
 | 等级 | 正式报告 | 前端集合 | 原始数据 |
 |---|---|---|---|
-| L2 | docs/meta/mak-l2.md | Mak L2 精英（收敛认证 · v3） | out/elite_report/mak_l2_r3/ |
-| L5 | docs/meta/mak-l5.md | Mak L5 精英（…） | out/elite_report/mak_l5/ |
-| L8 | docs/meta/mak-l8.md | Mak L8 精英（…） | out/elite_report/mak_l8/ |
-| L11 | docs/meta/mak-l11.md | Mak L11 精英（…） | out/elite_report/mak_l11/ |
-| L14 | docs/meta/mak-l14.md | Mak L14 精英（…） | out/elite_report/mak_l14_hi/、v2_l14/ |
-| L17 | docs/meta/mak-l17.md | Mak L17 精英（高原代表 · v3） | out/elite_report/mak_l17_hi/、v2_l17/ |
+| L2 | docs/meta/mak-l2.md | Mak L2 精英（收敛认证 · v4） | out/elite_report/mak_l2_v4/ |
+| L5 | docs/meta/mak-l5.md | Mak L5 精英（… v4） | out/elite_report/mak_l5_v4/ |
+| L8 | docs/meta/mak-l8.md | Mak L8 精英（… v4） | out/elite_report/mak_l8_v4/ |
+| L11 | docs/meta/mak-l11.md | Mak L11 精英（… v4） | out/elite_report/mak_l11_v4/ |
+| L14 | docs/meta/mak-l14.md | Mak L14 精英（… v4） | out/elite_report/mak_l14_v4/ |
+| L17 | docs/meta/mak-l17.md | Mak L17 精英（高原代表 · v4） | out/elite_report/mak_l17_v4/ |
+
+（v3 旧数据保留在 `out/meta_search/*_v3.*`、`out/elite_report/mak_l*/`（无 v4 后缀目录）等历史路径，仅供回溯。）
 
 方法论文档（已入冷路径）：`docs/archive/mak-l8-elite-neighborhood.md`（邻域认证法起源）、
 `docs/archive/mak-player-perspective.md`（玩家视角与实用建议）；对比页 `docs/mak-levels-generalization.md` 仍在 docs/。
