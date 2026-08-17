@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "jobId": "http-47-vs-49",
+  "mode": "simulate",
+  "payload": {
+    "allowTie": true,
+    "debug": {
+      "enabled": true,
+      "level": "detailed",
+      "maxEvents": 50000
+    },
+    "sides": [
+      {
+        "sideId": 0,
+        "level": 8,
+        "items": [
+          {
+            "key": "力量药水",
+            "tier": "gold"
+          },
+          {
+            "key": "图书馆",
+            "tier": "gold"
+          },
+          {
+            "key": "采掘工具",
+            "tier": "gold"
+          },
+          {
+            "key": "永恒火炬",
+            "tier": "gold",
+            "attrsOverride": {
+              "quest": 7
+            }
+          },
+          {
+            "key": "嗅盐",
+            "tier": "gold"
+          },
+          {
+            "key": "魂石",
+            "tier": "gold",
+            "attrsOverride": {
+              "quest": 6
+            }
+          },
+          {
+            "key": "无敌药水",
+            "tier": "gold"
+          }
+        ]
+      },
+      {
+        "sideId": 1,
+        "level": 8,
+        "items": [
+          {
+            "key": "瘟疫长柄刀",
+            "tier": "gold"
+          },
+          {
+            "key": "光学强化",
+            "tier": "gold"
+          },
+          {
+            "key": "腐朽圣像",
+            "tier": "gold",
+            "attrsOverride": {
+              "quest": 7
+            }
+          },
+          {
+            "key": "快速注射系统",
+            "tier": "gold"
+          },
+          {
+            "key": "肾上腺素调节服",
+            "tier": "gold"
+          }
+        ]
+      }
+    ],
+    "seed": 1855360793
+  },
+  "cliReproMeta": {
+    "exportedAt": "2026-08-16T08:55:22+00:00",
+    "deck0_as_side0": {
+      "deckId": 47,
+      "name": "精英 图书馆火炬壳",
+      "playerLevel": 8,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "力量药水",
+          "tier": 2
+        },
+        {
+          "position": 1,
+          "item_name": "图书馆",
+          "tier": 2
+        },
+        {
+          "position": 2,
+          "item_name": "采掘工具",
+          "tier": 2
+        },
+        {
+          "position": 3,
+          "item_name": "永恒火炬",
+          "tier": 2,
+          "attrs_override": {
+            "quest": 7
+          }
+        },
+        {
+          "position": 4,
+          "item_name": "嗅盐",
+          "tier": 2
+        },
+        {
+          "position": 5,
+          "item_name": "魂石",
+          "tier": 2,
+          "attrs_override": {
+            "quest": 6
+          }
+        },
+        {
+          "position": 6,
+          "item_name": "无敌药水",
+          "tier": 2
+        }
+      ]
+    },
+    "deck1_as_side1": {
+      "deckId": 49,
+      "name": "精英 自毒注射",
+      "playerLevel": 8,
+      "slots": [
+        {
+          "position": 0,
+          "item_name": "瘟疫长柄刀",
+          "tier": 2
+        },
+        {
+          "position": 1,
+          "item_name": "光学强化",
+          "tier": 2
+        },
+        {
+          "position": 2,
+          "item_name": "腐朽圣像",
+          "tier": 2,
+          "attrs_override": {
+            "quest": 7
+          }
+        },
+        {
+          "position": 3,
+          "item_name": "快速注射系统",
+          "tier": 2
+        },
+        {
+          "position": 4,
+          "item_name": "肾上腺素调节服",
+          "tier": 2
+        }
+      ]
+    },
+    "hint": "可直接作为 bazaararena_cli --input；cliReproMeta 仅供查阅。"
+  }
+}

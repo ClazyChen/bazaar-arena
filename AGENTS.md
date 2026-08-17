@@ -186,19 +186,19 @@ npm run dev
 | 文档 | 内容 |
 |------|------|
 | `README.md` | 仓库总览与常用命令 |
+| **`docs/deck-search-pipeline.md`** | **优质阵容探测主管线（唯一操作手册：枚举→矩阵→Nash→精英闭环→报告→前端同步；含测量纪律与故障表）** |
 | `docs/engine_cli.md` | `bazaararena_cli` JSON 协议（含 HTTP `/api/simulate` 字段） |
 | `docs/bazaararena_gdf.md` | GDF 参数、算法与输出 |
 | `docs/architecture.md` | 分层架构 |
 | `docs/bazaar-core.md` | 游戏规则与搜索问题形式化描述 |
-| `docs/bazaar-meta-evidence.md` | 超越贪心的实证研究与方向（meta 矩阵、非传递性、噪声、路线图） |
-| `docs/reason-graph-proposer-investigation.md` | 理由图提议器盲区根因分解（挖掘消融实验）与改进方向（BR 搜索 / 静态估值 / 格子化覆盖） |
-| `docs/gdf-vs-meta-routes.md` | GDF 与 meta 两条探测路线的优势/问题系统对照与综合判断 |
-| `docs/item-audit-mak-l8.md` | Mak L8 物品数据审计（Desc↔实现一致性）与防再犯 lint 建议 |
-| `docs/mak-l8-meta-v3-postfix.md` | 物品修复后的 meta 重算（matrix_l8_v3 / DO v4）：新精英层与流派清单 |
+| `docs/meta/mak-l2.md` / `mak-l5.md` / `mak-l8.md` / `mak-l11.md` / `mak-l14.md` / `mak-l17.md` | 各等级正式精英报告（收敛闭环认证后的最终阵容、分层、克制关系） |
+| `docs/mak-levels-generalization.md` | Mak 六等级泛化对比：meta 结构对比与构筑思路等级规律 |
+| `docs/detector-consolidation-handoff.md` | 探测器结构剪裁交接工作单（未开工）：目标结构、步骤、验收标准与红线 |
+| `docs/archive/` | 历史与调查记录（GDF/meta 路线、实证研究、理由图、邻域认证起源、玩家视角分析、物品审计、v3 重算记录）——仅供背景参考，主管线以 deck-search-pipeline.md 与 docs/meta/ 为准 |
 | `docs/data_format.md` | YAML 数据格式契约 |
 | `docs/api.md` | HTTP API |
 | `app/README.md`、`app/backend/README.md` | Web 前后端 |
 | `tools/item_codegen/README.md` | YAML → C++ / SQLite 生成与增量行为 |
-| `scripts/meta_search/README.md` | 测量底座与元博弈工具链（并行枚举、meta 矩阵、Nash 求解） |
+| `scripts/meta_search/README.md` | 测量底座与探测工具链（主管线模块 + 遗产线说明） |
 | `samples/cli/README.md` | CLI 样例用法 |
 | `.agents/skills/` | 两个工作流技能：`items-yaml-codegen-db-sync`（YAML 变更后全链路同步）、`web-battle-debug-close-loop`（Web 对战问题四阶段闭环调试） |
