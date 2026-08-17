@@ -60,8 +60,9 @@ cmake --build engine/build --config Release -j
 | 可执行文件 | 说明 |
 |-----------|------|
 | `bin/bazaararena_cli`（`.exe`） | JSON 对战模拟 CLI |
-| `bin/bazaararena_gdf`（`.exe`） | Greedy Deck Finder 搜索 |
-| `bin/bazaararena_gdf_pa`（`.exe`） | GDF 泛用度 / 聚类分析 |
+| `bin/bazaararena_meta`（`.exe`） | 批量对战评估（探测管线真值测量层） |
+| `bin/bazaararena_gdf`（`.exe`） | 锚点枚举器（Greedy Deck Finder，探测管线候选生成器） |
+| `bin/bazaararena_gdf_pa`（`.exe`） | GDF 泛用度 / 聚类分析（遗产工具，需 `-DBAZAARARENA_BUILD_GDF_PA=ON` 才构建） |
 
 自检：
 

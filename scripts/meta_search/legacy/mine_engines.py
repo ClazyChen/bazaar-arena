@@ -14,10 +14,10 @@ import itertools
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from meta_search.reason_graph import ReasonGraph, load  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from meta_search.legacy.reason_graph import ReasonGraph, load  # noqa: E402
 
-REPO = Path(__file__).resolve().parent.parent.parent
+REPO = Path(__file__).resolve().parent.parent.parent.parent
 SIZES = {"Small": 1, "Medium": 2, "Large": 3}
 
 

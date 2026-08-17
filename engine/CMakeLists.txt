@@ -85,6 +85,10 @@ set_target_properties(bazaararena_meta PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${BAZAARARENA_CLI_OUTPUT_DIR}"
 )
 
+# GDF-PA（泛用度/聚类分析）为遗产工具，已退出默认构建；源码保留于 gdf_pa/。
+# 需要时显式开启：cmake -S engine -B engine/build -DBAZAARARENA_BUILD_GDF_PA=ON
+option(BAZAARARENA_BUILD_GDF_PA "Build legacy bazaararena_gdf_pa analysis tool" OFF)
+if(BAZAARARENA_BUILD_GDF_PA)
 add_executable(bazaararena_gdf_pa
   gdf_pa/main.cpp
   gdf_pa/GdfPaFullTopk.cpp
@@ -108,4 +112,5 @@ set_target_properties(bazaararena_gdf_pa PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${BAZAARARENA_CLI_OUTPUT_DIR}"
   RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${BAZAARARENA_CLI_OUTPUT_DIR}"
 )
+endif()
 

@@ -392,6 +392,6 @@ if __name__ == "__main__":
     import sys as _sys
 
     _out = _sys.argv[1] if len(_sys.argv) > 1 else "out/meta_search/reason_profiles.json"
-    _g = load(Path(__file__).resolve().parent.parent.parent / "data" / "items", "mak")
+    _g = load(Path(__file__).resolve().parent.parent.parent.parent / "data" / "items", "mak")
     export_profiles_json(_g, _out)
     print(f"wrote {_out} ({len(_g.db)} items)")

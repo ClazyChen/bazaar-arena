@@ -18,10 +18,11 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from meta_search import battle, gdf_conditions, reason_graph  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from meta_search import battle, gdf_conditions  # noqa: E402
+from meta_search.legacy import reason_graph  # noqa: E402
 
-REPO = Path(__file__).resolve().parent.parent.parent
+REPO = Path(__file__).resolve().parent.parent.parent.parent
 OUT = REPO / "out" / "meta_search" / "pair_probe.json"
 SIZES = {"Small": 1, "Medium": 2, "Large": 3}
 SEEDS = 16

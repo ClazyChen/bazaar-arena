@@ -102,8 +102,8 @@
 
 ## 7. 明确的后续（非阻塞）
 
-- **探测器结构剪裁**：`docs/detector-consolidation-handoff.md`（工作单：legacy 迁移、GDF 正名、
-  GDF-PA 退出默认构建、bin/ 同步、验收标准）。
+- ~~**探测器结构剪裁**~~：**已完成**（遗产线整组迁入 `scripts/meta_search/legacy/`、
+  GDF 正名为锚点枚举器、GDF-PA 退出默认构建、bin/ 同步；L8 闭环复跑家族级一致）。
 - **Vanessa**：物品版本待更新后再启动；管线同本文（`--hero Vanessa`）。
 - 玩家产品化：转型路线图/双口径标注进前端（骨架见 docs/archive/mak-player-perspective.md §4）。
 - 数据层保卫：`docs/archive/item-audit-mak-l8.md` §5 的 lint 规则沉淀为 codegen 硬检查（防第四次物品 bug 推翻 meta）。

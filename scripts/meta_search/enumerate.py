@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
-"""并行锚点枚举：每个锚点一个 GDF 进程，进程级并行（GDF 内部对战为单线程）。
+"""并行锚点枚举（探测主管线步骤 1：候选生成）：每个锚点一个 GDF 进程，进程级并行。
+
+GDF 在本管线中的角色是**锚点枚举器/候选生成器**：其内部贪心/beam 评估仅用于
+枚举过程本身，不构成强度结论（真值测量由 bin/bazaararena_meta + 精英闭环承担）。
 
 与 scripts/gdf_enumerate_anchor_top1.py 的差别：
 - 进程池并行（本机 24 核下 136 锚点 Mak L8 从 ~2.6h 降到 ~13min）；
 - 保留每锚点原始 stdout 供轨迹分析；
-- 输出 TSV（每锚点满槽档 top1）与 full topk 文件，格式与原脚本一致，可直供 GDF-PA。
+- 输出 TSV（每锚点满槽档 top1）与 full topk 文件，格式与原脚本一致。
 """
 
 from __future__ import annotations

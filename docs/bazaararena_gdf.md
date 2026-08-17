@@ -1,5 +1,9 @@
 # Greedy Deck Finder（`bazaararena_gdf`）使用说明
 
+> **定位**：优质阵容探测主管线（`docs/deck-search-pipeline.md`）中的**候选生成器（锚点枚举器）**。
+> 它只负责按锚点枚举产出初始候选卡组；内部贪心/beam/瑞士轮评估是枚举所需的启发式，
+> **不构成强度结论**——真值测量唯一由 `bin/bazaararena_meta` 承担。
+
 C++ 版 GDF 是**独立可执行文件**，与 `bazaararena_cli`（JSON 对战 CLI）分离；复用同一套引擎库（`Simulator`、`BuildSideState` 等），**不**通过 JSON job 协议运行。
 
 ## 可执行文件位置与构建
@@ -57,8 +61,10 @@ cmake --build . --config Release --target bazaararena_gdf
 - **Mak 任务进度按等级覆写**（`GdfItemPrototypeCache::ComputeMakQuestOverride`，与腐朽圣像等共用入口、规则独立）：`寒霜图腾`：L5→0，L6→1，L7→3，L8+→7；`先祖墓`：L5→0，L6→1，L7+→3；`时间之砂`/`永恒火炬`/`生命导体`/`腐朽圣像` 仍为 L2→0，L3–4→1，L5–7→3，L8+→7；`空白石碑`（Quest 位图）：L2→0，L3→1，L4→3，L5–6→7，L7–8→15，L9+→31。
 - **Mak 不参与搜索的物品**（与 `催化剂` 同理，自池中剔除）：`产药药水`、`催化剂`、`筛盘`、`奥秘之书`、`亚罕典籍`、`蒸馏器`、`空灵灰烬`。
 
-### GDF-PA（`bazaararena_gdf_pa`）
+### GDF-PA（`bazaararena_gdf_pa`，已退出默认构建）
 
+- **遗产工具**：泛用度/聚类分析曾服务 GDF 路线，现已退出默认构建（`engine/CMakeLists.txt`
+  中 `-DBAZAARARENA_BUILD_GDF_PA=ON` 才会编译），源码保留在 `engine/gdf_pa/`。
 - 泛用度分析用的物品宇宙与 GDF 池键一致，但会去掉基底名 **`烙刀`**、**`魂石`**（签名中仅出现变体展示名，避免与四魂石/双烙刀重复计数）。
 
 ### 每档 `size` 流水线

@@ -21,12 +21,12 @@ from pathlib import Path
 
 import yaml
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from meta_search.mine_engines import mine_engines_v2  # noqa: E402
-from meta_search.reason_graph import EVENTS, RESOURCES, SELECTOR_TAGS, load  # noqa: E402
-from reason_token_census import IRRELEVANT, MODELED, census_tokens  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from meta_search.legacy.mine_engines import mine_engines_v2  # noqa: E402
+from meta_search.legacy.reason_graph import EVENTS, RESOURCES, SELECTOR_TAGS, load  # noqa: E402
+from meta_search.legacy.reason_token_census import IRRELEVANT, MODELED, census_tokens  # noqa: E402
 
-REPO = Path(__file__).resolve().parent.parent.parent
+REPO = Path(__file__).resolve().parent.parent.parent.parent
 OUT_DOC = REPO / "docs" / "reason-graph-review.md"
 
 CHANNEL_LABEL = {
@@ -126,7 +126,7 @@ def main() -> int:
     w("两级配额：核心件 ≤3、核心通道 ≤8。评审重点：有没有你认可的真引擎缺席；")
     w("有没有高分但你认为不成立的伪引擎。")
     w("")
-    from meta_search.proposer import _cached_engines
+    from meta_search.legacy.proposer import _cached_engines
 
     kept = _cached_engines(g, 4)[:40]
     for sc, sub in kept:

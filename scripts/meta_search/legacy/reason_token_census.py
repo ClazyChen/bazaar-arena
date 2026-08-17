@@ -16,9 +16,9 @@ from pathlib import Path
 
 import yaml
 
-REPO = Path(__file__).resolve().parent.parent.parent
+REPO = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
-from meta_search.reason_graph import EVENTS, RESOURCES, SELECTOR_TAGS, TOKEN_ALIAS  # noqa: E402
+from meta_search.legacy.reason_graph import EVENTS, RESOURCES, SELECTOR_TAGS, TOKEN_ALIAS  # noqa: E402
 
 # reason_graph 已消费的词元（与提取规则一一对应）
 MODELED = (

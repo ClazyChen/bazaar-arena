@@ -17,10 +17,11 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from meta_search import battle, gdf_conditions, nash, proposer, templates  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from meta_search import battle, gdf_conditions, nash  # noqa: E402
+from meta_search.legacy import proposer, templates  # noqa: E402
 
-REPO = Path(__file__).resolve().parent.parent.parent
+REPO = Path(__file__).resolve().parent.parent.parent.parent
 
 
 @dataclass
@@ -105,7 +106,7 @@ def run(
     history = []
     rg = None
     if reason_engines > 0:
-        from meta_search import reason_graph
+        from meta_search.legacy import reason_graph
 
         rg = reason_graph.load(REPO / "data" / "items", "mak")
     for it in range(max_iter):

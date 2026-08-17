@@ -13,8 +13,8 @@ import random
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from meta_search.templates import Template, check_assembly, layout  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from meta_search.legacy.templates import Template, check_assembly, layout  # noqa: E402
 
 SIZES = {"Small": 1, "Medium": 2, "Large": 3}
 
@@ -70,7 +70,7 @@ def reason_engine_candidates(
     → 每个引擎按尺寸预算采样 fill_variants 个填充组合（elite 软先验）
     → 装配检查（魂石全家族互斥/图书馆无武器/天平居中）→ 代表布局。
     """
-    from meta_search.templates import FILLERS, Template, check_assembly, layout
+    from meta_search.legacy.templates import FILLERS, Template, check_assembly, layout
 
     rng = random.Random(seed)
     engines = _cached_engines(g, max_members)[:top_engines]
@@ -113,18 +113,18 @@ def reason_engine_candidates(
 
 _ENGINES_CACHE: dict[tuple, list] = {}
 
-_META_EXE = Path(__file__).resolve().parent.parent.parent / "bin" / (
+_META_EXE = Path(__file__).resolve().parent.parent.parent.parent / "bin" / (
     "bazaararena_meta.exe" if sys.platform == "win32" else "bazaararena_meta")
-_PROFILES_JSON = Path(__file__).resolve().parent.parent.parent / "out" / "meta_search" / "reason_profiles.json"
-_ENGINES_JSON = Path(__file__).resolve().parent.parent.parent / "out" / "meta_search" / "engines_cpp.json"
+_PROFILES_JSON = Path(__file__).resolve().parent.parent.parent.parent / "out" / "meta_search" / "reason_profiles.json"
+_ENGINES_JSON = Path(__file__).resolve().parent.parent.parent.parent / "out" / "meta_search" / "engines_cpp.json"
 
 
 def _ensure_profiles_json() -> None:
     """画像 JSON 过期（或缺失）时用 Python 提取器重导（提取规则唯一事实来源在 reason_graph.py）。"""
-    yaml_path = Path(__file__).resolve().parent.parent.parent / "data" / "items" / "mak.yaml"
+    yaml_path = Path(__file__).resolve().parent.parent.parent.parent / "data" / "items" / "mak.yaml"
     if _PROFILES_JSON.exists() and _PROFILES_JSON.stat().st_mtime >= yaml_path.stat().st_mtime:
         return
-    from meta_search.reason_graph import export_profiles_json, load
+    from meta_search.legacy.reason_graph import export_profiles_json, load
 
     g = load(yaml_path.parent, "mak")
     export_profiles_json(g, _PROFILES_JSON)
@@ -139,8 +139,8 @@ def _cached_engines(g, max_members: int) -> list:
     import json
     import subprocess
 
-    yaml_path = Path(__file__).resolve().parent.parent.parent / "data" / "items" / "mak.yaml"
-    cache_path = Path(__file__).resolve().parent.parent.parent / "out" / "meta_search" / "mined_engines_v2.json"
+    yaml_path = Path(__file__).resolve().parent.parent.parent.parent / "data" / "items" / "mak.yaml"
+    cache_path = Path(__file__).resolve().parent.parent.parent.parent / "out" / "meta_search" / "mined_engines_v2.json"
     if cache_path.exists():
         try:
             doc = json.loads(cache_path.read_text(encoding="utf-8"))
@@ -160,7 +160,7 @@ def _cached_engines(g, max_members: int) -> list:
                 [str(_META_EXE), "--mine-engines", "--profiles", str(_PROFILES_JSON),
                  "--max-members", str(max_members), "--output", str(_ENGINES_JSON)],
                 capture_output=True, text=True, encoding="utf-8", errors="replace",
-                cwd=str(Path(__file__).resolve().parent.parent.parent),
+                cwd=str(Path(__file__).resolve().parent.parent.parent.parent),
             )
             if proc.returncode == 0:
                 engines = json.loads(_ENGINES_JSON.read_text(encoding="utf-8"))
@@ -168,7 +168,7 @@ def _cached_engines(g, max_members: int) -> list:
         except Exception:
             out = None
     if out is None:
-        from meta_search.mine_engines import mine_engines_v2
+        from meta_search.legacy.mine_engines import mine_engines_v2
 
         out = mine_engines_v2(g, max_members=max_members, family_quota=3, channel_quota=8)
     cache_path.parent.mkdir(parents=True, exist_ok=True)

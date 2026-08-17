@@ -20,21 +20,24 @@
 | `perm_constraints_test.py` | 排列约束验收：天平案例（61-0 基线）。 |
 | `smoke_test.py` | 冒烟自检：CLI 可复现性、等级规则覆写值、series/缓存/自适应收敛。**改任何模块后必跑**。 |
 
-## 遗产线模块（DO/PSRO 与理由图提议器——已被邻域闭环取代为主流程，保留供参考/复用）
+## 遗产线模块（`legacy/` 子包——DO/PSRO 与理由图提议器，已被邻域闭环取代为主流程）
+
+> 已整组迁入 `scripts/meta_search/legacy/`，**只移不删**：这是唯一被证实的替代提议器
+> （v4 的王由其合成），Vanessa 冷启动若锚点覆盖不足需以此为备胎。主管线模块对其零依赖。
 
 | 模块 | 作用 |
 |------|------|
-| `templates.py` | 装配工具：`check_assembly`、`layout`、`FILLERS`。手写引擎模板库已退役。 |
-| `proposer.py` | 候选提议器：`reason_engine_candidates`（挖掘引擎 × 填充）+ `gdf_topk_candidates`。 |
-| `double_oracle.py` | Double Oracle 外环 + 受限博弈模式。 |
-| `open_do.py` | 开放博弈 Double Oracle：自适应波次评估 + 双提议器 + Jaccard 多样性入池的 PSRO 主循环。 |
-| `open_do_validate.py` | 开放运行验收：引擎覆盖、真值支撑重合、σ 支撑 vs 真值精英 CI 系列赛、gain 轨迹。 |
-| `reason_graph.py` | **理由图**：机制画像 + 有向理由边 + 数值核心。**提取规则唯一事实来源**；可导出静态画像 JSON（`reason_profiles.json`）供 C++ 挖掘。 |
-| `mine_engines.py` | 引擎挖掘（Python 参考实现/回退）。**生产路径为 C++ `bazaararena_meta --mine-engines`（`engine/meta/ReasonMine.cpp`）**。 |
-| `mine_engines_test.py` | 覆盖回归测试：10 已知流派必须全覆盖 + 未建模词元不得超快照 + 挖掘有界性。 |
-| `reason_token_census.py` | 词元普查：YAML AST 词汇强制三分类（已建模/豁免/未建模）。 |
-| `pair_probe.py` | 经验配对探测图：全 K² 惰性对照替换的边际胜率实测。 |
-| `render_reason_graph.py` | 生成 `docs/archive/reason-graph-review.md`（玩家视角人工评审文档）。 |
+| `legacy/templates.py` | 装配工具：`check_assembly`、`layout`、`FILLERS`。手写引擎模板库已退役。 |
+| `legacy/proposer.py` | 候选提议器：`reason_engine_candidates`（挖掘引擎 × 填充）+ `gdf_topk_candidates`。 |
+| `legacy/double_oracle.py` | Double Oracle 外环 + 受限博弈模式。 |
+| `legacy/open_do.py` | 开放博弈 Double Oracle：自适应波次评估 + 双提议器 + Jaccard 多样性入池的 PSRO 主循环。 |
+| `legacy/open_do_validate.py` | 开放运行验收：引擎覆盖、真值支撑重合、σ 支撑 vs 真值精英 CI 系列赛、gain 轨迹。 |
+| `legacy/reason_graph.py` | **理由图**：机制画像 + 有向理由边 + 数值核心。**提取规则唯一事实来源**；可导出静态画像 JSON（`reason_profiles.json`）供 C++ 挖掘。 |
+| `legacy/mine_engines.py` | 引擎挖掘（Python 参考实现/回退）。**生产路径为 C++ `bazaararena_meta --mine-engines`（`engine/meta/ReasonMine.cpp`）**。 |
+| `legacy/mine_engines_test.py` | 覆盖回归测试：10 已知流派必须全覆盖 + 未建模词元不得超快照 + 挖掘有界性。 |
+| `legacy/reason_token_census.py` | 词元普查：YAML AST 词汇强制三分类（已建模/豁免/未建模）。 |
+| `legacy/pair_probe.py` | 经验配对探测图：全 K² 惰性对照替换的边际胜率实测。 |
+| `legacy/render_reason_graph.py` | 生成 `docs/archive/reason-graph-review.md`（玩家视角人工评审文档）。 |
 
 ## Python / C++ 职责分界（性能纪律）
 
@@ -44,9 +47,9 @@
   全部对战评估（批量模式 / `--serve` 常驻 / 自适应波次内卷）、全部物品规则
   （quest 覆写 / overridable 缩放 / 魂石变体——复用 GDF 规则代码）、
   引擎闭包挖掘（`--mine-engines`，静态画像 JSON → 引擎清单）。
-- **Python（`scripts/meta_search/`）**：仅编排——理由图**提取**（YAML AST 的唯一事实来源，
-  导出 `reason_profiles.json`）、候选提议（引擎×填充组合）、DO 外环簿记、
-  Nash 求解、矩阵装配、分析/报告/测试。
+- **Python（`scripts/meta_search/`）**：仅编排——锚点枚举驱动、Nash 求解、矩阵装配、
+  邻域认证与精英闭环、分析/报告/测试。
+  （理由图提取、候选提议、DO 外环等遗产编排已迁 `legacy/`。）
 - **禁止**：Python 循环逐局调进程、Python 端复刻物品规则（两次漂移教训：quest 丢弃、
   档位错位，见 docs/archive/bazaar-meta-evidence.md §0.1/§0.2）。新代码只收展示名，
   对战与规则一律走 `bazaararena_meta`。

@@ -7,7 +7,7 @@
 Bazaar Arena 是游戏《大巴扎》（The Bazaar，PVP 自走棋）的**模拟对战测试平台与优质阵容搜索工具**。核心能力：
 
 - 给定两套卡组，用 C++ 引擎进行逐帧自动对战模拟（JSON 输入/输出）。
-- GDF（Greedy Deck Finder）：在候选物品池中贪心搜索优质阵容。
+- GDF（Greedy Deck Finder）：**锚点枚举器（候选生成器）**，按锚点枚举产出初始候选卡组；其内部贪心/beam 评估仅服务枚举本身，不构成强度结论。
 - GDF-PA：对 GDF 结果做泛用度 / 聚类分析并导出 CSV / Excel。
 - Web 应用（Vue + Flask + SQLite）：浏览物品、编辑卡组、发起对战模拟并播放战斗动画。
 
@@ -28,10 +28,10 @@ Bazaar Arena 是游戏《大巴扎》（The Bazaar，PVP 自走棋）的**模拟
 | `engine/` | C++ 计算层：核心静态库 `bazaararena_engine` + 3 个可执行程序 |
 | `app/backend/` | Flask API（包 `bazaararena_api`，位于 `src/` 下，非打包安装，靠 `PYTHONPATH` 导入） |
 | `app/frontend/` | Vue 3 + Vite + TypeScript + Pinia + Vue Router |
-| `bin/` | C++ 可执行文件**固定输出目录**（已入库的 exe；与后端默认调用路径约定一致） |
+| `bin/` | C++ 可执行文件**固定输出目录**（gitignore 不入库；与后端默认调用路径约定一致，源码变更后须重编，见「重要开发约定」） |
 | `out/` | 本地运行产物目录（gitignore，仅跟踪 `.gitkeep`） |
 | `samples/` | CLI / GDF 输入输出样例（`samples/cli/` 含大量 `repro` 复现 job） |
-| `scripts/` | 分析流水线脚本（枚举锚点 Top-K、合并 Excel） |
+| `scripts/` | 探测主管线包 `meta_search/`（操作手册 `docs/deck-search-pipeline.md`；遗产线在 `meta_search/legacy/`）+ 前端卡组导入等脚本 |
 | `docs/` | 协议与开发指南（见文末索引） |
 | `pictures/webp/` | 物品图标，文件名与物品 `Name` 一致（gitignore，不入库） |
 
@@ -42,7 +42,7 @@ Bazaar Arena 是游戏《大巴扎》（The Bazaar，PVP 自走棋）的**模拟
   - `data/`：`ItemDatabase` 与生成的 `items_generated.cpp`
   - `formula/`：YAML 公式 AST 对应的 C++ 模板（`Formula`、`Condition`、`Percent`）
   - `io/`：JSON job 协议（`SimulateJob`、`Sink`、`JsonLite` 等）
-  - `gdf/`、`gdf_pa/`：搜索与分析实现
+  - `gdf/`、`gdf_pa/`：锚点枚举与泛用度分析实现（`gdf_pa` 为遗产工具，已退出默认构建）
 - 入口：`engine/cli/main.cpp`、`engine/gdf/main.cpp`、`engine/gdf_pa/main.cpp`；构建定义在 `engine/CMakeLists.txt`（CMake 3.20+，C++20，仅依赖 `Threads`）。
 
 ## 环境要求
@@ -73,7 +73,8 @@ YAML 要点（详见 `docs/data_format.md`）：以 `Name`（UTF-8 中文显示�
 ```powershell
 cmake -S engine -B engine/build -DCMAKE_BUILD_TYPE=Release
 cmake --build engine/build --config Release
-# 仅构建单个目标：--target bazaararena_cli / bazaararena_gdf / bazaararena_gdf_pa
+# 仅构建单个目标：--target bazaararena_cli / bazaararena_gdf / bazaararena_meta
+# （bazaararena_gdf_pa 为遗产目标，需先 -DBAZAARARENA_BUILD_GDF_PA=ON 重新配置）
 ```
 
 产物：
@@ -81,8 +82,8 @@ cmake --build engine/build --config Release
 | 可执行文件 | 说明 |
 |-----------|------|
 | `bin/bazaararena_cli(.exe)` | JSON 对战模拟 CLI（协议见 `docs/engine_cli.md`） |
-| `bin/bazaararena_gdf(.exe)` | Greedy Deck Finder 贪心卡组搜索（不走 JSON job 协议，参数见 `docs/bazaararena_gdf.md`） |
-| `bin/bazaararena_gdf_pa(.exe)` | GDF 泛用度 / 聚类分析 |
+| `bin/bazaararena_gdf(.exe)` | 锚点枚举器（Greedy Deck Finder，探测管线候选生成器；不走 JSON job 协议，参数见 `docs/bazaararena_gdf.md`） |
+| `bin/bazaararena_gdf_pa(.exe)` | GDF 泛用度 / 聚类分析（**遗产工具，已退出默认构建**：需 `-DBAZAARARENA_BUILD_GDF_PA=ON` 重新配置才会编译，源码保留在 `engine/gdf_pa/`） |
 | `bin/bazaararena_meta(.exe)` | 批量对战评估（meta_search 管线的 C++ 计算层；任务单 JSON → JSONL，可复现；协议见 `engine/meta/main.cpp` 头注释） |
 
 ## 运行
@@ -104,7 +105,11 @@ bin\bazaararena_gdf.exe --data-dir data/items --pool-hero Mak --anchor-item 魂�
 bin\bazaararena_gdf.exe --data-dir data/items --enumerate-anchors --level 4 --top-k 3 --workers 4
 ```
 
-### 分析流水线（产物写入本地 `out/`，不提交）
+### 泛用度分析流水线（遗产：基于 GDF-PA，产物写入本地 `out/`，不提交）
+
+> 当前优质阵容探测主管线见 `docs/deck-search-pipeline.md`（`scripts/meta_search/`）。
+> 本节的 GDF-PA 流水线为遗产路线：`bazaararena_gdf_pa` 已退出默认构建，
+> 需 `cmake -S engine -B engine/build -DBAZAARARENA_BUILD_GDF_PA=ON` 后单独构建该目标。
 
 ```powershell
 # 1. 枚举全部锚点，输出 TSV 与 full Top-K
@@ -188,12 +193,11 @@ npm run dev
 | `README.md` | 仓库总览与常用命令 |
 | **`docs/deck-search-pipeline.md`** | **优质阵容探测主管线（唯一操作手册：枚举→矩阵→Nash→精英闭环→报告→前端同步；含测量纪律与故障表）** |
 | `docs/engine_cli.md` | `bazaararena_cli` JSON 协议（含 HTTP `/api/simulate` 字段） |
-| `docs/bazaararena_gdf.md` | GDF 参数、算法与输出 |
+| `docs/bazaararena_gdf.md` | 锚点枚举器（GDF）参数、算法与输出 |
 | `docs/architecture.md` | 分层架构 |
 | `docs/bazaar-core.md` | 游戏规则与搜索问题形式化描述 |
 | `docs/meta/mak-l2.md` / `mak-l5.md` / `mak-l8.md` / `mak-l11.md` / `mak-l14.md` / `mak-l17.md` | 各等级正式精英报告（收敛闭环认证后的最终阵容、分层、克制关系） |
 | `docs/mak-levels-generalization.md` | Mak 六等级泛化对比：meta 结构对比与构筑思路等级规律 |
-| `docs/detector-consolidation-handoff.md` | 探测器结构剪裁交接工作单（未开工）：目标结构、步骤、验收标准与红线 |
 | `docs/archive/` | 历史与调查记录（GDF/meta 路线、实证研究、理由图、邻域认证起源、玩家视角分析、物品审计、v3 重算记录）——仅供背景参考，主管线以 deck-search-pipeline.md 与 docs/meta/ 为准 |
 | `docs/data_format.md` | YAML 数据格式契约 |
 | `docs/api.md` | HTTP API |

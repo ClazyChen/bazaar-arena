@@ -12,10 +12,10 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from meta_search import battle, gdf_conditions, nash  # noqa: E402
 
-REPO = Path(__file__).resolve().parent.parent.parent
+REPO = Path(__file__).resolve().parent.parent.parent.parent
 
 
 def truth_support_from_matrix(matrix_path: Path, top: int = 5) -> dict[str, str]:
@@ -73,7 +73,7 @@ def main() -> int:
     cache = battle.BattleCache()
     # 用完整 pool 重解 σ（final sigma 的键被截断到 60 字符，不可用于回查）
     sys.path.insert(0, str(REPO / "scripts"))
-    from meta_search.open_do import OpenRun
+    from meta_search.legacy.open_do import OpenRun
 
     orun = OpenRun(8, db, cache)
     full_sigma, _ = orun.sigma_on(pool)

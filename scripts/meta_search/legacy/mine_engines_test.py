@@ -12,11 +12,11 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from meta_search.mine_engines import mine_engines  # noqa: E402
-from meta_search.reason_graph import load  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from meta_search.legacy.mine_engines import mine_engines  # noqa: E402
+from meta_search.legacy.reason_graph import load  # noqa: E402
 
-REPO = Path(__file__).resolve().parent.parent.parent
+REPO = Path(__file__).resolve().parent.parent.parent.parent
 
 KNOWN_FAMILIES = {
     "药水引擎(炼金炉)": {"碎瓶", "沸腾烧瓶", "炼金炉"},
@@ -67,7 +67,7 @@ def main() -> int:
     from collections import Counter
 
     sys.path.insert(0, str(REPO / "scripts"))
-    from reason_token_census import MODELED, IRRELEVANT, census_tokens  # noqa: E402
+    from meta_search.legacy.reason_token_census import MODELED, IRRELEVANT, census_tokens  # noqa: E402
 
     doc = yaml.safe_load(open(REPO / "data/items/mak.yaml", encoding="utf-8"))
     unmodeled: Counter = Counter()
