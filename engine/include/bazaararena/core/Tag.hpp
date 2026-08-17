@@ -25,9 +25,10 @@ public:
     static constexpr int Potion = 1 << 17; // 药水
     static constexpr int Core = 1 << 18; // 核心
     static constexpr int Dinosaur = 1 << 19; // 恐龙
-    
+    static constexpr int Instrument = 1 << 20; // 乐器
+
     // 标签数量
-    static constexpr int Count = 20; // 标签数量
+    static constexpr int Count = 21; // 标签数量
 };
 
 }  // namespace bazaararena::core

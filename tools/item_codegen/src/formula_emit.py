@@ -318,6 +318,13 @@ def _emit_by_type(typ: str, params: list[object], *, where: str) -> str:
         dname = _key_name(params[0], "DerivedTag", where)
         return f"NotHasDerivedTag<{_derived_tag_cpp(dname)}>"
 
+    # 标签位常量（用于 Tags 光环 value，如 { type: Tag, params: [Aquatic] }）
+    if typ == "Tag":
+        if len(params) != 1:
+            raise ValueError(f"{where}: Tag 需要 1 个 Tag 名")
+        tname = _key_name(params[0], "Tag", where)
+        return f"formula::Constant<({_tag_cpp(tname)})>"
+
     if typ == "PercentFloor":
         if len(params) != 2:
             raise ValueError(f"{where}: PercentFloor 需要 2 个公式参数（基础值与百分比）")

@@ -161,3 +161,18 @@ items:
     AmmoCap: 1
     Abilities:
       - type: Damage
+  - Name: "迷你弯刀"
+    Desc: "▶ 造成 {Damage} 伤害；多重释放：{Multicast}；此物品能造成双倍暴击伤害"
+    Size: Small
+    Tier: Bronze
+    Tags: [Weapon]
+    Cooldown: 6s
+    Damage: [6, 12, 24, 48]
+    Multicast: 2
+    Custom_0: 100
+    Abilities:
+      - type: Damage
+    Auras:
+      - attribute: CritDamage
+        value: Custom_0
+        percent: true
