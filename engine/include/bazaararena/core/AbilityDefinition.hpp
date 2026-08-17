@@ -14,7 +14,7 @@ class Simulator;
 // 能力定义类
 class AbilityDefinition  {
 public:
-    static constexpr size_t MaxTriggerEntries = 4;
+    static constexpr size_t MaxTriggerEntries = 8;
 
     int priority = AbilityPriority::Medium; // 优先级
     int type = AbilityType::None; // 能力类型

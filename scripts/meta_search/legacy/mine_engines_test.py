@@ -40,7 +40,7 @@ SNAPSHOT_UNMODELED = {
     "SlowTargetCount", "BattleStart", "Transform_quicksilver", "StartSandstorm",
     "ReduceMaxHp", "AddMaxHp", "FreezeTargetCount", "SideItemTypes", "AmmoRemaining",
     "Source", "AboutToLose", "Constant", "SetHp", "Sum", "SameAsTarget",
-    "Transform_mirror", "FirstHalfHp",
+    "Transform_mirror", "FirstHalfHp", "ToggleInFlight",
 }
 
 

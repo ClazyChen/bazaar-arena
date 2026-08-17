@@ -199,6 +199,7 @@ _BASIC_TARGET_SAME_SIDE = frozenset(
         "Transform_mirror",
         "StartSandstorm",
         "AddMaxHp",
+        "ToggleInFlight",
     }
 )
 _BASIC_TARGET_DIFF_SIDE = frozenset({"Slow", "Destroy", "Freeze", "ReduceAttribute", "ReduceMaxHp"})
@@ -232,8 +233,8 @@ def _trigger_entries_from_ability(ab: dict, *, where_ab: str) -> list[dict]:
             raise ValueError(f"{where_ab}: triggers 不能为空")
         if _as_str(ab.get("trigger"), default="").strip():
             raise ValueError(f"{where_ab}: 使用 triggers 时不要同时写顶层 trigger")
-        if len(tl) > 4:
-            raise ValueError(f"{where_ab}: triggers 最多 4 条（AbilityDefinition::MaxTriggerEntries）")
+        if len(tl) > 8:
+            raise ValueError(f"{where_ab}: triggers 最多 8 条（AbilityDefinition::MaxTriggerEntries）")
         for i, te in enumerate(tl):
             if not isinstance(te, dict):
                 raise TypeError(f"{where_ab}: triggers[{i}] 必须是 object")
@@ -306,6 +307,8 @@ def _resolve_value_key_cpp(ab: dict, ability_type: str, *, where: str) -> str:
         "AddMaxHp": "Custom_0",
         "ReduceMaxHp": "Custom_0",
         "SetHp": "Heal",
+        # ToggleInFlight 无数值语义，填一个合法占位 key
+        "ToggleInFlight": "Custom_0",
     }
     if ability_type in defaults:
         return f"core::ItemKey::{defaults[ability_type]}"
@@ -334,6 +337,8 @@ def _default_target_count_key_cpp(ability_type: str) -> str | None:
         "Repair": "RepairTargetCount",
         "AddAttribute": "ModifyAttributeTargetCount",
         "ReduceAttribute": "ModifyAttributeTargetCount",
+        # ToggleInFlight：同属性修改类，目标数取 ModifyAttributeTargetCount（避免缺省 0 与 ItemKey::Id 混淆导致 0 目标）
+        "ToggleInFlight": "ModifyAttributeTargetCount",
         # Cast：立刻施放目标个数；与拍立蚌一致默认用 Custom_2（YAML 写 Custom_2 常数，避免误用 0 与 ItemKey::Id 混淆）。
         "Cast": "Custom_2",
     }

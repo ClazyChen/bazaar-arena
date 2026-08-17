@@ -44,6 +44,7 @@ void StartSandstorm(const AbilityDefinition& ability, const BattleContext& ctx);
 void AddMaxHp(const AbilityDefinition& ability, const BattleContext& ctx); // 增加最大生命值
 void ReduceMaxHp(const AbilityDefinition& ability, const BattleContext& ctx); // 减少敌方的最大生命值
 void SetHp(const AbilityDefinition& ability, const BattleContext& ctx); // 直接设置生命值（不触发治疗）
+void ToggleInFlight(const AbilityDefinition& ability, const BattleContext& ctx); // 切换飞行状态
 
 // 能力应用表
 constexpr std::array<void(*)(const AbilityDefinition& ability, const BattleContext& ctx), AbilityType::Count> AbilityApplyTable = {
@@ -73,6 +74,7 @@ constexpr std::array<void(*)(const AbilityDefinition& ability, const BattleConte
     ReduceMaxHp,
     SetHp,
     Transform_mirror,
+    ToggleInFlight,
 };
 
 

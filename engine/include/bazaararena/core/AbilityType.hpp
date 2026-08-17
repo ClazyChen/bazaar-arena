@@ -33,9 +33,10 @@ public:
     static constexpr int ReduceMaxHp = 23; // 减少敌方的最大生命值
     static constexpr int SetHp = 24; // 直接设置生命值（不触发治疗）
     static constexpr int Transform_mirror = 25; // 镜子的转化效果
+    static constexpr int ToggleInFlight = 26; // 切换飞行状态
 
     // 能力类型数量
-    static constexpr int Count = 26; // 能力类型数量
+    static constexpr int Count = 27; // 能力类型数量
 };
 
 }  // namespace bazaararena::core

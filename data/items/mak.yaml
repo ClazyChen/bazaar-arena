@@ -6,7 +6,7 @@ items:
     Size: Small
     Tier: Bronze
     Tags: [Weapon]
-    Cooldown: 6s
+    Cooldown: 5s
     Damage: [5, 10, 20, 40]
     Custom_0: 1
     Abilities:
@@ -201,7 +201,7 @@ items:
     Size: Small
     Tier: Bronze
     Tags: [Reagent]
-    Cooldown: 5s
+    Cooldown: 4s
     Haste: [1s, 2s, 3s, 4s]
     Abilities:
       - type: Haste
@@ -317,6 +317,7 @@ items:
           params: [Poison]
         key: Poison
         value: Custom_0
+        priority: High
   - Name: "硫磺"
     Desc: "▶ 造成 {Burn} 灼烧；【局外】此物品转化时，为其赋予炽焰附魔（如适用）"
     Size: Small
@@ -716,7 +717,7 @@ items:
         value: Custom_0
         target_condition: SameAsCaster
   - Name: "折射棱镜"
-    Desc: "▶ 造成 {Damage} 伤害；触发减速时，此物品的伤害提高 {Custom_0}（限本场战斗）；触发冻结时，此物品的伤害提高 {Custom_0}（限本场战斗）；触发灼烧时，此物品的伤害提高 {Custom_0}（限本场战斗）；触发剧毒时，此物品的伤害提高 {Custom_0}（限本场战斗）"
+    Desc: "▶ 造成 {Damage} 伤害；触发加速、减速、冻结、灼烧或剧毒时，此物品的伤害提高 {Custom_0}（限本场战斗）"
     Size: Medium
     Tier: Bronze
     Tags: [Weapon]
@@ -726,26 +727,16 @@ items:
     Abilities:
       - type: Damage
       - type: AddAttribute
-        trigger: Slow
+        triggers:
+          - trigger: Haste
+          - trigger: Slow
+          - trigger: Freeze
+          - trigger: Burn
+          - trigger: Poison
         key: Damage
         value: Custom_0
         target_condition: SameAsCaster
         priority: Low
-      - type: AddAttribute
-        trigger: Freeze
-        key: Damage
-        value: Custom_0
-        target_condition: SameAsCaster
-      - type: AddAttribute
-        trigger: Burn
-        key: Damage
-        value: Custom_0
-        target_condition: SameAsCaster
-      - type: AddAttribute
-        trigger: Poison
-        key: Damage
-        value: Custom_0
-        target_condition: SameAsCaster
   - Name: "时间之砂"
     Desc: "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；【Q1】此物品 {+Custom_0} 多重释放；【Q2】此物品缩短 {Custom_1:} 秒冷却时间；【Q3】此物品 {+Custom_2} 减速目标数量"
     Size: Medium
@@ -1601,7 +1592,7 @@ items:
     Tier: Silver
     Tags: [Friend]
     Cooldown: 4s
-    Poison: [4, 6, 8]
+    Poison: [4, 8, 12]
     Custom_0: [2, 4, 6]
     Abilities:
       - type: Poison
@@ -1630,7 +1621,7 @@ items:
     Size: Medium
     Tier: Silver
     Tags: [Weapon, Relic]
-    Cooldown: 10s
+    Cooldown: 9s
     Custom_0: [50, 100, 150]
     Custom_1: [5, 10, 15]
     overridable: [Custom_1]
@@ -1744,7 +1735,7 @@ items:
     Size: Medium
     Tier: Silver
     Tags: [Apparel, Tool]
-    Cooldown: [6s, 5s, 4s]
+    Cooldown: 4s
     Poison: [8, 16, 24]
     Custom_0: 100
     Abilities:
@@ -1972,6 +1963,7 @@ items:
     Desc: "▶ 减速 {SlowTargetCount} 件物品 {Slow} 秒；敌方每有一件武器或伙伴，此物品 {+Custom_0} 多重释放"
     Size: Medium
     Tier: Silver
+    Tags: [Trap]
     Cooldown: 5s
     Slow: [1s, 2s, 3s]
     SlowTargetCount: 1
@@ -2090,10 +2082,10 @@ items:
   - Name: "符文匕首"
     Desc: "▶ 造成 {Damage} 伤害；多重释放：{Multicast}；其他物品造成暴击时，为此物品充能 {Charge} 秒；吸血"
     Size: Medium
-    Tier: Silver
+    Tier: Gold
     Tags: [Weapon, Relic]
-    Cooldown: [6s, 5s, 4s]
-    Damage: 10
+    Cooldown: 4s
+    Damage: [20, 40]
     Multicast: 2
     Charge: 1s
     LifeSteal: 100
@@ -2128,8 +2120,8 @@ items:
     Size: Medium
     Tier: Silver
     Tags: [Weapon, Relic]
-    Cooldown: 6s
-    Damage: 10
+    Cooldown: 4s
+    Damage: [10, 20, 40]
     Custom_0: [4, 8, 12]
     Abilities:
       - type: Damage
@@ -2256,26 +2248,19 @@ items:
         value: Custom_2
         priority: Immediate
   - Name: "空惧巨龙"
-    Desc: "▶ 如果此物品不在飞行，此物品开始飞行；▶ 如果此物品正在飞行，此物品停止飞行；此物品开始飞行时，造成 {Custom_0} 灼烧；此物品开始飞行时，伤害提高 {Custom_1}（限本场战斗）；此物品停止飞行时，造成 {Custom_1} 伤害；此物品停止飞行时，灼烧提高 {Custom_0}（限本场战斗）"
+    Desc: "▶ 此物品开始或停止飞行；此物品开始飞行时，造成 {Burn} 灼烧；此物品开始飞行时，伤害提高 {Custom_1}（限本场战斗）；此物品停止飞行时，造成 {Damage} 伤害；此物品停止飞行时，灼烧提高 {Custom_0}（限本场战斗）"
     Size: Large
     Tier: Silver
     Tags: [Weapon, Friend, Dragon, Vehicle]
     Cooldown: 4s
     Burn: [10, 20, 30]
+    Damage: [100, 200, 400]
     Custom_0: [10, 20, 30]
     Custom_1: [100, 200, 400]
-    Custom_2: 1
     Abilities:
-      - type: AddAttribute
-        ex_condition: NotInFlight
-        key: InFlight
-        value: Custom_2
+      - type: ToggleInFlight
         target_condition: SameAsCaster
-      - type: ReduceAttribute
-        ex_condition: InFlight
-        key: InFlight
-        value: Custom_2
-        target_condition: SameAsCaster
+        priority: Immediate
       - type: Burn
         trigger: StartFlying
         ex_condition: SameAsTarget
@@ -2362,7 +2347,7 @@ items:
                 - 0
         value: Custom_0
   - Name: "药房"
-    Desc: "▶ 获得 {Regen} 生命再生；触发加速、减速、剧毒或灼烧时，为此物品充能 {Charge} 秒；【局外】每天开始时，获得 1 件原料"
+    Desc: "▶ 获得 {Regen} 生命再生；触发加速、减速、冻结、剧毒或灼烧时，为此物品充能 {Charge} 秒；【局外】每天开始时，获得 1 件原料"
     Size: Large
     Tier: Silver
     Tags: [Property]
@@ -2375,6 +2360,7 @@ items:
         triggers:
           - trigger: Haste
           - trigger: Slow
+          - trigger: Freeze
           - trigger: Poison
           - trigger: Burn
         target_condition: SameAsCaster
@@ -2412,7 +2398,7 @@ items:
     Tier: Silver
     Tags: [Weapon]
     Cooldown: [11s, 10s, 9s]
-    Damage: 1
+    Damage: 10
     Multicast: 3
     Abilities:
       - type: Damage
@@ -2896,7 +2882,7 @@ items:
     Size: Large
     Tier: Gold
     Tags: [Weapon, Friend]
-    Cooldown: [6s, 5s]
+    Cooldown: 5s
     Damage: 100
     Poison: [30, 60]
     Abilities:
@@ -3111,9 +3097,9 @@ items:
   - Name: "摆锤"
     Desc: "使用左侧的相邻物品时，为右侧的相邻物品充能 {Charge} 秒；使用右侧的相邻物品时，为左侧的相邻物品充能 {Charge} 秒"
     Size: Medium
-    Tier: Diamond
+    Tier: Gold
     Tags: [Tool, Relic]
-    Charge: 1s
+    Charge: [1s, 1.5s]
     ChargeTargetCount: 1
     Abilities:
       - type: Charge

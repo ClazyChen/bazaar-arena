@@ -454,6 +454,30 @@ void ReduceAttribute(const AbilityDefinition& ability, const BattleContext& ctx)
     }
 }
 
+// 切换飞行状态（InFlight 0↔1；分别触发 StopFlying / StartFlying）
+// 用于「开始/停止飞行」是同一 Immediate 能力的物品（如空惧巨龙）——
+// 两个分支能力在 Immediate 下会因扫描内即时翻转状态而同次施放双双命中，故设专用原语。
+void ToggleInFlight(const AbilityDefinition& ability, const BattleContext& ctx) {
+    BattleContext ctx_copy = ctx; // 复制一份上下文用于选择目标
+    auto simulator = const_cast<Simulator*>(ctx.simulator);
+    int target_count = GetTargets(ability, ctx_copy, condition::NotDestroyed);
+    for (int i = 0; i < target_count; i++) {
+        auto& target = *simulator->targets[i];
+        // 日志沿用属性增减钩子（仅支持单目标场景；当前数据均为 SameAsCaster）
+        if (target.attrs[ItemKey::InFlight] > 0) {
+            simulator->sink.OnAttributeDecrease(*simulator, *ctx.caster, 1, ItemKey::InFlight, 1);
+            target.attrs[ItemKey::InFlight] = 0;
+            // 触发「停止飞行」触发器
+            simulator->InvokeTrigger(Trigger::StopFlying, ctx.caster, &target);
+        } else {
+            simulator->sink.OnAttributeIncrease(*simulator, *ctx.caster, 1, ItemKey::InFlight, 1);
+            target.attrs[ItemKey::InFlight] = 1;
+            // 触发「开始飞行」触发器
+            simulator->InvokeTrigger(Trigger::StartFlying, ctx.caster, &target);
+        }
+    }
+}
+
 // 获得金币
 void GainGold(const AbilityDefinition& ability, const BattleContext& ctx) {
     int gold = ctx.GetItemInt(ctx.caster, ability.value_key);
