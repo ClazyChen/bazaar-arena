@@ -2,7 +2,7 @@
 """精英卡组邻域穷举扫描（Mak L8）。
 
 对每套精英卡组穷举三类单步扰动并用 bazaararena_meta 真值层评估：
-1. 单格替换：每个槽位换成池内所有尺寸兼容的物品（同位置），魂石家族互斥、禁重复；
+1. 单格替换：每个槽位换成池内所有尺寸兼容的物品（同位置），魂石/烙刀家族互斥、禁重复；
 2. 减件：依次移除每件物品（少于 10 格合法）；
 3. 排列：同一 multiset 的机制等价类代表（perm_constraints.partition_permutations）。
 
@@ -35,10 +35,16 @@ from meta_search.perm_constraints import partition_permutations
 
 META_EXE = ROOT / "bin" / "bazaararena_meta.exe"
 
-# 与 engine/src/bazaararena/gdf/ItemPool.cpp 一致的 Mak 排除清单。
+# 与 engine/src/bazaararena/gdf/ItemPool.cpp 一致的排除清单。
 IGNORED_MAK = {"产药药水", "催化剂", "筛盘", "奥秘之书", "亚罕典籍", "蒸馏器", "空灵灰烬"}
+IGNORED_VANESSA = {"伪装"}
+IGNORED_OF = {"mak": IGNORED_MAK, "vanessa": IGNORED_VANESSA}
 SOUL_FAMILY = {"魂石", "剧毒减速魂石", "剧毒冻结魂石", "灼烧减速魂石", "灼烧冻结魂石"}
 SOUL_VARIANTS = ["剧毒减速魂石", "剧毒冻结魂石", "灼烧减速魂石", "灼烧冻结魂石"]
+BRAND_FAMILY = {"烙刀", "减速烙刀", "加速烙刀"}
+BRAND_VARIANTS = ["减速烙刀", "加速烙刀"]
+# 互斥家族：同一家族内任意两个展示名不得同阵容（引擎 GreedySearcher 同规则）
+MUTEX_FAMILIES = (SOUL_FAMILY, BRAND_FAMILY)
 SIZE_OF = {"Small": 1, "Medium": 2, "Large": 3}
 # 与 GdfLevelRules::IsMinTierAllowedInPool 一致
 MIN_TIER_LEVEL_GATE = {"bronze": 1, "silver": 5, "gold": 8, "diamond": 11}
@@ -70,10 +76,11 @@ ELITES: dict[str, list[str]] = {
 TIE_DELTA = 0.05  # 9 对手 × 40 局的 avg，±0.05 约 2σ
 
 
-def build_pool(db: dict[str, dict], level: int) -> list[str]:
+def build_pool(db: dict[str, dict], level: int, hero: str = "mak") -> list[str]:
+    ignored = IGNORED_OF.get(hero.lower(), set())
     pool = []
     for name, it in db.items():
-        if name in IGNORED_MAK:
+        if name in ignored:
             continue
         tier = str(it.get("Tier", "Bronze")).lower()
         if level < MIN_TIER_LEVEL_GATE.get(tier, 99):
@@ -81,11 +88,18 @@ def build_pool(db: dict[str, dict], level: int) -> list[str]:
         pool.append(name)
     if "魂石" in pool:
         pool.extend(SOUL_VARIANTS)
+    if "烙刀" in pool:
+        pool.extend(BRAND_VARIANTS)
     return sorted(pool)
 
 
 def size_of(name: str, db: dict[str, dict]) -> int:
-    base = "魂石" if name in SOUL_VARIANTS else name
+    if name in SOUL_VARIANTS:
+        base = "魂石"
+    elif name in BRAND_VARIANTS:
+        base = "烙刀"
+    else:
+        base = name
     return SIZE_OF[db[base]["Size"]]
 
 
@@ -102,14 +116,14 @@ def gen_candidates(elite: list[str], pool: list[str], db: dict[str, dict],
 
     for i, item in enumerate(elite):
         s = size_of(item, db)
-        rest_soul = (in_deck - {item}) & SOUL_FAMILY
+        rest = in_deck - {item}
         for c in pool:
             if c == item or c in in_deck:
                 continue
             if total - s + size_of(c, db) > budget:
                 continue
-            if c in SOUL_FAMILY and rest_soul:
-                continue  # 魂石家族互斥
+            if any(c in fam and rest & fam for fam in MUTEX_FAMILIES):
+                continue  # 互斥家族（魂石/烙刀）
             cands[f"{item}@{i}→{c}"] = elite[:i] + [c] + elite[i + 1 :]
 
     try:
@@ -135,6 +149,7 @@ def main() -> None:
     ap.add_argument("--scan", default=None,
                     help="逗号分隔；只对这些卡组生成扰动（对手场仍为全体）")
     ap.add_argument("--level", type=int, default=8, help="玩家等级（默认 8）")
+    ap.add_argument("--hero", default="mak", help="英雄（默认 mak；决定物品池与真值层 hero）")
     args = ap.parse_args()
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -150,8 +165,8 @@ def main() -> None:
         if missing:
             raise SystemExit(f"--scan 中的卡组不在 decks 里：{missing}")
 
-    db = load_item_db(ROOT / "data" / "items", "mak")
-    pool = build_pool(db, args.level)
+    db = load_item_db(ROOT / "data" / "items", args.hero)
+    pool = build_pool(db, args.level, args.hero)
     print(f"pool: {len(pool)} items", file=sys.stderr)
 
     # ---- 生成全部候选 ----
@@ -188,7 +203,7 @@ def main() -> None:
     for ename, deck in elites.items():
         for oname, odeck in elites.items():
             battles.append({"id": f"@BASE|{ename}||{oname}", "a": deck, "b": odeck, "seeds": seeds})
-    job = {"data_dir": "data/items", "hero": "Mak", "level": args.level, "battles": battles}
+    job = {"data_dir": "data/items", "hero": args.hero, "level": args.level, "battles": battles}
     job_path = out_dir / "scan_job.json"
     out_path = out_dir / "scan_results.jsonl"
     job_path.write_text(json.dumps(job, ensure_ascii=False), encoding="utf-8")
@@ -216,7 +231,7 @@ def main() -> None:
 
     # ---- 报告 ----
     lines: list[str] = []
-    lines.append(f"# 精英邻域穷举认证报告（Mak L{args.level}）\n")
+    lines.append(f"# 精英邻域穷举认证报告（{args.hero} L{args.level}）\n")
     lines.append(f"> seeds {args.seed_base}–{args.seed_base + args.seeds - 1}，"
                  f"每对局 {args.seeds} 局，对手 = {len(opp_names)} 卡组。阈值 ±{TIE_DELTA} ≈ 2σ。\n")
 

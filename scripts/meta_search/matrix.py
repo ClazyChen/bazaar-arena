@@ -33,6 +33,7 @@ def build_matrix(
     workers: int = 12,
     cache: battle.BattleCache | None = None,
     existing: Path | None = None,
+    hero: str = "Mak",
 ) -> dict:
     """全对全自适应循环赛（C++ 批量端点）。decks: name → 物品签名（展示名，可含变体）。
 
@@ -54,7 +55,7 @@ def build_matrix(
     wave_chunk = 2000  # 控制单行大小
     params = {"ci_tol": ci_tol, "batch": batch, "max_games": max_games,
               "sign_margin": 0.15, "base_seed": 1000}
-    server = battle.MetaServer.shared(level)
+    server = battle.MetaServer.shared(level, hero=hero)
     for start in range(0, len(todo), wave_chunk):
         chunk = todo[start:start + wave_chunk]
         reqs = [(f"{a}|{b}", decks[a].split(","), decks[b].split(",")) for a, b in chunk]
@@ -126,7 +127,7 @@ def main() -> int:
     cache = battle.BattleCache()
     build_matrix(decks, args.level, args.out, ci_tol=args.ci_tol,
                  max_games=args.max_games, workers=args.workers,
-                 cache=cache, existing=args.existing)
+                 cache=cache, existing=args.existing, hero=args.hero)
     doc = json.loads(args.out.read_text(encoding="utf-8"))
     print("\n== avg winrate top 15 ==")
     for name, wr in sorted(avg_winrates(doc).items(), key=lambda kv: -kv[1])[:15]:

@@ -89,6 +89,11 @@ static bool IsMakSoulstoneVariant(std::string_view name) {
     return name == "剧毒减速魂石" || name == "剧毒冻结魂石" || name == "灼烧减速魂石" || name == "灼烧冻结魂石";
 }
 
+static bool IsVanessaBrandKnifeVariant(std::string_view name) {
+    // Vanessa 专用：烙刀的 2 个展示变体（Q1 减速 / Q2 加速，带 quest override）在每个 deck 内互斥。
+    return name == "减速烙刀" || name == "加速烙刀";
+}
+
 }  // namespace
 
 GreedySearcher::GreedySearcher(const ItemPool& pool, BattleEvaluator& evaluator, std::mt19937& rng, const GreedyConfig& config,
@@ -241,11 +246,14 @@ std::unordered_map<int, std::vector<CandidateState>> GreedySearcher::Run(const s
                 std::unordered_set<std::string> used(prev.representative.item_names.begin(), prev.representative.item_names.end());
                 const bool prev_has_soulstone_variant = std::any_of(prev.representative.item_names.begin(),
                     prev.representative.item_names.end(), [](const std::string& n) { return IsMakSoulstoneVariant(n); });
+                const bool prev_has_brand_knife_variant = std::any_of(prev.representative.item_names.begin(),
+                    prev.representative.item_names.end(), [](const std::string& n) { return IsVanessaBrandKnifeVariant(n); });
                 const auto& names_q = pool_.NamesForSize(q);
                 std::vector<std::vector<DeckRep>> rep_jobs;
                 for (const auto& item : names_q) {
                     if (used.count(item)) continue;
                     if (prev_has_soulstone_variant && IsMakSoulstoneVariant(item)) continue;
+                    if (prev_has_brand_knife_variant && IsVanessaBrandKnifeVariant(item)) continue;
                     rep_jobs.push_back(BuildInsertionReps(prev.representative, item));
                 }
                 if (rep_jobs.empty()) continue;

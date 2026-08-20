@@ -1172,7 +1172,9 @@ static const std::array<GeneratedItem, 294> kItems = {
     t.attributes[4][core::ItemKey::Value] = 32;
     for (auto& tier : t.attributes) tier[core::ItemKey::Tags] = (core::Tag::Aquatic | core::Tag::Vehicle);
     for (auto& tier : t.attributes) tier[core::ItemKey::Charge] = 2_s;
-    for (auto& tier : t.attributes) tier[core::ItemKey::Cooldown] = 3_s;
+    t.attributes[2][core::ItemKey::Cooldown] = 5_s;
+    t.attributes[3][core::ItemKey::Cooldown] = 3_s;
+    t.attributes[4][core::ItemKey::Cooldown] = 3_s;
     t.ability_count = 0;
     {
         auto& a = t.abilities[t.ability_count++];
@@ -9269,7 +9271,7 @@ static const std::array<GeneratedItem, 294> kItems = {
     {
         auto& g = t.auras[t.aura_count++];
         g.attribute = bazaararena::core::ItemKey::AmmoCap;
-        g.condition = SameSide;
+        g.condition = formula::And<SameSide, HasDerivedTag<core::DerivedTag::Ammo>>;
         g.value = formula::Caster<(bazaararena::core::ItemKey::Custom_0)>;
         g.percent = false;
     }

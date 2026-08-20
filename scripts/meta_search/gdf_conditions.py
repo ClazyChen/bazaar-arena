@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """GDF 等级规则的 Python 复刻（与 engine/src/bazaararena/gdf/GdfLevelRules.cpp 对齐）。
 
-用途：把「物品签名」（逗号分隔有序物品名，含魂石变体展示名）转换为
+用途：把「物品签名」（逗号分隔有序物品名，含魂石/烙刀变体展示名）转换为
 bazaararena_cli mode=simulate 的 items 数组，使 CLI 对战条件与 GDF 搜索时的
 条件完全一致（战斗档位、任务进度覆写、overridable 按等级缩放）。
 
@@ -80,6 +80,14 @@ SOUL_VARIANTS = {
     "灼烧冻结魂石": 2 + 8,
 }
 
+# ---- 烙刀双变体（引擎 ItemPool 注入的展示名 → db_key + quest 位图）----
+# Q1=减速(1), Q2=加速(2)；与 ResolveItemAlias（DeckRep.cpp）一致
+
+BRAND_VARIANTS = {
+    "减速烙刀": 1,
+    "加速烙刀": 2,
+}
+
 
 # ---- overridable 按等级缩放（GdfLevelRules::ComputeOverridableValue）----
 
@@ -146,7 +154,7 @@ def signature_to_items(
 ) -> list[dict]:
     """有序物品签名 → CLI items 数组（含 tier / quest / overridable 覆写）。
 
-    signature 中可出现魂石变体展示名；其余名字须为 db 中的物品 Name。
+    signature 中可出现魂石/烙刀变体展示名；其余名字须为 db 中的物品 Name。
     """
     names = signature.split(",") if isinstance(signature, str) else list(signature)
     tier = combat_tier(level)
@@ -156,6 +164,8 @@ def signature_to_items(
         attrs: dict[str, int] = {}
         if name in SOUL_VARIANTS:
             base, quest = "魂石", SOUL_VARIANTS[name]
+        elif name in BRAND_VARIANTS:
+            base, quest = "烙刀", BRAND_VARIANTS[name]
         else:
             base = name
             quest = mak_quest_override(name, level)

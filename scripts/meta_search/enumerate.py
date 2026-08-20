@@ -26,6 +26,9 @@ REPO = Path(__file__).resolve().parent.parent.parent
 # 与 GDF ItemPool 的 Mak 忽略列表一致（IsIgnoredMakItemForGdf, ItemPool.cpp）
 MAK_IGNORED = {"产药药水", "催化剂", "筛盘", "奥秘之书", "亚罕典籍", "蒸馏器", "空灵灰烬"}
 SOUL_VARIANTS = ["剧毒减速魂石", "剧毒冻结魂石", "灼烧减速魂石", "灼烧冻结魂石"]
+# 与 IsIgnoredVanessaItemForGdf 一致；烙刀拆为互斥双变体（ResolveItemAlias, DeckRep.cpp）
+VANESSA_IGNORED = {"伪装"}
+BRAND_VARIANTS = ["减速烙刀", "加速烙刀"]
 
 
 def list_anchors(data_dir: Path, hero: str) -> list[str]:
@@ -35,6 +38,8 @@ def list_anchors(data_dir: Path, hero: str) -> list[str]:
     names = [it["Name"] for it in doc["items"]]
     if hero.lower() == "mak":
         names = [n for n in names if n not in MAK_IGNORED and n != "魂石"] + SOUL_VARIANTS
+    if hero.lower() == "vanessa":
+        names = [n for n in names if n not in VANESSA_IGNORED and n != "烙刀"] + BRAND_VARIANTS
     return names
 
 

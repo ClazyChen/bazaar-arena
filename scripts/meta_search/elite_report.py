@@ -100,11 +100,12 @@ class BattleCache:
         self._fh.close()
 
 
-def run_meta_batch(battles: list[dict], level: int, work_dir: Path, tag: str) -> dict[str, list[int]]:
+def run_meta_batch(battles: list[dict], level: int, work_dir: Path, tag: str,
+                   hero: str = "Mak") -> dict[str, list[int]]:
     """执行一批 battle（含 seeds）→ {id: [wins_a, wins_b, ties]}。"""
     if not battles:
         return {}
-    job = {"data_dir": "data/items", "hero": "Mak", "level": level, "battles": battles}
+    job = {"data_dir": "data/items", "hero": hero, "level": level, "battles": battles}
     job_path = work_dir / f"job_{tag}.json"
     out_path = work_dir / f"out_{tag}.jsonl"
     job_path.write_text(json.dumps(job, ensure_ascii=False), encoding="utf-8")
@@ -119,7 +120,7 @@ def run_meta_batch(battles: list[dict], level: int, work_dir: Path, tag: str) ->
 
 def eval_adaptive(pairs: dict[str, tuple[list[str], list[str]]], level: int,
                   work_dir: Path, tag: str, cache: BattleCache,
-                  seed_base: int, max_seeds: int) -> dict[str, float]:
+                  seed_base: int, max_seeds: int, hero: str = "Mak") -> dict[str, float]:
     """自适应波次评估 {id: (卡组A, 卡组B)} → {id: winrate_a}。
 
     每波次内部 seed 列表前半不换边、后半换边（与 meta 协议一致），逐波累计，
@@ -145,7 +146,7 @@ def eval_adaptive(pairs: dict[str, tuple[list[str], list[str]]], level: int,
             else:
                 todo.append({"id": pid, "a": a, "b": b, "seeds": wave_seeds})
                 todo_keys.append(key)
-        res = run_meta_batch(todo, level, work_dir, f"{tag}_w{end}")
+        res = run_meta_batch(todo, level, work_dir, f"{tag}_w{end}", hero)
         for battle, key in zip(todo, todo_keys):
             wa, wb, t = res[battle["id"]]
             cache.put(key, wa, wb, t)
@@ -178,6 +179,7 @@ def avg_against_field(wr: dict[str, float], prefix: str, names: list[str]) -> fl
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--level", type=int, required=True)
+    ap.add_argument("--hero", default="mak", help="英雄（默认 mak；决定物品池与真值层 hero）")
     ap.add_argument("--decks-file", required=True)
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--seed-base", type=int, default=7000)
@@ -187,8 +189,8 @@ def main() -> None:
     args = ap.parse_args()
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    db = load_item_db(ROOT / "data" / "items", "mak")
-    pool = build_pool(db, args.level)
+    db = load_item_db(ROOT / "data" / "items", args.hero)
+    pool = build_pool(db, args.level, args.hero)
     budget = max_slots_for_level(args.level)
     cache = BattleCache(out_dir / "battle_cache.jsonl", rules_fingerprint())
 
@@ -218,7 +220,8 @@ def main() -> None:
             for opp, od in decks.items():
                 pairs[f"{cid}||{opp}"] = (items, od)
         print(f"[iter{it}] battles: {len(pairs)}（候选 {len(cand_owner)}）", file=sys.stderr)
-        wr = eval_adaptive(pairs, args.level, out_dir, f"iter{it}", cache, args.seed_base, args.max_seeds)
+        wr = eval_adaptive(pairs, args.level, out_dir, f"iter{it}", cache, args.seed_base,
+                           args.max_seeds, args.hero)
 
         base_avg = {n: avg_against_field(wr, f"@BASE|{n}", names) for n in names}
         best_up: dict[str, tuple[float, str, list[str]]] = {}
@@ -236,7 +239,7 @@ def main() -> None:
                     cpairs[f"{cid}||{opp}"] = (items, od)
                     cpairs[f"@CF|{owner}||{opp}"] = (decks[owner], od)
             cwr = eval_adaptive(cpairs, args.level, out_dir, f"iter{it}_confirm", cache,
-                                CONFIRM_SEED_BASE, args.max_seeds)
+                                CONFIRM_SEED_BASE, args.max_seeds, args.hero)
             for owner, (d0, cid, items) in best_up.items():
                 d = avg_against_field(cwr, cid, names) - avg_against_field(cwr, f"@CF|{owner}", names)
                 tag = cid.split("|", 1)[1]
@@ -272,7 +275,8 @@ def main() -> None:
 
     # ---- 自洽场循环赛 + Nash ----
     names = list(decks.keys())
-    wr = eval_adaptive(field_pairs(decks), args.level, out_dir, "final_rr", cache, args.seed_base, args.max_seeds)
+    wr = eval_adaptive(field_pairs(decks), args.level, out_dir, "final_rr", cache,
+                       args.seed_base, args.max_seeds, args.hero)
     n = len(names)
     M = [[wr[f"@BASE|{a}||{b}"] for b in names] for a in names]
     avg = {names[i]: sum(M[i]) / n for i in range(n)}
@@ -281,7 +285,7 @@ def main() -> None:
     cache.close()
 
     # ---- 报告骨架 ----
-    lines = [f"# Mak L{args.level} 精英认证报告（骨架，引擎标签待人工复核）\n"]
+    lines = [f"# {args.hero} L{args.level} 精英认证报告（骨架，引擎标签待人工复核）\n"]
     lines.append(f"> 场 = {n} 套收敛卡组；自适应波次（CI≤{CI_TOL}，上限 96 局）；"
                  f"升级确认阈值 {CONFIRM_DELTA}（独立 seed）；精英门槛 avg≥{ELITE_GATE} 或 σ 支撑。\n")
     lines.append(f"Nash：value={value:.3f} exploitability={exploit:.4f}\n")
@@ -314,7 +318,7 @@ def main() -> None:
     lines.append("## 附录\n")
     lines.append(f"- 原始数据：{out_dir}（job/out JSONL 每轮各一份；battle_cache.jsonl 精确缓存）")
     lines.append(f"- 逐格认证明细：python scripts/meta_search/neighborhood_scan.py "
-                 f"--level {args.level} --decks-file {out_dir / 'final_decks.json'}")
+                 f"--hero {args.hero} --level {args.level} --decks-file {out_dir / 'final_decks.json'}")
     (out_dir / "elite_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     json.dump(decks, open(out_dir / "final_decks.json", "w", encoding="utf-8"),
               ensure_ascii=False, indent=2)

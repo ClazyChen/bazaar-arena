@@ -2,7 +2,9 @@
 
 > 本文是 Mak 工作收束后的**唯一主管线文档**。遵循本文可在任意 英雄×等级 上产出：
 > 收敛认证的精英报告（`docs/meta/<hero>-l<level>.md`）+ 前端卡组集合 + 可复算的原始数据（`out/`）。
-> 已完成：Mak L2 / L5 / L8 / L11 / L14 / L17（报告见 `docs/meta/`，对比页 `docs/mak-levels-generalization.md`）。
+> 已完成：Mak L2 / L5 / L8 / L11 / L14 / L17（报告见 `docs/meta/`，对比页 `docs/mak-levels-generalization.md`）；
+> Vanessa L2 / L5 / L8 / L11 / L14 / L17（报告见 `docs/meta/`，对比页 `docs/vanessa-levels-generalization.md`；
+> 烙刀按互斥双变体探测、伪装唯一局外排除）。
 > 历史路线（GDF/meta 路线之争、理由图提议器）已归档至 `docs/archive/`，仅供了解背景。
 
 ## 0. 核心概念（先读）
@@ -85,16 +87,22 @@
 | 前端对局与报告强度不符 | 卡组集合是旧版：重跑 `import_reference_decks_mak.py`（幂等重建） |
 | 排列"升级"频繁出现 | 先确认是否真升级（确认制会过滤）；天平类居中约束看 `perm_constraints.py` |
 
-## 6. 产物地图（Mak 归档现状）
+## 6. 产物地图（Mak / Vanessa 归档现状）
 
 | 等级 | 正式报告 | 前端集合 | 原始数据 |
 |---|---|---|---|
-| L2 | docs/meta/mak-l2.md | Mak L2 精英（收敛认证 · v4） | out/elite_report/mak_l2_v4/ |
-| L5 | docs/meta/mak-l5.md | Mak L5 精英（… v4） | out/elite_report/mak_l5_v4/ |
-| L8 | docs/meta/mak-l8.md | Mak L8 精英（… v4） | out/elite_report/mak_l8_v4/ |
-| L11 | docs/meta/mak-l11.md | Mak L11 精英（… v4） | out/elite_report/mak_l11_v4/ |
-| L14 | docs/meta/mak-l14.md | Mak L14 精英（… v4） | out/elite_report/mak_l14_v4/ |
-| L17 | docs/meta/mak-l17.md | Mak L17 精英（高原代表 · v4） | out/elite_report/mak_l17_v4/ |
+| Mak L2 | docs/meta/mak-l2.md | Mak L2 精英（收敛认证 · v4） | out/elite_report/mak_l2_v4/ |
+| Mak L5 | docs/meta/mak-l5.md | Mak L5 精英（… v4） | out/elite_report/mak_l5_v4/ |
+| Mak L8 | docs/meta/mak-l8.md | Mak L8 精英（… v4） | out/elite_report/mak_l8_v4/ |
+| Mak L11 | docs/meta/mak-l11.md | Mak L11 精英（… v4） | out/elite_report/mak_l11_v4/ |
+| Mak L14 | docs/meta/mak-l14.md | Mak L14 精英（… v4） | out/elite_report/mak_l14_v4/ |
+| Mak L17 | docs/meta/mak-l17.md | Mak L17 精英（高原代表 · v4） | out/elite_report/mak_l17_v4/ |
+| Vanessa L2 | docs/meta/vanessa-l2.md | Vanessa L2 精英（收敛认证 · v4） | out/elite_report/vanessa_l2/ |
+| Vanessa L5 | docs/meta/vanessa-l5.md | Vanessa L5 精英（… v4） | out/elite_report/vanessa_l5/ |
+| Vanessa L8 | docs/meta/vanessa-l8.md | Vanessa L8 精英（… v4） | out/elite_report/vanessa_l8/ |
+| Vanessa L11 | docs/meta/vanessa-l11.md | Vanessa L11 精英（… v4） | out/elite_report/vanessa_l11/ |
+| Vanessa L14 | docs/meta/vanessa-l14.md | Vanessa L14 精英（… v4） | out/elite_report/vanessa_l14/ |
+| Vanessa L17 | docs/meta/vanessa-l17.md | Vanessa L17 精英（高原代表 · v4） | out/elite_report/vanessa_l17/ |
 
 （v3 旧数据保留在 `out/meta_search/*_v3.*`、`out/elite_report/mak_l*/`（无 v4 后缀目录）等历史路径，仅供回溯。）
 
@@ -106,6 +114,7 @@
 
 - ~~**探测器结构剪裁**~~：**已完成**（遗产线整组迁入 `scripts/meta_search/legacy/`、
   GDF 正名为锚点枚举器、GDF-PA 退出默认构建、bin/ 同步；L8 闭环复跑家族级一致）。
-- **Vanessa**：物品版本待更新后再启动；管线同本文（`--hero Vanessa`）。
+- ~~**Vanessa**~~：**已完成**（六等级全线打通；管线 hero 参数化，烙刀双变体互斥与魂石同构、伪装唯一局外排除；
+  对比页 `docs/vanessa-levels-generalization.md`）。
 - 玩家产品化：转型路线图/双口径标注进前端（骨架见 docs/archive/mak-player-perspective.md §4）。
 - 数据层保卫：`docs/archive/item-audit-mak-l8.md` §5 的 lint 规则沉淀为 codegen 硬检查（防第四次物品 bug 推翻 meta）。

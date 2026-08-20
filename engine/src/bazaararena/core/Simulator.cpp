@@ -63,13 +63,16 @@ void Simulator::CheckCharge(ItemState& item, bool ignore_charge_remaining) {
     if (ignore_charge_remaining || item.attrs[ItemKey::ChargedTime] >= cooldown) { // 充能完成
         int multicast = GetItemInt(&item, ItemKey::Multicast);
         if (item.attrs[ItemKey::DerivedTags] & DerivedTag::Ammo) {
-            // 弹药物品充能完成
-            if (item.attrs[ItemKey::AmmoRemaining] == 0) {
+            // 弹药物品充能完成：结算弹药时先把剩余弹药钳制到当前**有效**最大弹药量——
+            // 最大弹药量光环的来源可能已离场（如炮弹被摧毁），剩余弹药不得超过最大弹药量。
+            const int ammo_cap = std::max(0, GetItemInt(&item, ItemKey::AmmoCap));
+            const int remaining = std::min(item.attrs[ItemKey::AmmoRemaining], ammo_cap);
+            if (remaining == 0) {
                 // 充能完成但是没有弹药，不满足施放条件，不进入施放队列
                 return;
             } else {
                 // 充能完成且有弹药，立刻消耗 1 枚弹药
-                item.attrs[ItemKey::AmmoRemaining]--;
+                item.attrs[ItemKey::AmmoRemaining] = remaining - 1;
                 // 触发「弹药」触发器
                 InvokeTrigger(Trigger::Ammo, &item, &item);
             }

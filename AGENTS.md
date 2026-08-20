@@ -197,7 +197,9 @@ npm run dev
 | `docs/architecture.md` | 分层架构 |
 | `docs/bazaar-core.md` | 游戏规则与搜索问题形式化描述 |
 | `docs/meta/mak-l2.md` / `mak-l5.md` / `mak-l8.md` / `mak-l11.md` / `mak-l14.md` / `mak-l17.md` | 各等级正式精英报告（收敛闭环认证后的最终阵容、分层、克制关系） |
+| `docs/meta/vanessa-l2.md` / `vanessa-l5.md` / `vanessa-l8.md` / `vanessa-l11.md` / `vanessa-l14.md` / `vanessa-l17.md` | Vanessa 各等级正式精英报告（同上口径；烙刀双变体探测、伪装局外排除） |
 | `docs/mak-levels-generalization.md` | Mak 六等级泛化对比：meta 结构对比与构筑思路等级规律 |
+| `docs/vanessa-levels-generalization.md` | Vanessa 六等级泛化对比：meta 结构对比与构筑思路等级规律 |
 | `docs/archive/` | 历史与调查记录（GDF/meta 路线、实证研究、理由图、邻域认证起源、玩家视角分析、物品审计、v3 重算记录）——仅供背景参考，主管线以 deck-search-pipeline.md 与 docs/meta/ 为准 |
 | `docs/data_format.md` | YAML 数据格式契约 |
 | `docs/api.md` | HTTP API |

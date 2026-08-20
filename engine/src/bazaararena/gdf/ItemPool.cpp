@@ -34,6 +34,12 @@ static bool IsIgnoredMakItemForGdf(std::string_view key, std::string_view hero) 
            key == "蒸馏器" || key == "空灵灰烬";
 }
 
+static bool IsIgnoredVanessaItemForGdf(std::string_view key, std::string_view hero) {
+    // Vanessa 的伪装为纯局外物品（购买时获得他英雄物品）：直接从池中移除。
+    if (Lower(hero) != "vanessa") return false;
+    return key == "伪装";
+}
+
 }  // namespace
 
 int ItemPool::SizeOfItem(const core::ItemTemplate* templ) {
@@ -55,6 +61,7 @@ ItemPool::ItemPool(int player_level, std::string_view pool_hero, const std::unor
         auto it = key_to_hero.find(std::string(key));
         if (it == key_to_hero.end()) continue;
         if (IsIgnoredMakItemForGdf(key, it->second)) continue;
+        if (IsIgnoredVanessaItemForGdf(key, it->second)) continue;
         if (!HeroMatches(it->second, pool_l)) continue;
         const core::ItemTemplate* t = rec.templ;
         const int min_tier = t->attributes[core::ItemTier::Bronze][core::ItemKey::MinTier];

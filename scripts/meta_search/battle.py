@@ -104,11 +104,11 @@ class MetaServer:
     _shared: "MetaServer | None" = None
 
     @classmethod
-    def shared(cls, level: int = 8) -> "MetaServer":
+    def shared(cls, level: int = 8, hero: str = "Mak") -> "MetaServer":
         if cls._shared is None:
             import atexit
 
-            cls._shared = cls(level=level)
+            cls._shared = cls(level=level, hero=hero)
             atexit.register(cls._shared.close)
         return cls._shared
 
