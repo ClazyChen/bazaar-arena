@@ -41,9 +41,6 @@ Desktop.ini
 # Rider
 .idea/
 
-# Raw images
-pictures/webp/
-
 # Cursor（本地 IDE 文件）
 .cursor/
 

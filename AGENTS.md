@@ -33,7 +33,7 @@ Bazaar Arena 是游戏《大巴扎》（The Bazaar，PVP 自走棋）的**模拟
 | `samples/` | CLI / GDF 输入输出样例（`samples/cli/` 含大量 `repro` 复现 job） |
 | `scripts/` | 探测主管线包 `meta_search/`（操作手册 `docs/deck-search-pipeline.md`；遗产线在 `meta_search/legacy/`）+ 前端卡组导入等脚本 |
 | `docs/` | 协议与开发指南（见文末索引） |
-| `pictures/webp/` | 物品图标，文件名与物品 `Name` 一致（gitignore，不入库） |
+| `pictures/webp/` | 物品图标，文件名与物品 `Name` 一致（已入库） |
 
 ### engine/ 内部
 
@@ -181,7 +181,7 @@ npm run dev
 
 ## 安全注意事项
 
-- **本地数据库与产物不入库**：`app/backend/data/*.db`、`out/**`、`pictures/webp/`、前端 `node_modules`/`dist` 均已 gitignore；请勿提交。
+- **本地数据库与产物不入库**：`app/backend/data/*.db`、`out/**`、前端 `node_modules`/`dist` 均已 gitignore；请勿提交。`pictures/webp/` 图标已入库。
 - **文件操作限定在仓库内**：`out/` 为本地运行产物目录；脚本与工具的默认输出均指向仓库内路径。
 - Python 依赖仅 `pyyaml`、`jsonschema`、`flask`；安装第三方包（如 `openpyxl`）时注意使用隔离环境。
 - 后端通过子进程调用 `bin/` 下的 CLI；`BAZAARARENA_CLI` 指向错误路径是常见故障（症状：API 报「未写出 out.json」且 stdout 出现非 JSON 内容），用 `--version` 自检身份。
